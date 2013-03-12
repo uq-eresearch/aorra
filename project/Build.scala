@@ -10,11 +10,11 @@ object ApplicationBuild extends Build {
   def jcloudsDep(s: String) = { "org.jclouds.api" % s % "1.5.7" }
 
   val appDependencies = Seq(
-    // Add your project dependencies here,
-    jdbc,
-    anorm,
-    jcloudsDep("filesystem"),
-    jcloudsDep("swift")
+    //jcloudsDep("filesystem"),
+    //jcloudsDep("swift"),
+    "javax.jcr" % "jcr" % "2.0",
+    "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.0",
+    "com.h2database" % "h2" % "1.3.170"
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
