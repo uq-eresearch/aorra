@@ -19,6 +19,7 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     // Add your own project settings here
-  ).dependsOn(RootProject(file("../securesocial/module-code")))
+  ).dependsOn(RootProject(uri(
+      "git://github.com/tjdett/securesocial.git#master-module-code")))
 
 }
