@@ -16,7 +16,7 @@ import org.apache.jackrabbit.api.JackrabbitSession
 import securesocial.core.SocialUser
 import securesocial.core.AuthenticationMethod
 import play.api.libs.oauth.OAuth
-import securesocial.core.UserId
+import securesocial.core.{PasswordInfo,UserId}
 
 /**
  * Check that Jackrabbit is hooked up properly for testing.
@@ -28,14 +28,17 @@ class JackrabbitUserServiceSpec extends Specification {
     "allow social users to be saved" in new CleanJackrabbitEnvironment {
       val testImpl = new TestImpl(repository)
       val testUser = SocialUser(
-          UserId("testuser", "testprovider"),
-          "Test", "User", "Test User",
-          Some("test@example.com"),
-          Some("http://example.test/"),
-          AuthenticationMethod.UserPassword,
-          None,
-          None,
-          None)
+        UserId("testuser", "testprovider"),
+        "Test", "User", "Test User",
+        Some("test@example.com"),
+        Some("http://example.test/"),
+        AuthenticationMethod.UserPassword,
+        None,
+        None,
+        Some(PasswordInfo(
+          "bcrypt",
+          "$2a$10$IK84/N39CQ.zdYgmc8I3o.XOMYm1SoJobtI35XsVa5MgI1/MaMzhS",
+          None)))
       testImpl.save(testUser)
       val loadedUser = testImpl.find(testUser.id).get
       loadedUser should_== testUser
