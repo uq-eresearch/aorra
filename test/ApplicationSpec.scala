@@ -1,5 +1,6 @@
 package test
 
+import test.AorraTestUtils.fakeApp
 import org.specs2.mutable._
 
 import play.api.test._
@@ -15,20 +16,20 @@ class ApplicationSpec extends Specification {
   "Application" should {
 
     "send 404 on a bad request" in {
-      running(FakeApplication()) {
+      running(fakeApp) {
         route(FakeRequest(GET, "/boom")) must beNone
       }
     }
 
     "send 303 for index page without login" in {
-      running(FakeApplication()) {
+      running(fakeApp) {
         val home = route(FakeRequest(GET, "/")).get
         status(home) must equalTo(SEE_OTHER)
       }
     }
 
     "render the login page" in {
-      running(FakeApplication()) {
+      running(fakeApp) {
         val home = route(FakeRequest(GET, "/login")).get
 
         status(home) must equalTo(OK)

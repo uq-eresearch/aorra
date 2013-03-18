@@ -17,10 +17,20 @@
 package service
 
 import collection.JavaConversions._
-import javax.jcr.Value
-import javax.jcr.ValueFactory
+import com.fasterxml.uuid.EthernetAddress
+import com.fasterxml.uuid.Generators
+import com.fasterxml.uuid.Generators.timeBasedGenerator
+import com.fasterxml.uuid.UUIDGenerator
+import com.wingnest.play2.jackrabbit.Jcr
+import com.wingnest.play2.jackrabbit.plugin.ConfigConsts
+import javax.jcr.SimpleCredentials
+import javax.jcr.{Repository, Value, ValueFactory}
+import org.apache.jackrabbit.api.JackrabbitSession
 import org.apache.jackrabbit.api.security.user.Authorizable
+import org.apache.jackrabbit.api.security.user.Query
 import org.apache.jackrabbit.api.security.user.QueryBuilder
+import org.apache.jackrabbit.api.security.user.QueryBuilder.Direction
+import org.apache.jackrabbit.api.security.user.User
 import org.apache.jackrabbit.api.security.user.UserManager
 import org.apache.jackrabbit.core.value.InternalValue
 import org.joda.time.DateTime
@@ -30,50 +40,44 @@ import play.api.{Application, Logger}
 import securesocial.core.UserId
 import securesocial.core._
 import securesocial.core.providers.Token
-import org.apache.jackrabbit.api.security.user.QueryBuilder.Direction
-import org.apache.jackrabbit.api.security.user.Query
-import org.apache.jackrabbit.api.security.user.User
-import org.apache.jackrabbit.core.TransientRepository
-import javax.jcr.SimpleCredentials
-import org.apache.jackrabbit.api.JackrabbitSession
-import com.fasterxml.uuid.UUIDGenerator
-import com.fasterxml.uuid.Generators
-import com.fasterxml.uuid.EthernetAddress
+import javax.jcr.Session
 
 class JackrabbitUserService(implicit val application: Application)
     extends UserServicePlugin(application)
     with CachingTokenProvider
     with JackrabbitSocialUserProvider {
 
-  val REPOSITORY_CONFIG_PATH = "test/repository.xml"
-  val REPOSITORY_DIRECTORY_PATH = "./target/jackrabbittestrepository"
-
-  lazy val repository = new TransientRepository(
-              REPOSITORY_CONFIG_PATH, REPOSITORY_DIRECTORY_PATH)
-  lazy val session = repository.login(
-        new SimpleCredentials("admin", "admin".toCharArray))
-
-  def userManager = {
-    session.asInstanceOf[JackrabbitSession].getUserManager()
+  override def inSession[A](op: (Session) => A): A = {
+    val session = Jcr.login(
+      confStr(ConfigConsts.CONF_JCR_USERID).get,
+      confStr(ConfigConsts.CONF_JCR_PASSWORD).get)
+    op(session)
+    // Note: We don't close the session, because it constantly gets reused.
   }
 
-  def valueFactory = {
-    session.getValueFactory()
+  private def confStr(k: String) = {
+    application.configuration.getString(k)
   }
-
 }
 
 trait JackrabbitSocialUserProvider {
 
   val UserIdPrefix = "user-"
 
-  def userManager: UserManager
-  def valueFactory: ValueFactory
+  def inSession[A](op: (Session) => A): A
 
-  implicit def userIdStr(id: UserId): String = id.id + ":" + id.providerId
-  def strToValue(s: String): Value = valueFactory.createValue(s)
+  case class SocialUserDao(val session: Session) {
 
-  object SocialUserDao {
+    implicit def userIdStr(id: UserId): String = id.id + ":" + id.providerId
+    def strToValue(s: String): Value = valueFactory.createValue(s)
+
+    def userManager = {
+      session.asInstanceOf[JackrabbitSession].getUserManager()
+    }
+
+    def valueFactory = {
+      session.getValueFactory()
+    }
 
     def load(authorizable: Authorizable): SocialUser = {
       val a = StringPropertyHolder(authorizable)
@@ -170,8 +174,62 @@ trait JackrabbitSocialUserProvider {
       }
     }
 
-  }
+    /**
+     * Finds a user that maches the specified id
+     *
+     * @param id the user id
+     * @return an optional user
+     */
+    def find(id: UserId): Option[Identity] = {
+      findAuthorizable(id) flatMap { a => Some(load(a)) }
+    }
 
+    /**
+     * Finds a user by email and provider id.
+     *
+     * @param email - the user email
+     * @param providerId - the provider id
+     * @return
+     */
+    def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
+      // TODO: Implement
+      None
+    }
+
+    /**
+     * Saves the user.  This method gets called when a user logs in.
+     * This is your chance to save the user information in your backing store.
+     * @param user
+     */
+    def save(user: Identity): Identity = {
+
+      val authorizable = findAuthorizable(user.id) match {
+        case Some(a) => a
+        case None => userManager.createUser(newUserId, "")
+      }
+      save(authorizable, user)
+      find(user.id).get
+    }
+
+    private def newUserId = {
+      val addr = EthernetAddress.fromInterface()
+      UserIdPrefix + Generators.timeBasedGenerator(addr)
+    }
+
+    private def findAuthorizable(id: UserId) = {
+      val query = new Query() {
+        override def build[C](qb: QueryBuilder[C]) {
+          val userMatch: C = qb.eq("id/user", strToValue(id.id))
+          val providerMatch: C = qb.eq("id/provider", strToValue(id.providerId))
+          qb.setCondition(qb.and(userMatch, providerMatch))
+          qb.setSortOrder("id/@user", Direction.ASCENDING);
+          qb.setSelector(classOf[User]);
+        }
+      }
+      userManager.findAuthorizables(query).toSeq.headOption
+    }
+
+  }
 
   /**
    * Finds a user that maches the specified id
@@ -180,7 +238,7 @@ trait JackrabbitSocialUserProvider {
    * @return an optional user
    */
   def find(id: UserId): Option[Identity] = {
-    findAuthorizable(id) flatMap { a => Some(SocialUserDao.load(a)) }
+    inSession { s => SocialUserDao(s).find(id) }
   }
 
   /**
@@ -201,34 +259,7 @@ trait JackrabbitSocialUserProvider {
    * @param user
    */
   def save(user: Identity): Identity = {
-
-    val authorizable = findAuthorizable(user.id) match {
-      case Some(a) => a
-      case None => userManager.createUser(newUserId, "")
-    }
-    SocialUserDao.save(authorizable, user)
-
-    // this sample returns the same user object, but you could return an instance of your own class
-    // here as long as it implements the Identity trait. This will allow you to use your own class in the protected
-    // actions and event callbacks. The same goes for the find(id: UserId) method.
-    find(user.id).get
-  }
-
-  private def newUserId = {
-    UserIdPrefix+Generators.timeBasedGenerator(EthernetAddress.fromInterface())
-  }
-
-  private def findAuthorizable(id: UserId) = {
-    val query = new Query() {
-      override def build[C](qb: QueryBuilder[C]) {
-        val userMatch: C = qb.eq("id/user", strToValue(id.id))
-        val providerMatch: C = qb.eq("id/provider", strToValue(id.providerId))
-        qb.setCondition(qb.and(userMatch, providerMatch))
-        qb.setSortOrder("id/@user", Direction.ASCENDING);
-        qb.setSelector(classOf[User]);
-      }
-    }
-    userManager.findAuthorizables(query).toSeq.headOption
+    inSession { s => SocialUserDao(s).save(user) }
   }
 
 }

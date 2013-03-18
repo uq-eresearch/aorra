@@ -1,7 +1,5 @@
-import play.api.GlobalSettings
+import play.api.{Application,GlobalSettings}
 
 object Global extends GlobalSettings {
-
-
 
 }

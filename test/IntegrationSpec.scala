@@ -1,5 +1,7 @@
 package test
 
+import test.AorraTestUtils.fakeApp
+
 import org.specs2.mutable._
 
 import play.api.test._
@@ -14,15 +16,11 @@ class IntegrationSpec extends Specification {
   "Application" should {
 
     "work from within a browser" in {
-      running(TestServer(3333), HTMLUNIT) { browser =>
-
+      running(TestServer(3333, fakeApp), HTMLUNIT) { browser =>
         browser.goTo("http://localhost:3333/")
-
         browser.pageSource must contain("Login")
-
       }
     }
-
   }
 
 }
