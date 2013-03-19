@@ -1,5 +1,6 @@
 package test
 
+import test.AorraTestUtils.fakeApp
 import org.specs2.mutable._
 
 import play.api.test._
@@ -11,22 +12,36 @@ import play.api.test.Helpers._
  * For more information, consult the wiki.
  */
 class ApplicationSpec extends Specification {
-  
+
   "Application" should {
-    
+
     "send 404 on a bad request" in {
-      running(FakeApplication()) {
-        route(FakeRequest(GET, "/boum")) must beNone        
+      running(fakeApp) {
+        route(FakeRequest(GET, "/boom")) must beNone
       }
     }
-    
-    "render the index page" in {
-      running(FakeApplication()) {
+
+    "send 200 for index page without login" in {
+      running(fakeApp) {
         val home = route(FakeRequest(GET, "/")).get
-        
+        status(home) must equalTo(OK)
+      }
+    }
+
+    "send 303 for user info page without login" in {
+      running(fakeApp) {
+        val home = route(FakeRequest(GET, "/user/info")).get
+        status(home) must equalTo(SEE_OTHER)
+      }
+    }
+
+    "render the login page" in {
+      running(fakeApp) {
+        val home = route(FakeRequest(GET, "/login")).get
+
         status(home) must equalTo(OK)
         contentType(home) must beSome.which(_ == "text/html")
-        contentAsString(home) must contain ("Your new application is ready.")
+        contentAsString(home) must contain ("Login")
       }
     }
   }

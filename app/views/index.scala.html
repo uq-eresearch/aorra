@@ -1,7 +1,34 @@
-@(message: String)
+@(
+user: Option[securesocial.core.Identity],
+allUsers: Seq[securesocial.core.Identity]
+)(implicit request: RequestHeader)
 
-@main("Welcome to Play 2.1") {
-    
-    @play20.welcome(message)
-    
+@main("AORRA") {
+  <div class="page-header">
+    <h1>Welcome</h1>
+  </div>
+
+  <p>
+    @user match {
+      case Some(u: User) => {
+        <a href="@controllers.routes.Application.userInfo()">
+        User Info (@u.id.id)
+        </a>
+      }
+      case None => {
+        <a href="@controllers.routes.Application.userInfo()">
+        Login to see User Info
+        </a>
+      }
+    }
+  </p>
+
+  <div>
+    <h2>Existing Users</h2>
+    <ul>
+      @allUsers.map { user =>
+        <li>@user.id.id</li>
+      }
+    </ul>
+  </div>
 }
