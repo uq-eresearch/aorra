@@ -26,21 +26,20 @@ import com.wingnest.play2.jackrabbit.plugin.ConfigConsts
 import javax.jcr.SimpleCredentials
 import javax.jcr.{Repository, Value, ValueFactory}
 import org.apache.jackrabbit.api.JackrabbitSession
-import org.apache.jackrabbit.api.security.user.Authorizable
+import org.apache.jackrabbit.api.security.user.{User => JackrabbitUser}
 import org.apache.jackrabbit.api.security.user.Query
 import org.apache.jackrabbit.api.security.user.QueryBuilder
 import org.apache.jackrabbit.api.security.user.QueryBuilder.Direction
-import org.apache.jackrabbit.api.security.user.User
 import org.apache.jackrabbit.api.security.user.UserManager
 import org.apache.jackrabbit.core.value.InternalValue
 import org.joda.time.DateTime
 import org.joda.time.Duration
 import org.mindrot.jbcrypt.BCrypt
 import play.api.{Application, Logger}
-import securesocial.core.UserId
 import securesocial.core._
 import securesocial.core.providers.Token
 import javax.jcr.Session
+import models.User
 
 class JackrabbitUserService(implicit val application: Application)
     extends UserServicePlugin(application)
@@ -64,6 +63,10 @@ trait JackrabbitSocialUserProvider {
 
   val UserIdPrefix = "user-"
 
+  lazy val uuidGenerator = {
+    Generators.timeBasedGenerator(EthernetAddress.fromInterface())
+  }
+
   def inSession[A](op: (Session) => A): A
 
   case class SocialUserDao(val session: Session) {
@@ -79,7 +82,7 @@ trait JackrabbitSocialUserProvider {
       session.getValueFactory()
     }
 
-    def load(authorizable: Authorizable): SocialUser = {
+    def load(authorizable: JackrabbitUser): Identity = {
       val a = StringPropertyHolder(authorizable)
       val userId = UserId(
         a.prop("id/user").getString.get, a.prop("id/provider").getString.get)
@@ -105,20 +108,22 @@ trait JackrabbitSocialUserProvider {
           }
         }
       }
-      SocialUser(
-        userId,
-        a.prop("names/first").getString.get,
-        a.prop("names/last").getString.get,
-        a.prop("names/full").getString.get,
-        a.prop("email").getString,
-        a.prop("avatarUrl").getString,
-        AuthenticationMethod(a.prop("authMethod").getString.get),
-        oAuth1Info,
-        oAuth2Info,
-        passwordInfo)
+      User(
+          authorizable,
+          SocialUser(
+            userId,
+            a.prop("names/first").getString.get,
+            a.prop("names/last").getString.get,
+            a.prop("names/full").getString.get,
+            a.prop("email").getString,
+            a.prop("avatarUrl").getString,
+            AuthenticationMethod(a.prop("authMethod").getString.get),
+            oAuth1Info,
+            oAuth2Info,
+            passwordInfo))
     }
 
-    def save(authorizable: Authorizable, user: Identity) = {
+    def save(authorizable: JackrabbitUser, user: Identity): Identity = {
       val a = StringPropertyHolder(authorizable)
       a prop("id/user")		set user.id.id
       a prop("id/provider")	set user.id.providerId
@@ -143,9 +148,10 @@ trait JackrabbitSocialUserProvider {
         a prop("password/password")	set info.password
         a prop("password/salt")		set info.salt
       }
+      load(authorizable)
     }
 
-    case class StringPropertyHolder(authorizable: Authorizable) {
+    case class StringPropertyHolder(authorizable: JackrabbitUser) {
       def prop(relPath: String) = AuthProp(relPath)
 
       case class AuthProp(val relPath: String) {
@@ -208,25 +214,26 @@ trait JackrabbitSocialUserProvider {
         case None => userManager.createUser(newUserId, "")
       }
       save(authorizable, user)
-      find(user.id).get
     }
 
     private def newUserId = {
-      val addr = EthernetAddress.fromInterface()
-      UserIdPrefix + Generators.timeBasedGenerator(addr)
+      UserIdPrefix + uuidGenerator.generate()
     }
 
-    private def findAuthorizable(id: UserId) = {
+    private def findAuthorizable(id: UserId): Option[JackrabbitUser] = {
       val query = new Query() {
         override def build[C](qb: QueryBuilder[C]) {
           val userMatch: C = qb.eq("id/user", strToValue(id.id))
           val providerMatch: C = qb.eq("id/provider", strToValue(id.providerId))
           qb.setCondition(qb.and(userMatch, providerMatch))
           qb.setSortOrder("id/@user", Direction.ASCENDING);
-          qb.setSelector(classOf[User]);
+          qb.setSelector(classOf[JackrabbitUser]);
         }
       }
-      userManager.findAuthorizables(query).toSeq.headOption
+      userManager.findAuthorizables(query).toSeq match {
+        case Seq(user: JackrabbitUser, _*) => Some(user)
+        case _ => None
+      }
     }
 
   }
