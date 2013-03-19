@@ -97,7 +97,7 @@
             class: FQN of class implementing the PersistenceManager interface
         -->
         <PersistenceManager class="org.apache.jackrabbit.core.persistence.bundle.H2PersistenceManager">
-          <param name="url" value="jdbc:h2:${wsp.home}/db;create=true"/>
+          <param name="url" value="jdbc:h2:${wsp.home}/workspace"/>
           <param name="schemaObjectPrefix" value="${wsp.name}_"/>
         </PersistenceManager>
         <!--
@@ -129,7 +129,7 @@
             implementations.
         -->
         <PersistenceManager class="org.apache.jackrabbit.core.persistence.bundle.H2PersistenceManager">
-          <param name="url" value="jdbc:h2:${rep.home}/db;create=true"/>
+          <param name="url" value="jdbc:h2:${rep.home}/repository"/>
           <param name="schemaObjectPrefix" value="version_"/>
         </PersistenceManager>
     </Versioning>
