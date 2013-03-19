@@ -198,8 +198,15 @@ trait JackrabbitSocialUserProvider {
      * @return
      */
     def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
-      // TODO: Implement
-      None
+      findAuthorizable(new Query() {
+        override def build[C](qb: QueryBuilder[C]) {
+          val emailMatch: C = qb.eq("email", strToValue(email))
+          val providerMatch: C = qb.eq("id/provider", strToValue(providerId))
+          qb.setCondition(qb.and(emailMatch, providerMatch))
+          qb.setSortOrder("id/@user", Direction.ASCENDING);
+          qb.setSelector(classOf[JackrabbitUser]);
+        }
+      }) flatMap { a => Some(load(a)) }
     }
 
     /**
@@ -208,7 +215,6 @@ trait JackrabbitSocialUserProvider {
      * @param user
      */
     def save(user: Identity): Identity = {
-
       val authorizable = findAuthorizable(user.id) match {
         case Some(a) => a
         case None => userManager.createUser(newUserId, "")
@@ -221,7 +227,7 @@ trait JackrabbitSocialUserProvider {
     }
 
     private def findAuthorizable(id: UserId): Option[JackrabbitUser] = {
-      val query = new Query() {
+      findAuthorizable(new Query() {
         override def build[C](qb: QueryBuilder[C]) {
           val userMatch: C = qb.eq("id/user", strToValue(id.id))
           val providerMatch: C = qb.eq("id/provider", strToValue(id.providerId))
@@ -229,13 +235,36 @@ trait JackrabbitSocialUserProvider {
           qb.setSortOrder("id/@user", Direction.ASCENDING);
           qb.setSelector(classOf[JackrabbitUser]);
         }
-      }
+      })
+    }
+
+    private def findAuthorizable(query: Query): Option[JackrabbitUser] = {
       userManager.findAuthorizables(query).toSeq match {
         case Seq(user: JackrabbitUser, _*) => Some(user)
         case _ => None
       }
     }
 
+  }
+
+  /**
+   * List all known users. (Not required by SecureSocial.)
+   */
+  def list(): Seq[Identity] = inSession { session =>
+    val dao = SocialUserDao(session)
+    dao.userManager.findAuthorizables(new Query() {
+      override def build[C](qb: QueryBuilder[C]) {
+        qb.setCondition(qb.exists("id/provider"))
+        qb.setSortOrder("id/@user", Direction.ASCENDING);
+        qb.setSelector(classOf[JackrabbitUser]);
+      }
+    }).toSeq flatMap {
+      case user: JackrabbitUser => try {
+        Some(dao.load(user))
+      } catch {
+        case e: NoSuchElementException => None
+      }
+    }
   }
 
   /**
@@ -256,8 +285,9 @@ trait JackrabbitSocialUserProvider {
    * @return
    */
   def findByEmailAndProvider(email: String, providerId: String): Option[Identity] = {
-    // TODO: Implement
-    None
+    inSession { s =>
+      SocialUserDao(s).findByEmailAndProvider(email, providerId)
+    }
   }
 
   /**

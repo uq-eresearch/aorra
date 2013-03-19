@@ -38,25 +38,57 @@ class JackrabbitUserServiceSpec extends Specification {
         "$2a$10$IK84/N39CQ.zdYgmc8I3o.XOMYm1SoJobtI35XsVa5MgI1/MaMzhS",
         None)))
 
+    def checkEqual(expected: Identity, actual: Identity) {
+      // OK, let's run through Identity and check all the methods match
+      actual.id should_== expected.id
+      actual.firstName should_== expected.firstName
+      actual.lastName should_== expected.lastName
+      actual.fullName should_== expected.fullName
+      actual.email should_== expected.email
+      actual.avatarUrl should_== expected.avatarUrl
+      actual.authMethod should_== expected.authMethod
+      actual.oAuth1Info should_== expected.oAuth1Info
+      actual.oAuth2Info should_== expected.oAuth2Info
+      actual.passwordInfo should_== expected.passwordInfo
+    }
 
     "allow social users to be saved" in {
       running(fakeApp) {
         val testImpl = new TestImpl(Jcr.getRepository)
         val testUser = testSocialUser
         testImpl.save(testUser)
-        val loadedUser = testImpl.find(testUser.id).get
 
-        // OK, let's run through Identity and check all the methods match
-        loadedUser.id should_== testUser.id
-        loadedUser.firstName should_== testUser.firstName
-        loadedUser.lastName should_== testUser.lastName
-        loadedUser.fullName should_== testUser.fullName
-        loadedUser.email should_== testUser.email
-        loadedUser.avatarUrl should_== testUser.avatarUrl
-        loadedUser.authMethod should_== testUser.authMethod
-        loadedUser.oAuth1Info should_== testUser.oAuth1Info
-        loadedUser.oAuth2Info should_== testUser.oAuth2Info
-        loadedUser.passwordInfo should_== testUser.passwordInfo
+        val loadedUser = testImpl.find(testUser.id)
+        loadedUser must beSome
+        checkEqual(testUser, loadedUser.get)
+      }
+    }
+
+    "can find with email/provider" in {
+      running(fakeApp) {
+        val testImpl = new TestImpl(Jcr.getRepository)
+        val testUser = testSocialUser
+        testImpl.save(testUser)
+
+        val loadedUser = testImpl.findByEmailAndProvider(
+            testUser.email.get,
+            testUser.id.providerId)
+        loadedUser must beSome
+        checkEqual(testUser, loadedUser.get)
+      }
+    }
+
+    "can list users" in {
+      running(fakeApp) {
+        val testImpl = new TestImpl(Jcr.getRepository)
+        val testUser = testSocialUser
+        testImpl.save(testUser)
+
+        val allUsers = testImpl.list
+        allUsers must have size(1)
+        allUsers match {
+          case Seq(u: User) => checkEqual(testUser, u)
+        }
       }
     }
 

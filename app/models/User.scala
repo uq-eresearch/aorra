@@ -32,7 +32,7 @@ case class User(
       case c: CryptedSimpleCredentials => crypted2simple(c)
       case sc: SimpleCredentials => sc
       // TODO: Use better exception
-      case _ => sys.error("You can't impersonate without those credentials.")
+      case _ => sys.error("You can't impersonate with those credentials.")
     }
     session.impersonate(creds)
   }

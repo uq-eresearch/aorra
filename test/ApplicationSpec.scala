@@ -21,9 +21,16 @@ class ApplicationSpec extends Specification {
       }
     }
 
-    "send 303 for index page without login" in {
+    "send 200 for index page without login" in {
       running(fakeApp) {
         val home = route(FakeRequest(GET, "/")).get
+        status(home) must equalTo(OK)
+      }
+    }
+
+    "send 303 for user info page without login" in {
+      running(fakeApp) {
+        val home = route(FakeRequest(GET, "/user/info")).get
         status(home) must equalTo(SEE_OTHER)
       }
     }

@@ -1,47 +1,34 @@
-@(user: securesocial.core.Identity)(implicit request: RequestHeader)
-@import securesocial.core.IdentityProvider
+@(
+user: Option[securesocial.core.Identity],
+allUsers: Seq[securesocial.core.Identity]
+)(implicit request: RequestHeader)
 
-@main("SecureSocial - Sample Protected Page") {
-<div class="page-header">
-  <h2><img src="@user.avatarUrl" alt="@user.firstName" width="40px" height="40px"/> Welcome @user.firstName</h2>
-</div>
+@main("AORRA") {
+  <div class="page-header">
+    <h1>Welcome</h1>
+  </div>
 
-<div class="clearfix">
-  <h2>User Details</h2>
+  <p>
+    @user match {
+      case Some(u: User) => {
+        <a href="@controllers.routes.Application.userInfo()">
+        User Info (@u.id.id)
+        </a>
+      }
+      case None => {
+        <a href="@controllers.routes.Application.userInfo()">
+        Login to see User Info
+        </a>
+      }
+    }
+  </p>
 
-  <dl class="dl-horizontal">
-    <dt>User Id</dt><dd>@user.id.id</dd>
-    <dt>First name</dt><dd>@user.firstName</dd>
-    <dt>Last name</dt><dd>@user.lastName</dd>
-    <dt>Full name</dt><dd>@user.fullName</dd>
-    <dt>Logged in from</dt><dd>@user.id.providerId</dd>
-    <dt>Email</dt><dd>@user.email.map { email => @email }.getOrElse("Not Available")</dd>
-    <dt>Authentication method</dt><dd>@user.authMethod</dd>
-  </dl>
-
-  @user.oAuth1Info.map { info =>
-    <h2>OAuth1 Info</h2>
-
+  <div>
+    <h2>Existing Users</h2>
     <ul>
-      <li>Token: @info.token</li>
-      <li>Secret: @info.secret</li>
+      @allUsers.map { user =>
+        <li>@user.id.id</li>
+      }
     </ul>
-  }
-
-  @user.oAuth2Info.map { info =>
-    <h2>OAuth2 Info</h2>
-
-    <ul>
-      <li>Access Token: @info.accessToken</li>
-      @info.tokenType.map { t => <li>Token Type: @t</li> }
-      @info.expiresIn.map { exp => <li>Expires in: @exp seconds</li>}
-      @info.refreshToken.map { rt => <li>Refresh Token: @rt</li>}
-    </ul>
-  }
-  <hr/>
-  @user.passwordInfo.map { info =>
-    <a class="btn" href="@securesocial.core.providers.utils.RoutesHelper.changePasswordPage.absoluteURL(IdentityProvider.sslEnabled)">Change Password</a>
-  }
-  <a class="btn" href="@securesocial.controllers.routes.LoginPage.logout()">Logout</a>
-</div>
+  </div>
 }

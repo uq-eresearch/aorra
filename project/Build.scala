@@ -24,6 +24,6 @@ object ApplicationBuild extends Build {
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/securesocial.git#master-module-code"))
   ).dependsOn(RootProject(uri(
-      "git://github.com/sgougi/play21-jackrabbit-plugin.git#master")))
+      "git://github.com/tjdett/play21-jackrabbit-plugin.git#shutdown")))
 
 }
