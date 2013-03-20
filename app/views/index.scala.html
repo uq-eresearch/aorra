@@ -4,31 +4,52 @@ allUsers: Seq[securesocial.core.Identity]
 )(implicit request: RequestHeader)
 
 @main("AORRA") {
-  <div class="page-header">
-    <h1>Welcome</h1>
-  </div>
+  <div class="row-fluid">
+    <div class="span3">
+      <h5>Existing Users</h5>
+      <ul>
+        @allUsers.map { user =>
+          <li>@user.id.id</li>
+        }
+      </ul>
+    </div>
 
-  <p>
+    <div class="span9">
     @user match {
       case Some(u: User) => {
-        <a href="@controllers.routes.Application.userInfo()">
-        User Info (@u.id.id)
-        </a>
+        <p>
+          <ul>
+            <li>
+              <a href="@controllers.routes.Application.userInfo">
+              User Info (@u.id.id)
+              </a>
+            </li>
+            <li>
+              <a href="@controllers.routes.FileUploadController.getUpload">
+              File Upload Test
+              </a>
+            </li>
+          </ul>
+        </p>
       }
       case None => {
-        <a href="@controllers.routes.Application.userInfo()">
-        Login to see User Info
-        </a>
+        <p>
+          Login to see:
+          <ul>
+            <li>
+              <a href="@controllers.routes.Application.userInfo">
+              User Info
+              </a>
+            </li>
+            <li>
+              <a href="@controllers.routes.FileUploadController.getUpload">
+              File Upload Test
+              </a>
+            </li>
+          </ul>
+        </p>
       }
     }
-  </p>
-
-  <div>
-    <h2>Existing Users</h2>
-    <ul>
-      @allUsers.map { user =>
-        <li>@user.id.id</li>
-      }
-    </ul>
+    </div>
   </div>
 }

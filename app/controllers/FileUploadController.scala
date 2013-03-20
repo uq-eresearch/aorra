@@ -19,8 +19,10 @@ object FileUploadController extends Controller with SecureSocial {
           "files" -> body.files.map { filePart =>
             val fileName = filePart.filename
             val file = filePart.ref.file
-            Logger.info(String.format("file %s content type %s uploaded to %s",
-              fileName, filePart.contentType, file.getAbsolutePath()))
+            Logger.info(String.format(
+              "file %s content type %s uploaded to %s by %s",
+              fileName, filePart.contentType, file.getAbsolutePath(),
+              request.user.id.id))
             Json.obj(
               "name" -> fileName,
               "size" -> file.length)

@@ -2,12 +2,9 @@
 @import securesocial.core.IdentityProvider
 
 @main("User Info") {
-<div class="page-header">
-  <h2><img src="@user.avatarUrl" alt="@user.firstName" width="40px" height="40px"/> Welcome @user.firstName</h2>
-</div>
+<h2><img src="@user.avatarUrl" alt="@user.firstName" width="40px" height="40px"/> Welcome @user.firstName</h2>
 
 <div class="clearfix">
-  <h2>User Details</h2>
 
   <dl class="dl-horizontal">
     <dt>User Id</dt><dd>@user.id.id</dd>
