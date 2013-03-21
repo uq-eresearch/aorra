@@ -3,6 +3,8 @@
 .*
 # except for .gitignore
 !.gitignore
+# Ignore all temporary files
+*~
 
 # Ignore Play! working directories #
 bin
