@@ -21,7 +21,6 @@ import com.fasterxml.uuid.EthernetAddress
 import com.fasterxml.uuid.Generators
 import com.fasterxml.uuid.Generators.timeBasedGenerator
 import com.fasterxml.uuid.UUIDGenerator
-import com.wingnest.play2.jackrabbit.Jcr
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts
 import javax.jcr.SimpleCredentials
 import javax.jcr.{Repository, Value, ValueFactory}
@@ -46,13 +45,7 @@ class JackrabbitUserService(implicit val application: Application)
     with CachingTokenProvider
     with JackrabbitSocialUserProvider {
 
-  override def inSession[A](op: (Session) => A): A = {
-    val session = Jcr.login(
-      confStr(ConfigConsts.CONF_JCR_USERID).get,
-      confStr(ConfigConsts.CONF_JCR_PASSWORD).get)
-    op(session)
-    // Note: We don't close the session, because it constantly gets reused.
-  }
+  override def inSession[A](op: (Session) => A): A = Jcr.session(op)
 
   private def confStr(k: String) = {
     application.configuration.getString(k)

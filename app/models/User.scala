@@ -27,7 +27,7 @@ case class User(
   /**
    * Get session impersonating this user.
    */
-  def impersonate(session: Session) = {
+  def impersonate(session: Session): Session = {
     val creds = jackrabbitUser.getCredentials() match {
       case c: CryptedSimpleCredentials => crypted2simple(c)
       case sc: SimpleCredentials => sc
