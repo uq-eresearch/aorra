@@ -8,23 +8,31 @@ import service.Jcr
 import test.AorraTestUtils.fakeApp
 import org.apache.jackrabbit.api.JackrabbitSession
 import org.apache.jackrabbit.api.security.user.Group
+import service.FreeformFileStore
+import org.specs2.matcher.DataTables
 
 /**
  * Check that Jackrabbit is hooked up properly for testing.
  */
-class FreeformFileStoreSpec extends Specification {
+class FreeformFileStoreSpec extends Specification with DataTables {
 
   "Freeform File Store" should {
 
     "create groups for file storage" in {
-      running(fakeApp) {
-        Jcr.session { session =>
-          val um = session.asInstanceOf[JackrabbitSession].getUserManager()
-          val name = "Reef Secretariat"
-          val g = um.getAuthorizable(name)
-          g must not be null
-          g must beAnInstanceOf[Group]
-          g.getID should_== name
+      "group name"           |>
+      "Reef Secretariat"     |
+      "Catchment Loads"      |
+      "Groundcover"          |
+      "Management Practices" |
+      "Marine"               | { groupName =>
+        running(fakeApp) {
+          Jcr.session { session =>
+            val um = session.asInstanceOf[JackrabbitSession].getUserManager()
+            val g = um.getAuthorizable(groupName)
+            g must not be null
+            g must beAnInstanceOf[Group]
+            g.getID should_== groupName
+          }
         }
       }
     }

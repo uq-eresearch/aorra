@@ -40,15 +40,18 @@ class FreeformFileStore(implicit val application: Application) extends Plugin {
     val userManager = session.asInstanceOf[JackrabbitSession].getUserManager
 
     def apply(name: String): ContributionGroup = {
+      // Defining an implicit conversion so we can just use JCR_READ, etc.
       implicit def str2privilege(s: String) = accessManager.privilegeFromName(s)
-      val auth = userManager.getAuthorizable(s"${groupPath}/$name")
-      val group = Option(auth) match {
+      // Get or create group
+      val group = Option(userManager.getAuthorizable(name)) match {
         case Some(g: Group) => g
         case None => userManager.createGroup(NamedPrincipal(name), groupPath)
         case Some(a: Authorizable) =>
           sys.error(s"Authorizable already exists! Not a group: $a")
       }
+      // Create the group folder
       val folder = rootFolder.findOrCreateFolder(name)
+      // Set appropriate ACLs
       accessManager.getApplicablePolicies(folder.node.getPath).toSeq match {
         case Seq(acl: AccessControlList) =>
           acl.getAccessControlEntries() foreach {
