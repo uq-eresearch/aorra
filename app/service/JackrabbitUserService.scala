@@ -101,7 +101,7 @@ trait JackrabbitSocialUserProvider {
           }
         }
       }
-      User(
+      new User(
           authorizable,
           SocialUser(
             userId,
