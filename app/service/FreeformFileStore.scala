@@ -1,6 +1,7 @@
 package service
 
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts
+import com.wingnest.play2.jackrabbit.{Jcr => PluginJcr}
 import javax.jcr.Session
 import org.apache.jackrabbit.api.JackrabbitSession
 import play.api.{Application,Plugin}
@@ -15,6 +16,45 @@ import javax.jcr.security.Privilege.{JCR_READ, JCR_WRITE}
 import org.apache.jackrabbit.api.security.user.Authorizable
 
 class FreeformFileStore(implicit val application: Application) extends Plugin {
+
+  object Jcr {
+
+    def repository = PluginJcr.getRepository()
+
+    /**
+     * Perform work in session the admin user.
+     */
+    def session: SessionWrapper = {
+      SessionWrapper({ () =>
+        def confStr(k: String) = application.configuration.getString(k)
+        PluginJcr.login(
+          confStr(ConfigConsts.CONF_JCR_USERID).get,
+          confStr(ConfigConsts.CONF_JCR_PASSWORD).get)
+      })
+    }
+
+    /**
+     * Perform work in session as a particular user.
+     */
+    def session(user: models.User): SessionWrapper = {
+      SessionWrapper({ () =>
+        session { adminSession =>
+          user.impersonate(adminSession)
+        }
+      })
+    }
+
+    case class SessionWrapper(initSession: () => Session) {
+      def apply[A](op: (Session) => A): A = {
+        val session = initSession()
+        try {
+          op(session)
+        } finally {
+          session.logout
+        }
+      }
+    }
+  }
 
   override def onStart {
     initFileStore

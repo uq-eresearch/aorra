@@ -45,7 +45,19 @@ class JackrabbitUserService(implicit val application: Application)
     with CachingTokenProvider
     with JackrabbitSocialUserProvider {
 
-  override def inSession[A](op: (Session) => A): A = Jcr.session(op)
+  override def inSession[A](op: (Session) => A): A = {
+    val session = {
+      def confStr(k: String) = application.configuration.getString(k)
+      com.wingnest.play2.jackrabbit.Jcr.login(
+        confStr(ConfigConsts.CONF_JCR_USERID).get,
+        confStr(ConfigConsts.CONF_JCR_PASSWORD).get)
+    }
+    try {
+      op(session)
+    } finally {
+      session.logout
+    }
+  }
 
   private def confStr(k: String) = {
     application.configuration.getString(k)
