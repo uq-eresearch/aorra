@@ -9,8 +9,8 @@ GET     /user/info                  controllers.Application.userInfo
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
-GET     /upload                     controllers.FileUploadController.getUpload
-POST    /upload                     controllers.FileUploadController.postUpload
+GET     /upload                     controllers.FileUpload.getUpload
+POST    /upload                     controllers.FileUpload.postUpload
 # Login page
 GET     /login                      securesocial.controllers.LoginPage.login
 GET     /logout                     securesocial.controllers.LoginPage.logout
