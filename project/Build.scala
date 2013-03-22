@@ -12,6 +12,7 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     //jcloudsDep("filesystem"),
     //jcloudsDep("swift"),
+    javaCore,
     "javax.jcr" % "jcr" % "2.0",
     "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.0",
     "com.h2database" % "h2" % "1.3.170",

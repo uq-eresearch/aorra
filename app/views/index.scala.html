@@ -1,7 +1,8 @@
 @(
 user: Option[securesocial.core.Identity],
 allUsers: Seq[securesocial.core.Identity]
-)(implicit request: RequestHeader)
+)
+@import play.mvc.Http.Context.Implicit
 
 @main("AORRA") {
   <div class="row-fluid">
@@ -16,7 +17,7 @@ allUsers: Seq[securesocial.core.Identity]
 
     <div class="span9">
     @user match {
-      case Some(u: User) => {
+      case Some(u: securesocial.core.Identity) => {
         <p>
           <ul>
             <li>

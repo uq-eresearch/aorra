@@ -1,5 +1,6 @@
-@(user: securesocial.core.Identity)(implicit request: RequestHeader)
+@(user: securesocial.core.Identity)
 @import securesocial.core.IdentityProvider
+@import play.mvc.Http.Context.Implicit
 
 @main("User Info") {
 <h2><img src="@user.avatarUrl" alt="@user.firstName" width="40px" height="40px"/> Welcome @user.firstName</h2>
