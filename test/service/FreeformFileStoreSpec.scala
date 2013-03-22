@@ -1,6 +1,8 @@
 package test.service
 
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts
+import java.util.Iterator
+import javax.jcr.Node
 import javax.jcr.Session
 import org.apache.jackrabbit.api.JackrabbitSession
 import org.apache.jackrabbit.api.security.user.Group
@@ -10,6 +12,7 @@ import org.specs2.specification.Scope
 import play.api.Play
 import play.api.test.Helpers._
 import play.api.test._
+import scala.collection.JavaConversions._
 import service.FreeformFileStore
 import test.AorraTestUtils.fakeApp
 
@@ -20,7 +23,7 @@ class FreeformFileStoreSpec extends Specification with DataTables {
 
   "Freeform File Store" should {
 
-    "create groups for file storage" in {
+    "create groups and folders for file storage" in {
       "group name"           |>
       "Reef Secretariat"     |
       "Catchment Loads"      |
@@ -34,6 +37,9 @@ class FreeformFileStoreSpec extends Specification with DataTables {
             g must not be null
             g must beAnInstanceOf[Group]
             g.getID should_== groupName
+            session.getRootNode()
+              .getNode(FreeformFileStore.FILE_STORE_PATH)
+              .hasNode(groupName) must beTrue
           }
         }
       }

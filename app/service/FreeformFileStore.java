@@ -28,6 +28,9 @@ import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils
 
 public class FreeformFileStore extends Plugin {
 
+  public static final String FILE_STORE_PATH = "filestore";
+  public static final String GROUP_PATH = "contributionGroups";
+
   private Application application;
 
   public FreeformFileStore(Application application) {
@@ -57,15 +60,13 @@ public class FreeformFileStore extends Plugin {
       rs.belongsTo(gm.group("Groundcover"));
       rs.belongsTo(gm.group("Management Practices"));
       rs.belongsTo(gm.group("Marine"));
+      session.save();
     } finally {
       session.logout();
     }
   }
 
   private class GroupManager {
-
-    public static final String FILE_STORE_PATH = "filestore";
-    public static final String GROUP_PATH = "contributionGroups";
 
     private final Session session;
     private final UserManager userManager;
@@ -107,33 +108,33 @@ public class FreeformFileStore extends Plugin {
         this.node = node;
       }
 
-      public FolderHelper findOrCreateFolder(String path) {
+      public FolderHelper findOrCreateFolder(String path) throws RepositoryException {
         try {
-          if (node.hasNode(path)) {
-            return new FolderHelper(this.node.getNode(path));
-          } else {
-            return new FolderHelper(this.node.addNode(path, NodeType.NT_FOLDER));
-          }
+          return new FolderHelper(this.node.getNode(path));
         } catch (PathNotFoundException e) {
-          throw new RuntimeException(e);
-        } catch (ItemExistsException e) {
-          throw new RuntimeException(e);
-        } catch (NoSuchNodeTypeException e) {
-          throw new RuntimeException(e);
-        } catch (LockException e) {
-          throw new RuntimeException(e);
-        } catch (VersionException e) {
-          throw new RuntimeException(e);
-        } catch (ConstraintViolationException e) {
-          throw new RuntimeException(e);
-        } catch (RepositoryException e) {
-          throw new RuntimeException(e);
+          try {
+            return new FolderHelper(
+                this.node.addNode(path, NodeType.NT_FOLDER));
+          } catch (ItemExistsException e1) {
+            // Recurse to find newly-created node
+            return findOrCreateFolder(path);
+          } catch (PathNotFoundException e1) {
+            throw new RuntimeException(e1);
+          } catch (NoSuchNodeTypeException e1) {
+            throw new RuntimeException(e1);
+          } catch (LockException e1) {
+            throw new RuntimeException(e1);
+          } catch (VersionException e1) {
+            throw new RuntimeException(e1);
+          } catch (ConstraintViolationException e1) {
+            throw new RuntimeException(e1);
+          }
         }
       }
 
       public void setOwner(Session session, Group group)
           throws RepositoryException {
-        AccessControlUtils.denyAllToEveryone(session, this.node.getPath());
+        //AccessControlUtils.denyAllToEveryone(session, this.node.getPath());
         AccessControlUtils.addAccessControlEntry(session, this.node.getPath(),
             group.getPrincipal(), AccessControlUtils.privilegesFromNames(
                 session, Privilege.JCR_READ, Privilege.JCR_WRITE), true);
