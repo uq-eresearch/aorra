@@ -44,6 +44,23 @@ class FreeformFileStoreSpec extends Specification with DataTables {
         }
       }
     }
+
+    "provide a set of contribution folders" in {
+      running(fakeApp) {
+        inSession { session =>
+          val folders = Play.current.plugin(classOf[FreeformFileStore])
+            .get.getContributionFolders(session);
+          val folderNames = folders map { _.getName() }
+          folderNames must contain("Reef Secretariat")
+          folderNames must contain("Catchment Loads")
+          folderNames must contain("Groundcover")
+          folderNames must contain("Management Practices")
+          folderNames must contain("Marine")
+        }
+      }
+    }
+
+
   }
 
   def inSession[A](op: (Session) => A): A = {

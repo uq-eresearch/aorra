@@ -1,5 +1,6 @@
 package service;
 
+import com.google.common.collect.ImmutableSet;
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 import com.wingnest.play2.jackrabbit.Jcr;
 
@@ -14,6 +15,9 @@ import play.Application;
 import play.Plugin;
 import org.apache.jackrabbit.api.security.user.Group;
 import java.security.Principal;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.apache.jackrabbit.api.security.user.UserManager;
 import javax.jcr.Node;
 import javax.jcr.lock.LockException;
@@ -45,14 +49,26 @@ public class FreeformFileStore extends Plugin {
     }
   }
 
-  private Session getSession() throws RepositoryException {
+  @SuppressWarnings("unchecked")
+  public Set<Node> getContributionFolders(Session session) {
+    try {
+      return ImmutableSet.copyOf((Iterator<Node>)
+          session.getRootNode().getNode(FILE_STORE_PATH).getNodes());
+    } catch (PathNotFoundException e) {
+      throw new RuntimeException(e);
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Session getAdminSession() throws RepositoryException {
     return Jcr.login(
         application.configuration().getString(ConfigConsts.CONF_JCR_USERID),
         application.configuration().getString(ConfigConsts.CONF_JCR_PASSWORD));
   }
 
   protected void initFileStore() throws RepositoryException {
-    Session session = getSession();
+    Session session = getAdminSession();
     try {
       GroupManager gm = new GroupManager(session);
       ContributionGroup rs = gm.group("Reef Secretariat");
@@ -134,7 +150,7 @@ public class FreeformFileStore extends Plugin {
 
       public void setOwner(Session session, Group group)
           throws RepositoryException {
-        //AccessControlUtils.denyAllToEveryone(session, this.node.getPath());
+        AccessControlUtils.denyAllToEveryone(session, this.node.getPath());
         AccessControlUtils.addAccessControlEntry(session, this.node.getPath(),
             group.getPrincipal(), AccessControlUtils.privilegesFromNames(
                 session, Privilege.JCR_READ, Privilege.JCR_WRITE), true);
