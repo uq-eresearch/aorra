@@ -15,19 +15,21 @@ public final class Application extends Controller {
 
   @SecureSocial.UserAwareAction
   public final static Result index() {
-    Identity user = (Identity) ctx().args.get(SecureSocial.USER_KEY);
     Seq<Identity> allUsers = userService().list();
-    return ok(index.render(Option.apply(user), allUsers));
+    return ok(index.render(Option.apply(getUser()), allUsers));
   }
 
   @SecureSocial.SecuredAction
   public final static Result userInfo() {
-    Identity user = (Identity) ctx().args.get(SecureSocial.USER_KEY);
-    return ok(info.render(user));
+    return ok(info.render(getUser()));
   }
 
   private final static JackrabbitUserService userService() {
     return Play.application().plugin(JackrabbitUserService.class);
+  }
+
+  private final static Identity getUser() {
+    return (Identity) ctx().args.get(SecureSocial.USER_KEY);
   }
 
 }

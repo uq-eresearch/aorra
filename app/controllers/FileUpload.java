@@ -15,7 +15,7 @@ public final class FileUpload extends Controller {
 
   @SecureSocial.SecuredAction
   public final static Result postUpload() {
-    final Identity user = (Identity) ctx().args.get(SecureSocial.USER_KEY);
+    final Identity user = getUser();
     final MultipartFormData body = request().body().asMultipartFormData();
     if (body == null) {
       return badRequest("POST must contain multipart form data.")
@@ -49,6 +49,10 @@ public final class FileUpload extends Controller {
   @SecureSocial.SecuredAction
   public final static Result getUpload() {
     return ok(views.html.upload.render());
+  }
+
+  private final static Identity getUser() {
+    return (Identity) ctx().args.get(SecureSocial.USER_KEY);
   }
 
 }
