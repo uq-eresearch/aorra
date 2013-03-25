@@ -9,12 +9,6 @@ import securesocial.core.SocialUser;
 import securesocial.core.UserId;
 
 import javax.jcr.Credentials;
-import javax.jcr.LoginException;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
-
-import org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
 import scala.Option;
 
 /**
@@ -22,17 +16,16 @@ import scala.Option;
  **/
 public class User implements Identity {
 
-  private org.apache.jackrabbit.api.security.user.User jackrabbitUser;
+  private Credentials credentials;
   private SocialUser socialUser;
 
-  public User(org.apache.jackrabbit.api.security.user.User jackrabbitUser,
-              SocialUser socialUser) {
-    this.jackrabbitUser = jackrabbitUser;
+  public User(Credentials credentials, SocialUser socialUser) {
+    this.credentials = credentials;
     this.socialUser = socialUser;
   }
 
-  public org.apache.jackrabbit.api.security.user.User jackrabbitUser() {
-    return this.jackrabbitUser;
+  public Credentials credentials() {
+    return this.credentials;
   }
 
   public UserId id() { return socialUser.id(); }
@@ -47,27 +40,6 @@ public class User implements Identity {
 
   public Option<PasswordInfo> passwordInfo() {
     return socialUser.passwordInfo();
-  }
-
-  /**
-   * Get session impersonating this user.
-   */
-  public Session impersonate(Session session)
-      throws LoginException, RepositoryException {
-    Credentials usableCreds;
-    {
-      final Credentials creds = jackrabbitUser.getCredentials();
-      if (creds instanceof CryptedSimpleCredentials) {
-        usableCreds = new SimpleCredentials(
-            ((CryptedSimpleCredentials) creds).getUserID(), "".toCharArray());
-      } else if (creds instanceof SimpleCredentials) {
-        usableCreds = creds;
-      } else {
-        throw new RuntimeException(
-            "You can't impersonate with those credentials.");
-      }
-    }
-    return session.impersonate(usableCreds);
   }
 
 }

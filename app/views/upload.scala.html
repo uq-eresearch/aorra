@@ -1,7 +1,15 @@
-@()
+@(contributionFolders: Set[javax.jcr.Node])
 
 @main("File Upload Test") {
 <input id="fileupload" type="file" name="files[]" data-url="upload" multiple>
+
+<dl>
+  <dt>Contribution Folders</dt>
+  @for(folder <- contributionFolders) {
+    <dd>@folder.getName()</dd>
+  }
+</dl>
+</select>
 <script src="@routes.Assets.at("javascripts/jquery.ui.widget.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.iframe-transport.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.fileupload.js")"></script>

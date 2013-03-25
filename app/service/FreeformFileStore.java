@@ -30,7 +30,9 @@ import javax.jcr.version.VersionException;
 import org.apache.jackrabbit.api.security.user.Authorizable;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 
-public class FreeformFileStore extends Plugin {
+public class FreeformFileStore extends Plugin
+    implements ContributionFolderProvider
+{
 
   public static final String FILE_STORE_PATH = "filestore";
   public static final String GROUP_PATH = "contributionGroups";
@@ -49,11 +51,12 @@ public class FreeformFileStore extends Plugin {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public Set<Node> getContributionFolders(Session session) {
     try {
-      return ImmutableSet.copyOf((Iterator<Node>)
-          session.getRootNode().getNode(FILE_STORE_PATH).getNodes());
+      @SuppressWarnings("unchecked")
+      Iterator<Node> nodeIterator = (Iterator<Node>)
+        session.getRootNode().getNode(FILE_STORE_PATH).getNodes();
+      return ImmutableSet.copyOf(nodeIterator);
     } catch (PathNotFoundException e) {
       throw new RuntimeException(e);
     } catch (RepositoryException e) {

@@ -114,7 +114,7 @@ trait JackrabbitSocialUserProvider {
         }
       }
       new User(
-          authorizable,
+          authorizable.getCredentials(),
           SocialUser(
             userId,
             a.prop("names/first").getString.get,

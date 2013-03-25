@@ -17,6 +17,9 @@ import service.JackrabbitSocialUserProvider
 import javax.jcr.Session
 import models.User
 import java.util.UUID
+import service.JcrSessionFactory
+import
+  org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials
 
 /**
  * Check that Jackrabbit is hooked up properly for testing.
@@ -102,33 +105,41 @@ class JackrabbitUserServiceSpec extends Specification {
 
         val uuidRegex =
           """[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}""".r
-        uuidRegex.findFirstIn(u.jackrabbitUser.getID) must beSome
+        u.credentials match {
+          case cc: CryptedSimpleCredentials =>
+            uuidRegex.findFirstIn(cc.getUserID()) must beSome
+        }
       }
     }
 
     "create users that can be impersonated" in {
       running(fakeApp) {
+        import testImpl.scala2ffunc
         val testImpl = new TestImpl(Jcr.getRepository)
         val loadedUser = testImpl.save(testSocialUser)
 
         // It should be a User
         val u = loadedUser.asInstanceOf[User]
-        testImpl.inSession { session =>
-          val newSession = u.impersonate(session)
-          newSession.getUserID() should_== u.jackrabbitUser.getID
-          newSession.logout()
-          session.isLive must beTrue
-        }
+        testImpl.sf.inSession(u.credentials, { session: Session =>
+          session.getUserID should_==
+            u.credentials.asInstanceOf[CryptedSimpleCredentials].getUserID
+        })
       }
     }
   }
 
   class TestImpl(repository: Repository) extends JackrabbitSocialUserProvider {
-    override def inSession[A](op: (Session) => A): A = {
-      val session = Jcr.login("admin", "admin")
-      op(session)
-      // Note: We don't close the session, because it constantly gets reused.
+    import play.libs.F
+
+    val sf: JcrSessionFactory = new JcrSessionFactory() {
+      def newAdminSession() = Jcr.login("admin", "admin")
     }
+
+    implicit def scala2ffunc[A, R](f: (A => R)): F.Function[A,R] = {
+      new F.Function[A,R] { def apply(a: A): R = f(a) }
+    }
+
+    override def inSession[R](op: (Session) => R): R = sf.inSession(op)
   }
 
 }

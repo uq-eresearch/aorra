@@ -1,20 +1,35 @@
 package controllers;
 
+import com.google.inject.Inject;
 import java.io.File;
+import javax.jcr.Session;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import play.Logger;
+import play.libs.F.Function;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import securesocial.core.Identity;
 import securesocial.core.java.SecureSocial;
+import service.ContributionFolderProvider;
+import service.JcrSessionFactory;
 
 public final class FileUpload extends Controller {
 
+  private final ContributionFolderProvider contributionFolderProvider;
+  private final JcrSessionFactory sessionFactory;
+
+  @Inject
+  public FileUpload(final ContributionFolderProvider cfp,
+      final JcrSessionFactory sessionFactory) {
+    this.contributionFolderProvider = cfp;
+    this.sessionFactory = sessionFactory;
+  }
+
   @SecureSocial.SecuredAction
-  public final static Result postUpload() {
+  public Result postUpload() {
     final Identity user = getUser();
     final MultipartFormData body = request().body().asMultipartFormData();
     if (body == null) {
@@ -47,11 +62,16 @@ public final class FileUpload extends Controller {
   }
 
   @SecureSocial.SecuredAction
-  public final static Result getUpload() {
-    return ok(views.html.upload.render());
+  public Result getUpload() {
+    return sessionFactory.inSession(new Function<Session, Result>() {
+      public final Result apply(Session session) {
+        return ok(views.html.upload.render(contributionFolderProvider
+            .getContributionFolders(session)));
+      }
+    });
   }
 
-  private final static Identity getUser() {
+  private Identity getUser() {
     return (Identity) ctx().args.get(SecureSocial.USER_KEY);
   }
 
