@@ -5,10 +5,8 @@ import javax.jcr.LoginException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
-
-import org.apache.jackrabbit.api.security.user.User;
-import org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
-
+import
+  org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
 import play.libs.F.Function;
 
 public abstract class JcrSessionFactory {
@@ -48,7 +46,7 @@ public abstract class JcrSessionFactory {
   /**
    * Perform the given function in a session with the provided credentials.
    * The credentials should come from a Jackrabbit User, and will be used for
-   * impersonation of a login.
+   * impersonation of a login. Changes will be saved on successful return.
    *
    * @param credentials the Jackrabbit credentials to use for impersonation
    * @param func a function to perform in the user session
@@ -59,18 +57,25 @@ public abstract class JcrSessionFactory {
   }
 
   /**
-   * Perform the given function in a session, then close it.
+   * Perform the given function in a session, then close it after saving any
+   * pending changes.
+   *
    * @param session the JCR session to use
    * @param func a function to perform in the session
+   * @throws RuntimeException wraps any exception that may have been thrown
    * @returns return value of the function
    */
   protected <R> R inSession(Session session, Function<Session, R> func) {
     try {
-      return func.apply(session);
+      R result = func.apply(session);
+      if (session.hasPendingChanges()) {
+        session.save();
+      }
+      return result;
     } catch (Throwable e) {
       throw new RuntimeException(e);
     } finally {
-      //session.logout();
+      session.logout();
     }
   }
 

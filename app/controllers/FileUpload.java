@@ -66,7 +66,7 @@ public final class FileUpload extends Controller {
     return sessionFactory.inSession(new Function<Session, Result>() {
       public final Result apply(Session session) {
         return ok(views.html.upload.render(contributionFolderProvider
-            .getContributionFolders(session)));
+            .getWritable(session)));
       }
     });
   }

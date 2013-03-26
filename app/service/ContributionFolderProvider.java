@@ -6,6 +6,8 @@ import javax.jcr.Session;
 
 public interface ContributionFolderProvider {
 
-  public Set<Node> getContributionFolders(Session session);
+  public Set<Node> getAll(Session session);
+
+  public Set<Node> getWritable(Session session);
 
 }

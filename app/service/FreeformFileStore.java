@@ -1,34 +1,34 @@
 package service;
 
 import com.google.common.collect.ImmutableSet;
-import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 import com.wingnest.play2.jackrabbit.Jcr;
-
+import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
+import java.security.Principal;
+import java.util.Iterator;
+import java.util.Set;
 import javax.jcr.ItemExistsException;
+import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
-
-import org.apache.jackrabbit.api.JackrabbitSession;
-import play.Application;
-import play.Plugin;
-import org.apache.jackrabbit.api.security.user.Group;
-import java.security.Principal;
-import java.util.Iterator;
-import java.util.Set;
-
-import org.apache.jackrabbit.api.security.user.UserManager;
-import javax.jcr.Node;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.security.AccessControlEntry;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
-
+import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.user.Authorizable;
+import org.apache.jackrabbit.api.security.user.Group;
+import org.apache.jackrabbit.api.security.user.UserManager;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
+import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
+import play.Application;
+import play.Plugin;
 
 public class FreeformFileStore extends Plugin
     implements ContributionFolderProvider
@@ -51,7 +51,8 @@ public class FreeformFileStore extends Plugin
     }
   }
 
-  public Set<Node> getContributionFolders(Session session) {
+  @Override
+  public Set<Node> getAll(Session session) {
     try {
       @SuppressWarnings("unchecked")
       Iterator<Node> nodeIterator = (Iterator<Node>)
@@ -63,6 +64,26 @@ public class FreeformFileStore extends Plugin
       throw new RuntimeException(e);
     }
   }
+
+  @Override
+  public Set<Node> getWritable(Session session) {
+    final String HYPOTHETICAL_NEW_CHILD_NODE = "test-file.which.must-not-exist";
+    ImmutableSet.Builder<Node> builder = ImmutableSet.<Node>builder();
+    try {
+      for (Node n : getAll(session)) {
+        final String newPath = n.getPath()+"/"+HYPOTHETICAL_NEW_CHILD_NODE;
+        // The ADD_NODE privilege checks the ability to create new node at a
+        // particular absolute path. It will fail for existing folder.
+        if (session.hasPermission(newPath, Session.ACTION_ADD_NODE)) {
+          builder.add(n);
+        }
+      }
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
+    return builder.build();
+  }
+
 
   private Session getAdminSession() throws RepositoryException {
     return Jcr.login(
@@ -153,10 +174,22 @@ public class FreeformFileStore extends Plugin
 
       public void setOwner(Session session, Group group)
           throws RepositoryException {
-        AccessControlUtils.denyAllToEveryone(session, this.node.getPath());
-        AccessControlUtils.addAccessControlEntry(session, this.node.getPath(),
-            group.getPrincipal(), AccessControlUtils.privilegesFromNames(
-                session, Privilege.JCR_READ, Privilege.JCR_WRITE), true);
+        AccessControlManager acm = session.getAccessControlManager();
+        AccessControlList acl = AccessControlUtils.getAccessControlList(
+            acm, this.node.getPath());
+        Principal everyone = EveryonePrincipal.getInstance();
+        for (AccessControlEntry entry : acl.getAccessControlEntries()) {
+          if (entry.getPrincipal().equals(everyone)) {
+            acl.removeAccessControlEntry(entry);
+          }
+        }
+        acl.addAccessControlEntry(group.getPrincipal(),
+            AccessControlUtils.privilegesFromNames(session,
+                Privilege.JCR_READ,
+                Privilege.JCR_ADD_CHILD_NODES,
+                Privilege.JCR_REMOVE_CHILD_NODES,
+                Privilege.JCR_MODIFY_PROPERTIES));
+        acm.setPolicy(this.node.getPath(), acl);
       }
 
     }
