@@ -5,9 +5,29 @@
 
 <dl>
   <dt>Contribution Folders</dt>
-  @for(folder <- contributionFolders) {
-    <dd>@folder.getName()</dd>
-  }
+  <dd>
+    <select id="folderselect">
+    @for(folder <- contributionFolders) {
+      <option>@folder.getName()</option>
+    }
+    </select>
+  </dd>
+  <dt>Existing Files</dt>
+  <dd>
+    @for(folder <- contributionFolders) {
+      <dl>
+        <dt>@folder.getName()</dt>
+        @folder.getNodes.toSeq.asInstanceOf[Seq[javax.jcr.Node]].map { n =>
+          @n.getPrimaryNodeType.getName match {
+            case "nt:file" => {
+              <dd>@n.getName</dd>
+            }
+            case _ => {}
+          }
+        }
+      </dl>
+    }
+  </dd>
 </dl>
 </select>
 <script src="@routes.Assets.at("javascripts/jquery.ui.widget.js")"></script>
@@ -22,6 +42,13 @@ $(function () {
                 $('<p/>').text(file.name).insertAfter("#fileupload");
             });
         }
+    });
+    $('#folderselect').change(function() {
+      $('#fileupload').fileupload(
+          'option',
+          'url',
+          'upload/'+$(this).val()
+      );
     });
 });
 </script>

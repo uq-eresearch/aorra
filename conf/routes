@@ -10,7 +10,7 @@ GET     /user/info                  @controllers.Application.userInfo
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /upload                     @controllers.FileUpload.getUpload
-POST    /upload                     @controllers.FileUpload.postUpload
+POST    /upload/:folder             @controllers.FileUpload.postUpload(folder)
 # Login page
 GET     /login                      securesocial.controllers.LoginPage.login
 GET     /logout                     securesocial.controllers.LoginPage.logout
