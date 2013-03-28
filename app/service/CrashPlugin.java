@@ -34,10 +34,20 @@ public class CrashPlugin extends PluginLifeCycle implements Plugin {
     PluginDiscovery discovery = new ServiceLoaderDiscovery(
         application.classloader());
     Logger.info("Starting CRaSH...");
-    PluginContext context = new PluginContext(discovery, getAttributes(),
-        getFS(Path.get("/crash/commands/")), getFS(Path.get("/crash/")),
-        application.classloader());
-    start(context);
+    PluginContext context;
+    try {
+      context = new PluginContext(discovery, getAttributes(),
+          (new FS())
+            .mount(application.classloader(), Path.get("/crash/commands/"))
+            .mount(application.getFile("conf/crash")),
+          (new FS())
+            .mount(application.classloader(), Path.get("/crash/")),
+          application.classloader());
+      start(context);
+    } catch (Exception e) {
+      // We can safely call this fatal
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -47,17 +57,6 @@ public class CrashPlugin extends PluginLifeCycle implements Plugin {
 
   protected Map<String, Object> getAttributes() {
     return new HashMap<String, Object>();
-  }
-
-  protected FS getFS(Path path) {
-    try {
-      FS fs = new FS();
-      fs.mount(application.classloader(), path);
-      return fs;
-    } catch (Exception e) {
-      // We really shouldn't get any errors here, and if we do they're fatal
-      throw new RuntimeException(e);
-    }
   }
 
 }

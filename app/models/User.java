@@ -41,5 +41,10 @@ public class User implements Identity {
   public Option<PasswordInfo> passwordInfo() {
     return socialUser.passwordInfo();
   }
+  
+  public String toString() {
+    return String.format("(%s, %s, %s)", 
+        id().id(), id().providerId(), fullName());
+  }
 
 }
