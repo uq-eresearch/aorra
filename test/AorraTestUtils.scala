@@ -12,6 +12,7 @@ object AorraTestUtils {
       additionalConfiguration = Map(
         ConfigConsts.CONF_JCR_REPOSITORY_URI -> REPOSITORY_DIRECTORY_PATH,
         ConfigConsts.CONF_JCR_REPOSITORY_CONFIG -> REPOSITORY_CONFIG_PATH,
-        ConfigConsts.CONF_JCR_HAS_RECREATION_REQUIRE -> true))
+        ConfigConsts.CONF_JCR_HAS_RECREATION_REQUIRE -> true,
+        "crashplugin" -> "disabled"))
   }
 }

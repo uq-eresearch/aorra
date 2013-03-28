@@ -7,11 +7,9 @@ object ApplicationBuild extends Build {
   val appName         = "aorra"
   val appVersion      = "1.0-SNAPSHOT"
 
-  def jcloudsDep(s: String) = { "org.jclouds.api" % s % "1.5.7" }
+  def crshVersion = "1.2.0-cr11"
 
   val appDependencies = Seq(
-    //jcloudsDep("filesystem"),
-    //jcloudsDep("swift"),
     javaCore,
     "javax.jcr" % "jcr" % "2.0",
     "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.0",
@@ -19,7 +17,9 @@ object ApplicationBuild extends Build {
     "org.jcrom" % "jcrom" % "2.0.0",
     "com.fasterxml.uuid" % "java-uuid-generator" % "3.1.3",
     "com.google.guava" % "guava" % "14.0.1",
-    "com.google.inject" % "guice" % "3.0"
+    "com.google.inject" % "guice" % "3.0",
+    "org.crsh" % "crsh.shell.core" % crshVersion,
+    "org.crsh" % "crsh.shell.telnet" % crshVersion
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
