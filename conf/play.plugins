@@ -8,4 +8,3 @@
 10004:securesocial.core.providers.UsernamePasswordProvider
 10006:service.MyEventListener
 10100:service.FreeformFileStore
-17050:service.CrashPlugin
