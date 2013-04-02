@@ -1,15 +1,15 @@
 package controllers;
 
-import com.google.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import javax.jcr.Node;
+
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import org.apache.jackrabbit.commons.JcrUtils;
+
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
+
 import play.Logger;
 import play.libs.F.Function;
 import play.libs.Json;
@@ -18,27 +18,34 @@ import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import securesocial.core.Identity;
 import securesocial.core.java.SecureSocial;
-import service.ContributionFolderProvider;
 import service.JcrSessionFactory;
+import service.filestore.FileStore;
+
+import com.google.inject.Inject;
 
 public final class FileUpload extends Controller {
 
-  private final ContributionFolderProvider contributionFolderProvider;
+  private final FileStore fileStore;
   private final JcrSessionFactory sessionFactory;
 
   @Inject
-  public FileUpload(final ContributionFolderProvider cfp,
-      final JcrSessionFactory sessionFactory) {
-    this.contributionFolderProvider = cfp;
+  public FileUpload(final JcrSessionFactory sessionFactory) {
+    this.fileStore = new FileStore(sessionFactory);
     this.sessionFactory = sessionFactory;
   }
 
   @SecureSocial.SecuredAction
-  public Result postUpload(final String folderName) {
+  public Result postUpload(final String folderPath) {
     return sessionFactory.inSession(new Function<Session, Result>() {
       public final Result apply(Session session) {
+        final FileStore.Manager fm = fileStore.getManager(session);
         final Identity user = getUser();
-        final Node folder = getFolder(session, folderName);
+        final FileStore.Folder folder;
+        try {
+          folder = fm.getFolder(folderPath);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
         if (folder == null) {
           return badRequest("A valid folder must be specified.")
               .as("text/plain");
@@ -80,8 +87,12 @@ public final class FileUpload extends Controller {
   public Result getUpload() {
     return sessionFactory.inSession(new Function<Session, Result>() {
       public final Result apply(Session session) {
-        return ok(views.html.upload.render(contributionFolderProvider
-            .getWritable(session)));
+        try {
+          return ok(views.html.upload.render(
+              fileStore.getManager(session).getFolders()));
+        } catch (RepositoryException e) {
+          throw new RuntimeException(e);
+        }
       }
     });
   }
@@ -90,25 +101,18 @@ public final class FileUpload extends Controller {
     return (Identity) ctx().args.get(SecureSocial.USER_KEY);
   }
 
-  private Node getFolder(Session session, String folderName) {
-    try {
-      for (Node folder : contributionFolderProvider.getWritable(session)) {
-        if (folder.getName().equals(folderName)) {
-          return folder;
-        }
-      }
-    } catch (RepositoryException e) {
-      throw new RuntimeException(e);
-    }
-    return null;
-  }
-
-  private void updateFileContents(Node folder,
+  private void updateFileContents(FileStore.Folder folder,
       MultipartFormData.FilePart filePart) {
     try {
-      JcrUtils.putFile(folder, filePart.getFilename(),
-          filePart.getContentType(),
+      FileStore.File f = folder.getFile(filePart.getFilename());
+      if (f == null) {
+        f = folder.createFile(filePart.getFilename(),
+            filePart.getContentType(),
+            new FileInputStream(filePart.getFile()));
+      } else {
+        f.update(filePart.getContentType(),
           new FileInputStream(filePart.getFile()));
+      }
     } catch (RepositoryException e) {
       throw new RuntimeException(e);
     } catch (FileNotFoundException e) {

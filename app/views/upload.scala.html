@@ -1,4 +1,4 @@
-@(contributionFolders: Set[javax.jcr.Node])
+@(folders: Set[service.filestore.FileStore.Folder])
 
 @main("File Upload Test") {
 <input id="fileupload" type="file" name="files[]" data-url="upload" multiple>
@@ -7,23 +7,18 @@
   <dt>Contribution Folders</dt>
   <dd>
     <select id="folderselect">
-    @for(folder <- contributionFolders) {
-      <option>@folder.getName()</option>
+    @for(folder <- folders) {
+      <option>@folder.getPath()</option>
     }
     </select>
   </dd>
   <dt>Existing Files</dt>
   <dd>
-    @for(folder <- contributionFolders) {
+    @for(folder <- folders) {
       <dl>
-        <dt>@folder.getName()</dt>
-        @folder.getNodes.toSeq.asInstanceOf[Seq[javax.jcr.Node]].map { n =>
-          @n.getPrimaryNodeType.getName match {
-            case "nt:file" => {
-              <dd>@n.getName</dd>
-            }
-            case _ => {}
-          }
+        <dt>@folder.getPath()</dt>
+        @folder.getFiles.map { file =>
+          <dd>@file.getName</dd>
         }
       </dl>
     }

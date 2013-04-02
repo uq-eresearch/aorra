@@ -19,7 +19,7 @@ public class Global extends GlobalSettings {
   /*
    * Dependency injection setup from: http://git.io/CgkboA
    */
-  private static final Injector INJECTOR = createInjector();
+  public static final Injector INJECTOR = createInjector();
 
   @Override
   public <A> A getControllerInstance(Class<A> controllerClass)
