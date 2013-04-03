@@ -1,3 +1,4 @@
+100:service.GuiceInjectionPlugin
 1500:com.typesafe.plugin.CommonsMailerPlugin
 9994:securesocial.core.DefaultAuthenticatorStore
 9995:securesocial.core.DefaultIdGenerator

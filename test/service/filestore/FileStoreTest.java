@@ -8,11 +8,12 @@ import java.util.Set;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import static test.AorraTestUtils.fakeJavaApp;
-import static test.AorraTestUtils.injector;
 
 import org.junit.Test;
 
+import play.Play;
 import play.libs.F.Function;
+import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 
 public class FileStoreTest {
@@ -21,8 +22,9 @@ public class FileStoreTest {
     running(fakeJavaApp(), new Runnable() {
       @Override
       public void run() {
-        final JcrSessionFactory sessionFactory =
-            injector().getInstance(JcrSessionFactory.class);
+        final JcrSessionFactory sessionFactory = GuiceInjectionPlugin
+            .getInjector(Play.application())
+            .getInstance(JcrSessionFactory.class);
         final FileStore fileStore = new FileStore(sessionFactory);
         sessionFactory.inSession(new Function<Session,FileStore.Folder>() {
           @Override

@@ -19,7 +19,7 @@ object AorraTestUtils {
         ConfigConsts.CONF_JCR_HAS_RECREATION_REQUIRE -> true,
         "crash.enabled" -> false))
   }
-  
+
   def fakeJavaApp = {
     val scalaApp = fakeApp
     new play.test.FakeApplication(
@@ -28,12 +28,5 @@ object AorraTestUtils {
         scalaApp.additionalConfiguration,
         scalaApp.additionalPlugins,
         scalaApp.global.asInstanceOf[JavaGlobalSettingsAdapter].underlying)
-  }
-  
-  def injector() = {
-    val global = Play.current.global
-        .asInstanceOf[JavaGlobalSettingsAdapter].underlying
-    global.getClass().getDeclaredField("INJECTOR").get(null)
-          .asInstanceOf[Injector]
   }
 }

@@ -1,7 +1,10 @@
+import static play.Play.application;
+
 import org.crsh.cli.Command
 import org.crsh.cli.Usage
 import org.crsh.cli.Option
 import play.Play
+import service.GuiceInjectionPlugin;
 import service.JackrabbitUserService
 import securesocial.core.UserId
 
@@ -30,7 +33,8 @@ class user {
   }
   
   private JackrabbitUserService userService() {
-    return Play.application().plugin(JackrabbitUserService.class);
+    return GuiceInjectionPlugin.getInjector(application())
+                               .getInstance(JackrabbitUserService.class);
   }
   
 }
