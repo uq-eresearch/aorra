@@ -94,7 +94,7 @@ public class FileStore {
       return Collections.emptySet();
     }
 
-    protected Folder getRoot() throws RepositoryException {
+    public Folder getRoot() throws RepositoryException {
       return new Folder(getRootNode());
     }
 
@@ -127,6 +127,16 @@ public class FileStore {
       } catch (PathNotFoundException e) {
         return null;
       }
+    }
+
+    public Set<Folder> getFolders() throws RepositoryException {
+      ImmutableSet.Builder<Folder> set = ImmutableSet.<Folder>builder();
+      for (final Node child : JcrUtils.getChildNodes(node)) {
+        if (child.getPrimaryNodeType().isNodeType(NodeType.NT_FOLDER)) {
+          set.add(new Folder(child));
+        }
+      }
+      return set.build();
     }
 
     public Set<File> getFiles() throws RepositoryException {
@@ -208,6 +218,14 @@ public class FileStore {
       return node.getSession();
     }
 
+    public int getDepth() throws RepositoryException {
+      if (node.getPath().equals("/"+FILE_STORE_PATH)) {
+        return 0;
+      } else {
+        return (new Folder(node.getParent())).getDepth() + 1;
+      }
+    }
+
     public String getName() throws RepositoryException {
       return node.getName();
     }
@@ -216,8 +234,11 @@ public class FileStore {
       return node.getPath().substring(FILE_STORE_PATH.length()+1);
     }
 
+    public void delete() throws AccessDeniedException, VersionException,
+        LockException, ConstraintViolationException, RepositoryException {
+      node.remove();
+    }
+
   }
-
-
 
 }

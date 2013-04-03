@@ -2,6 +2,7 @@ import static play.Play.application
 
 import java.util.SortedSet
 
+import javax.jcr.nodetype.NodeType
 import javax.jcr.Session
 
 import com.google.common.collect.ImmutableSortedSet
@@ -13,13 +14,62 @@ import org.crsh.cli.Option
 import play.Play
 import play.libs.F.Function
 import models.GroupManager
+import service.filestore.FileStore
 import service.filestore.roles.Admin
 import service.GuiceInjectionPlugin
 import service.JcrSessionFactory
 import securesocial.core.UserId
 
-@Usage("Group information")
+@Usage("Filestore operations")
 class filestore {
+
+  @Usage("print tree of filestore structure")
+  @Command
+  void tree() {
+    def filestore = new FileStore(sessionFactory())
+    sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) {
+          def sb = new StringBuilder()
+          def m = filestore.getManager(session)
+          def tree
+          tree = { folder ->
+            def format = { nw, isFolder ->
+              ("|   " * nw.getDepth()).replaceAll(/\|   $/,
+                  isFolder ? "|-+ " : "|-- ") +
+              nw.getName()
+            }
+            out.println(format(folder, true))
+            folder.getFolders().each {
+              tree(it)
+            }
+            folder.getFiles().each {
+              out.println(format(it, false))
+            }
+          }
+          tree(m.getRoot())
+        }
+      })
+
+  @Usage("remove all files and folders")
+  @Command
+  String destroy() {
+    def surePhrase = "Yes, I am."
+    def sure = context.readLine(
+      "Are you sure? Type \""+surePhrase+"\" to continue.\n",
+      true)
+    if (!sure.equals(surePhrase)) {
+      return
+    }
+    def filestore = new FileStore(sessionFactory())
+    sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) {
+          def root = filestore.getManager(session).getRoot()
+          root.getFolders().each { it.delete() }
+          root.getFiles().each { it.delete() }
+          return "All files and folders have been removed."
+        }
+      })
+  }
 
   @Usage("make group filestore administrators")
   @Command

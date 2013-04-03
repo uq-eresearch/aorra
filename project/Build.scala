@@ -7,7 +7,7 @@ object ApplicationBuild extends Build {
   val appName         = "aorra"
   val appVersion      = "1.0-SNAPSHOT"
 
-  def crshVersion = "1.2.0-cr11"
+  def crshVersion = "1.2.0"
 
   val appDependencies = Seq(
     javaCore,
