@@ -9,6 +9,7 @@ import securesocial.core.SocialUser;
 import securesocial.core.UserId;
 
 import javax.jcr.Credentials;
+import org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
 import scala.Option;
 
 /**
@@ -16,10 +17,14 @@ import scala.Option;
  **/
 public class User implements Identity {
 
-  private Credentials credentials;
-  private SocialUser socialUser;
+  private final String internalId;
+  private final Credentials credentials;
+  private final SocialUser socialUser;
 
   public User(Credentials credentials, SocialUser socialUser) {
+    this.internalId = (credentials instanceof CryptedSimpleCredentials) ?
+        ((CryptedSimpleCredentials) credentials).getUserID() :
+        credentials.toString();
     this.credentials = credentials;
     this.socialUser = socialUser;
   }
@@ -41,10 +46,11 @@ public class User implements Identity {
   public Option<PasswordInfo> passwordInfo() {
     return socialUser.passwordInfo();
   }
-  
+
+  @Override
   public String toString() {
-    return String.format("(%s, %s, %s)", 
-        id().id(), id().providerId(), fullName());
+    return String.format("%s => (%s, %s, %s)",
+        internalId, id().id(), id().providerId(), fullName());
   }
 
 }

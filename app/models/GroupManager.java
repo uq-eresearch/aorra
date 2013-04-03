@@ -95,6 +95,40 @@ public class GroupManager {
     }
   }
 
+  public void addMember(String groupName, String memberId)
+      throws PathNotFoundException {
+    Group group = find(groupName);
+    try {
+      Authorizable a = session.getUserManager().getAuthorizable(memberId);
+      if (a == null)
+        throw new PathNotFoundException("User/Group does not exist.");
+      group.addMember(a);
+    } catch (AccessDeniedException e) {
+      throw new RuntimeException(e);
+    } catch (UnsupportedRepositoryOperationException e) {
+      throw new RuntimeException(e);
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void removeMember(String groupName, String memberId)
+      throws PathNotFoundException {
+    Group group = find(groupName);
+    try {
+      Authorizable a = session.getUserManager().getAuthorizable(memberId);
+      if (a == null)
+        throw new PathNotFoundException("User/Group does not exist.");
+      group.removeMember(a);
+    } catch (AccessDeniedException e) {
+      throw new RuntimeException(e);
+    } catch (UnsupportedRepositoryOperationException e) {
+      throw new RuntimeException(e);
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   protected Iterator<Authorizable> fetchGroups() throws AccessDeniedException,
       UnsupportedRepositoryOperationException, RepositoryException {
     return session.getUserManager().findAuthorizables(
