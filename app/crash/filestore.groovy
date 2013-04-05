@@ -7,7 +7,9 @@ import javax.jcr.Session
 
 import com.google.common.collect.ImmutableSortedSet
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.api.security.user.Group
+
 import org.crsh.cli.Command
 import org.crsh.cli.Usage
 import org.crsh.cli.Option
@@ -15,13 +17,63 @@ import play.Play
 import play.libs.F.Function
 import models.GroupManager
 import service.filestore.FileStore
+import service.filestore.FileStore.Folder
 import service.filestore.roles.Admin
 import service.GuiceInjectionPlugin
 import service.JcrSessionFactory
 import securesocial.core.UserId
 
+
+
 @Usage("Filestore operations")
 class filestore {
+
+    @Usage("make directories")
+    @Command
+    void mkdir(
+        @Required(true)
+        @Argument String directory,
+        @Usage("Make parent directories as needed")
+        @Option(names=["p","parents"])
+        Boolean parents) {
+        def filestore = new FileStore(sessionFactory())
+        sessionFactory().inSession(new Function<Session, String>() {
+            public String apply(Session session) {
+                def mkdir
+                mkdir = { file, parent ->
+                    if(file == null) {
+                        return filestore.getManager(session).getRoot();
+                    } else {
+                        Folder parentFolder = mkdir(file.getParentFile(), true);
+                        if(parentFolder == null) {
+                            return null;
+                        }
+                        Folder folder = parentFolder.getFolder(file.getName());
+                        if(folder == null) {
+                            if(!parent) {
+                                return parentFolder.createFolder(file.getName());
+                            }
+                            if(parent && (parents != null)) {
+                                return parentFolder.createFolder(file.getName());
+                            } else {
+                                out.println(String.format(
+                                    "Parent folder %s does not exist, try option --parents",
+                                    file.getName()));
+                                return null;
+                            }
+                        } else {
+                            if(!parent) {
+                                out.println(String.format(
+                                    "Folder %s already exists", file.getName()));
+                            }
+                            return folder;
+                        }
+                    }
+                }
+                mkdir(new File(StringUtils.stripStart(StringUtils.strip(directory), "/")), false);
+            }
+        })
+    }
 
   @Usage("print tree of filestore structure")
   @Command
@@ -49,6 +101,7 @@ class filestore {
           tree(m.getRoot())
         }
       })
+  }
 
   @Usage("remove all files and folders")
   @Command

@@ -23,6 +23,7 @@ import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
@@ -137,6 +138,15 @@ public class FileStore {
         }
       }
       return set.build();
+    }
+
+    public Folder getFolder(String name) throws RepositoryException {
+        for(Folder folder : getFolders()) {
+            if(StringUtils.equals(name, folder.getName())) {
+                return folder;
+            }
+        }
+        return null;
     }
 
     public Set<File> getFiles() throws RepositoryException {
