@@ -67,6 +67,10 @@ public class FileStore {
     return new Manager(session);
   }
 
+  private static FileOrFolder fromNode(Node node) throws RepositoryException {
+      return node.getPrimaryNodeType().isNodeType(NodeType.NT_FILE)?new File(node):new Folder(node);
+  }
+
   public static class Manager {
 
     private final Session session;
@@ -77,13 +81,27 @@ public class FileStore {
 
     public FileStore.Folder getFolder(String relPath)
         throws RepositoryException {
-      try {
-        if (relPath == "")
-          return getRoot();
-        return new Folder(getRootNode().getNode(relPath));
-      } catch (PathNotFoundException e) {
-        return null;
-      }
+        FileOrFolder f = getFileOrFolder(relPath);
+        if(f!=null && f.isFolder()) {
+            return (Folder)f;
+        } else {
+            return null;
+        }
+    }
+
+    public FileOrFolder getFileOrFolder(String relPath) throws RepositoryException {
+        if(StringUtils.isBlank(relPath)) {
+            return getRoot();
+        } else {
+            try {
+                Node node = getRootNode().getNode(relPath);
+                if(node != null) {
+                    return fromNode(node);
+                }
+            } catch (PathNotFoundException e) {
+            }
+            return null;
+        }
     }
 
     public Set<FileStore.Folder> getFolders() throws RepositoryException {
@@ -114,20 +132,36 @@ public class FileStore {
     public Folder createFolder(String name) throws ItemExistsException,
         PathNotFoundException, NoSuchNodeTypeException, LockException,
         VersionException, ConstraintViolationException, RepositoryException {
-      return new Folder(node.addNode(name, NodeType.NT_FOLDER));
+      if(getFileOrFolder(name) != null) {
+          throw new RuntimeException(String.format("file or folder already exists '%s'", name));
+      } else {
+          return new Folder(node.addNode(name, NodeType.NT_FOLDER));
+      }
     }
 
     public File createFile(String name, String mime, InputStream data)
         throws RepositoryException {
-      return new File(node, name, mime, data);
+      return createOrOverwriteFile(name, mime, data);
+    }
+
+    public File createOrOverwriteFile(String name, String mime, InputStream data)
+        throws RepositoryException {
+        FileOrFolder f = getFileOrFolder(name);
+        if(f!=null && f.isFolder()) {
+            throw new RuntimeException(String.format("Can't create file '%s'." +
+                    " Folder with same name already exists", name));
+        } else {
+            return new File(node, name, mime, data);
+        }
     }
 
     public File getFile(String name) throws RepositoryException {
-      try {
-        return new File(node.getNode(name));
-      } catch (PathNotFoundException e) {
-        return null;
-      }
+        FileOrFolder f = getFileOrFolder(name);
+        if((f!=null) && (!f.isFolder())) {
+            return (File)f;
+        } else {
+            return null;
+        }
     }
 
     public Set<Folder> getFolders() throws RepositoryException {
@@ -144,6 +178,15 @@ public class FileStore {
         for(Folder folder : getFolders()) {
             if(StringUtils.equals(name, folder.getName())) {
                 return folder;
+            }
+        }
+        return null;
+    }
+
+    public FileOrFolder getFileOrFolder(String name) throws RepositoryException {
+        for (final Node child : JcrUtils.getChildNodes(node)) {
+            if(StringUtils.equals(child.getName(), name)) {
+                return fromNode(child);
             }
         }
         return null;
@@ -194,6 +237,11 @@ public class FileStore {
       return node.hashCode();
     }
 
+    @Override
+    public boolean isFolder() {
+        return true;
+    }
+
   }
 
   public static class File extends NodeWrapper {
@@ -214,9 +262,23 @@ public class FileStore {
           JcrUtils.putFile(node.getParent(), node.getName(), mime, data));
     }
 
+    @Override
+    public boolean isFolder() {
+        return false;
+    }
+
   }
 
-  protected abstract static class NodeWrapper {
+  public static interface FileOrFolder {
+      public int getDepth() throws RepositoryException;
+      public String getName() throws RepositoryException;
+      public String getPath() throws RepositoryException;
+      public void delete() throws AccessDeniedException, VersionException,
+          LockException, ConstraintViolationException, RepositoryException;
+      public boolean isFolder();
+  }
+
+  protected abstract static class NodeWrapper implements FileOrFolder {
 
     protected final Node node;
 

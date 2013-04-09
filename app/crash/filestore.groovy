@@ -32,7 +32,7 @@ class filestore {
     @Command
     void mkdir(
         @Required(true)
-        @Argument String directory,
+        @Argument List<String> directories,
         @Usage("Make parent directories as needed")
         @Option(names=["p","parents"])
         Boolean parents) {
@@ -50,16 +50,13 @@ class filestore {
                         }
                         Folder folder = parentFolder.getFolder(file.getName());
                         if(folder == null) {
-                            if(!parent) {
-                                return parentFolder.createFolder(file.getName());
-                            }
-                            if(parent && (parents != null)) {
-                                return parentFolder.createFolder(file.getName());
-                            } else {
+                            if(parent && (parents == null)) {
                                 out.println(String.format(
                                     "Parent folder %s does not exist, try option --parents",
                                     file.getName()));
                                 return null;
+                            } else {
+                                return parentFolder.createFolder(file.getName());
                             }
                         } else {
                             if(!parent) {
@@ -70,14 +67,49 @@ class filestore {
                         }
                     }
                 }
-                mkdir(new File(StringUtils.stripStart(StringUtils.strip(directory), "/")), false);
+                directories.each() {
+                    mkdir(new File(StringUtils.stripStart(StringUtils.strip(it), "/")), false);
+                }
+            }
+        })
+    }
+
+    @Usage("remove files or directories")
+    @Command
+    void rm(
+        @Required(true)
+        @Argument List<String> files,
+        @Usage("remove directories and their contents recursively")
+        @Option(names=["r", "recursive"])
+        Boolean recursive) {
+        def filestore = new FileStore(sessionFactory())
+        sessionFactory().inSession(new Function<Session, String>() {
+            public String apply(Session session) {
+                def rm;
+                rm = { path ->
+                    if(path == null) {
+                        return null;
+                    }
+                    def f = filestore.getManager(session).getFileOrFolder(path);
+                    if(f == null) {
+                        out.println(String.format("no such file or directory '%s'", path));
+                    } else if(f.isFolder() && recursive == null) {
+                        out.println(String.format(
+                            "cannot remove '%s': Is a directory, try using --recursive", path));
+                    } else {
+                        f.delete();
+                    }
+                }
+                files.each() {
+                    rm(it);
+                }
             }
         })
     }
 
   @Usage("print tree of filestore structure")
   @Command
-  void tree() {
+  void tree(@Usage("only show tree below folder") @Argument String path) {
     def filestore = new FileStore(sessionFactory())
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
@@ -98,7 +130,12 @@ class filestore {
               out.println(format(it, false))
             }
           }
-          tree(m.getRoot())
+          def f = m.getFolder(path);
+          if(f!=null) {
+              tree(f);
+          } else {
+              out.println(String.format("no such folder %s", path));
+          }
         }
       })
   }
