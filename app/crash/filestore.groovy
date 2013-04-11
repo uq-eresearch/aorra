@@ -68,7 +68,7 @@ class filestore {
                     }
                 }
                 directories.each() {
-                    mkdir(new File(StringUtils.stripStart(StringUtils.strip(it), "/")), false);
+                    mkdir(new File(StringUtils.strip(it)), false);
                 }
             }
         })

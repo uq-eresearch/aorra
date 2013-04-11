@@ -38,7 +38,9 @@ import com.google.inject.Inject;
 
 public class FileStore {
 
-  public static final String FILE_STORE_PATH = "filestore";
+  public static final String FILE_STORE_PATH = "/filestore";
+  public static final String FILE_STORE_NODE_NAME =
+      StringUtils.stripStart(FILE_STORE_PATH, "/");
 
   @Inject
   public FileStore(final JcrSessionFactory sessionFactory) {
@@ -47,10 +49,10 @@ public class FileStore {
       public Node apply(Session session) {
         try {
           Node root;
-          if (session.getRootNode().hasNode(FILE_STORE_PATH)) {
-            root = session.getNode("/"+FILE_STORE_PATH);
+          if (session.getRootNode().hasNode(FILE_STORE_NODE_NAME)) {
+            root = session.getNode(FILE_STORE_PATH);
           } else {
-            root = session.getRootNode().addNode(FILE_STORE_PATH);
+            root = session.getRootNode().addNode(FILE_STORE_NODE_NAME);
             (new Folder(root)).resetPermissions();
           }
           return root;
@@ -68,7 +70,10 @@ public class FileStore {
   }
 
   private static FileOrFolder fromNode(Node node) throws RepositoryException {
-      return node.getPrimaryNodeType().isNodeType(NodeType.NT_FILE)?new File(node):new Folder(node);
+    if (node.getPrimaryNodeType().isNodeType(NodeType.NT_FILE))
+      return new File(node);
+    else
+      return new Folder(node);
   }
 
   public static class Manager {
@@ -79,29 +84,29 @@ public class FileStore {
       this.session = session;
     }
 
-    public FileStore.Folder getFolder(String relPath)
-        throws RepositoryException {
-        FileOrFolder f = getFileOrFolder(relPath);
-        if(f!=null && f.isFolder()) {
-            return (Folder)f;
-        } else {
-            return null;
-        }
+    public FileStore.Folder getFolder(String absPath)
+      throws RepositoryException {
+      FileOrFolder f = getFileOrFolder(absPath);
+      if (f != null && f.isFolder()) {
+        return (Folder)f;
+      } else {
+        return null;
+      }
     }
 
-    public FileOrFolder getFileOrFolder(String relPath) throws RepositoryException {
-        if(StringUtils.isBlank(relPath)) {
-            return getRoot();
-        } else {
-            try {
-                Node node = getRootNode().getNode(relPath);
-                if(node != null) {
-                    return fromNode(node);
-                }
-            } catch (PathNotFoundException e) {
-            }
-            return null;
-        }
+    public FileOrFolder getFileOrFolder(String absPath) throws RepositoryException {
+      if (absPath.equals("/")) {
+        return getRoot();
+      } else {
+        try {
+          Node node = getRootNode().getNode(
+              StringUtils.stripStart(absPath, "/"));
+          if (node != null) {
+            return fromNode(node);
+          }
+        } catch (PathNotFoundException e) {}
+        return null;
+      }
     }
 
     public Set<FileStore.Folder> getFolders() throws RepositoryException {
@@ -118,7 +123,7 @@ public class FileStore {
     }
 
     protected Node getRootNode() throws RepositoryException {
-      return session.getRootNode().getNode(FILE_STORE_PATH);
+      return session.getRootNode().getNode(FILE_STORE_NODE_NAME);
     }
 
   }
@@ -290,22 +295,33 @@ public class FileStore {
       return node.getSession();
     }
 
+    @Override
     public int getDepth() throws RepositoryException {
-      if (node.getPath().equals("/"+FILE_STORE_PATH)) {
+      if (node.getPath().equals(FILE_STORE_PATH)) {
         return 0;
       } else {
         return (new Folder(node.getParent())).getDepth() + 1;
       }
     }
 
+    public String getIdentifier() throws RepositoryException {
+      return node.getIdentifier();
+    }
+
+    @Override
     public String getName() throws RepositoryException {
       return node.getName();
     }
 
+    @Override
     public String getPath() throws RepositoryException {
-      return node.getPath().substring(FILE_STORE_PATH.length()+1);
+      final String absPath = node.getPath();
+      if (absPath.equals(FILE_STORE_PATH))
+        return "/";
+      return absPath.substring(FILE_STORE_PATH.length());
     }
 
+    @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
       node.remove();

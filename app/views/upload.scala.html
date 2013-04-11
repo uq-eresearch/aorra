@@ -1,50 +1,74 @@
-@(folders: Set[service.filestore.FileStore.Folder])
-
 @main("File Upload Test") {
 <input id="fileupload" type="file" name="files[]" data-url="upload" multiple>
 
 <dl>
-  <dt>Contribution Folders</dt>
+  <dt>Upload to:</dt>
   <dd>
-    <select id="folderselect">
-    @for(folder <- folders) {
-      <option>@folder.getPath()</option>
-    }
-    </select>
-  </dd>
-  <dt>Existing Files</dt>
-  <dd>
-    @for(folder <- folders) {
-      <dl>
-        <dt>@folder.getPath()</dt>
-        @folder.getFiles.map { file =>
-          <dd>@file.getName</dd>
-        }
-      </dl>
-    }
+    <input type="text" disabled id="folderselect" value="/"/>
   </dd>
 </dl>
-</select>
+
+<div id="filetree"></div>
 <script src="@routes.Assets.at("javascripts/jquery.ui.widget.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.iframe-transport.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.fileupload.js")"></script>
+<script src="@routes.Assets.at("javascripts/glyphtree.min.js")"></script>
 <script>
+var tree;
 $(function () {
-    $('#fileupload').fileupload({
-        dataType: 'json',
-        done: function (e, data) {
-            $.each(data.result.files, function (index, file) {
-                $('<p/>').text(file.name).insertAfter("#fileupload");
-            });
-        }
-    });
-    $('#folderselect').change(function() {
+  $('#fileupload').fileupload({
+    dataType: 'json',
+    add: function (e, data) {
       $('#fileupload').fileupload(
-          'option',
-          'url',
-          'upload/'+$(this).val()
+        'option',
+        'url',
+        'upload'+$('#folderselect').val()
       );
-    });
+      data.submit();
+    },
+    done: function (e, data) {
+      $.each(data.result.files, function (index, file) {
+        $('<p/>').text(file.name).insertAfter("#fileupload");
+      });
+    }
+  });
+  tree = glyphtree($('#filetree'), {
+    startExpanded: true,
+    types: {
+      folder: {
+        icon: {
+          "default": {
+            content: "\uf07b",
+            'font-family': "FontAwesome"
+          },
+          expanded: {
+            content: "\uf07c",
+            'font-family': "FontAwesome"
+          }
+        }
+      },
+      file: {
+        icon: {
+          leaf: {
+            content: "\uf016",
+            'font-family': "FontAwesome"
+          }
+        }
+      }
+    }
+  });
+  selectHandler = function(event, node) {
+    if (node.type == 'folder') {
+      $('.label.label-success').removeClass('label label-success');
+      $("#folderselect").val(node.attributes.path);
+      $(node.element()).children('.glyphtree-node-label')
+        .addClass('label label-success');
+    }
+  }
+  tree.events.label.click = [selectHandler];
+  $.get("@controllers.routes.FileStore.tree", function(data) {
+    tree.load(data);
+  });
 });
 </script>
 }

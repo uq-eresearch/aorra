@@ -37,12 +37,13 @@ public final class FileUpload extends Controller {
   @SecureSocial.SecuredAction
   public Result postUpload(final String folderPath) {
     return sessionFactory.inSession(new Function<Session, Result>() {
+      @Override
       public final Result apply(Session session) {
         final FileStore.Manager fm = fileStore.getManager(session);
         final Identity user = getUser();
         final FileStore.Folder folder;
         try {
-          folder = fm.getFolder(folderPath);
+          folder = fm.getFolder("/"+folderPath);
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
@@ -85,16 +86,7 @@ public final class FileUpload extends Controller {
 
   @SecureSocial.SecuredAction
   public Result getUpload() {
-    return sessionFactory.inSession(new Function<Session, Result>() {
-      public final Result apply(Session session) {
-        try {
-          return ok(views.html.upload.render(
-              fileStore.getManager(session).getFolders()));
-        } catch (RepositoryException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    });
+    return ok(views.html.upload.render());
   }
 
   private Identity getUser() {

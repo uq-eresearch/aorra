@@ -11,7 +11,10 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /upload                     @controllers.FileUpload.getUpload
 POST    /upload                     @controllers.FileUpload.postUpload(folder="")
-POST    /upload/:folder             @controllers.FileUpload.postUpload(folder)
+POST    /upload/*folder             @controllers.FileUpload.postUpload(folder)
+
+GET     /filestore/tree             @controllers.FileStore.tree
+
 # Login page
 GET     /login                      securesocial.controllers.LoginPage.login
 GET     /logout                     securesocial.controllers.LoginPage.logout
