@@ -120,7 +120,8 @@ class filestore {
             def format = { nw, isFolder ->
               ("|   " * nw.getDepth()).replaceAll(/\|   $/,
                   isFolder ? "|-+ " : "|-- ") +
-              nw.getName()
+              // Make root easier to spot/understand
+              (nw.getPath() == "/" ? "/ (root)" : nw.getName())
             }
             out.println(format(folder, true))
             folder.getFolders().each {
