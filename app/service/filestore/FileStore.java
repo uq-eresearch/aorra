@@ -3,6 +3,7 @@ package service.filestore;
 import java.io.InputStream;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.jcr.AccessDeniedException;
@@ -29,9 +30,16 @@ import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 
+import play.Logger;
+import play.api.libs.iteratee.Concurrent.Channel;
+import play.libs.Akka;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
 import service.filestore.roles.Admin;
+
+import akka.actor.ActorRef;
+import akka.actor.Props;
+import akka.actor.UntypedActor;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -42,8 +50,11 @@ public class FileStore {
   public static final String FILE_STORE_NODE_NAME =
       StringUtils.stripStart(FILE_STORE_PATH, "/");
 
+  private final ActorRef eventManager;
+
   @Inject
   public FileStore(final JcrSessionFactory sessionFactory) {
+    eventManager = Akka.system().actorOf(new Props(EventManager.class));
     sessionFactory.inSession(new Function<Session, Node>() {
       @Override
       public Node apply(Session session) {
@@ -53,7 +64,7 @@ public class FileStore {
             root = session.getNode(FILE_STORE_PATH);
           } else {
             root = session.getRootNode().addNode(FILE_STORE_NODE_NAME);
-            (new Folder(root)).resetPermissions();
+            (new Folder(root, eventManager)).resetPermissions();
           }
           return root;
         } catch (PathNotFoundException e) {
@@ -66,22 +77,85 @@ public class FileStore {
   }
 
   public Manager getManager(Session session) {
-    return new Manager(session);
+    return new Manager(session, eventManager);
   }
 
-  private static FileOrFolder fromNode(Node node) throws RepositoryException {
+  public ActorRef getEventManager() {
+    return eventManager;
+  }
+
+  protected static FileOrFolder fromNode(Node node,
+      ActorRef eventManager) throws RepositoryException {
     if (node.getPrimaryNodeType().isNodeType(NodeType.NT_FILE))
-      return new File(node);
+      return new File(node, eventManager);
     else
-      return new Folder(node);
+      return new Folder(node, eventManager);
+  }
+
+  public static class EventManager extends UntypedActor {
+
+    private final Set<Channel<String>> channels =
+        new HashSet<Channel<String>>();
+
+    @Override
+    public void onReceive(Object message) throws Exception {
+      if (message instanceof String) {
+        Logger.info(this+" - "+message);
+        Logger.info(this+" - "+channels.toString());
+        for (Channel<String> channel : channels) {
+          Logger.info("Pushing message onto channel: "+message);
+          channel.push(""+message);
+        }
+      } else if (message instanceof ChannelMessage) {
+        ChannelMessage channelMessage = (ChannelMessage) message;
+        switch (channelMessage.type) {
+        case ADD:
+          Logger.info(this+" - Adding notification channel.");
+          channels.add(channelMessage.channel);
+          break;
+        case REMOVE:
+          Logger.info(this+" - Removing notification channel.");
+          channels.remove(channelMessage.channel);
+          break;
+        }
+      } else {
+        unhandled(message);
+      }
+    }
+
+    public static class ChannelMessage {
+
+      private static enum MessageType { ADD, REMOVE }
+
+      public final MessageType type;
+      public final Channel<String> channel;
+
+      protected ChannelMessage(MessageType type, Channel<String> channel) {
+        this.type = type;
+        this.channel = channel;
+      }
+
+      public static ChannelMessage add(Channel<String> channel) {
+        return new ChannelMessage(MessageType.ADD, channel);
+      }
+
+      public static ChannelMessage remove(Channel<String> channel) {
+        return new ChannelMessage(MessageType.ADD, channel);
+      }
+
+    }
+
+
   }
 
   public static class Manager {
 
     private final Session session;
+    private final ActorRef eventManager;
 
-    protected Manager(Session session) {
+    protected Manager(Session session, ActorRef eventManager) {
       this.session = session;
+      this.eventManager = eventManager;
     }
 
     public FileStore.Folder getFolder(String absPath)
@@ -102,7 +176,7 @@ public class FileStore {
           Node node = getRootNode().getNode(
               StringUtils.stripStart(absPath, "/"));
           if (node != null) {
-            return fromNode(node);
+            return fromNode(node, eventManager);
           }
         } catch (PathNotFoundException e) {}
         return null;
@@ -119,7 +193,7 @@ public class FileStore {
     }
 
     public Folder getRoot() throws RepositoryException {
-      return new Folder(getRootNode());
+      return new Folder(getRootNode(), eventManager);
     }
 
     protected Node getRootNode() throws RepositoryException {
@@ -130,8 +204,8 @@ public class FileStore {
 
   public static class Folder extends NodeWrapper {
 
-    protected Folder(final Node node) {
-      super(node);
+    protected Folder(final Node node, final ActorRef eventManager) {
+      super(node, eventManager);
     }
 
     public Folder createFolder(String name) throws ItemExistsException,
@@ -140,7 +214,8 @@ public class FileStore {
       if(getFileOrFolder(name) != null) {
           throw new RuntimeException(String.format("file or folder already exists '%s'", name));
       } else {
-          return new Folder(node.addNode(name, NodeType.NT_FOLDER));
+          return new Folder(
+              node.addNode(name, NodeType.NT_FOLDER), eventManager);
       }
     }
 
@@ -156,7 +231,7 @@ public class FileStore {
             throw new RuntimeException(String.format("Can't create file '%s'." +
                     " Folder with same name already exists", name));
         } else {
-            return new File(node, name, mime, data);
+            return new File(node, name, mime, data, eventManager);
         }
     }
 
@@ -173,7 +248,7 @@ public class FileStore {
       ImmutableSet.Builder<Folder> set = ImmutableSet.<Folder>builder();
       for (final Node child : JcrUtils.getChildNodes(node)) {
         if (child.getPrimaryNodeType().isNodeType(NodeType.NT_FOLDER)) {
-          set.add(new Folder(child));
+          set.add(new Folder(child, eventManager));
         }
       }
       return set.build();
@@ -191,7 +266,7 @@ public class FileStore {
     public FileOrFolder getFileOrFolder(String name) throws RepositoryException {
         for (final Node child : JcrUtils.getChildNodes(node)) {
             if(StringUtils.equals(child.getName(), name)) {
-                return fromNode(child);
+                return fromNode(child, eventManager);
             }
         }
         return null;
@@ -201,7 +276,7 @@ public class FileStore {
       ImmutableSet.Builder<File> set = ImmutableSet.<File>builder();
       for (final Node child : JcrUtils.getChildNodes(node)) {
         if (child.getPrimaryNodeType().isNodeType(NodeType.NT_FILE)) {
-          set.add(new File(child));
+          set.add(new File(child, eventManager));
         }
       }
       return set.build();
@@ -251,20 +326,32 @@ public class FileStore {
 
   public static class File extends NodeWrapper {
 
-    protected File(final Node node) {
-      super(node);
+    protected File(final Node node, final ActorRef eventManager) {
+      super(node, eventManager);
     }
 
     protected File(final Node parent, final String name, final String mime,
-        final InputStream data) throws RepositoryException {
-      super(JcrUtils.putFile(parent, name, mime, data));
+        final InputStream data, final ActorRef eventManager)
+            throws RepositoryException {
+      super(JcrUtils.putFile(parent, name, mime, data), eventManager);
+      eventManager.tell("Created new file.", null);
     }
 
     public File update(final String mime, InputStream data)
         throws AccessDeniedException, ItemNotFoundException,
         RepositoryException {
-      return new File(
-          JcrUtils.putFile(node.getParent(), node.getName(), mime, data));
+      File f = new File(
+          JcrUtils.putFile(node.getParent(), node.getName(), mime, data),
+          eventManager);
+      eventManager.tell("Updated existing file.", null);
+      return f;
+    }
+
+    @Override
+    public void delete() throws AccessDeniedException, VersionException,
+        LockException, ConstraintViolationException, RepositoryException {
+      super.delete();
+      eventManager.tell("Deleting file.", null);
     }
 
     @Override
@@ -286,9 +373,11 @@ public class FileStore {
   protected abstract static class NodeWrapper implements FileOrFolder {
 
     protected final Node node;
+    protected final ActorRef eventManager;
 
-    protected NodeWrapper(final Node node) {
+    protected NodeWrapper(final Node node, final ActorRef eventManager) {
       this.node = node;
+      this.eventManager = eventManager;
     }
 
     protected Session session() throws RepositoryException {
@@ -300,7 +389,7 @@ public class FileStore {
       if (node.getPath().equals(FILE_STORE_PATH)) {
         return 0;
       } else {
-        return (new Folder(node.getParent())).getDepth() + 1;
+        return (new Folder(node.getParent(), eventManager)).getDepth() + 1;
       }
     }
 

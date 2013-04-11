@@ -13,6 +13,7 @@ import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 
 import play.Application;
 import play.Plugin;
+import service.filestore.FileStore;
 
 public class GuiceInjectionPlugin extends Plugin {
 
@@ -55,7 +56,7 @@ public class GuiceInjectionPlugin extends Plugin {
     Module sessionModule = new AbstractModule() {
       @Override
       protected void configure() {
-        bind(JcrSessionFactory.class).toInstance(new JcrSessionFactory() {
+        JcrSessionFactory sessionFactory = new JcrSessionFactory() {
           @Override
           public Session newAdminSession() {
             try {
@@ -70,7 +71,9 @@ public class GuiceInjectionPlugin extends Plugin {
           private String cfgStr(String key) {
             return application.configuration().getString(key);
           }
-        });
+        };
+        bind(JcrSessionFactory.class).toInstance(sessionFactory);
+        bind(FileStore.class).toInstance(new FileStore(sessionFactory));
       }
     };
     return Guice.createInjector(pluginModule, sessionModule);

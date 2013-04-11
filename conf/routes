@@ -10,9 +10,10 @@ GET     /user/info                  @controllers.Application.userInfo
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /upload                     @controllers.FileUpload.getUpload
-POST    /upload                     @controllers.FileUpload.postUpload(folder="")
+POST    /upload/                    @controllers.FileUpload.postUpload(folder="")
 POST    /upload/*folder             @controllers.FileUpload.postUpload(folder)
 
+GET     /filestore/notifications    @controllers.FileStoreAsync.notifications
 GET     /filestore/tree             @controllers.FileStore.tree
 
 # Login page

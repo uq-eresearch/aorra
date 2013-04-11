@@ -69,6 +69,11 @@ $(function () {
   $.get("@controllers.routes.FileStore.tree", function(data) {
     tree.load(data);
   });
+  // EventSource
+  var es = new EventSource('@controllers.routes.FileStoreAsync.notifications');
+  es.onmessage = function (event) {
+    console.debug(event);
+  };
 });
 </script>
 }

@@ -29,8 +29,9 @@ public final class FileUpload extends Controller {
   private final JcrSessionFactory sessionFactory;
 
   @Inject
-  public FileUpload(final JcrSessionFactory sessionFactory) {
-    this.fileStore = new FileStore(sessionFactory);
+  public FileUpload(final JcrSessionFactory sessionFactory,
+      final FileStore fileStore) {
+    this.fileStore = fileStore;
     this.sessionFactory = sessionFactory;
   }
 

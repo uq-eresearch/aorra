@@ -26,8 +26,9 @@ public final class FileStore extends Controller {
   private final JcrSessionFactory sessionFactory;
 
   @Inject
-  public FileStore(final JcrSessionFactory sessionFactory) {
-    this.fileStore = new service.filestore.FileStore(sessionFactory);
+  public FileStore(final JcrSessionFactory sessionFactory,
+      final service.filestore.FileStore fileStore) {
+    this.fileStore = fileStore;
     this.sessionFactory = sessionFactory;
   }
 

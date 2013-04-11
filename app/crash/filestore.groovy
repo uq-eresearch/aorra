@@ -36,7 +36,7 @@ class filestore {
         @Usage("Make parent directories as needed")
         @Option(names=["p","parents"])
         Boolean parents) {
-        def filestore = new FileStore(sessionFactory())
+        def filestore = fileStore()
         sessionFactory().inSession(new Function<Session, String>() {
             public String apply(Session session) {
                 def mkdir
@@ -82,7 +82,7 @@ class filestore {
         @Usage("remove directories and their contents recursively")
         @Option(names=["r", "recursive"])
         Boolean recursive) {
-        def filestore = new FileStore(sessionFactory())
+        def filestore = fileStore()
         sessionFactory().inSession(new Function<Session, String>() {
             public String apply(Session session) {
                 def rm;
@@ -110,7 +110,7 @@ class filestore {
   @Usage("print tree of filestore structure")
   @Command
   void tree(@Usage("only show tree below folder") @Argument String path) {
-    def filestore = new FileStore(sessionFactory())
+    def filestore = fileStore()
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
           def sb = new StringBuilder()
@@ -130,7 +130,7 @@ class filestore {
               out.println(format(it, false))
             }
           }
-          def f = m.getFolder(path);
+          def f = m.getFolder(path == null ? "/" : path);
           if(f!=null) {
               tree(f);
           } else {
@@ -150,7 +150,7 @@ class filestore {
     if (!sure.equals(surePhrase)) {
       return
     }
-    def filestore = new FileStore(sessionFactory())
+    def filestore = fileStore()
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
           def root = filestore.getManager(session).getRoot()
@@ -202,6 +202,11 @@ class filestore {
   private JcrSessionFactory sessionFactory() {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(JcrSessionFactory.class);
+  }
+  
+  private FileStore fileStore() {
+    return GuiceInjectionPlugin.getInjector(application())
+                               .getInstance(FileStore.class);
   }
 
 }
