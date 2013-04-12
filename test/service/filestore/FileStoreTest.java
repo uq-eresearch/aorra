@@ -34,7 +34,7 @@ public class FileStoreTest {
                   fileStore.getManager(session).getFolders();
               assertThat(folders).hasSize(1);
               FileStore.Folder folder = folders.iterator().next();
-              assertThat(folder.getPath()).isEqualTo("");
+              assertThat(folder.getPath()).isEqualTo("/");
               return folder;
             } catch (RepositoryException e) {
               throw new RuntimeException(e);
