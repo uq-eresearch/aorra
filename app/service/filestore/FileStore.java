@@ -3,7 +3,6 @@ package service.filestore;
 import java.io.InputStream;
 import java.security.Principal;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import javax.jcr.AccessDeniedException;
@@ -13,6 +12,7 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.ValueFormatException;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -30,16 +30,14 @@ import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 
-import play.Logger;
-import play.api.libs.iteratee.Concurrent.Channel;
 import play.libs.Akka;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
+import service.filestore.EventManager.FileStoreEvent;
 import service.filestore.roles.Admin;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -90,62 +88,6 @@ public class FileStore {
       return new File(node, eventManager);
     else
       return new Folder(node, eventManager);
-  }
-
-  public static class EventManager extends UntypedActor {
-
-    private final Set<Channel<String>> channels =
-        new HashSet<Channel<String>>();
-
-    @Override
-    public void onReceive(Object message) throws Exception {
-      if (message instanceof String) {
-        Logger.info(this+" - "+message);
-        Logger.info(this+" - "+channels.toString());
-        for (Channel<String> channel : channels) {
-          Logger.info("Pushing message onto channel: "+message);
-          channel.push(""+message);
-        }
-      } else if (message instanceof ChannelMessage) {
-        ChannelMessage channelMessage = (ChannelMessage) message;
-        switch (channelMessage.type) {
-        case ADD:
-          Logger.info(this+" - Adding notification channel.");
-          channels.add(channelMessage.channel);
-          break;
-        case REMOVE:
-          Logger.info(this+" - Removing notification channel.");
-          channels.remove(channelMessage.channel);
-          break;
-        }
-      } else {
-        unhandled(message);
-      }
-    }
-
-    public static class ChannelMessage {
-
-      private static enum MessageType { ADD, REMOVE }
-
-      public final MessageType type;
-      public final Channel<String> channel;
-
-      protected ChannelMessage(MessageType type, Channel<String> channel) {
-        this.type = type;
-        this.channel = channel;
-      }
-
-      public static ChannelMessage add(Channel<String> channel) {
-        return new ChannelMessage(MessageType.ADD, channel);
-      }
-
-      public static ChannelMessage remove(Channel<String> channel) {
-        return new ChannelMessage(MessageType.ADD, channel);
-      }
-
-    }
-
-
   }
 
   public static class Manager {
@@ -334,7 +276,7 @@ public class FileStore {
         final InputStream data, final ActorRef eventManager)
             throws RepositoryException {
       super(JcrUtils.putFile(parent, name, mime, data), eventManager);
-      eventManager.tell("Created new file.", null);
+      eventManager.tell(FileStoreEvent.create(this), null);
     }
 
     public File update(final String mime, InputStream data)
@@ -343,15 +285,26 @@ public class FileStore {
       File f = new File(
           JcrUtils.putFile(node.getParent(), node.getName(), mime, data),
           eventManager);
-      eventManager.tell("Updated existing file.", null);
+      eventManager.tell(FileStoreEvent.update(this), null);
       return f;
+    }
+
+    public String getMimeType()
+        throws ValueFormatException, PathNotFoundException, RepositoryException {
+      return node.getNode(Node.JCR_CONTENT)
+          .getProperty("jcr:mimeType").getString();
+    }
+
+    public Folder getParent() throws RepositoryException {
+      return new Folder(node.getParent(), eventManager);
     }
 
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
+      FileStoreEvent event = FileStoreEvent.delete(this);
       super.delete();
-      eventManager.tell("Deleting file.", null);
+      eventManager.tell(event, null);
     }
 
     @Override

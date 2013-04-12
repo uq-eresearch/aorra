@@ -74,6 +74,21 @@ $(function () {
   es.onmessage = function (event) {
     console.debug(event);
   };
+  es.addEventListener('create', function(event) {
+    var struct = JSON.parse(event.data);
+    console.debug(event.type, struct);
+    tree.add(struct, struct.parentId);
+  });
+  es.addEventListener('update', function(event) {
+    var struct = JSON.parse(event.data);
+    console.debug(event.type, struct);
+    tree.update(struct);
+  });
+  es.addEventListener('delete', function(event) {
+    var struct = JSON.parse(event.data);
+    console.debug(event.type, struct);
+    tree.remove(struct.id);
+  });
 });
 </script>
 }
