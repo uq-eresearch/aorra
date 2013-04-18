@@ -23,9 +23,10 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
-    // Add your own project settings here
+    resolvers += Resolver.url("play-easymail (release)", url("http://joscha.github.com/play-easymail/repo/releases/"))(Resolver.ivyStylePatterns),
+    resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns)
   ).dependsOn(RootProject(uri(
-      "git://github.com/tjdett/securesocial.git#master-module-code"))
+      "git://github.com/tjdett/play-authenticate.git#testing-code"))
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play21-jackrabbit-plugin.git#shutdown"))
   ).dependsOn(RootProject(uri(

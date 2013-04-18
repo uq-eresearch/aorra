@@ -12,6 +12,7 @@ import service.filestore.EventManager.ChannelMessage
 import service.filestore.EventManager.FileStoreEvent
 import play.api.libs.iteratee.Enumeratee
 import play.api.libs.json.Json
+import play.api.mvc.Action
 
 /**
  *
@@ -23,9 +24,9 @@ import play.api.libs.json.Json
  */
 class FileStoreAsync @Inject()(
       val filestore: service.filestore.FileStore)
-    extends Controller with securesocial.core.SecureSocial {
+    extends Controller {
 
-  def notifications = SecuredAction { implicit request =>
+  def notifications = Action { implicit request =>
     import play.api.Play.current
     val em = filestore.getEventManager
     var c: Channel[FileStoreEvent] = null;

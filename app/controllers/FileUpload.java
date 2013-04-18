@@ -16,8 +16,6 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
-import securesocial.core.Identity;
-import securesocial.core.java.SecureSocial;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 
@@ -35,13 +33,11 @@ public final class FileUpload extends Controller {
     this.sessionFactory = sessionFactory;
   }
 
-  @SecureSocial.SecuredAction
   public Result postUpload(final String folderPath) {
     return sessionFactory.inSession(new Function<Session, Result>() {
       @Override
       public final Result apply(Session session) {
         final FileStore.Manager fm = fileStore.getManager(session);
-        final Identity user = getUser();
         final FileStore.Folder folder;
         try {
           folder = fm.getFolder("/"+folderPath);
@@ -67,10 +63,10 @@ public final class FileUpload extends Controller {
               updateFileContents(folder, filePart);
               final String fileName = filePart.getFilename();
               final File file = filePart.getFile();
-              Logger.info(String.format(
-                "file %s content type %s uploaded to %s by %s",
-                fileName, filePart.getContentType(), file.getAbsolutePath(),
-                user.id().id()));
+              //Logger.info(String.format(
+              //  "file %s content type %s uploaded to %s by %s",
+              //  fileName, filePart.getContentType(), file.getAbsolutePath(),
+              //  user.id().id()));
               jsonFileData.put("name", fileName);
               jsonFileData.put("size", file.length());
             }
@@ -85,13 +81,8 @@ public final class FileUpload extends Controller {
     });
   }
 
-  @SecureSocial.SecuredAction
   public Result getUpload() {
     return ok(views.html.upload.render());
-  }
-
-  private Identity getUser() {
-    return (Identity) ctx().args.get(SecureSocial.USER_KEY);
   }
 
   private void updateFileContents(FileStore.Folder folder,

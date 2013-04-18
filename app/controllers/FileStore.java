@@ -13,7 +13,6 @@ import play.libs.Json;
 import play.libs.F.Function;
 import play.mvc.Controller;
 import play.mvc.Result;
-import securesocial.core.java.SecureSocial;
 import service.JcrSessionFactory;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.File;
@@ -32,7 +31,6 @@ public final class FileStore extends Controller {
     this.sessionFactory = sessionFactory;
   }
 
-  @SecureSocial.SecuredAction
   public Result tree() {
     return sessionFactory.inSession(new Function<Session, Result>() {
       @Override

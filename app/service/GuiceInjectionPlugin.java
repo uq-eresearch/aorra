@@ -47,10 +47,10 @@ public class GuiceInjectionPlugin extends Plugin {
       @Override
       protected void configure() {}
 
-      @Provides
-      JackrabbitUserService getUserService() {
-        return application.plugin(JackrabbitUserService.class);
-      }
+      //@Provides
+      //JackrabbitUserService getUserService() {
+      //  return application.plugin(JackrabbitUserService.class);
+      //}
 
     };
     Module sessionModule = new AbstractModule() {

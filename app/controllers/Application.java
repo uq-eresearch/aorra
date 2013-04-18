@@ -3,40 +3,40 @@ package controllers;
 import com.google.inject.Inject;
 import play.mvc.Controller;
 import play.mvc.Result;
-import scala.Option;
-import scala.collection.Seq;
-import securesocial.core.Identity;
-import securesocial.core.java.SecureSocial;
-import service.JackrabbitUserService;
-import views.html.index;
-import views.html.user.info;
 
 public final class Application extends Controller {
 
-  private JackrabbitUserService userService;
-
   @Inject
-  Application(JackrabbitUserService userService) {
-    this.userService = userService;
-  }
+  Application() {}
 
-  @SecureSocial.UserAwareAction
   public final Result index() {
-    Seq<Identity> allUsers = userService.list();
-    return ok(index.render(Option.apply(getUser()), allUsers));
+    // TODO: Implement
+    return ok();
   }
 
-  @SecureSocial.SecuredAction
+  public final Result login() {
+    // TODO: Implement
+    return ok();
+  }
+
+  public final Result oAuthDenied(String providerKey) {
+    // TODO: Implement
+    return ok();
+  }
+
   public final Result userInfo() {
-    return ok(info.render(getUser()));
+    // TODO: Implement
+    return ok();
   }
 
-  /**
-   * Fetches the user Identity from the session context.
-   * @returns Identity
-   */
-  private final Identity getUser() {
-    return (Identity) ctx().args.get(SecureSocial.USER_KEY);
+  public final Result userExists() {
+    // TODO: Implement
+    return ok();
+  }
+
+  public final Result userUnverified() {
+    // TODO: Implement
+    return ok();
   }
 
 }

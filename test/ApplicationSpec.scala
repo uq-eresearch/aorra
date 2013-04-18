@@ -28,6 +28,8 @@ class ApplicationSpec extends Specification {
       }
     }
 
+    /*
+
     "send 303 for user info page without login" in {
       running(fakeApp) {
         val home = route(FakeRequest(GET, "/user/info")).get
@@ -44,5 +46,7 @@ class ApplicationSpec extends Specification {
         contentAsString(home) must contain ("Login")
       }
     }
+
+    */
   }
 }
