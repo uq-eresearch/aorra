@@ -7,7 +7,7 @@ import java.util.Set;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import static test.AorraTestUtils.fakeJavaApp;
+import static test.AorraTestUtils.fakeAorraApp;
 
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ import service.JcrSessionFactory;
 public class FileStoreTest {
   @Test
   public void canGetFolders() {
-    running(fakeJavaApp(), new Runnable() {
+    running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
         final JcrSessionFactory sessionFactory = GuiceInjectionPlugin

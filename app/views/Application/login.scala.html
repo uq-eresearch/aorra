@@ -1,0 +1,36 @@
+@(form: play.data.Form[models.User.Login])
+
+@import helper.twitterBootstrap._
+
+@inlineInput(field: play.data.Form.Field, inputType: String, icon: String, placeholder: String = "") = {
+<div class="control-group @(if (field.errors.length > 0) {"error"})" style="display: inline-block">
+  <div class="input-prepend">
+    <span class="add-on" title="@(field.name)">
+      <i class="icon-@(icon)"></i>
+    </span>
+    <input class="span2" type="@inputType" id="@(field.id)" 
+      name="@(field.name)" value="@(field.value)" placeholder="@placeholder"/>
+  </div>
+</div>
+}
+
+@main("Login") {
+  
+  <div class="span12" style="text-align: center">
+  <h1 id="big-headline" style="line-height: 120%">AORRA</h1>
+  <script>
+  $(function() {
+    jQuery("#big-headline").fitText(1);
+  });
+  </script>
+  
+  @helper.form(action = routes.Application.postLogin(), 'class -> "form-inline") {
+    @inlineInput(form("email"), "text", "envelope", "eg. user@domain.com")
+    @inlineInput(form("password"), "password", "asterisk")
+    <button class="btn btn-primary" type="submit">
+      <i class="icon-signin"></i> Login
+    </button>
+  }
+  </div>
+
+}

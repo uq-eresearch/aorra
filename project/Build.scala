@@ -23,6 +23,14 @@ object ApplicationBuild extends Build {
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
+    // Get rid of jBoss logging warning
+    javaOptions := Seq("-Dorg.jboss.logging.provider=slf4j"),
+    // Allows mock Http.Contexts to be built for play-authenticate
+    libraryDependencies += "play" %% "play-test" % play.core.PlayVersion.current,
+    // Debug tests
+    //Keys.fork in (Test) := true,
+    //javaOptions in (Test) += "-Xdebug",
+    //javaOptions in (Test) += "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9998",
     resolvers += Resolver.url("play-easymail (release)", url("http://joscha.github.com/play-easymail/repo/releases/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns)
   ).dependsOn(RootProject(uri(

@@ -8,7 +8,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import static test.AorraTestUtils.fakeJavaApp;
+import static test.AorraTestUtils.fakeAorraApp;
 
 import org.apache.jackrabbit.api.security.user.AuthorizableExistsException;
 import org.apache.jackrabbit.api.security.user.Group;
@@ -22,7 +22,7 @@ import service.JcrSessionFactory;
 public class GroupManagerTest {
   @Test
   public void canCreateFindListDelete() {
-    running(fakeJavaApp(), new Runnable() {
+    running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
         final JcrSessionFactory sessionFactory = GuiceInjectionPlugin

@@ -21,9 +21,6 @@ import service.filestore.FileStore.Folder
 import service.filestore.roles.Admin
 import service.GuiceInjectionPlugin
 import service.JcrSessionFactory
-import securesocial.core.UserId
-
-
 
 @Usage("Filestore operations")
 class filestore {

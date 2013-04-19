@@ -82,7 +82,7 @@ public final class FileUpload extends Controller {
   }
 
   public Result getUpload() {
-    return ok(views.html.upload.render());
+    return ok(views.html.FileUpload.upload.render());
   }
 
   private void updateFileContents(FileStore.Folder folder,

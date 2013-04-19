@@ -4,7 +4,7 @@
 
 # Home page
 GET     /                           @controllers.Application.index
-GET     /login                      @controllers.Application.login
+POST    /login                      @controllers.Application.postLogin
 GET     /user-exists                @controllers.Application.userExists
 GET     /user-unverified            @controllers.Application.userUnverified
 GET     /user/info                  @controllers.Application.userInfo

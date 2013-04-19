@@ -30,7 +30,7 @@ public class Global extends GlobalSettings {
       @Override
       public Call login() {
         // Your login page
-        return controllers.routes.Application.login();
+        return controllers.routes.Application.index();
       }
 
       @Override

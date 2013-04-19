@@ -2,39 +2,33 @@ import static play.Play.application;
 
 import org.crsh.cli.Command
 import org.crsh.cli.Usage
-import org.crsh.cli.Option
+import org.crsh.cli.Argument
+import org.crsh.cli.Required
+import models.User
 import play.Play
-import service.GuiceInjectionPlugin;
-import service.JackrabbitUserService
-import securesocial.core.UserId
+import service.GuiceInjectionPlugin
+import providers.JackrabbitEmailPasswordAuthProvider
+
 
 @Usage("User information")
 class user {
-  
-  @Usage("list existing users")
+
+  @Usage("invite user")
   @Command
-  String list() {
-    userService().list().mkString("\n")
-  }
-  
-  @Usage("find existing user")
-  @Command
-  String find(
-      @Usage("identity provider (default: userpass)")
-      @Option(names=["p","provider"])
-      String provider,
-      @Usage("user id")
+  String invite(
+      @Usage("email")
       @Argument
-      String id) {
-    if (provider == null) {
-      provider = "userpass"
-    }
-    userService().find(new UserId(id, provider)).get().toString()
+      @Required
+      String email,
+      @Usage("name")
+      @Argument
+      @Required
+      String name) {
+    authProvider().signup(new User.Invite(email, name))
   }
   
-  private JackrabbitUserService userService() {
-    return GuiceInjectionPlugin.getInjector(application())
-                               .getInstance(JackrabbitUserService.class);
+  private JackrabbitEmailPasswordAuthProvider authProvider() {
+    return application().plugin(JackrabbitEmailPasswordAuthProvider.class)
   }
   
 }

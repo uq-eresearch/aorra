@@ -15,7 +15,6 @@ import play.libs.F.Function
 import models.GroupManager
 import service.GuiceInjectionPlugin
 import service.JcrSessionFactory
-import securesocial.core.UserId
 
 @Usage("Group information")
 class group {

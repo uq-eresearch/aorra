@@ -7,7 +7,7 @@ import org.junit.*;
 
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
-import static test.AorraTestUtils.fakeJavaApp;
+import static test.AorraTestUtils.fakeAorraApp;
 import play.Play;
 import play.libs.F.Function;
 
@@ -24,7 +24,7 @@ public class AdminTest {
 
   @Test
   public void canGetInstance() {
-    running(fakeJavaApp(), new Runnable() {
+    running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
         JcrSessionFactory sessionFactory = GuiceInjectionPlugin
