@@ -1,4 +1,4 @@
 1001:service.GuiceInjectionPlugin
 1500:com.typesafe.plugin.CommonsMailerPlugin
-10005:service.JackrabbitUserServicePlugin
+10005:service.SimpleUserServicePlugin
 10040:providers.JackrabbitEmailPasswordAuthProvider

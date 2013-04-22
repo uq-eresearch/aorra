@@ -7,7 +7,6 @@ GET     /                           @controllers.Application.index
 POST    /login                      @controllers.Application.postLogin
 GET     /user-exists                @controllers.Application.userExists
 GET     /user-unverified            @controllers.Application.userUnverified
-GET     /user/info                  @controllers.Application.userInfo
 GET     /user/:email/verify/:token  @controllers.Application.verify(email: String, token: String)
 POST     /user/:email/verify/:token @controllers.Application.postVerify(email: String, token: String)
 

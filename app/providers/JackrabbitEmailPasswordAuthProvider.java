@@ -11,7 +11,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 import javax.jcr.Session;
 
@@ -49,9 +48,6 @@ public class JackrabbitEmailPasswordAuthProvider
     UsernamePasswordAuthProvider<String, JackrabbitEmailPasswordAuthProvider.LoginUser, JackrabbitEmailPasswordAuthProvider.SignupUser, Login, Invite> {
 
   private final Application application;
-
-  private final Map<String, String> verifiedUsers = new HashMap<String, String>();
-  private final Map<String, String> unverifiedUsers = new HashMap<String, String>();
 
   public JackrabbitEmailPasswordAuthProvider(Application application) {
     super(application);
@@ -95,12 +91,13 @@ public class JackrabbitEmailPasswordAuthProvider
   public static class LoginUser extends UsernamePasswordAuthUser {
     private static final long serialVersionUID = 1L;
 
-    public LoginUser(final String email) {
-      super(null, email);
-    }
-
     public LoginUser(final String clearPassword, final String email) {
       super(clearPassword, email);
+    }
+
+    @Override
+    public String getId() {
+      return getEmail();
     }
   }
 
@@ -256,8 +253,9 @@ public class JackrabbitEmailPasswordAuthProvider
   }
 
   @Override
-  protected LoginUser transformAuthUser(SignupUser signupUser, Context context) {
-    return new LoginUser(signupUser.getEmail());
+  protected LoginUser transformAuthUser(SignupUser signupUser, Context ctx) {
+    // This should never be called
+    throw new UnsupportedOperationException("Signup users must validate");
   }
 
   @Override

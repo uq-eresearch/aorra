@@ -36,8 +36,7 @@ public final class Application extends Controller {
 
   public final Result index() {
     if (!isAuthenticated()) return login();
-    // TODO: Implement
-    return ok();
+    return redirect(controllers.routes.FileUpload.getUpload());
   }
 
   public final Result login() {
@@ -104,12 +103,6 @@ public final class Application extends Controller {
     return ok();
   }
 
-  @Security.Authenticated(Secured.class)
-  public final Result userInfo() {
-    // TODO: Implement
-    return ok();
-  }
-
   public final Result userExists() {
     // TODO: Implement
     return ok();
@@ -127,10 +120,5 @@ public final class Application extends Controller {
   private boolean isAuthenticated() {
     return PlayAuthenticate.getUser(ctx().session()) != null;
   }
-
-  private JackrabbitEmailPasswordAuthProvider provider() {
-    return Play.application().plugin(JackrabbitEmailPasswordAuthProvider.class);
-  }
-
 
 }

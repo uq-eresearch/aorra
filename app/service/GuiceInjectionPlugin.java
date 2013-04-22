@@ -56,8 +56,8 @@ public class GuiceInjectionPlugin extends Plugin {
       protected void configure() {}
 
       @Provides
-      JackrabbitUserServicePlugin getUserService() {
-        return application.plugin(JackrabbitUserServicePlugin.class);
+      SimpleUserServicePlugin getUserService() {
+        return application.plugin(SimpleUserServicePlugin.class);
       }
 
       @Provides
