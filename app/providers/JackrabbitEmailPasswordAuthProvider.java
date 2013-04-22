@@ -4,6 +4,8 @@ import static play.test.Helpers.fakeRequest;
 import static java.util.Collections.emptyMap;
 import static play.data.Form.form;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,14 +13,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import javax.jcr.Session;
+
+import org.jcrom.Jcrom;
+
+import models.User;
 import models.User.Invite;
 import models.User.Login;
+import models.UserDAO;
 import play.Application;
 import play.Logger;
+import play.Play;
 import play.api.http.MediaRange;
-import play.api.mvc.AnyContentAsFormUrlEncoded;
 import play.data.Form;
 import play.i18n.Lang;
+import play.libs.F;
 import play.libs.Scala;
 import play.mvc.Call;
 import play.mvc.Http;
@@ -34,7 +43,6 @@ import com.feth.play.module.mail.Mailer.Mail.Body;
 import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
 import com.feth.play.module.pa.providers.password.UsernamePasswordAuthUser;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 
 public class JackrabbitEmailPasswordAuthProvider
     extends
@@ -44,16 +52,24 @@ public class JackrabbitEmailPasswordAuthProvider
 
   private final Map<String, String> verifiedUsers = new HashMap<String, String>();
   private final Map<String, String> unverifiedUsers = new HashMap<String, String>();
-  private final Map<String, String> verificationTokens = new HashMap<String, String>();
 
   public JackrabbitEmailPasswordAuthProvider(Application application) {
     super(application);
     this.application = application;
   }
 
-  public JcrSessionFactory getSessionFactory() {
+  private JcrSessionFactory getSessionFactory() {
     return GuiceInjectionPlugin.getInjector(application).getInstance(
         JcrSessionFactory.class);
+  }
+
+  private Jcrom getJcrom() {
+    return GuiceInjectionPlugin.getInjector(application).getInstance(
+        Jcrom.class);
+  }
+
+  private UserDAO getUserDAO(Session session) {
+    return new UserDAO(session, getJcrom());
   }
 
   public static class SignupUser extends UsernamePasswordAuthUser {
@@ -65,6 +81,15 @@ public class JackrabbitEmailPasswordAuthProvider
       super(null, email);
       this.name = name;
     }
+
+    public User asNewUser() {
+      User user = new User();
+      user.setEmail(getEmail());
+      user.setName(name);
+      user.setVerified(false);
+      return user;
+    }
+
   }
 
   public static class LoginUser extends UsernamePasswordAuthUser {
@@ -88,7 +113,6 @@ public class JackrabbitEmailPasswordAuthProvider
   }
 
   private Http.Context fakeContext(Map<String,String> data) {
-    long id = 0;
     final play.api.mvc.Request<Http.RequestBody> req =
         fakeRequest().withFormUrlEncodedBody(data).getWrappedRequest();
     Http.Request request = new Request() {
@@ -120,7 +144,17 @@ public class JackrabbitEmailPasswordAuthProvider
 
       @Override
       public String host() {
-        return req.host();
+        try {
+          URL url = new URL(Play.application()
+              .configuration().getString("application.baseUrl"));
+          if (url.getDefaultPort() == url.getPort()) {
+            return url.getHost();
+          } else {
+            return url.getHost() + ":" + url.getPort();
+          }
+        } catch (MalformedURLException e) {
+          throw new RuntimeException(e);
+        }
       }
 
       @Override
@@ -186,38 +220,21 @@ public class JackrabbitEmailPasswordAuthProvider
         request, sessionData, flashData, args);
   }
 
-
-  // Only used for testing.
-  public String getVerificationToken(String email) {
-    for (Entry<String, String> e : verificationTokens.entrySet()) {
-      if (e.getValue().equals(email)) {
-        return e.getKey();
-      }
-    }
-    return null;
-  }
-
-  public LoginUser verifyWithToken(String token) {
-    if (verificationTokens.containsKey(token)) {
-      final String email = verificationTokens.get(token);
-      if (!unverifiedUsers.containsKey(email)) {
-        return null;
-      }
-      final String hashedPassword = unverifiedUsers.get(email);
-      verifiedUsers.put(email, hashedPassword);
-      verificationTokens.remove(token);
-      unverifiedUsers.remove(email);
-      return new LoginUser(email);
-    } else {
-      return null;
-    }
-  }
-
   @Override
-  protected String generateVerificationRecord(SignupUser user) {
-    final String token = UUID.randomUUID().toString();
-    verificationTokens.put(token, user.getEmail());
-    return token;
+  protected String generateVerificationRecord(final SignupUser user) {
+    return getSessionFactory().inSession(
+        new F.Function<Session, String>() {
+      @Override
+      public String apply(final Session session) {
+        UserDAO dao = getUserDAO(session);
+        User u = dao.findByEmail(user.getEmail());
+        try {
+          return u.createVerificationToken();
+        } finally {
+          dao.update(u);
+        }
+      }
+    });
   }
 
   @Override
@@ -226,10 +243,11 @@ public class JackrabbitEmailPasswordAuthProvider
   }
 
   @Override
-  protected Body getVerifyEmailMailingBody(String verificationRecord,
+  protected Body getVerifyEmailMailingBody(String verificationToken,
       SignupUser user, Context ctx) {
     // TODO: Make this intelligible
-    return new Body(verificationRecord);
+    return new Body(controllers.routes.Application.verify(
+        user.getEmail(), verificationToken).absoluteURL(ctx.request()));
   }
 
   @Override
@@ -251,39 +269,57 @@ public class JackrabbitEmailPasswordAuthProvider
   @Override
   protected
       com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider.LoginResult
-      loginUser(LoginUser user) {
-    final String e = user.getEmail();
-    if (unverifiedUsers.containsKey(e)) {
-      Logger.debug(e + " attempted to login but is still unverified.");
-      return LoginResult.USER_UNVERIFIED;
-    }
-    if (!verifiedUsers.containsKey(e)) {
-      Logger.debug(e + " attempted to login but was not found.");
-      return LoginResult.NOT_FOUND;
-    }
-    final boolean passwordCorrect = user.checkPassword(verifiedUsers.get(e),
-        user.getPassword());
-    if (!passwordCorrect) {
-      Logger.debug(e + " provided an incorrect password.");
-      return LoginResult.WRONG_PASSWORD;
-    }
-    Logger.debug(e + " successfully authenticated.");
-    return LoginResult.USER_LOGGED_IN;
+      loginUser(final LoginUser loginUser) {
+    return getSessionFactory().inSession(
+        new F.Function<Session, LoginResult>() {
+      @Override
+      public LoginResult apply(final Session session) throws Throwable {
+        final UserDAO dao = getUserDAO(session);
+        final User u = dao.findByEmail(loginUser.getEmail());
+        if (u == null) {
+          Logger.debug(loginUser.getEmail() +
+              " attempted to login but was not found.");
+          return LoginResult.NOT_FOUND;
+        }
+        if (!u.isVerified()) {
+          Logger.debug(u + " attempted to login but is still unverified.");
+          return LoginResult.USER_UNVERIFIED;
+        }
+        if (!dao.checkPassword(u, loginUser.getPassword())) {
+          Logger.debug(u + " provided an incorrect password.");
+          return LoginResult.WRONG_PASSWORD;
+        }
+        Logger.debug(u + " successfully authenticated.");
+        return LoginResult.USER_LOGGED_IN;
+      }
+    });
   }
 
   @Override
   protected
       com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider.SignupResult
-      signupUser(SignupUser user) {
+      signupUser(final SignupUser user) {
     final String e = user.getEmail();
-    if (verifiedUsers.containsKey(e)) {
-      return SignupResult.USER_EXISTS;
-    }
-    if (unverifiedUsers.containsKey(e)) {
-      return SignupResult.USER_EXISTS_UNVERIFIED;
-    }
-    unverifiedUsers.put(user.getEmail(), user.getHashedPassword());
-    return SignupResult.USER_CREATED_UNVERIFIED;
+    return getSessionFactory().inSession(
+        new F.Function<Session, SignupResult>() {
+      @Override
+      public SignupResult apply(final Session session) throws Throwable {
+        final UserDAO dao = getUserDAO(session);
+        {
+          final User existingUser = dao.findByEmail(e);
+          if (existingUser != null) {
+            if (existingUser.isVerified()) {
+              return SignupResult.USER_EXISTS;
+            } else {
+              return SignupResult.USER_EXISTS_UNVERIFIED;
+            }
+          }
+        }
+        dao.create(user.asNewUser());
+        Logger.debug("Created new user: "+user.asNewUser());
+        return SignupResult.USER_CREATED_UNVERIFIED;
+      }
+    });
   }
 
   @Override

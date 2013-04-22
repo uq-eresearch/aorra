@@ -3,7 +3,10 @@ package service;
 import java.util.HashMap;
 import java.util.Map;
 
+import models.LinkedAccountDAO;
+
 import play.Application;
+import play.Logger;
 
 import com.feth.play.module.pa.service.UserServicePlugin;
 import com.feth.play.module.pa.user.AuthUser;
@@ -19,12 +22,14 @@ public class JackrabbitUserServicePlugin extends UserServicePlugin {
 
 	@Override
 	public Object save(final AuthUser authUser) {
+	  Logger.debug(""+authUser);
 		users.put(new ImmutableAuthUserIdentity(authUser), authUser);
 		return authUser;
 	}
 
 	@Override
 	public Object getLocalIdentity(final AuthUserIdentity identity) {
+    Logger.debug(""+identity);
 		return users.get(new ImmutableAuthUserIdentity(identity));
 	}
 

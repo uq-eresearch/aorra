@@ -1,8 +1,15 @@
 package service;
 
+import java.util.Set;
+
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import models.User;
+
+import org.jcrom.Jcrom;
+
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -13,6 +20,7 @@ import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 
 import play.Application;
 import play.Plugin;
+import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.FileStore;
 
 public class GuiceInjectionPlugin extends Plugin {
@@ -47,10 +55,15 @@ public class GuiceInjectionPlugin extends Plugin {
       @Override
       protected void configure() {}
 
-      //@Provides
-      //JackrabbitUserService getUserService() {
-      //  return application.plugin(JackrabbitUserService.class);
-      //}
+      @Provides
+      JackrabbitUserServicePlugin getUserService() {
+        return application.plugin(JackrabbitUserServicePlugin.class);
+      }
+
+      @Provides
+      JackrabbitEmailPasswordAuthProvider getEmailPasswordAuthProvider() {
+        return application.plugin(JackrabbitEmailPasswordAuthProvider.class);
+      }
 
     };
     Module sessionModule = new AbstractModule() {
@@ -76,7 +89,19 @@ public class GuiceInjectionPlugin extends Plugin {
         bind(FileStore.class).toInstance(new FileStore(sessionFactory));
       }
     };
-    return Guice.createInjector(pluginModule, sessionModule);
+    Module jcromModule = new AbstractModule() {
+      @Override
+      protected void configure() {}
+
+      @Provides
+      Jcrom getJcrom() {
+        final Set<Class<?>> classes = ImmutableSet.<Class<?>>builder()
+            .add(User.class)
+            .build();
+        return new Jcrom(classes);
+      }
+    };
+    return Guice.createInjector(pluginModule, sessionModule, jcromModule);
   }
 
 }

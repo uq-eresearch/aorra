@@ -1,5 +1,8 @@
 package service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.RepositoryException;
@@ -7,9 +10,22 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import
   org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
+
+import play.Logger;
 import play.libs.F.Function;
+import play.mvc.Result;
 
 public abstract class JcrSessionFactory {
+
+  private static final String ADMIN_USERNAME = "admin";
+
+  protected final ThreadLocal<Map<String, Session>> sessions =
+      new ThreadLocal<Map<String, Session>>() {
+    @Override
+    protected Map<String, Session> initialValue() {
+      return new HashMap<String, Session>();
+    }
+  };
 
   /**
    * Get a new admin session.
@@ -24,6 +40,7 @@ public abstract class JcrSessionFactory {
    */
   public Session newUserSession(final Credentials credentials) {
     return inSession(new Function<Session, Session>() {
+      @Override
       public Session apply(final Session session) {
         try {
           return impersonate(session, credentials);
@@ -33,6 +50,23 @@ public abstract class JcrSessionFactory {
       }
     });
   }
+
+  public Session getCurrentAdminSession() {
+    return getCurrentSession(ADMIN_USERNAME);
+  }
+
+  public Session getCurrentSession(String userId) {
+    return sessions.get().get(userId);
+  }
+
+  protected void setCurrentSession(Session session) {
+    sessions.get().put(session.getUserID(), session);
+  }
+
+  protected void clearCurrentSession(Session session) {
+    sessions.get().remove(session.getUserID());
+  }
+
 
   /**
    * Perform the given function in an admin session.
@@ -67,6 +101,7 @@ public abstract class JcrSessionFactory {
    */
   protected <R> R inSession(Session session, Function<Session, R> func) {
     try {
+      setCurrentSession(session);
       R result = func.apply(session);
       if (session.hasPendingChanges()) {
         session.save();
@@ -75,6 +110,7 @@ public abstract class JcrSessionFactory {
     } catch (Throwable e) {
       throw new RuntimeException(e);
     } finally {
+      clearCurrentSession(session);
       session.logout();
     }
   }
@@ -98,5 +134,4 @@ public abstract class JcrSessionFactory {
     }
     return session.impersonate(usableCreds);
   }
-
 }
