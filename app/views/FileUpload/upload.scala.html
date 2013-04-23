@@ -15,7 +15,7 @@
 <script src="@routes.Assets.at("javascripts/jquery.iframe-transport.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.fileupload.js")"></script>
 <script src="@routes.Assets.at("javascripts/glyphtree.min.js")"></script>
-<script>
+<script type="text/javascript">
 var tree;
 $(function () {
   $('#fileupload').fileupload({
@@ -68,31 +68,51 @@ $(function () {
     }
   }
   tree.events.label.click = [selectHandler];
-  // EventSource
-  var es = new EventSource('@controllers.routes.FileStoreAsync.notifications');
-  es.onmessage = function (event) {
-    console.debug(event);
+  
+  var eventHandlers = {
+    ping:   function(message) { /*console.log(message);*/ },
+    load:   function(struct) { tree.load(struct); },
+    create:    function(struct) { tree.add(struct, struct.parentId); },
+    update: function(struct) { tree.update(struct); },
+    'delete': function(struct) { tree.remove(struct.id); }
   };
-  es.addEventListener('load', function(event) {
-    var struct = JSON.parse(event.data);
-    console.debug(event.type, struct);
-    tree.load(struct);
-  });
-  es.addEventListener('create', function(event) {
-    var struct = JSON.parse(event.data);
-    console.debug(event.type, struct);
-    tree.add(struct, struct.parentId);
-  });
-  es.addEventListener('update', function(event) {
-    var struct = JSON.parse(event.data);
-    console.debug(event.type, struct);
-    tree.update(struct);
-  });
-  es.addEventListener('delete', function(event) {
-    var struct = JSON.parse(event.data);
-    console.debug(event.type, struct);
-    tree.remove(struct.id);
-  });
+  
+  var notificationUrl = '@controllers.routes.FileStoreAsync.notifications';
+  
+  // Are we using a modern browser, or are we using IE?
+  if (typeof(window.EventSource) == 'undefined') {
+    // HTML iframe
+    function connect_htmlfile(url, callback) {
+      var ifrDiv = document.createElement("div");
+      ifrDiv.setAttribute("style", "display: none");
+      document.body.appendChild(ifrDiv);
+      ifrDiv.innerHTML = "<iframe src=\"" + url + "\"><\/iframe>";
+      
+      // From: http://davidwalsh.name/window-iframe
+      var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+      var eventer = window[eventMethod];
+      var messageEvent = eventMethod == "attachEvent" ? "onmessage" : "message";
+      eventer(messageEvent, function(e) {
+        var msg = JSON.parse(e.data);
+        callback(msg.type, msg.data);
+      }, false);
+    }
+    connect_htmlfile(notificationUrl, function(eventType, data) {
+      eventHandlers[eventType](data);
+    });
+  } else {
+    // EventSource
+    var es = new EventSource(notificationUrl);
+    es.addEventListener('ping', function(event) {
+      eventHandlers.ping(event.data);
+    });
+    $.each(['load', 'create', 'update', 'delete'], function(i, n) {
+      es.addEventListener(n, function(event) {
+        var struct = JSON.parse(event.data);
+        eventHandlers[n](struct);
+      });
+    });
+  }
 });
 </script>
 }
