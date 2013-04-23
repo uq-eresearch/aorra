@@ -78,6 +78,21 @@ public abstract class JcrSessionFactory {
   }
 
   /**
+   * Perform the given function in a session with the provided jackrabbit
+   * user ID. The ID will be used to produce credentials for a Jackrabbit User,
+   * which will be used for impersonation of a login.
+   *
+   * Changes will be saved on successful return.
+   *
+   * @param credentials the Jackrabbit credentials to use for impersonation
+   * @param func a function to perform in the user session
+   * @returns return value of the function
+   */
+  public <R> R inSession(String userId, Function<Session, R> func) {
+    return inSession(new SimpleCredentials(userId, "".toCharArray()), func);
+  }
+
+  /**
    * Perform the given function in a session with the provided credentials.
    * The credentials should come from a Jackrabbit User, and will be used for
    * impersonation of a login. Changes will be saved on successful return.

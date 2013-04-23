@@ -103,6 +103,10 @@ public class User {
     return id;
   }
 
+  public String getJackrabbitUserId() {
+    return getId();
+  }
+
   public SimpleCredentials getCredentials() {
     return new SimpleCredentials(email, "".toCharArray());
   }

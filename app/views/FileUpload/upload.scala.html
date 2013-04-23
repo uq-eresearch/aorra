@@ -68,14 +68,16 @@ $(function () {
     }
   }
   tree.events.label.click = [selectHandler];
-  $.get("@controllers.routes.FileStore.tree", function(data) {
-    tree.load(data);
-  });
   // EventSource
   var es = new EventSource('@controllers.routes.FileStoreAsync.notifications');
   es.onmessage = function (event) {
     console.debug(event);
   };
+  es.addEventListener('load', function(event) {
+    var struct = JSON.parse(event.data);
+    console.debug(event.type, struct);
+    tree.load(struct);
+  });
   es.addEventListener('create', function(event) {
     var struct = JSON.parse(event.data);
     console.debug(event.type, struct);

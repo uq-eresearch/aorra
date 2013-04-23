@@ -111,7 +111,7 @@ public class UserDAO extends AbstractJcrDAO<User> {
   }
 
   private String jackrabbitAuthUserId(User user) {
-    return user.getId();
+    return user.getJackrabbitUserId();
   }
 
 }
