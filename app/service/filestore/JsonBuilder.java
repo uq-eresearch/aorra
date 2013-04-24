@@ -10,7 +10,6 @@ import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 
 import play.libs.Json;
-import play.libs.F.Function;
 import service.filestore.FileStore.File;
 import service.filestore.FileStore.Folder;
 

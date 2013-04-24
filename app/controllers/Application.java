@@ -14,12 +14,10 @@ import com.google.inject.Inject;
 
 import static play.data.Form.form;
 import play.Logger;
-import play.Play;
 import play.data.Form;
 import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
-import play.mvc.Security;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.JcrSessionFactory;
 
@@ -36,7 +34,7 @@ public final class Application extends Controller {
 
   public final Result index() {
     if (!isAuthenticated()) return login();
-    return redirect(controllers.routes.FileUpload.getUpload());
+    return redirect(controllers.routes.FileStoreController.upload());
   }
 
   public final Result login() {

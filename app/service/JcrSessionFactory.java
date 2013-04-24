@@ -11,9 +11,7 @@ import javax.jcr.SimpleCredentials;
 import
   org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
 
-import play.Logger;
 import play.libs.F.Function;
-import play.mvc.Result;
 
 public abstract class JcrSessionFactory {
 
