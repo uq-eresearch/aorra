@@ -24,7 +24,7 @@ $(function () {
       $('#fileupload').fileupload(
         'option',
         'url',
-        'upload'+$('#folderselect').val()
+        '@controllers.routes.FileStoreController.upload'+$('#folderselect').val()
       );
       data.submit();
     },

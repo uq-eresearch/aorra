@@ -13,6 +13,7 @@ POST     /user/:email/verify/:token @controllers.Application.postVerify(email: S
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
+GET     /download/*file             @controllers.FileStoreController.download(file)
 GET     /upload                     @controllers.FileStoreController.upload
 POST    /upload/                    @controllers.FileStoreController.postUpload(folder="")
 POST    /upload/*folder             @controllers.FileStoreController.postUpload(folder)

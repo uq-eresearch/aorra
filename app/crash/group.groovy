@@ -12,9 +12,11 @@ import org.crsh.cli.Usage
 import org.crsh.cli.Option
 import play.Play
 import play.libs.F.Function
+import models.UserDAO
 import models.GroupManager
 import service.GuiceInjectionPlugin
 import service.JcrSessionFactory
+import org.jcrom.Jcrom
 
 @Usage("Group information")
 class group {
@@ -30,7 +32,7 @@ class group {
           return (new GroupManager(session)).create(name);
         }
       })
-    group.toString()
+    group.getID().toString()
   }
 
   @Usage("show existing group")
@@ -40,8 +42,14 @@ class group {
       new Function<Session, String>() {
         public String apply(Session session) {
           def group = (new GroupManager(session)).find(name);
-          String.format("%s : %s", group.getID(),
-            group.getMembers().collect { it.getID() }.join(", "))
+          String.format("%s : %s\n", group.getID(),
+            group.getMembers().collect {
+              def node = session.getNodeByIdentifier(it.getID())
+              if (node == null)
+                it.getID()
+              else
+                node.getProperty("email").getValue().getString()
+            }.join(", "))
         }
       })
   }
@@ -56,7 +64,7 @@ class group {
                             .collect{ it.getID() });
         }
       })
-    groups.join("\n")
+    groups.join("\n")+"\n"
   }
 
   @Usage("delete group")
@@ -91,31 +99,44 @@ class group {
       List<String> removeIds) {
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
+          def dao = userDAO(session)
           def gm = new GroupManager(session)
           def addMessages = addIds.collect {
             try {
-              gm.addMember(groupName, it)
+              def userId = dao.findByEmail(it).getJackrabbitUserId()
+              gm.addMember(groupName, userId)
             } catch (RuntimeException e) {
+              e.printStackTrace();
               return e.getMessage()
             }
             it+" successfully added to "+groupName
           }
           def removeMessages = removeIds.collect {
             try {
-              gm.removeMember(groupName, it)
+              def userId = dao.findByEmail(it).getJackrabbitUserId()
+              gm.removeMember(groupName, userId)
             } catch (RuntimeException e) {
               return e.getMessage()
             }
             it+" successfully removed from "+groupName
           }
-          (addMessages + removeMessages).join("\n")
+          (addMessages + removeMessages).join("\n")+"\n"
         }
       })
+  }
+  
+  private UserDAO userDAO(session) {
+    return new UserDAO(session, jcrom());
   }
 
   private JcrSessionFactory sessionFactory() {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(JcrSessionFactory.class);
+  }
+  
+  private Jcrom jcrom() {
+    return GuiceInjectionPlugin.getInjector(application())
+                               .getInstance(Jcrom.class);
   }
 
 }

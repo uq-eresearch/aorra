@@ -106,7 +106,10 @@ class filestore {
 
   @Usage("print tree of filestore structure")
   @Command
-  void tree(@Usage("only show tree below folder") @Argument String path) {
+  void tree(
+      @Usage("only show tree below folder") @Argument String path,
+      @Usage("show permissions") @Option(names=["p", "perms"]) Boolean showPerms
+      ) {
     def filestore = fileStore()
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
@@ -118,7 +121,8 @@ class filestore {
               ("|   " * nw.getDepth()).replaceAll(/\|   $/,
                   isFolder ? "|-+ " : "|-- ") +
               // Make root easier to spot/understand
-              (nw.getPath() == "/" ? "/ (root)" : nw.getName())
+              (nw.getPath() == "/" ? "/ (root)" : nw.getName()) + 
+              (showPerms ? " "+nw.getGroupPermissions() : "")
             }
             out.println(format(folder, true))
             folder.getFolders().each {
@@ -138,27 +142,45 @@ class filestore {
       })
   }
 
-  @Usage("remove all files and folders")
+  @Usage("make group filestore administrators")
   @Command
-  String destroy() {
-    def surePhrase = "Yes, I am."
-    def sure = context.readLine(
-      "Are you sure? Type \""+surePhrase+"\" to continue.\n",
-      true)
-    if (!sure.equals(surePhrase)) {
-      return
-    }
-    def filestore = fileStore()
+  String listadmin(
+      @Usage("group name")
+      @Argument
+      String name) {
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
-          def root = filestore.getManager(session).getRoot()
-          root.getFolders().each { it.delete() }
-          root.getFiles().each { it.delete() }
-          return "All files and folders have been removed."
+          try {
+            def root = Admin.getInstance(session).getGroup()
+            def tree
+            tree = { authorizable, depth ->
+              def isGroup = authorizable instanceof Group
+              // If group, just use ID
+              def n = authorizable.getID()
+              try {
+                // Get user email if user
+                def node = session.getNodeByIdentifier(authorizable.getID())
+                n = node.getProperty("email").getValue().getString()
+              } catch (Exception e) {}
+              out.println(
+                ("|   " * depth).replaceAll(/\|   $/,
+                    isGroup ? "|-+ " : "|-- ") + n
+              )
+              if (isGroup) {
+                ((Group)authorizable).getDeclaredMembers().each {
+                  tree(it, depth + 1)
+                }
+              }
+            }
+            tree(root, 0)
+          } catch (RuntimeException e) {
+            return e.getMessage()
+          }
+          "\n"
         }
       })
   }
-
+  
   @Usage("make group filestore administrators")
   @Command
   String makeadmin(

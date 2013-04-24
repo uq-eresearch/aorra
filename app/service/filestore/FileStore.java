@@ -3,7 +3,12 @@ package service.filestore;
 import java.io.InputStream;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
@@ -21,15 +26,20 @@ import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicy;
 import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 
+import models.GroupManager;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 
+import play.Logger;
 import play.libs.Akka;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
@@ -39,10 +49,20 @@ import service.filestore.roles.Admin;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 
 public class FileStore {
+
+  public enum Permission {
+    NONE, RO, RW;
+
+    public boolean isAtLeast(Permission other) {
+      return this.compareTo(other) >= 0;
+    }
+
+  }
 
   public static final String FILE_STORE_PATH = "/filestore";
   public static final String FILE_STORE_NODE_NAME =
@@ -72,6 +92,42 @@ public class FileStore {
         }
       }
     });
+
+  }
+
+  protected static void debugPermissions(Session session, String path) {
+    Node node;
+    try {
+      node = session.getNode(path);
+      Logger.debug("Actual:");
+      {
+        AccessControlManager acm = session.getAccessControlManager();
+        AccessControlList acl = AccessControlUtils.getAccessControlList(
+            acm, node.getPath());
+        for (AccessControlEntry entry : acl.getAccessControlEntries()) {
+          for (Privilege p : entry.getPrivileges()) {
+            Logger.debug(entry.getPrincipal().getName()+" "+p.getName());
+          }
+        }
+      }
+      Logger.debug("Effective:");
+      AccessControlPolicy[] policies = session.getAccessControlManager()
+          .getEffectivePolicies(node.getPath());
+      for (AccessControlPolicy policy : policies) {
+        AccessControlList acl = (AccessControlList) policy;
+        for (AccessControlEntry entry : acl.getAccessControlEntries()) {
+          for (Privilege p : entry.getPrivileges()) {
+            Logger.debug(entry.getPrincipal().getName()+" "+p.getName());
+          }
+        }
+      }
+    } catch (PathNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (RepositoryException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
   public Manager getManager(Session session) {
@@ -240,7 +296,8 @@ public class FileStore {
               Privilege.JCR_READ,
               Privilege.JCR_ADD_CHILD_NODES,
               Privilege.JCR_REMOVE_CHILD_NODES,
-              Privilege.JCR_MODIFY_PROPERTIES));
+              Privilege.JCR_MODIFY_PROPERTIES,
+              Privilege.JCR_NODE_TYPE_MANAGEMENT));
       acm.setPolicy(node.getPath(), acl);
     }
 
@@ -287,6 +344,14 @@ public class FileStore {
           eventManager);
       eventManager.tell(FileStoreEvent.update(this), null);
       return f;
+    }
+
+    public InputStream getData() {
+      try {
+        return JcrUtils.readFile(node);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
 
     public String getMimeType()
@@ -345,6 +410,67 @@ public class FileStore {
         return (new Folder(node.getParent(), eventManager)).getDepth() + 1;
       }
     }
+
+    public Map<Group, Permission> getGroupPermissions() throws RepositoryException {
+      final ImmutableMap.Builder<Group, Permission> b =
+          ImmutableMap.<Group, Permission>builder();
+      final Set<Group> groups = (new GroupManager(node.getSession())).list();
+      final Map<Principal, Permission> perms = getPrincipalPermissions();
+      for (Group group : groups) {
+        b.put(group, resolvePermission(group, perms));
+      }
+      return b.build();
+    }
+
+    private Permission resolvePermission(Group group, Map<Principal, Permission> perms) throws RepositoryException {
+      Principal p = group.getPrincipal();
+      if (perms.containsKey(p)) {
+        return perms.get(p);
+      } else {
+        SortedSet<Permission> inherited = new TreeSet<Permission>();
+        // Get all potentially inherited permissions
+        Iterator<Group> iter = group.declaredMemberOf();
+        while (iter.hasNext()) {
+          inherited.add(resolvePermission(iter.next(), perms));
+        }
+        if (inherited.isEmpty()) {
+          return Permission.NONE;
+        }
+        // Use natural order of enum to return highest permission
+        return inherited.last();
+      }
+    }
+
+    private Map<Principal, Permission> getPrincipalPermissions() throws RepositoryException {
+      final ImmutableMap.Builder<Principal, Permission> b =
+          ImmutableMap.<Principal, Permission>builder();
+      JackrabbitSession session = (JackrabbitSession) node.getSession();
+      AccessControlPolicy[] policies = session.getAccessControlManager()
+          .getEffectivePolicies(node.getPath());
+      for (AccessControlPolicy policy : policies) {
+        AccessControlList acl = (AccessControlList) policy;
+        for (AccessControlEntry entry : acl.getAccessControlEntries()) {
+          final Set<String> privilegeNames = new HashSet<String>();
+          for (Privilege privilege : entry.getPrivileges()) {
+            // Add privilege
+            privilegeNames.add(privilege.getName());
+            // Add constituent privileges
+            for (Privilege rp : privilege.getAggregatePrivileges()) {
+              privilegeNames.add(rp.getName());
+            }
+          }
+          if (privilegeNames.contains("jcr:addChildNodes")) {
+            b.put(entry.getPrincipal(), Permission.RW);
+          } else if (privilegeNames.contains("jcr:read")) {
+            b.put(entry.getPrincipal(), Permission.RO);
+          } else {
+            b.put(entry.getPrincipal(), Permission.NONE);
+          }
+        }
+      }
+      return b.build();
+    }
+
 
     public String getIdentifier() throws RepositoryException {
       return node.getIdentifier();
