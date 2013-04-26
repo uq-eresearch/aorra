@@ -65,6 +65,8 @@ $(function () {
       $("#folderselect").val(node.attributes.path);
       $(node.element()).children('.glyphtree-node-label')
         .addClass('label label-success');
+    } else {
+      window.open('/download'+node.attributes.path);
     }
   }
   tree.events.label.click = [selectHandler];
