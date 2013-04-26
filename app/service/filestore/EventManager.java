@@ -97,6 +97,16 @@ public class EventManager extends UntypedActor {
         this.attributes = attrs.build();
       }
 
+      NodeInfo(FileStore.Folder folder) throws RepositoryException {
+        this.id = folder.getIdentifier();
+        this.name = folder.getName();
+        this.parentId = folder.getParent().getIdentifier();
+        this.type = NodeType.FOLDER;
+        ImmutableMap.Builder<String, Object> attrs =
+            ImmutableMap.<String, Object>builder();
+        this.attributes = attrs.build();
+      }
+
       @Override
       public String toString() {
         return String.format("%s (%s: %s)", id, type, name);
@@ -106,6 +116,12 @@ public class EventManager extends UntypedActor {
 
     public final EventType type;
     public final NodeInfo info;
+
+    protected FileStoreEvent(EventType type, FileStore.Folder folder)
+        throws RepositoryException {
+      this.type = type;
+      this.info = new NodeInfo(folder);
+    }
 
     protected FileStoreEvent(EventType type, FileStore.File file)
         throws RepositoryException {
@@ -118,6 +134,11 @@ public class EventManager extends UntypedActor {
       return new FileStoreEvent(EventType.CREATE, file);
     }
 
+    public static FileStoreEvent create(FileStore.Folder folder)
+        throws RepositoryException {
+      return new FileStoreEvent(EventType.CREATE, folder);
+    }
+
     public static FileStoreEvent update(FileStore.File file)
         throws RepositoryException {
       return new FileStoreEvent(EventType.UPDATE, file);
@@ -126,6 +147,11 @@ public class EventManager extends UntypedActor {
     public static FileStoreEvent delete(FileStore.File file)
         throws RepositoryException {
       return new FileStoreEvent(EventType.DELETE, file);
+    }
+
+    public static FileStoreEvent delete(FileStore.Folder folder)
+        throws RepositoryException {
+      return new FileStoreEvent(EventType.DELETE, folder);
     }
 
     @Override

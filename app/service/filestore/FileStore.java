@@ -212,8 +212,10 @@ public class FileStore {
       if(getFileOrFolder(name) != null) {
           throw new RuntimeException(String.format("file or folder already exists '%s'", name));
       } else {
-          return new Folder(
-              node.addNode(name, NodeType.NT_FOLDER), eventManager);
+        Folder folder = new Folder(
+            node.addNode(name, NodeType.NT_FOLDER), eventManager);
+        eventManager.tell(FileStoreEvent.create(folder), null);
+        return folder;
       }
     }
 
@@ -229,7 +231,9 @@ public class FileStore {
             throw new RuntimeException(String.format("Can't create file '%s'." +
                     " Folder with same name already exists", name));
         } else {
-            return new File(node, name, mime, data, eventManager);
+          File file = new File(node, name, mime, data, eventManager);
+          eventManager.tell(FileStoreEvent.create(file), null);
+          return file;
         }
     }
 
@@ -321,6 +325,14 @@ public class FileStore {
         return true;
     }
 
+    @Override
+    public void delete() throws AccessDeniedException, VersionException,
+        LockException, ConstraintViolationException, RepositoryException {
+      FileStoreEvent event = FileStoreEvent.delete(this);
+      super.delete();
+      eventManager.tell(event, null);
+    }
+
   }
 
   public static class File extends NodeWrapper {
@@ -333,7 +345,6 @@ public class FileStore {
         final InputStream data, final ActorRef eventManager)
             throws RepositoryException {
       super(JcrUtils.putFile(parent, name, mime, data), eventManager);
-      eventManager.tell(FileStoreEvent.create(this), null);
     }
 
     public File update(final String mime, InputStream data)
@@ -358,10 +369,6 @@ public class FileStore {
         throws ValueFormatException, PathNotFoundException, RepositoryException {
       return node.getNode(Node.JCR_CONTENT)
           .getProperty("jcr:mimeType").getString();
-    }
-
-    public Folder getParent() throws RepositoryException {
-      return new Folder(node.getParent(), eventManager);
     }
 
     @Override
@@ -409,6 +416,10 @@ public class FileStore {
       } else {
         return (new Folder(node.getParent(), eventManager)).getDepth() + 1;
       }
+    }
+
+    public Folder getParent() throws RepositoryException {
+      return new Folder(node.getParent(), eventManager);
     }
 
     public Map<Group, Permission> getGroupPermissions() throws RepositoryException {
