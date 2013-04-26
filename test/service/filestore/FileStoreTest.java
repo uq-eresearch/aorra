@@ -82,78 +82,87 @@ public class FileStoreTest {
             .getInjector(Play.application())
             .getInstance(JcrSessionFactory.class);
         final FileStore fileStore = new FileStore(sessionFactory);
-        String userId = sessionFactory.inSession(new Function<Session,String>() {
+        final String userId = sessionFactory.inSession(
+            new Function<Session,String>() {
           @Override
           public String apply(Session session) {
-            try {
-              final GroupManager gm = new GroupManager(session);
-              final Group gAdmin = gm.create("testAdmin");
-              final Group gNone = gm.create("testNone");
-              Admin.getInstance(session).getGroup().addMember(gAdmin);
-              session.save();
-              final FileStore.Folder rootFolder =
-                  fileStore.getManager(session).getRoot();
-              assertThat(rootFolder.getGroupPermissions().containsKey(gAdmin))
-                  .as("created admin group has a listed permission")
-                  .isTrue();
-              assertThat(rootFolder.getGroupPermissions().containsKey(gNone))
-                  .as("created unprivileged group has a listed permission")
-                  .isTrue();
-              assertThat(rootFolder.getGroupPermissions().get(gAdmin))
+            // Create new user
+            final String userId;
+            UserDAO dao = new UserDAO(session, jcrom());
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setName("Test User");
+            user = dao.create(user);
+            String token = user.createVerificationToken();
+            user.checkVerificationToken(token);
+            dao.setPassword(user, "password");
+            userId = user.getJackrabbitUserId();
+            return userId;
+          }
+        });
+        sessionFactory.inSession(userId, new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException {
+            // Unprivileged users should see no folders
+            Set<FileStore.Folder> folders =
+                fileStore.getManager(session).getFolders();
+            assertThat(folders).hasSize(0);
+            return null;
+          }
+        });
+        sessionFactory.inSession(new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException {
+            final GroupManager gm = new GroupManager(session);
+            final Group gAdmin = gm.create("testAdmin");
+            final Group gNone = gm.create("testNone");
+            Admin.getInstance(session).getGroup().addMember(gAdmin);
+            session.save();
+            final FileStore.Folder rootFolder =
+                fileStore.getManager(session).getRoot();
+            assertThat(rootFolder.getGroupPermissions().containsKey(gAdmin))
+                .as("created admin group has a listed permission")
+                .isTrue();
+            assertThat(rootFolder.getGroupPermissions().containsKey(gNone))
+                .as("created unprivileged group has a listed permission")
+                .isTrue();
+            assertThat(rootFolder.getGroupPermissions().get(gAdmin))
                 .as("created admin group has RW permissions")
                 .isEqualTo(FileStore.Permission.RW);
-              assertThat(rootFolder.getGroupPermissions().get(gNone))
+            assertThat(rootFolder.getGroupPermissions().get(gNone))
                 .as("created unprivileged group has no permissions")
                 .isEqualTo(FileStore.Permission.NONE);
-              // Assign new user to admin group
-              final String userId;
-              {
-                UserDAO dao = new UserDAO(session, jcrom());
-                User user = new User();
-                user.setEmail("user@example.com");
-                user.setName("Test User");
-                user = dao.create(user);
-                String token = user.createVerificationToken();
-                user.checkVerificationToken(token);
-                dao.setPassword(user, "password");
-                userId = user.getJackrabbitUserId();
-                gm.addMember("testAdmin", userId);
-              }
-              return userId;
-            } catch (RepositoryException e) {
-              throw new RuntimeException(e);
-            }
+            // Assign new user to admin group
+            gm.addMember("testAdmin", userId);
+            return userId;
           }
         });
         sessionFactory.inSession(userId, new Function<Session,FileStore.Folder>() {
           @Override
-          public FileStore.Folder apply(Session session) {
+          public FileStore.Folder apply(Session session)
+              throws RepositoryException {
+            final FileStore.Folder rootFolder =
+                fileStore.getManager(session).getRoot();
+            final String filename = "README.txt";
+            final String mimeType = "text/plain";
+            final String content = "Test content.";
             try {
-              final FileStore.Folder rootFolder =
-                  fileStore.getManager(session).getRoot();
-              final String filename = "README.txt";
-              final String mimeType = "text/plain";
-              final String content = "Test content.";
-              try {
-                rootFolder.createFile(filename, mimeType,
-                    new ByteArrayInputStream(content.getBytes()));
-                final FileStore.File file = (FileStore.File) fileStore
-                    .getManager(session)
-                    .getFileOrFolder("/"+filename);
-                assertThat(file.getName()).isEqualTo(filename);
-                assertThat(file.getMimeType()).isEqualTo(mimeType);
-                Scanner scanner = new Scanner(file.getData());
-                assertThat(scanner.useDelimiter("\\Z").next())
-                  .isEqualTo(content);
-                scanner.close();
-              } catch (AccessDeniedException ade) {
-                Logger.debug("Access unexpectedly denied.", ade);
-                fail("An admin user should be able to create a file.");
-              }
-              return rootFolder;
-            } catch (RepositoryException e) {
-              throw new RuntimeException(e);
+              rootFolder.createFile(filename, mimeType,
+                  new ByteArrayInputStream(content.getBytes()));
+              final FileStore.File file = (FileStore.File) fileStore
+                  .getManager(session)
+                  .getFileOrFolder("/"+filename);
+              assertThat(file.getName()).isEqualTo(filename);
+              assertThat(file.getMimeType()).isEqualTo(mimeType);
+              Scanner scanner = new Scanner(file.getData());
+              assertThat(scanner.useDelimiter("\\Z").next())
+                .isEqualTo(content);
+              scanner.close();
+            } catch (AccessDeniedException ade) {
+              Logger.debug("Access unexpectedly denied.", ade);
+              fail("An admin user should be able to create a file.");
             }
+            return rootFolder;
           }
         });
       }

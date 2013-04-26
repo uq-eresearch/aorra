@@ -195,7 +195,7 @@ class filestore {
           } catch (RuntimeException e) {
             return e.getMessage()
           }
-          name + " granted admin access."
+          name + " granted admin access.\n"
         }
       })
   }
@@ -214,7 +214,7 @@ class filestore {
           } catch (RuntimeException e) {
             return e.getMessage()
           }
-          name + " stripped of admin access."
+          name + " stripped of admin access.\n"
         }
       })
   }

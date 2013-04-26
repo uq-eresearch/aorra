@@ -174,8 +174,14 @@
       };
 
       GlyphTree.prototype.add = function(structure, parentId) {
+        var parent;
+
         if (parentId != null) {
-          this.find(parentId).addChild(new Node(structure, this));
+          parent = this.find(parentId);
+          if (parent == null) {
+            throw new Error('Cannot add node - unknown parent node ID');
+          }
+          parent.addChild(new Node(structure, this));
         } else {
           if (!(this.rootNodes != null)) {
             this._setRootContainer(new NodeContainer([], this));

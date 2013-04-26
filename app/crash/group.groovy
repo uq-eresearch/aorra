@@ -80,7 +80,7 @@ class group {
         } catch (RuntimeException e) {
           return e.getMessage()
         }
-        "Group successfully deleted."
+        "Group successfully deleted.\n"
       }
     })
   }

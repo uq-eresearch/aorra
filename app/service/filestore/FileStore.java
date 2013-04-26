@@ -1,6 +1,7 @@
 package service.filestore;
 
 import java.io.InputStream;
+import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,7 +24,6 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.security.AccessControlEntry;
-import javax.jcr.security.AccessControlException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicy;
@@ -34,6 +34,8 @@ import models.GroupManager;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.api.JackrabbitSession;
+import org.apache.jackrabbit.api.security.JackrabbitAccessControlEntry;
+import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
@@ -183,6 +185,7 @@ public class FileStore {
 
     public Set<FileStore.Folder> getFolders() throws RepositoryException {
       try {
+        session.checkPermission(FILE_STORE_PATH, "read");
         return ImmutableSet.<FileStore.Folder>of(getRoot());
       } catch (AccessControlException e) {
         // TODO: Handle access for users without read on the root node
@@ -287,7 +290,7 @@ public class FileStore {
     public void resetPermissions() throws RepositoryException {
       Group group = Admin.getInstance(session()).getGroup();
       AccessControlManager acm = session().getAccessControlManager();
-      AccessControlList acl = AccessControlUtils.getAccessControlList(
+      JackrabbitAccessControlList acl = AccessControlUtils.getAccessControlList(
           acm, node.getPath());
       Principal everyone = EveryonePrincipal.getInstance();
       for (AccessControlEntry entry : acl.getAccessControlEntries()) {
@@ -295,13 +298,20 @@ public class FileStore {
           acl.removeAccessControlEntry(entry);
         }
       }
-      acl.addAccessControlEntry(group.getPrincipal(),
+      if (node.getPath().equals(FILE_STORE_PATH)) {
+        // Deny everyone everything by default on root (which should propagate)
+       acl.addEntry(EveryonePrincipal.getInstance(),
+           AccessControlUtils.privilegesFromNames(session(),
+               Privilege.JCR_ALL), false);
+      }
+      // Explicitly allow read permissions to admin group
+      acl.addEntry(group.getPrincipal(),
           AccessControlUtils.privilegesFromNames(session(),
               Privilege.JCR_READ,
               Privilege.JCR_ADD_CHILD_NODES,
               Privilege.JCR_REMOVE_CHILD_NODES,
               Privilege.JCR_MODIFY_PROPERTIES,
-              Privilege.JCR_NODE_TYPE_MANAGEMENT));
+              Privilege.JCR_NODE_TYPE_MANAGEMENT), true);
       acm.setPolicy(node.getPath(), acl);
     }
 
@@ -459,8 +469,12 @@ public class FileStore {
       AccessControlPolicy[] policies = session.getAccessControlManager()
           .getEffectivePolicies(node.getPath());
       for (AccessControlPolicy policy : policies) {
-        AccessControlList acl = (AccessControlList) policy;
+        JackrabbitAccessControlList acl = (JackrabbitAccessControlList) policy;
         for (AccessControlEntry entry : acl.getAccessControlEntries()) {
+          final JackrabbitAccessControlEntry jackrabbitEntry =
+              (JackrabbitAccessControlEntry) entry;
+          // Ignore deny entries (we shouldn't see any other than Everybody)
+          if (!jackrabbitEntry.isAllow()) { continue; }
           final Set<String> privilegeNames = new HashSet<String>();
           for (Privilege privilege : entry.getPrivileges()) {
             // Add privilege

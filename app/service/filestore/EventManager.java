@@ -94,6 +94,7 @@ public class EventManager extends UntypedActor {
         ImmutableMap.Builder<String, Object> attrs =
             ImmutableMap.<String, Object>builder();
         attrs.put("mimeType", file.getMimeType());
+        attrs.put("path", file.getPath());
         this.attributes = attrs.build();
       }
 
@@ -104,6 +105,7 @@ public class EventManager extends UntypedActor {
         this.type = NodeType.FOLDER;
         ImmutableMap.Builder<String, Object> attrs =
             ImmutableMap.<String, Object>builder();
+        attrs.put("path", folder.getPath());
         this.attributes = attrs.build();
       }
 

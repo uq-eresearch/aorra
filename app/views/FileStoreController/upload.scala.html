@@ -14,7 +14,7 @@
 <script src="@routes.Assets.at("javascripts/jquery.ui.widget.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.iframe-transport.js")"></script>
 <script src="@routes.Assets.at("javascripts/jquery.fileupload.js")"></script>
-<script src="@routes.Assets.at("javascripts/glyphtree.min.js")"></script>
+<script src="@routes.Assets.at("javascripts/glyphtree.js")"></script>
 <script type="text/javascript">
 var tree;
 $(function () {
@@ -70,34 +70,43 @@ $(function () {
     }
   }
   tree.events.label.click = [selectHandler];
-  
+
+  function catchErrors(f) {
+    return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
+  }
+
   var eventHandlers = {
     ping:   function(message) { /*console.log(message);*/ },
     load:   function(struct) { tree.load(struct); },
-    create:    function(struct) { tree.add(struct, struct.parentId); },
-    update: function(struct) { tree.update(struct); },
-    'delete': function(struct) { tree.remove(struct.id); }
+    create: catchErrors(function(struct) { tree.add(struct, struct.parentId) }),
+    update: catchErrors(function(struct) { tree.update(struct) }),
+    'delete': catchErrors(function(struct) { tree.remove(struct.id) })
   };
-  
+
   var notificationUrl = '@controllers.routes.FileStoreAsync.notifications';
-  
+
   // Are we using a modern browser, or are we using IE?
   if (typeof(window.EventSource) == 'undefined') {
     // HTML iframe
     function connect_htmlfile(url, callback) {
       var ifrDiv = document.createElement("div");
+      var iframe = document.createElement("iframe");
       ifrDiv.setAttribute("style", "display: none");
       document.body.appendChild(ifrDiv);
-      ifrDiv.innerHTML = "<iframe src=\"" + url + "\"><\/iframe>";
-      
+      ifrDiv.appendChild(iframe);
+      iframe.src = url;
+      iframe.onload = function() { iframe.currentWindow.location.reload(); };
       // From: http://davidwalsh.name/window-iframe
-      var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
-      var eventer = window[eventMethod];
-      var messageEvent = eventMethod == "attachEvent" ? "onmessage" : "message";
-      eventer(messageEvent, function(e) {
+      function eventHandler(w, eventName, handler) {
+        var eMethod = w.addEventListener ? "addEventListener" : "attachEvent";
+        var eName = w.addEventListener ? eventName : "on" + eventName;
+        return w[eMethod](eName, handler, false);
+      }
+      // Receive messages from iframe
+      eventHandler(window, 'message', function(e) {
         var msg = JSON.parse(e.data);
         callback(msg.type, msg.data);
-      }, false);
+      });
     }
     connect_htmlfile(notificationUrl, function(eventType, data) {
       eventHandlers[eventType](data);
