@@ -35,39 +35,39 @@ class filestore {
         Boolean parents) {
         def filestore = fileStore()
         sessionFactory().inSession(new Function<Session, String>() {
-            public String apply(Session session) {
-                def mkdir
-                mkdir = { file, parent ->
-                    if(file == null) {
-                        return filestore.getManager(session).getRoot();
-                    } else {
-                        Folder parentFolder = mkdir(file.getParentFile(), true);
-                        if(parentFolder == null) {
-                            return null;
-                        }
-                        Folder folder = parentFolder.getFolder(file.getName());
-                        if(folder == null) {
-                            if(parent && (parents == null)) {
-                                out.println(String.format(
-                                    "Parent folder %s does not exist, try option --parents",
-                                    file.getName()));
-                                return null;
-                            } else {
-                                return parentFolder.createFolder(file.getName());
-                            }
-                        } else {
-                            if(!parent) {
-                                out.println(String.format(
-                                    "Folder %s already exists", file.getName()));
-                            }
-                            return folder;
-                        }
-                    }
+          public String apply(Session session) {
+            def mkdir
+            mkdir = { file, parent ->
+              if (file == null || file.getPath() == "/") {
+                return filestore.getManager(session).getRoot();
+              } else {
+                Folder parentFolder = mkdir(file.getParentFile(), true);
+                if(parentFolder == null) {
+                    return null;
                 }
-                directories.each() {
-                    mkdir(new File(StringUtils.strip(it)), false);
+                Folder folder = parentFolder.getFolder(file.getName());
+                if(folder == null) {
+                  if(parent && (parents == null)) {
+                    out.println(String.format(
+                        "Parent folder %s does not exist, try option --parents",
+                        file.getName()));
+                    return null;
+                  } else {
+                    return parentFolder.createFolder(file.getName());
+                  }
+                } else {
+                  if(!parent) {
+                    out.println(String.format(
+                        "Folder %s already exists", file.getName()));
+                  }
+                  return folder;
                 }
+              }
             }
+            directories.each() {
+              mkdir(new File(StringUtils.strip(it)), false);
+            }
+          }
         })
     }
 
