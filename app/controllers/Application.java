@@ -34,7 +34,7 @@ public final class Application extends Controller {
 
   public final Result index() {
     if (!isAuthenticated()) return login();
-    return redirect(controllers.routes.FileStoreController.upload());
+    return ok(views.html.Application.index.render());
   }
 
   public final Result login() {

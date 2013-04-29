@@ -62,11 +62,6 @@ public final class FileStoreController extends Controller {
   }
 
   @Security.Authenticated(Secured.class)
-  public Result upload() {
-    return ok(views.html.FileStoreController.upload.render());
-  }
-
-  @Security.Authenticated(Secured.class)
   public Result postUpload(final String folderPath) {
     final AuthUser user = PlayAuthenticate.getUser(ctx());
     return inUserSession(user, new F.Function<Session, Result>() {
@@ -143,6 +138,7 @@ public final class FileStoreController extends Controller {
   private <A extends Object> A inUserSession(final AuthUser authUser,
       final F.Function<Session, A> f) {
     String userId = sessionFactory.inSession(new F.Function<Session, String>() {
+      @Override
       public String apply(Session session) {
         String email = authUser instanceof EmailIdentity ?
           ((EmailIdentity)authUser).getEmail() :
