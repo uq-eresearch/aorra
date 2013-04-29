@@ -10,7 +10,7 @@
 bin
 db
 eclipse
-lib
+/lib
 log
 logs
 modules

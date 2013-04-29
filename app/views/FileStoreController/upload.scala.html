@@ -11,10 +11,10 @@
 </dl>
 
 <div id="filetree"></div>
-<script src="@routes.Assets.at("javascripts/jquery.ui.widget.js")"></script>
-<script src="@routes.Assets.at("javascripts/jquery.iframe-transport.js")"></script>
-<script src="@routes.Assets.at("javascripts/jquery.fileupload.js")"></script>
-<script src="@routes.Assets.at("javascripts/glyphtree.js")"></script>
+<script src="@routes.Assets.at("js/lib/jquery.ui.widget.js")"></script>
+<script src="@routes.Assets.at("js/lib/jquery.iframe-transport.js")"></script>
+<script src="@routes.Assets.at("js/lib/jquery.fileupload.js")"></script>
+<script src="@routes.Assets.at("js/lib/glyphtree.js")"></script>
 <script type="text/javascript">
 var tree;
 $(function () {
@@ -29,9 +29,7 @@ $(function () {
       data.submit();
     },
     done: function (e, data) {
-      $.each(data.result.files, function (index, file) {
-        $('<p/>').text(file.name).insertAfter("#fileupload");
-      });
+      // Don't really need to do anything right now.
     }
   });
   tree = glyphtree($('#filetree'), {
