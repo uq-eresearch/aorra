@@ -3,6 +3,8 @@ package controllers;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
@@ -44,7 +46,15 @@ public final class FileStoreController extends Controller {
     this.sessionFactory = sessionFactory;
   }
 
-  public Result download(final String filePath) {
+  @Security.Authenticated(Secured.class)
+  public Result download(final String encodedFilePath) {
+    final String filePath;
+    try {
+      filePath = URLDecoder.decode(encodedFilePath, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      // Should never happen
+      throw new RuntimeException(e);
+    }
     final AuthUser user = PlayAuthenticate.getUser(ctx());
     return inUserSession(user, new F.Function<Session, Result>() {
       @Override
