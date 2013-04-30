@@ -1,4 +1,6 @@
 (function() {
+  
+  var SPREADSHEET_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
   var FileTree = Backbone.Model.extend({
     options: {
@@ -192,6 +194,31 @@
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
       this.$el.append(this._makeDownloadElement());
+      this._loadChartElements();
+    },
+    _loadChartElements: function() {
+      if (this.model.mimeType != SPREADSHEET_MIME_TYPE) {
+        return;
+      }
+      var createChartElement = _.bind(function(chart) {
+        console.debug(this);
+        var $wrapper = $('<div/>')
+          .append('<h3>'+chart.region+'</h3>')
+          .append(_.template(
+            '<img src="/chart<%= model.path %>?region=<%=chart.region %>"'+
+            ' alt="Chart for <%= chart.region %>" />'
+          , { model: this.model, chart: chart }));
+        return $wrapper;
+      }, this);
+      var onSuccess = _.bind(function(data) {
+        this.$el.append(_.map(data.charts, createChartElement));
+      }, this);
+      $.ajax({
+        method: 'GET',
+        url: '/chart' + this.model.path,
+        dataType: 'json',
+        success: onSuccess
+      });
     }
   });
   

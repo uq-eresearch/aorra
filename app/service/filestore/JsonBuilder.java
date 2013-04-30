@@ -62,6 +62,7 @@ public class JsonBuilder {
     fileJson.put("name", file.getName());
     fileJson.put("type", "file");
     final ObjectNode attributes = fileJson.putObject("attributes");
+    attributes.put("mimeType", file.getMimeType());
     attributes.put("path", file.getPath());
     return fileJson;
   }
