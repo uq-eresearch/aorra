@@ -38,9 +38,13 @@
     
     open: function() {
       var tree = _.bind(function() { return this.model.tree }, this);
+      var trigger = _.bind(this.trigger, this);
       var eventHandlers = {
         ping:   function(message) { /*console.log(message);*/ },
-        load:   function(struct) { tree().load(struct); },
+        load:   function(struct) { 
+          trigger("event:load", struct);
+          tree().load(struct); 
+        },
         create: catchErrors(function(struct) { tree().add(struct, struct.parentId) }),
         update: catchErrors(function(struct) { tree().update(struct) }),
         'delete': catchErrors(function(struct) { tree().remove(struct.id) })
@@ -94,13 +98,14 @@
     render: function() {
       var tree = glyphtree(this.$el, this.model.options);
       selectHandler = _.bind(function(event, node) {
+        var m = _.defaults({}, node.attributes);
         if (node.type == 'folder') {
-          this.trigger("folder:select", node.attributes);
+          this.trigger("folder:select", m);
           $('.label.label-success').removeClass('label label-success');
           $(node.element()).children('.glyphtree-node-label')
             .addClass('label label-success');
         } else {
-          this.trigger("file:select", node.attributes);
+          this.trigger("file:select", m);
         }
       }, this);
       tree.events.label.click = [selectHandler];
@@ -128,23 +133,48 @@
     }
   });
   
-  var FolderView = Backbone.View.extend({
+  var FileOrFolderView = Backbone.View.extend({
+    _makeBreadCrumbElement: function() {
+      var breadcrumbs = this.model.path.split("/");
+      var $breadcrumbs = $('<ul/>');
+      $breadcrumbs.addClass('breadcrumb');
+      $breadcrumbs.append(_.map(_.initial(breadcrumbs), function(v) {
+        var $li = $('<li/>')
+        $li.append($('<span>'+_.escape(v)+'</span>'))
+        $li.append($('<span class="divider"> / </span>'))
+        return $li;
+      }));
+      var $active = $('<li class="active"/>')
+      $active.append($('<span>'+_.escape(_(breadcrumbs).last())+'</span>'));
+      $breadcrumbs.append($active);
+      return $breadcrumbs;
+    },
+    _makeDownloadElement: function() {
+      var $link = $('<a class="btn"/>');
+      $link.attr('href', '/download' + this.model.path);
+      $link.html('<i class="icon-download-alt"></i> Download');
+      return $link;
+    }
+  });
+  
+  var FolderView = FileOrFolderView.extend({
     initialize: function() { this.render(); }, 
     render: function() {
       var fileUploadView = new FileUploadView({
         model: this.model
       })
+      this.$el.append(this._makeBreadCrumbElement());
       this.$el.append(fileUploadView.$el);
     } 
   });
   
-  var FileView = Backbone.View.extend({
+  var FileView = FileOrFolderView.extend({
     initialize: function() { this.render(); }, 
     render: function() {
-      this.$el.html(
-        _.template(
-          '<a href="/download<%= model.path %>">Download</a>')(this));
-    } 
+      this.$el.empty();
+      this.$el.append(this._makeBreadCrumbElement());
+      this.$el.append(this._makeDownloadElement());
+    }
   });
   
   var MainPane = Backbone.View.extend({
@@ -177,6 +207,9 @@
     $('#sidebar').append(fileTreePane.$el);
     $('#main').append(mainPane.$el);
     notificationFeed.open();
+    notificationFeed.on("event:load", function(struct) {
+      mainPane.showFolder(_.defaults({}, _.first(struct).attributes));
+    });
     fileTreePane.on("folder:select", function(folder) {
       mainPane.showFolder(folder);
     });
