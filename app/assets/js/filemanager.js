@@ -132,6 +132,7 @@
       setProgress(0, 1);
       var $input = $('<input type="file" name="files[]" multiple />');
       this.$el.append($input);
+      $progressbar.hide();
       this.$el.append($progressbar);
       $input.fileupload({
         url: this.url+this.model.path,
