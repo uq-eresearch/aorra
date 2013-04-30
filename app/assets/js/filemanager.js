@@ -1,12 +1,6 @@
-var tree;
 (function() {
 
   var FileTree = Backbone.Model.extend({
-    url: {
-      upload: '/upload',
-      download: '/download',
-      notifications: '/filestore/notifications'
-    },
     options: {
       startExpanded: true,
       types: {
@@ -38,17 +32,18 @@ var tree;
     return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
   }
   
-  var NotificationFeed = Backbone.Model.extend({
+  var NotificationFeed = Backbone.View.extend({
     
     url: '/filestore/notifications',
     
     open: function() {
+      var tree = _.bind(function() { return this.model.tree }, this);
       var eventHandlers = {
         ping:   function(message) { /*console.log(message);*/ },
-        load:   function(struct) { tree.load(struct); },
-        create: catchErrors(function(struct) { tree.add(struct, struct.parentId) }),
-        update: catchErrors(function(struct) { tree.update(struct) }),
-        'delete': catchErrors(function(struct) { tree.remove(struct.id) })
+        load:   function(struct) { tree().load(struct); },
+        create: catchErrors(function(struct) { tree().add(struct, struct.parentId) }),
+        update: catchErrors(function(struct) { tree().update(struct) }),
+        'delete': catchErrors(function(struct) { tree().remove(struct.id) })
       };
       
       // Are we using a modern browser, or are we using IE?
@@ -94,53 +89,100 @@ var tree;
     }
   });
   
-  var FileTreeView = Backbone.View.extend({
-    
+  var FileTreePane = Backbone.View.extend({
     tagName: "div",
-    
     render: function() {
-      tree = glyphtree(this.$el, this.model.options);
-      selectHandler = function(event, node) {
+      var tree = glyphtree(this.$el, this.model.options);
+      selectHandler = _.bind(function(event, node) {
         if (node.type == 'folder') {
+          this.trigger("folder:select", node.attributes);
           $('.label.label-success').removeClass('label label-success');
-          $("#folderselect").val(node.attributes.path);
           $(node.element()).children('.glyphtree-node-label')
             .addClass('label label-success');
         } else {
-          window.open('/download'+node.attributes.path);
+          this.trigger("file:select", node.attributes);
         }
-      }
+      }, this);
       tree.events.label.click = [selectHandler];
+      this.model.tree = tree;
     }
-  
   });
+  
+  var FileUploadView = Backbone.View.extend({
+    url: '/upload',
+    tagName: 'div',
+    initialize: function() { this.render(); }, 
+    render: function() {
+      this.$el.html('<input type="file" name="files[]" multiple />')
+      var $input = this.$el.find('input');
+      $input.fileupload({
+        url: this.url+this.model.path,
+        dataType: 'json',
+        add: function (e, data) {
+          data.submit();
+        },
+        done: function (e, data) {
+          // Don't really need to do anything right now.
+        }
+      });
+    }
+  });
+  
+  var FolderView = Backbone.View.extend({
+    initialize: function() { this.render(); }, 
+    render: function() {
+      var fileUploadView = new FileUploadView({
+        model: this.model
+      })
+      this.$el.append(fileUploadView.$el);
+    } 
+  });
+  
+  var FileView = Backbone.View.extend({
+    initialize: function() { this.render(); }, 
+    render: function() {
+      this.$el.html(
+        _.template(
+          '<a href="/download<%= model.path %>">Download</a>')(this));
+    } 
+  });
+  
+  var MainPane = Backbone.View.extend({
+    tagName: "div",
+    showFolder: function(folder) {
+      this.innerView = new FolderView({ model: folder });
+      this.render();
+    },
+    showFile: function(file) {
+      this.innerView = new FileView({ model: file });
+      this.render();
+    },
+    render: function() {
+      this.$el.empty();
+      this.$el.append(this.innerView.$el);
+    }
+  })
   
   $(function () {
     
     var fileTree = new FileTree();
-    var fileTreeView = new FileTreeView({
+    var fileTreePane = new FileTreePane({
       model: fileTree
     });
-    fileTreeView.setElement($('#filetree'));
-    fileTreeView.render();
-    
-    var notificationFeed = new NotificationFeed();
-    notificationFeed.open();
-    
-    $('#fileupload').fileupload({
-      dataType: 'json',
-      add: function (e, data) {
-        $('#fileupload').fileupload(
-          'option',
-          'url',
-          '/upload'+$('#folderselect').val()
-        );
-        data.submit();
-      },
-      done: function (e, data) {
-        // Don't really need to do anything right now.
-      }
+    var notificationFeed = new NotificationFeed({
+      model: fileTree
     });
-   
+    var mainPane = new MainPane();
+    fileTreePane.render();
+    $('#sidebar').append(fileTreePane.$el);
+    $('#main').append(mainPane.$el);
+    notificationFeed.open();
+    fileTreePane.on("folder:select", function(folder) {
+      mainPane.showFolder(folder);
+    });
+    fileTreePane.on("file:select", function(file) {
+      mainPane.showFile(file);
+    });
+    
   });
 })();

@@ -80,9 +80,7 @@
       GlyphTree.prototype.setupStyle = function() {
         var $style;
 
-        $style = $('<style/>');
-        $style.attr('type', 'text/css');
-        $style.text(this.getStyle());
+        $style = $('<style type="text/css">' + this.getStyle() + '</style>');
         $('body').append($style);
         return $style;
       };
@@ -370,7 +368,7 @@
           var watchedEvents,
             _this = this;
 
-          watchedEvents = "click\nkeydown\nkeypress\nkeyup\nmouseover\nmouseout".replace(/\s+/gm, ' ').trim();
+          watchedEvents = ['click', 'keydown', 'keypress', 'keyup', 'mouseover', 'mouseout'].join(' ');
           return $element.on(watchedEvents, function(e) {
             var handler, _i, _len, _ref1, _results;
 

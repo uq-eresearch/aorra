@@ -35,6 +35,10 @@ import play.api.http.MimeTypes
 import play.api.mvc.EssentialAction
 import org.codehaus.jackson.node.ArrayNode
 import play.api.libs.json.JsObject
+import scala.collection.JavaConversions._
+import play.api.libs.json.JsString
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsNull
 
 /**
  *
@@ -93,6 +97,14 @@ class FileStoreAsync @Inject()(
       "id" -> event.info.id,
       "name" -> event.info.name,
       "parentId" -> event.info.parentId,
+      "attributes" -> JsObject(event.info.attributes.toSeq.map {
+        case (k,v) =>
+          (k, v match {
+            case s: String => JsString(s)
+            case n: BigDecimal => JsNumber(n)
+            case _ => JsNull
+          })
+      }),
       "type" -> event.info.`type`.toString
     )
   }
@@ -142,6 +154,8 @@ class FileStoreAsync @Inject()(
   private def initialCometSetup(user: AuthUser): String = {
     val jsonText = scala.xml.Unparsed(getInitialTree(user).toString())
     " " * pow(2, 11).toInt + "\n" + // Pad it to kick IE into action
+    // Oh, and IE8 may not know what JSON is (if in compatibility mode)
+    <script src="//cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script> +
     <script>
     parent.postMessage(
       JSON.stringify({{
@@ -179,5 +193,4 @@ class FileStoreAsync @Inject()(
       def apply(session: Session): A = f(session)
     })
   }
-
 }
