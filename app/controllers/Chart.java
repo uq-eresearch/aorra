@@ -31,11 +31,11 @@ import ereefs.charts.ChartDescription;
 import ereefs.spreadsheet.Spreadsheet;
 
 public class Chart extends Controller {
-    
+
     private final FileStore fileStore;
     private final Jcrom jcrom;
     private final JcrSessionFactory sessionFactory;
-    
+
     @Inject
     public Chart(final JcrSessionFactory sessionFactory,
             final Jcrom jcrom,
@@ -57,6 +57,11 @@ public class Chart extends Controller {
                     FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+decoded);
                     if (fof instanceof FileStore.File) {
                         FileStore.File file = (FileStore.File) fof;
+                        // Check this is an OpenXML document (no chance otherwise)
+                        if (!file.getMimeType().equals(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+                          return notFound();
+                        }
                         Spreadsheet spreadsheet = new Spreadsheet(file.getData(), file.getMimeType());
                         List<ereefs.charts.Chart> charts = spreadsheet.getCharts(request().queryString());
                         if(charts.isEmpty()) {
@@ -92,6 +97,7 @@ public class Chart extends Controller {
     private <A extends Object> A inUserSession(final AuthUser authUser,
             final F.Function<Session, A> f) {
         String userId = sessionFactory.inSession(new F.Function<Session, String>() {
+            @Override
             public String apply(Session session) {
                 String email = authUser instanceof EmailIdentity ?
                         ((EmailIdentity)authUser).getEmail() :
