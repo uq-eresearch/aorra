@@ -101,14 +101,16 @@
       var tree = glyphtree(this.$el, this.model.options);
       selectHandler = _.bind(function(event, node) {
         var m = _.defaults({}, node.attributes);
+        // Emit select event
         if (node.type == 'folder') {
           this.trigger("folder:select", m);
-          $('.label.label-success').removeClass('label label-success');
-          $(node.element()).children('.glyphtree-node-label')
-            .addClass('label label-success');
         } else {
           this.trigger("file:select", m);
         }
+        // Show the active node on the tree
+        $('.label.label-success').removeClass('label label-info');
+        $(node.element()).children('.glyphtree-node-label')
+          .addClass('label label-info');
       }, this);
       tree.events.label.click = [selectHandler];
       this.model.tree = tree;
