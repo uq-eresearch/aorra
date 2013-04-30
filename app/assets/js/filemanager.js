@@ -187,7 +187,9 @@
         model: this.model
       })
       this.$el.append(this._makeBreadCrumbElement());
-      this.$el.append(fileUploadView.$el);
+      this.$el.append($('<div/>')
+        .append('<h3>Upload files</h3>')
+        .append(fileUploadView.$el));
     } 
   });
   
