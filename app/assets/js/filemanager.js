@@ -108,7 +108,7 @@
           this.trigger("file:select", m);
         }
         // Show the active node on the tree
-        $('.label.label-success').removeClass('label label-info');
+        $('.label.label-info').removeClass('label label-info');
         $(node.element()).children('.glyphtree-node-label')
           .addClass('label label-info');
       }, this);
