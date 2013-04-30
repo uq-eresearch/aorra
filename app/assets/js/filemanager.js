@@ -203,7 +203,6 @@
         return;
       }
       var createChartElement = _.bind(function(chart) {
-        console.debug(this);
         var $wrapper = $('<div/>')
           .append('<h3>'+chart.region+'</h3>')
           .append(_.template(
