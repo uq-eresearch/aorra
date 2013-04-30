@@ -118,16 +118,34 @@
     tagName: 'div',
     initialize: function() { this.render(); }, 
     render: function() {
-      this.$el.html('<input type="file" name="files[]" multiple />')
-      var $input = this.$el.find('input');
+      this.$el.empty();
+      var $progressbar = $('<div class="progress"></div>')
+          .append('<div class="bar"></div>');
+      var setProgress = function(current, total) {
+        var progress = parseInt(1.0 * current / total * 100, 10);
+        $progressbar.find('.bar').css('width', progress+'%');
+      };
+      setProgress(0, 1);
+      var $input = $('<input type="file" name="files[]" multiple />');
+      this.$el.append($input);
+      this.$el.append($progressbar);
       $input.fileupload({
         url: this.url+this.model.path,
         dataType: 'json',
-        add: function (e, data) {
+        sequentialUploads: true,
+        add: _.bind(function (e, data) {
+          $progressbar.show();
           data.submit();
+        }, this),
+        progressall: function (e, data) {
+          setProgress(data.loaded, data.total);
+          if (data.loaded == data.total) {
+            $progressbar.hide();
+            setProgress(0, 1);
+          }
         },
         done: function (e, data) {
-          // Don't really need to do anything right now.
+          // No need to do anything
         }
       });
     }
