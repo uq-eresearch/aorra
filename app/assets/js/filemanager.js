@@ -1,4 +1,13 @@
 (function() {
+  /*
+  Note: This is still very much a work in progress.
+
+  The use of Backbone.js here is quite minimal. It's mainly limited to its
+  event and view handling, and pretty much ignores the model/collection
+  functionality.
+
+  It it looks like a mess, that's because it probably is.
+  */
   
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
@@ -15,6 +24,27 @@
     }
     return 'file';
   };
+  
+  var FileOrFolder = Backbone.Model.extend({}, {
+    _getNodeAttrs: function(node) {
+      return _({
+        id: node.id,
+        name: node.name
+      }).extend(node.attributes);
+    }
+  });
+  
+  var Folder = FileOrFolder.extend({}, {
+    fromNode: function(node) {
+      return new this(this._getNodeAttrs(node));
+    }
+  });
+  
+  var File = FileOrFolder.extend({}, {
+    fromNode: function(node) {
+      return new this(this._getNodeAttrs(node));
+    }
+  });
 
   var FileTree = Backbone.View.extend({
     tagName: "div",
@@ -24,9 +54,9 @@
         var m = _.defaults({}, node.attributes);
         // Emit select event
         if (node.type == 'folder') {
-          this.trigger("folder:select", m);
+          this.trigger("folder:select", Folder.fromNode(node));
         } else {
-          this.trigger("file:select", m);
+          this.trigger("file:select", File.fromNode(node));
         }
         // Show the active node on the tree
         $('.label.label-info').removeClass('label label-info');
@@ -183,7 +213,7 @@
       $progressbar.hide();
       this.$el.append($progressbar);
       $input.fileupload({
-        url: this.url+this.model.path,
+        url: this.url+this.model.get('path'),
         dataType: 'json',
         sequentialUploads: true,
         add: _.bind(function (e, data) {
@@ -209,7 +239,7 @@
     tagName: 'form',
     initialize: function() { this.render(); }, 
     render: function() {
-      var parentFolder = this.model.path;
+      var parentFolder = this.model.get('path');
       var $input = $('<input type="text" name="folder"/>')
       $input.addClass('span3');
       $input.attr('placeholder', 'folder name');
@@ -243,7 +273,7 @@
   
   var FileOrFolderView = Backbone.View.extend({
     _makeBreadCrumbElement: function() {
-      var breadcrumbs = this.model.path.split("/");
+      var breadcrumbs = this.model.get('path').split("/");
       var $breadcrumbs = $('<ul/>');
       $breadcrumbs.addClass('breadcrumb');
       $breadcrumbs.append(_.map(_.initial(breadcrumbs), function(v) {
@@ -260,7 +290,7 @@
     _makeDeleteElement: function() {
       var $form = $('<form>');
       $form.attr('method', 'DELETE');
-      $form.attr('action', '/filestore' + this.model.path)
+      $form.attr('action', '/filestore' + this.model.get('path'))
       var $btn = $('<button type="submit" class="btn btn-danger"/>');
       $btn.html('<i class="icon-remove"></i> Delete');
       $form.append($btn);
@@ -278,7 +308,7 @@
     },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');
-      $link.attr('href', '/filestore' + this.model.path);
+      $link.attr('href', '/filestore' + this.model.get('path'));
       $link.html('<i class="icon-download-alt"></i> Download');
       return $link;
     }
@@ -302,7 +332,7 @@
   var FileView = FileOrFolderView.extend({
     initialize: function() { this.render(); }, 
     render: function() {
-      var type = typeFromMimeType(this.model.mimeType);
+      var type = typeFromMimeType(this.model.get('mimeType'));
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
       this.$el.append(this._makeDeleteElement().addClass('pull-right'));
@@ -318,9 +348,9 @@
     },
     _makeImageElement: function() {
       return $('<div><br /></div>').append(_.template(
-        '<img class="img-polaroid" alt="Image for <%= model.path %>"' + 
-        ' src="/filestore<%= model.path %>" />', 
-        this));
+        '<img class="img-polaroid" alt="Image for <%= path %>"' + 
+        ' src="/filestore<%= path %>" />', 
+        this.model.toJSON()));
     },
     _loadChartElements: function() {
       var createChartElement = _.bind(function(chart) {
@@ -329,7 +359,7 @@
           .append(_.template(
             '<img src="/chart<%= model.path %>?region=<%=chart.region %>"'+
             ' alt="Chart for <%= chart.region %>" />'
-          , { model: this.model, chart: chart }));
+          , { model: this.model.toJSON(), chart: chart }));
         return $wrapper;
       }, this);
       var onSuccess = _.bind(function(data) {
@@ -337,7 +367,7 @@
       }, this);
       $.ajax({
         method: 'GET',
-        url: '/chart' + this.model.path,
+        url: '/chart' + this.model.get('path'),
         dataType: 'json',
         success: onSuccess
       });
@@ -354,7 +384,7 @@
         .addClass("muted")
         .html('<i class="icon-remove-circle"></i>');
       var $message = $('<small/>');
-      $message.text("This location has been deleted.");
+      $message.text('This location has no longer exists.');
       $heading.append($symbol, '<br />', $message);
       this.$el.append($heading)
     }
@@ -370,8 +400,8 @@
       this.innerView = new FileView({ model: file });
       this.render();
     },
-    showDeleted: function() {
-      this.innerView = new DeletedView();
+    showDeleted: function(fof) {
+      this.innerView = new DeletedView({ model: fof});
       this.render();
     },
     render: function() {
@@ -392,19 +422,43 @@
     $('#main').append(mainPane.$el);
     notificationFeed.open();
     notificationFeed.on("event:load", function(struct) {
-      mainPane.showFolder(_.defaults({}, _.first(struct).attributes));
+      // Start router (as now we can load existing nodes)
+      Backbone.history.start();
     });
+    
+    var Router = Backbone.Router.extend({
+      routes: {
+        "file/:id": "showFile",
+        "folder/:id": "showFolder"
+      },
+      showFolder: function(id) {
+        var node = fileTree.tree.find(id);
+        if (node == null) {
+          mainPane.showDeleted()
+        }
+        mainPane.showFolder(Folder.fromNode(node));
+      },
+      showFile: function(id) {
+        var node = fileTree.tree.find(id);
+        if (node == null) {
+          mainPane.showDeleted()
+        }
+        mainPane.showFile(File.fromNode(node));
+      }
+    })
+    var router = new Router();
+    
     fileTree.on("folder:select", function(folder) {
-      mainPane.showFolder(folder);
+      router.navigate("folder/"+folder.id, {trigger: true});
     });
     fileTree.on("file:select", function(file) {
-      mainPane.showFile(file);
+      router.navigate("file/"+file.id, {trigger: true});
     });
     notificationFeed.on("event:delete", function(struct) {
       // Handle being on the deleted page already
       if (_.isUndefined(mainPane.innerView.model)) return;
       // If the current path has been deleted, then hide it.
-      if (mainPane.innerView.model.path == struct.attributes.path) {
+      if (fileTree.tree.find(mainPane.innerView.model.id) == null) {
         mainPane.showDeleted();
       }
     });

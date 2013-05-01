@@ -1,0 +1,5 @@
+/* Make short labels easily selectable */
+span.glyphtree-node-label {
+	display: inline-block;
+	min-width: 2em;
+}
