@@ -58,10 +58,6 @@
         } else {
           this.trigger("file:select", File.fromNode(node));
         }
-        // Show the active node on the tree
-        $('.label.label-info').removeClass('label label-info');
-        $(node.element()).children('.glyphtree-node-label')
-          .addClass('label label-info');
       }, this);
       tree.events.label.click = [selectHandler];
       this.tree = tree;
@@ -436,6 +432,7 @@
         if (node == null) {
           mainPane.showDeleted()
         }
+        this._highlightNode(node);
         mainPane.showFolder(Folder.fromNode(node));
       },
       showFile: function(id) {
@@ -443,7 +440,14 @@
         if (node == null) {
           mainPane.showDeleted()
         }
+        this._highlightNode(node);
         mainPane.showFile(File.fromNode(node));
+      },
+      _highlightNode: function(node) {
+        // Show the active node on the tree
+        $('.label.label-info').removeClass('label label-info');
+        $(node.element()).children('.glyphtree-node-label')
+          .addClass('label label-info');
       }
     })
     var router = new Router();
