@@ -47,14 +47,48 @@ public final class FileStoreController extends Controller {
   }
 
   @Security.Authenticated(Secured.class)
+  public Result mkdir(final String encodedPath) {
+    final AuthUser user = PlayAuthenticate.getUser(ctx());
+    return inUserSession(user, new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final FileStore.Manager fm = fileStore.getManager(session);
+        FileStore.Folder baseFolder = fm.getRoot();
+        for (String encodedPart : encodedPath.split("/")) {
+          // Skip empty string directories as part oddities
+          if (encodedPart.equals("")) continue;
+          String part = decodePath(encodedPart);
+          Logger.debug(part);
+          FileStore.Folder nextFolder = baseFolder.getFolder(part);
+          if (nextFolder == null) {
+            nextFolder = baseFolder.createFolder(part);
+          }
+          // Move up
+          baseFolder = nextFolder;
+        }
+        return created();
+      }
+    });
+  }
+
+  @Security.Authenticated(Secured.class)
+  public Result delete(final String encodedPath) {
+    final String path = decodePath(encodedPath);
+    final AuthUser user = PlayAuthenticate.getUser(ctx());
+    return inUserSession(user, new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final FileStore.Manager fm = fileStore.getManager(session);
+        FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+path);
+        fof.delete();
+        return noContent();
+      }
+    });
+  }
+
+  @Security.Authenticated(Secured.class)
   public Result download(final String encodedFilePath) {
-    final String filePath;
-    try {
-      filePath = URLDecoder.decode(encodedFilePath, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      // Should never happen
-      throw new RuntimeException(e);
-    }
+    final String filePath = decodePath(encodedFilePath);
     final AuthUser user = PlayAuthenticate.getUser(ctx());
     return inUserSession(user, new F.Function<Session, Result>() {
       @Override
@@ -160,4 +194,14 @@ public final class FileStoreController extends Controller {
     });
     return sessionFactory.inSession(userId, f);
   }
+
+  private static String decodePath(String path) {
+    try {
+      return URLDecoder.decode(path, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      // Should never happen
+      throw new RuntimeException(e);
+    }
+  }
+
 }

@@ -311,7 +311,9 @@ public class FileStore {
               Privilege.JCR_ADD_CHILD_NODES,
               Privilege.JCR_REMOVE_CHILD_NODES,
               Privilege.JCR_MODIFY_PROPERTIES,
-              Privilege.JCR_NODE_TYPE_MANAGEMENT), true);
+              Privilege.JCR_NODE_TYPE_MANAGEMENT,
+              Privilege.JCR_REMOVE_NODE,
+              Privilege.JCR_REMOVE_CHILD_NODES), true);
       acm.setPolicy(node.getPath(), acl);
     }
 

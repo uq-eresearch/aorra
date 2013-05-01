@@ -85,7 +85,7 @@
   
   var NotificationFeed = Backbone.View.extend({
     
-    url: '/filestore/notifications',
+    url: '/notifications',
     
     open: function() {
       var tree = _.bind(function() { return this.model.tree }, this);
@@ -167,7 +167,7 @@
   });
   
   var FileUploadView = Backbone.View.extend({
-    url: '/upload',
+    url: '/filestore',
     tagName: 'div',
     initialize: function() { this.render(); }, 
     render: function() {
@@ -205,6 +205,43 @@
     }
   });
   
+  var CreateFolderView = Backbone.View.extend({
+    url: '/filestore',
+    tagName: 'form',
+    initialize: function() { this.render(); }, 
+    render: function() {
+      var parentFolder = this.model.path;
+      var $input = $('<input type="text" name="folder"/>')
+      $input.addClass('span3');
+      $input.attr('placeholder', 'folder name');
+      this.$el.addClass('form-inline');
+      this.$el.attr('method', 'PUT');
+      this.$el.append($input);
+      this.$el.append(' <button class="btn" type="submit">Create</mkdir>');
+      this.$el.submit(function(e) {
+        var form = e.target;
+        var path = parentFolder
+        // Handle possibility parent has a trailing slash
+        if (!_.str.endsWith(path, "/")) path += "/"
+        path += $(form).find('[name="folder"]').val();
+        $.ajax({
+          method: $(form).attr('method'),
+          url: '/filestore' + path,
+          success: function() {
+            var $alert = $( 
+              '<div class="alert alert-info">' +
+              '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
+              '<strong>' + path + '</strong> was successfully created.' +
+              '</div>');
+            $input.before($alert);
+            $alert.alert();
+          }
+        });
+        return false;
+      });
+    }
+  });
+  
   var FileOrFolderView = Backbone.View.extend({
     _makeBreadCrumbElement: function() {
       var breadcrumbs = this.model.path.split("/");
@@ -221,9 +258,28 @@
       $breadcrumbs.append($active);
       return $breadcrumbs;
     },
+    _makeDeleteElement: function() {
+      var $form = $('<form>');
+      $form.attr('method', 'DELETE');
+      $form.attr('action', '/filestore' + this.model.path)
+      var $btn = $('<button type="submit" class="btn btn-danger"/>');
+      $btn.html('<i class="icon-remove"></i> Delete');
+      $form.append($btn);
+      $form.submit(function(e) {
+        $.ajax({
+          method: $form.attr('method'),
+          url: $form.attr('action'),
+          success: function() {
+            // need to implement sensible handling for deletion
+          }
+        });
+        return false;
+      });
+      return $form;
+    },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');
-      $link.attr('href', '/download' + this.model.path);
+      $link.attr('href', '/filestore' + this.model.path);
       $link.html('<i class="icon-download-alt"></i> Download');
       return $link;
     }
@@ -232,13 +288,15 @@
   var FolderView = FileOrFolderView.extend({
     initialize: function() { this.render(); }, 
     render: function() {
-      var fileUploadView = new FileUploadView({
-        model: this.model
-      })
+      var fileUploadView = new FileUploadView({ model: this.model })
+      var mkdirView = new CreateFolderView({ model: this.model });
       this.$el.append(this._makeBreadCrumbElement());
+      this.$el.append(this._makeDeleteElement().addClass('pull-right'));
       this.$el.append($('<div/>')
         .append('<h3>Upload files</h3>')
-        .append(fileUploadView.$el));
+        .append(fileUploadView.$el)
+        .append('<h3>Create new folder</h3>')
+        .append(mkdirView.$el));
     } 
   });
   
@@ -248,6 +306,7 @@
       var type = typeFromMimeType(this.model.mimeType);
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
+      this.$el.append(this._makeDeleteElement().addClass('pull-right'));
       this.$el.append(this._makeDownloadElement());
       switch (type) {
       case 'spreadsheet':
@@ -261,7 +320,7 @@
     _makeImageElement: function() {
       return $('<div><br /></div>').append(_.template(
         '<img class="img-polaroid" alt="Image for <%= model.path %>"' + 
-        ' src="/download/<%= model.path %>" />', 
+        ' src="/filestore<%= model.path %>" />', 
         this));
     },
     _loadChartElements: function() {

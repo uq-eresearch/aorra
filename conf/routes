@@ -13,11 +13,13 @@ POST     /user/:email/verify/:token @controllers.Application.postVerify(email: S
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
-GET     /download/*file             @controllers.FileStoreController.download(file)
-POST    /upload/                    @controllers.FileStoreController.postUpload(folder="")
-POST    /upload/*folder             @controllers.FileStoreController.postUpload(folder)
+GET     /filestore/*file            @controllers.FileStoreController.download(file)
+POST    /filestore/                 @controllers.FileStoreController.postUpload(folder="")
+POST    /filestore/*folder          @controllers.FileStoreController.postUpload(folder)
+PUT     /filestore/*folder          @controllers.FileStoreController.mkdir(folder)
+DELETE  /filestore/*fileOrFolder    @controllers.FileStoreController.delete(fileOrFolder)
 
-GET     /filestore/notifications    @controllers.FileStoreAsync.notifications
+GET     /notifications              @controllers.FileStoreAsync.notifications
 
 # play-authenticate
 GET     /logout                     com.feth.play.module.pa.controllers.Authenticate.logout
