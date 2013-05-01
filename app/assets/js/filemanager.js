@@ -1,10 +1,33 @@
 (function() {
   
-  var SPREADSHEET_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  var typeFromMimeType = function(mimeType) {
+    var mimeTypePatterns = [
+      { pattern: /^image/, type: 'image' },
+      { pattern: /^text/, type: 'document' },
+      { pattern: /wordprocessingml.document$/, type: 'document' },
+      { pattern: /spreadsheetml.sheet$/, type: 'spreadsheet' }
+    ];
+    var match = _.find(mimeTypePatterns, function(entry) {
+      return mimeType.match(entry.pattern);
+    });
+    if (match) {
+      return match.type;
+    }
+    return 'file';
+  };
 
   var FileTree = Backbone.Model.extend({
     options: {
       startExpanded: true,
+      typeResolver: function(struct) {
+        if (struct.type == 'folder') {
+          return 'folder';
+        }
+        if (struct['attributes'] && struct['attributes']['mimeType']) {
+          return typeFromMimeType(struct.attributes.mimeType);
+        }
+        return 'file';
+      },
       types: {
         folder: {
           icon: {
@@ -22,6 +45,32 @@
           icon: {
             leaf: {
               content: "\uf016",
+              'font-family': "FontAwesome"
+            }
+          }
+        },
+        image: {
+          icon: {
+            leaf: {
+              content: "\uf03e",
+              'font-family': "FontAwesome"
+            }
+          }
+        },
+        spreadsheet: {
+          icon: {
+            leaf: {
+              content: "\uf0ce",
+              'font-family': "FontAwesome",
+              'color': '#339933'
+            }
+          }
+        },
+        document: {
+          icon: {
+            leaf: {
+              content: "\uf0f6",
+              'color': '#333399',
               'font-family': "FontAwesome"
             }
           }
@@ -196,15 +245,26 @@
   var FileView = FileOrFolderView.extend({
     initialize: function() { this.render(); }, 
     render: function() {
+      var type = typeFromMimeType(this.model.mimeType);
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
       this.$el.append(this._makeDownloadElement());
-      this._loadChartElements();
+      switch (type) {
+      case 'spreadsheet':
+        this._loadChartElements();
+        break;
+      case 'image':
+        this.$el.append(this._makeImageElement());
+        break;
+      }
+    },
+    _makeImageElement: function() {
+      return $('<div><br /></div>').append(_.template(
+        '<img class="img-polaroid" alt="Image for <%= model.path %>"' + 
+        ' src="/download/<%= model.path %>" />', 
+        this));
     },
     _loadChartElements: function() {
-      if (this.model.mimeType != SPREADSHEET_MIME_TYPE) {
-        return;
-      }
       var createChartElement = _.bind(function(chart) {
         var $wrapper = $('<div/>')
           .append('<h3>'+chart.region+'</h3>')
