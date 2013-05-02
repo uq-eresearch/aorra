@@ -18,10 +18,11 @@ import play.Logger;
 import play.libs.Json;
 import play.libs.F;
 import play.mvc.Result;
-import play.mvc.Security;
 import play.mvc.Http.MultipartFormData;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
+
+import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.user.AuthUser;
@@ -39,7 +40,7 @@ public final class FileStoreController extends SessionAwareController {
     this.fileStore = fileStore;
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public Result mkdir(final String encodedPath) {
     final AuthUser user = PlayAuthenticate.getUser(ctx());
     return inUserSession(user, new F.Function<Session, Result>() {
@@ -64,7 +65,7 @@ public final class FileStoreController extends SessionAwareController {
     });
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public Result delete(final String encodedPath) {
     final String path = decodePath(encodedPath);
     final AuthUser user = PlayAuthenticate.getUser(ctx());
@@ -79,7 +80,7 @@ public final class FileStoreController extends SessionAwareController {
     });
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public Result download(final String encodedFilePath) {
     final String filePath = decodePath(encodedFilePath);
     final AuthUser user = PlayAuthenticate.getUser(ctx());
@@ -98,7 +99,7 @@ public final class FileStoreController extends SessionAwareController {
     });
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public Result postUpload(final String folderPath) {
     final AuthUser user = PlayAuthenticate.getUser(ctx());
     return inUserSession(user, new F.Function<Session, Result>() {

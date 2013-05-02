@@ -7,24 +7,20 @@ import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import models.UserDAO;
-
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
 
 import play.libs.F;
 import play.libs.Json;
-import play.mvc.Controller;
 import play.mvc.Result;
-import play.mvc.Security;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import au.edu.uq.aorra.charts.ChartRenderer;
+import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.user.AuthUser;
-import com.feth.play.module.pa.user.EmailIdentity;
 import com.google.inject.Inject;
 
 import ereefs.charts.ChartDescription;
@@ -42,7 +38,7 @@ public class Chart extends SessionAwareController {
       this.fileStore = fileStore;
     }
 
-    @Security.Authenticated(Secured.class)
+    @SubjectPresent
     public Result charts(final String path) {
         final AuthUser user = PlayAuthenticate.getUser(ctx());
         return inUserSession(user, new F.Function<Session, Result>() {

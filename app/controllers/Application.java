@@ -8,7 +8,6 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.jcrom.Jcrom;
 
@@ -17,6 +16,8 @@ import models.User;
 import models.UserDAO;
 import models.User.Invite;
 import models.User.Login;
+
+import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
@@ -28,9 +29,7 @@ import static play.data.Form.form;
 import play.Logger;
 import play.data.Form;
 import play.libs.F;
-import play.libs.F.Function;
 import play.mvc.Result;
-import play.mvc.Security;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.JcrSessionFactory;
 
@@ -46,12 +45,12 @@ public final class Application extends SessionAwareController {
     return ok(views.html.Application.index.render());
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public final Result invite() {
     return ok(views.html.Application.invite.render(form(Invite.class)));
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public final Result postInvite() {
     com.feth.play.module.pa.controllers.Authenticate.noCache(response());
     final Form<Invite> filledForm = form(Invite.class).bindFromRequest();
@@ -130,7 +129,7 @@ public final class Application extends SessionAwareController {
     return ok();
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public final Result userExists(String encodedEmail) {
     final String email = urlDecode(encodedEmail);
     return sessionFactory.inSession(new F.Function<Session, Result>() {
@@ -143,7 +142,7 @@ public final class Application extends SessionAwareController {
     });
   }
 
-  @Security.Authenticated(Secured.class)
+  @SubjectPresent
   public final Result userUnverified(String encodedEmail) {
     final String email = urlDecode(encodedEmail);
     return sessionFactory.inSession(new F.Function<Session, Result>() {

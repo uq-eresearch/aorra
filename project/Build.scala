@@ -8,7 +8,7 @@ object ApplicationBuild extends Build {
   val appVersion      = "1.0-SNAPSHOT"
 
   def crshVersion = "1.2.0"
-
+  
   val appDependencies = Seq(
     javaCore,
     "javax.jcr" % "jcr" % "2.0",
@@ -19,7 +19,8 @@ object ApplicationBuild extends Build {
     "com.google.guava" % "guava" % "14.0.1",
     "com.google.inject" % "guice" % "3.0",
     "org.crsh" % "crsh.shell.core" % crshVersion,
-    "org.crsh" % "crsh.shell.telnet" % crshVersion
+    "org.crsh" % "crsh.shell.telnet" % crshVersion,
+    "be.objectify" %% "deadbolt-java" % "2.0-SNAPSHOT"
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
@@ -35,6 +36,8 @@ object ApplicationBuild extends Build {
     resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns)
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play-authenticate.git#testing-code"))
+  ).dependsOn(RootProject(uri(
+      "git://github.com/schaloner/deadbolt-2-java.git"))
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play21-jackrabbit-plugin.git#shutdown"))
   ).dependsOn(RootProject(uri(
