@@ -10,8 +10,6 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import models.UserDAO;
-
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
@@ -19,7 +17,6 @@ import org.jcrom.Jcrom;
 import play.Logger;
 import play.libs.Json;
 import play.libs.F;
-import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Security;
 import play.mvc.Http.MultipartFormData;
@@ -28,22 +25,18 @@ import service.filestore.FileStore;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.user.AuthUser;
-import com.feth.play.module.pa.user.EmailIdentity;
 import com.google.inject.Inject;
 
-public final class FileStoreController extends Controller {
+public final class FileStoreController extends SessionAwareController {
 
   private final FileStore fileStore;
-  private final Jcrom jcrom;
-  private final JcrSessionFactory sessionFactory;
 
   @Inject
   public FileStoreController(final JcrSessionFactory sessionFactory,
       final Jcrom jcrom,
       final FileStore fileStore) {
+    super(sessionFactory, jcrom);
     this.fileStore = fileStore;
-    this.jcrom = jcrom;
-    this.sessionFactory = sessionFactory;
   }
 
   @Security.Authenticated(Secured.class)
@@ -177,22 +170,6 @@ public final class FileStoreController extends Controller {
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private <A extends Object> A inUserSession(final AuthUser authUser,
-      final F.Function<Session, A> f) {
-    String userId = sessionFactory.inSession(new F.Function<Session, String>() {
-      @Override
-      public String apply(Session session) {
-        String email = authUser instanceof EmailIdentity ?
-          ((EmailIdentity)authUser).getEmail() :
-          authUser.getId();
-        return (new UserDAO(session, jcrom))
-          .findByEmail(email)
-          .getJackrabbitUserId();
-      }
-    });
-    return sessionFactory.inSession(userId, f);
   }
 
   private static String decodePath(String path) {

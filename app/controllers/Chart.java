@@ -30,19 +30,16 @@ import com.google.inject.Inject;
 import ereefs.charts.ChartDescription;
 import ereefs.spreadsheet.Spreadsheet;
 
-public class Chart extends Controller {
+public class Chart extends SessionAwareController {
 
     private final FileStore fileStore;
-    private final Jcrom jcrom;
-    private final JcrSessionFactory sessionFactory;
 
     @Inject
     public Chart(final JcrSessionFactory sessionFactory,
             final Jcrom jcrom,
             final FileStore fileStore) {
-        this.fileStore = fileStore;
-        this.jcrom = jcrom;
-        this.sessionFactory = sessionFactory;
+      super(sessionFactory, jcrom);
+      this.fileStore = fileStore;
     }
 
     @Security.Authenticated(Secured.class)
@@ -92,22 +89,6 @@ public class Chart extends Controller {
                 }
             }
         });
-    }
-
-    private <A extends Object> A inUserSession(final AuthUser authUser,
-            final F.Function<Session, A> f) {
-        String userId = sessionFactory.inSession(new F.Function<Session, String>() {
-            @Override
-            public String apply(Session session) {
-                String email = authUser instanceof EmailIdentity ?
-                        ((EmailIdentity)authUser).getEmail() :
-                            authUser.getId();
-                        return (new UserDAO(session, jcrom))
-                                .findByEmail(email)
-                                .getJackrabbitUserId();
-            }
-        });
-        return sessionFactory.inSession(userId, f);
     }
 
 }

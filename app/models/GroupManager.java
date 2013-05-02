@@ -63,6 +63,20 @@ public class GroupManager {
     return set.build();
   }
 
+  public Set<Group> memberships(String memberId) {
+    ImmutableSet.Builder<Group> set = ImmutableSet.<Group>builder();
+    try {
+      Authorizable a = session.getUserManager().getAuthorizable(memberId);
+      Iterator<Group> iter = a.declaredMemberOf();
+      while (iter.hasNext()) {
+        set.add(iter.next());
+      }
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
+    return set.build();
+  }
+
   public Group find(String groupName) throws PathNotFoundException {
     Group group;
     try {

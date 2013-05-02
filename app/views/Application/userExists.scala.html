@@ -1,0 +1,19 @@
+@(
+  user: models.User
+)
+
+@main("User Already Exists") {
+  
+  <div class="span12">
+  <div class="page-header">
+  <h1>User Already Exists</h1>
+  </div>
+  
+  <p>The specified user already exists:</p>
+  
+  <address>
+    <strong>@user.getName</strong><br />
+    <a href="mailto:#">@user.getEmail</a>
+  </address>
+
+}

@@ -81,6 +81,8 @@ public class User {
     @Email
     public String email;
 
+    @Required
+    @MinLength(2)
     public String name;
 
     public Invite() {}

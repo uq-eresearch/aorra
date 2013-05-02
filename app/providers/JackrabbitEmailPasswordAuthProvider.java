@@ -306,6 +306,7 @@ public class JackrabbitEmailPasswordAuthProvider
         {
           final User existingUser = dao.findByEmail(e);
           if (existingUser != null) {
+            Logger.debug("Found existing user for "+e+": "+existingUser);
             if (existingUser.isVerified()) {
               return SignupResult.USER_EXISTS;
             } else {
@@ -332,12 +333,12 @@ public class JackrabbitEmailPasswordAuthProvider
 
   @Override
   protected Call userExists(UsernamePasswordAuthUser authUser) {
-    return controllers.routes.Application.userExists();
+    return controllers.routes.Application.userExists(authUser.getEmail());
   }
 
   @Override
   protected Call userUnverified(UsernamePasswordAuthUser authUser) {
-    return controllers.routes.Application.userUnverified();
+    return controllers.routes.Application.userUnverified(authUser.getEmail());
   }
 
 }
