@@ -13,6 +13,8 @@ import org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentia
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
 
+import play.Logger;
+
 public class UserDAO extends AbstractJcrDAO<User> {
 
   public static final String USER_PATH = "/user";
@@ -41,12 +43,8 @@ public class UserDAO extends AbstractJcrDAO<User> {
   }
 
   public User findByEmail(String email) {
-    String nodeName = User.generateNodeName(email);
-    // Return first hit
-    for (User user: findAll(USER_PATH, nodeName, 1, 0, 1)) {
-      return user;
-    }
-    return null;
+    final String nodeName = User.generateNodeName(email);
+    return get(USER_PATH+"/"+nodeName);
   }
 
   public List<User> list() {
