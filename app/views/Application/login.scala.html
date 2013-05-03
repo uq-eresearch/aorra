@@ -3,34 +3,77 @@
 @import helper.twitterBootstrap._
 
 @inlineInput(field: play.data.Form.Field, inputType: String, icon: String, placeholder: String = "") = {
-<div class="control-group @(if (field.errors.length > 0) {"error"})" style="display: inline-block">
+<div class="control-group @(if (field.errors.length > 0) {"error"})" >
   <div class="input-prepend">
     <span class="add-on" title="@(field.name)">
       <i class="icon-@(icon)"></i>
     </span>
-    <input class="span3" type="@inputType" id="@(field.id)"
+    <input class="input-large" type="@inputType" id="@(field.id)"
       name="@(field.name)" value="@(field.value)" placeholder="@placeholder"/>
   </div>
 </div>
 }
 
 @main("Login") {
-  
-  <div class="span12" style="text-align: center">
-  <h1 id="big-headline" style="line-height: 120%">AORRA</h1>
   <script>
   $(function() {
-    jQuery("#big-headline").fitText(1);
+    $('body').addClass("hero-page");
   });
   </script>
   
+  <div class="span6 offset2">
+  <h1 id="big-headline">
+  <span class="word">A<span class="rest">utomated</span></span>
+  <span class="word">O<span class="rest">nline</span></span>
+  <span class="word">R<span class="rest">eef</span></span>
+  <span class="word">R<span class="rest">eport Card</span></span>
+  <span class="word">A<span class="rest">pplication</span></span>
+  </h1>
+  </div>
+  
+  <div class="span2">
+  <div class="pull-right" style="text-align: right">
+  <br class="hidden-phone" />
+  <br class="hidden-phone" />
+  
   @helper.form(action = routes.Application.postLogin(), 'class -> "form-inline") {
-    @inlineInput(form("email"), "text", "envelope", "eg. user@domain.com")
-    @inlineInput(form("password"), "password", "asterisk")
+    @inlineInput(form("email"), "text", "envelope", "your email address")
+    @inlineInput(form("password"), "password", "asterisk", "your password")
     <button class="btn btn-primary" type="submit">
       <i class="icon-signin"></i> Login
     </button>
   }
   </div>
-
+  </div>
+  
+  <p class="attribution">
+    <a href="#">
+      <i class="icon-info-sign"></i> Background
+    </a>
+  </p>
+  <div class="attribution-content">
+    Derived from
+    <a href="http://www.flickr.com/photos/sackerman519/4251310991/">
+    original image
+    </a>
+    <a href="http://creativecommons.org/licenses/by/2.0/">
+      &copy; Some Rights Reserved
+    </a>
+    by
+    <a href="http://www.flickr.com/photos/sackerman519/">Sarah Ackerman</a>
+  </div>
+  <script>
+  $(function() {
+    $('.attribution > a').popover({
+      placement: "left",
+      title: "Background Attribution",
+      html: true,
+      content: function() { return $('.attribution-content').html(); }
+    });
+  });
+  </script>
+  
+    
+    
+  
 }
