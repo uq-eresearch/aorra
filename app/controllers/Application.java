@@ -106,7 +106,6 @@ public final class Application extends SessionAwareController {
         if (user != null && user.checkVerificationToken(token)) {
           Form<User.ChangePassword> filledForm =
               form(User.ChangePassword.class).bindFromRequest();
-          Logger.debug(filledForm+"");
           if (filledForm.hasErrors()) {
             return ok(views.html.Application.setPassword.render(
                 routes.Application.postVerify(email, token),
