@@ -21,7 +21,6 @@ span.glyphtree-node-label {
 	color: #f8f8f8;
 	font-weight: bold;
 	line-height: 120%;
-  text-align: center;
   font-size: 500%;
   text-shadow: 0 2px 0 black;
 }
@@ -32,13 +31,34 @@ span.glyphtree-node-label {
 	background-color: rgba(0,0,0,0.6);
 }
 
+.hero-page .well h1, .hero-page .well p {
+	color: white;
+}
+
+.hero-page .well a {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.hero-page .well a:hover {
+  color: inherit;
+}
+
+.hero-page .login-container {
+  text-align: center;
+}
+
+.hero-page .login-container p {
+  font-style: italic;
+}
+
 .hero-page h1#big-headline small {
 	font-size: 30%;
 	display: block;
+  color: inherit;
 }
 
 .hero-page h1#big-headline .word {
-  color: white;
   display: inline;
   white-space: nowrap;
 }
@@ -46,11 +66,6 @@ span.glyphtree-node-label {
 .hero-page h1#big-headline .word .first {
 	font-weight: bold;
 }
-
-.hero-page .login-container {
-  text-align: center;
-}
-
 @media (min-width: 980px) {
 	.hero-page .login-container .control-group {
 	  display: inline;
@@ -66,8 +81,4 @@ span.glyphtree-node-label {
 
 .hero-page .attribution > a {
 	color: white;
-}
-
-.hero-page .attribution-content {
-	display: none;
 }
