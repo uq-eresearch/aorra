@@ -23,6 +23,13 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min.js" type="text/javascript"></script>
     <!-- Client-side application framework (views, models, routers, etc) -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js" type="text/javascript"></script>
+    <!-- Placeholders don't exist in IE, so shim them -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-placeholder/2.0.7/jquery.placeholder.min.js"></script>
+    <script>
+    $(function() {
+      $('input, textarea').placeholder();
+    });
+    </script>
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("css/main.css")"/>
     <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")"/>
   </head>

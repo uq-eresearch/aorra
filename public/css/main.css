@@ -21,19 +21,40 @@ span.glyphtree-node-label {
 	color: #f8f8f8;
 	font-weight: bold;
 	line-height: 120%;
-	text-shadow: horizontal-offset vertical-offset blur color;
-  text-shadow: 2px 4px 3px rgba(0,0,0,0.3);
+  text-align: center;
+  font-size: 500%;
+  text-shadow: 0 2px 0 black;
+}
+
+.hero-page .well {
+	border-width: 0;
+	border-color: rgba(0,0,0,0.8);
+	background-color: rgba(0,0,0,0.6);
+}
+
+.hero-page h1#big-headline small {
+	font-size: 30%;
+	display: block;
 }
 
 .hero-page h1#big-headline .word {
-  display: block;
+  color: white;
+  display: inline;
   white-space: nowrap;
 }
 
-.hero-page h1#big-headline .word:first-letter {
-	color: white;
-	font-size: 150%;
-	line-height: 120%;
+.hero-page h1#big-headline .word .first {
+	font-weight: bold;
+}
+
+.hero-page .login-container {
+  text-align: center;
+}
+
+@media (min-width: 980px) {
+	.hero-page .login-container .control-group {
+	  display: inline;
+	}
 }
 
 .hero-page .attribution {
@@ -49,24 +70,4 @@ span.glyphtree-node-label {
 
 .hero-page .attribution-content {
 	display: none;
-}
-
-@media (max-width: 767px) {
-	.hero-page h1#big-headline {
-	  float: left;
-	}
-  .hero-page h1#big-headline .word {
-    display: inline;
-  }
-  .hero-page h1#big-headline .word .rest {
-    display: none;
-  }
-}
-
-@media (min-width: 1200px) {
-	.hero-page h1#big-headline span:nth-of-type(1) { margin-left: 0px; }
-	.hero-page h1#big-headline span:nth-of-type(2) { margin-left: 80px; }
-	.hero-page h1#big-headline span:nth-of-type(3) { margin-left: 160px; }
-	.hero-page h1#big-headline span:nth-of-type(4) { margin-left: 240px; }
-	.hero-page h1#big-headline span:nth-of-type(5) { margin-left: 320px; }
 }

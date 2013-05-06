@@ -3,12 +3,12 @@
 @import helper.twitterBootstrap._
 
 @inlineInput(field: play.data.Form.Field, inputType: String, icon: String, placeholder: String = "") = {
-<div class="control-group @(if (field.errors.length > 0) {"error"})" >
+<div class="control-group @(if (field.errors.length > 0) {"error"})">
   <div class="input-prepend">
     <span class="add-on" title="@(field.name)">
       <i class="icon-@(icon)"></i>
     </span>
-    <input class="input-large" type="@inputType" id="@(field.id)"
+    <input class="input-medium" type="@inputType" id="@(field.id)"
       name="@(field.name)" value="@(field.value)" placeholder="@placeholder"/>
   </div>
 </div>
@@ -21,21 +21,23 @@
   });
   </script>
   
-  <div class="span6 offset2">
+  <div class="hidden-phone" style="height: 10em"></div>
+  
+  <div class="span8 offset2">
+  <div class="well">
   <h1 id="big-headline">
-  <span class="word">A<span class="rest">utomated</span></span>
-  <span class="word">O<span class="rest">nline</span></span>
-  <span class="word">R<span class="rest">eef</span></span>
-  <span class="word">R<span class="rest">eport Card</span></span>
-  <span class="word">A<span class="rest">pplication</span></span>
+    AORRA
+    <small>
+      <span class="word"><span class="first">A</span>utomated</span>
+      <span class="word"><span class="first">O</span>nline</span>
+      <span class="word"><span class="first">R</span>eef</span>
+      <span class="word"><span class="first">R</span>eport Card</span>
+      <span class="word"><span class="first">A</span>pplication</span>
+    </small>
   </h1>
-  </div>
   
-  <div class="span2">
-  <div class="pull-right" style="text-align: right">
+  <div class="login-container">
   <br class="hidden-phone" />
-  <br class="hidden-phone" />
-  
   @helper.form(action = routes.Application.postLogin(), 'class -> "form-inline") {
     @inlineInput(form("email"), "text", "envelope", "your email address")
     @inlineInput(form("password"), "password", "asterisk", "your password")
@@ -43,6 +45,7 @@
       <i class="icon-signin"></i> Login
     </button>
   }
+  </div>
   </div>
   </div>
   
@@ -56,7 +59,8 @@
     <a href="http://www.flickr.com/photos/sackerman519/4251310991/">
     original image
     </a>
-    <a href="http://creativecommons.org/licenses/by/2.0/">
+    <a href="http://creativecommons.org/licenses/by/2.0/" 
+       style="white-space: nowrap;">
       &copy; Some Rights Reserved
     </a>
     by
