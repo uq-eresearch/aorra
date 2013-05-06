@@ -66,9 +66,17 @@ span.glyphtree-node-label {
 .hero-page h1#big-headline .word .first {
 	font-weight: bold;
 }
+
 @media (min-width: 980px) {
 	.hero-page .login-container .control-group {
 	  display: inline;
+	}
+}
+
+@media (min-width: 768px) {
+	.hero-page .above-login {
+	  padding-top: 4em;
+	  min-height: 8em;
 	}
 }
 

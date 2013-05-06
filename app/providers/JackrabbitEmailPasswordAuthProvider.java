@@ -341,4 +341,10 @@ public class JackrabbitEmailPasswordAuthProvider
     return controllers.routes.Application.userUnverified(authUser.getEmail());
   }
 
+  @Override
+  protected String onLoginUserNotFound(Context context) {
+    context.flash().put("error", "Invalid email address or password.");
+    return super.onLoginUserNotFound(context);
+  }
+
 }

@@ -21,9 +21,14 @@
   });
   </script>
   
-  <div class="hidden-phone" style="height: 10em"></div>
-  
   <div class="span8 offset2">
+  <div class="above-login">
+    @if(flash.contains("error")) {
+      <div class="alert alert-error">
+        @flash().get("error")
+      </div>
+    }
+  </div>
   <div class="well login-container">
   <h1 id="big-headline">
     AORRA
