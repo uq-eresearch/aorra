@@ -10,7 +10,7 @@
            maxEntriesLocalHeap="1"
            eternal="false"
            overflowToDisk="false"
-           diskPersistent="true"
+           diskPersistent="false"
            timeToIdleSeconds="300"
            timeToLiveSeconds="600"
            memoryStoreEvictionPolicy="LFU"

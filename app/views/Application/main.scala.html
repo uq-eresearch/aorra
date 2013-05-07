@@ -29,6 +29,7 @@
     <script>
     $(function() {
       $('input, textarea').placeholder();
+      $('[rel="tooltip"]').tooltip();
     });
     </script>
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("css/main.css")"/>
@@ -65,6 +66,13 @@
                     <b class="caret"></b>
                     </a>
                     <ul class="dropdown-menu">
+                      <li>
+                        <a href="#" rel="tooltip" data-placement="top"
+                          title="All emails will be sent to this address.">
+                          <em>@currentUser.getEmail()</em>
+                        </a>
+                      </li>
+                      <li class="divider"></li>
                       <li><a href="/logout">Logout</a></li>
                     </ul>
                   </li>

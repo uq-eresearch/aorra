@@ -65,7 +65,6 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
 
   @Override
   public CacheableUser getUser(Http.Session session) {
-    Logger.debug(this+" providing current user for session.");
     final AuthUser authUser = PlayAuthenticate.getUser(session);
     // Not logged in
     if (authUser == null) return null;
@@ -89,6 +88,7 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
       public User apply(Session session) {
         String email = authUser instanceof EmailIdentity ?
             ((EmailIdentity)authUser).getEmail() : authUser.getId();
+        Logger.debug("Lookup up user with email: " + email);
         return (new UserDAO(session, jcrom))
             .findByEmail(email);
       }
