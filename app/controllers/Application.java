@@ -30,14 +30,18 @@ import play.Logger;
 import play.data.Form;
 import play.libs.F;
 import play.mvc.Result;
+import providers.CacheableUserProvider;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.JcrSessionFactory;
 
 public final class Application extends SessionAwareController {
 
   @Inject
-  Application(JcrSessionFactory sessionFactory, Jcrom jcrom) {
-    super(sessionFactory, jcrom);
+  Application(
+      final JcrSessionFactory sessionFactory,
+      final Jcrom jcrom,
+      final CacheableUserProvider sessionHandler) {
+    super(sessionFactory, jcrom, sessionHandler);
   }
 
   public final Result index() {

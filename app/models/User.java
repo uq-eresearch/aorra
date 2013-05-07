@@ -1,7 +1,5 @@
 package models;
 
-import org.apache.commons.codec.binary.Hex;
-
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,20 +10,21 @@ import java.util.UUID;
 
 import javax.jcr.SimpleCredentials;
 
+import org.apache.commons.codec.binary.Hex;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrName;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.annotations.JcrPath;
 import org.jcrom.annotations.JcrProperty;
 
-import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider.UsernamePassword;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
-
 import play.data.validation.Constraints.Email;
 import play.data.validation.Constraints.MinLength;
 import play.data.validation.Constraints.Required;
 import play.data.validation.ValidationError;
+
+import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider.UsernamePassword;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 
 @JcrNode
 public class User {

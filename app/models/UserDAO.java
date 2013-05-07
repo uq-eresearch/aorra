@@ -13,8 +13,6 @@ import org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentia
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
 
-import play.Logger;
-
 public class UserDAO extends AbstractJcrDAO<User> {
 
   public static final String USER_PATH = "/user";

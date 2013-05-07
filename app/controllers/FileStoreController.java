@@ -15,17 +15,15 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
 
 import play.Logger;
-import play.libs.Json;
 import play.libs.F;
-import play.mvc.Result;
+import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
+import play.mvc.Result;
+import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
-
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
-import com.feth.play.module.pa.PlayAuthenticate;
-import com.feth.play.module.pa.user.AuthUser;
 import com.google.inject.Inject;
 
 public final class FileStoreController extends SessionAwareController {
@@ -35,15 +33,15 @@ public final class FileStoreController extends SessionAwareController {
   @Inject
   public FileStoreController(final JcrSessionFactory sessionFactory,
       final Jcrom jcrom,
+      final CacheableUserProvider sessionHandler,
       final FileStore fileStore) {
-    super(sessionFactory, jcrom);
+    super(sessionFactory, jcrom, sessionHandler);
     this.fileStore = fileStore;
   }
 
   @SubjectPresent
   public Result mkdir(final String encodedPath) {
-    final AuthUser user = PlayAuthenticate.getUser(ctx());
-    return inUserSession(user, new F.Function<Session, Result>() {
+    return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStore.getManager(session);
@@ -68,8 +66,7 @@ public final class FileStoreController extends SessionAwareController {
   @SubjectPresent
   public Result delete(final String encodedPath) {
     final String path = decodePath(encodedPath);
-    final AuthUser user = PlayAuthenticate.getUser(ctx());
-    return inUserSession(user, new F.Function<Session, Result>() {
+    return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStore.getManager(session);
@@ -83,8 +80,7 @@ public final class FileStoreController extends SessionAwareController {
   @SubjectPresent
   public Result download(final String encodedFilePath) {
     final String filePath = decodePath(encodedFilePath);
-    final AuthUser user = PlayAuthenticate.getUser(ctx());
-    return inUserSession(user, new F.Function<Session, Result>() {
+    return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStore.getManager(session);
@@ -101,8 +97,7 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result postUpload(final String folderPath) {
-    final AuthUser user = PlayAuthenticate.getUser(ctx());
-    return inUserSession(user, new F.Function<Session, Result>() {
+    return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStore.getManager(session);
@@ -136,7 +131,7 @@ public final class FileStoreController extends SessionAwareController {
                 "file %s content type %s uploaded to %s by %s",
                 fileName, filePart.getContentType(),
                 f.getPath(),
-                user.getId()));
+                getUser()));
               jsonFileData.put("name", fileName);
               jsonFileData.put("size", file.length());
             } catch (AccessDeniedException ade) {

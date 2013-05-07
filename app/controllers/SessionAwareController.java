@@ -2,41 +2,34 @@ package controllers;
 
 import javax.jcr.Session;
 
+import models.CacheableUser;
+
 import org.jcrom.Jcrom;
-
-import models.UserDAO;
-
-import com.feth.play.module.pa.user.AuthUser;
-import com.feth.play.module.pa.user.EmailIdentity;
 
 import play.libs.F;
 import play.mvc.Controller;
+import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 
 public abstract class SessionAwareController extends Controller {
 
   protected final JcrSessionFactory sessionFactory;
   protected final Jcrom jcrom;
+  protected final CacheableUserProvider subjectHandler;
 
   protected SessionAwareController(final JcrSessionFactory sessionFactory,
-      final Jcrom jcrom) {
+      final Jcrom jcrom, final CacheableUserProvider subjectHandler) {
     this.sessionFactory = sessionFactory;
     this.jcrom = jcrom;
+    this.subjectHandler = subjectHandler;
   }
 
-  protected <A extends Object> A inUserSession(final AuthUser authUser,
-        final F.Function<Session, A> f) {
-    String userId = sessionFactory.inSession(new F.Function<Session, String>() {
-      @Override
-      public String apply(Session session) {
-        String email = authUser instanceof EmailIdentity ?
-            ((EmailIdentity)authUser).getEmail() : authUser.getId();
-        return (new UserDAO(session, jcrom))
-            .findByEmail(email)
-            .getJackrabbitUserId();
-      }
-    });
-    return sessionFactory.inSession(userId, f);
+  protected CacheableUser getUser() {
+    return subjectHandler.getUser(ctx().session());
+  }
+
+  protected <A extends Object> A inUserSession(final F.Function<Session, A> f) {
+    return sessionFactory.inSession(getUser().getJackrabbitUserId(), f);
   }
 
 }

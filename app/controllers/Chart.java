@@ -14,13 +14,12 @@ import org.jcrom.Jcrom;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Result;
+import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import au.edu.uq.aorra.charts.ChartRenderer;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
-import com.feth.play.module.pa.PlayAuthenticate;
-import com.feth.play.module.pa.user.AuthUser;
 import com.google.inject.Inject;
 
 import ereefs.charts.ChartDescription;
@@ -33,15 +32,15 @@ public class Chart extends SessionAwareController {
     @Inject
     public Chart(final JcrSessionFactory sessionFactory,
             final Jcrom jcrom,
+            final CacheableUserProvider sessionHandler,
             final FileStore fileStore) {
-      super(sessionFactory, jcrom);
+      super(sessionFactory, jcrom, sessionHandler);
       this.fileStore = fileStore;
     }
 
     @SubjectPresent
     public Result charts(final String path) {
-        final AuthUser user = PlayAuthenticate.getUser(ctx());
-        return inUserSession(user, new F.Function<Session, Result>() {
+        return inUserSession(new F.Function<Session, Result>() {
             @Override
             public final Result apply(Session session) throws RepositoryException {
                 try {

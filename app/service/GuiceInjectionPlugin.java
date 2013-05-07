@@ -1,7 +1,5 @@
 package service;
 
-import java.util.Set;
-
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -9,7 +7,13 @@ import models.User;
 
 import org.jcrom.Jcrom;
 
-import com.google.common.collect.ImmutableSet;
+import play.Application;
+import play.Plugin;
+import providers.CacheableUserProvider;
+import providers.DeadboltHandlerImpl;
+import providers.JackrabbitEmailPasswordAuthProvider;
+import service.filestore.FileStore;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -17,11 +21,6 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.wingnest.play2.jackrabbit.Jcr;
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
-
-import play.Application;
-import play.Plugin;
-import providers.JackrabbitEmailPasswordAuthProvider;
-import service.filestore.FileStore;
 
 public class GuiceInjectionPlugin extends Plugin {
 
@@ -87,6 +86,7 @@ public class GuiceInjectionPlugin extends Plugin {
         };
         bind(JcrSessionFactory.class).toInstance(sessionFactory);
         bind(FileStore.class).toInstance(new FileStore(sessionFactory));
+        bind(CacheableUserProvider.class).to(DeadboltHandlerImpl.class);
       }
     };
     Module jcromModule = new AbstractModule() {
@@ -95,12 +95,12 @@ public class GuiceInjectionPlugin extends Plugin {
 
       @Provides
       Jcrom getJcrom() {
-        final Set<Class<?>> classes = ImmutableSet.<Class<?>>builder()
-            .add(User.class)
-            .build();
-        return new Jcrom(classes);
+        final Jcrom jcrom = new Jcrom();
+        jcrom.map(User.class);
+        return jcrom;
       }
     };
+
     return Guice.createInjector(pluginModule, sessionModule, jcromModule);
   }
 
