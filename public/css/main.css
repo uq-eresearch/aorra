@@ -27,8 +27,8 @@ span.glyphtree-node-label {
 
 .hero-page .well {
 	border: 0;
-	background-color: #222222; /* IE8 */
-	background-color: rgba(0,0,0,0.6);
+	background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGCYCQAAngCauPYSkQAAAABJRU5ErkJggg==") repeat; /* IE8 */
+	background: rgba(0,0,0,0.6);
 }
 
 .hero-page .well h1, .hero-page .well p {
