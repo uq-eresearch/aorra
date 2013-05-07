@@ -483,15 +483,18 @@
     $('#main').append(mainPane.$el);
     notificationFeed.open();
     notificationFeed.on("event:load", function(struct) {
-      mainPane.showStart();
       // Start router (as now we can load existing nodes)
       Backbone.history.start();
     });
     
     var Router = Backbone.Router.extend({
       routes: {
+        "": "showStart",
         "file/:id": "showFile",
         "folder/:id": "showFolder"
+      },
+      showStart: function() {
+        mainPane.showStart();
       },
       showFolder: function(id) {
         var node = fileTree.tree.find(id);
