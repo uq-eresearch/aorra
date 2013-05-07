@@ -125,7 +125,7 @@
             for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
               state = _ref1[_i];
               if (config.icon[state]) {
-                _results.push(("." + this.idClass + " ul li." + (cr.node()) + (sel(state, name)) + ":before {") + ((function() {
+                _results.push(("." + this.idClass + " ul li." + (cr.node()) + (sel(state, name)) + " > span." + (cr.node('icon')) + ":after {") + ((function() {
                   var _ref2, _results1;
 
                   _ref2 = config.icon[state];
@@ -141,7 +141,7 @@
             return _results;
           }).call(_this)).join("\n") + "\n" + ("." + _this.idClass + " ul li." + (cr.node()) + (sel('default', name)) + " > ul." + (cr.tree()) + " {\n  display: none;\n}\n." + _this.idClass + " ul li." + (cr.node()) + (sel('expanded', name)) + " > ul." + (cr.tree()) + " {\n  display: block;\n}");
         };
-        boilerplate = "." + this.idClass + " ul {\n  list-style-type: none;\n}\n." + this.idClass + " ul li." + (cr.node()) + " {\n  cursor: pointer;\n}\n." + this.idClass + " ul li." + (cr.node()) + ":before {\n  width: 1em;\n  text-align: center;\n  display: inline-block;\n  padding-right: 1ex;\n  speak: none;\n}";
+        boilerplate = "." + this.idClass + " ul {\n  list-style-type: none;\n}\n." + this.idClass + " ul li." + (cr.node()) + " {\n  cursor: pointer;\n}\n." + this.idClass + " ul li." + (cr.node()) + " > span." + (cr.node('icon')) + ":after {\n  width: 1em;\n  text-align: center;\n  display: inline-block;\n  padding-right: 1ex;\n  speak: none;\n}";
         return boilerplate + "\n" + ((function() {
           var _ref1, _results;
 
@@ -331,10 +331,12 @@
         };
 
         Node.prototype._buildElement = function() {
-          var $label, $li;
+          var $icon, $label, $li;
 
           $li = $('<li/>').addClass(this._cr.node()).addClass(this._cr.type(this.type));
+          $icon = $('<span/>').addClass(this._cr.node('icon'));
           $label = $('<span/>').addClass(this._cr.node('label')).text(this.name);
+          $li.append($icon);
           $li.append($label);
           if (this.isLeaf()) {
             $li.addClass(this._cr.state('leaf'));
@@ -344,7 +346,7 @@
           if (this.tree.startExpanded) {
             $li.addClass(this._cr.state('expanded'));
           }
-          this._attachEvents($li, 'icon');
+          this._attachEvents($icon, 'icon');
           this._attachEvents($label, 'label');
           return $li;
         };
@@ -368,20 +370,18 @@
           var watchedEvents,
             _this = this;
 
-          watchedEvents = ['click', 'keydown', 'keypress', 'keyup', 'mouseover', 'mouseout'].join(' ');
+          watchedEvents = ['click', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mouseleave'].join(' ');
           return $element.on(watchedEvents, function(e) {
             var handler, _i, _len, _ref1, _results;
 
             if (_this.tree.events[eventMapKey][e.type] != null) {
-              if (e.currentTarget === e.target) {
-                _ref1 = _this.tree.events[eventMapKey][e.type];
-                _results = [];
-                for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-                  handler = _ref1[_i];
-                  _results.push(handler(e, _this));
-                }
-                return _results;
+              _ref1 = _this.tree.events[eventMapKey][e.type];
+              _results = [];
+              for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+                handler = _ref1[_i];
+                _results.push(handler(e, _this));
               }
+              return _results;
             }
           });
         };

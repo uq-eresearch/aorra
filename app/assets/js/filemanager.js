@@ -59,7 +59,27 @@
           this.trigger("file:select", File.fromNode(node));
         }
       }, this);
+      hoverHandler = function(e) {
+        $(e.currentTarget).tooltip(e.type == 'mouseenter' ? 'show' : 'hide'); 
+      };
+      setTooltipText = function(e) {
+        $(e.currentTarget).tooltip('show');
+      };
+      createTooltip = function(e, node) {
+        if (node.isLeaf()) return;
+        $(e.currentTarget).tooltip({
+          placement: 'bottom',
+          trigger: 'manual',
+          delay: { show: 0, hide: 100 },
+          title: function() { 
+            return (node.isExpanded() ? 'Collapse' : 'Expand') + ' Folder';
+          }
+        });
+      };
       tree.events.label.click = [selectHandler];
+      tree.events.icon.click.push(setTooltipText);
+      tree.events.icon.mouseenter = [createTooltip, hoverHandler];
+      tree.events.icon.mouseleave = [hoverHandler];
       this.tree = tree;
     },
     options: {
@@ -386,8 +406,53 @@
     }
   });
   
+  var LoadingView = Backbone.View.extend({
+    initialize: function() { this.render(); },
+    render: function() {
+      var $heading = $('<h1/>')
+        .css('text-align', 'center');
+      var $symbol = $('<span/>')
+        .css('font-size', '5em')
+        .addClass("muted")
+        .html(
+          '<i class="icon-refresh icon-spin"></i>'
+          );
+      var $message = $('<small/>');
+      $message.html('Please wait - data loading&hellip;');
+      $heading.append($symbol, '<br />', $message);
+      this.$el.append($heading)
+    }
+  });
+  
+  var StartView = Backbone.View.extend({
+    initialize: function() { this.render(); },
+    render: function() {
+      var $heading = $('<h1/>')
+        .css('text-align', 'center');
+      var $symbol = $('<span/>')
+        .css('font-size', '5em')
+        .addClass("muted")
+        .html(
+          '<i class="icon-circle-arrow-up visible-phone"></i>'+
+          '<i class="icon-circle-arrow-left hidden-phone"></i>'
+          );
+      var $message = $('<small/>');
+      $message.text('Select a file or folder by clicking its name.');
+      $heading.append($symbol, '<br />', $message);
+      this.$el.append($heading)
+    }
+  });
+  
   var MainPane = Backbone.View.extend({
     tagName: "div",
+    initialize: function() {
+      this.innerView = new LoadingView();
+      this.render();
+    },
+    showStart: function() {
+      this.innerView = new StartView();
+      this.render();
+    },
     showFolder: function(folder) {
       this.innerView = new FolderView({ model: folder });
       this.render();
@@ -418,6 +483,7 @@
     $('#main').append(mainPane.$el);
     notificationFeed.open();
     notificationFeed.on("event:load", function(struct) {
+      mainPane.showStart();
       // Start router (as now we can load existing nodes)
       Backbone.history.start();
     });
