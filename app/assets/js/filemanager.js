@@ -307,9 +307,26 @@
       var $form = $('<form>');
       $form.attr('method', 'DELETE');
       $form.attr('action', '/filestore' + this.model.get('path'))
-      var $btn = $('<button type="submit" class="btn btn-danger"/>');
+      var $btn = $('<button class="btn btn-danger"/>');
       $btn.html('<i class="icon-remove"></i> Delete');
+      var $modal = $(
+        '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">' +
+        '  <div class="modal-header">' +
+        '    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' +
+        '    <h3>Are you sure? There is no undo!</h3>' +
+        '  </div>' +
+        '  <div class="modal-body">' +
+        '    <p>Please confirm you realy want to delete this item.</p>' +
+        '  </div>' +
+        '  <div class="modal-footer">' +
+        '    <button type="submit" class="btn btn-danger">Yes, I want it gone forever!</button>' +
+        '    <button class="btn" data-dismiss="modal" aria-hidden="true">No, leave it.</button>' +
+        '  </div>' +
+        '</div>'
+        ).modal({ show: false });
+      $btn.click(function() { $modal.modal('show'); return false; });
       $form.append($btn);
+      $form.append($modal);
       $form.submit(function(e) {
         $.ajax({
           method: $form.attr('method'),
@@ -318,6 +335,7 @@
             // need to implement sensible handling for deletion
           }
         });
+        $modal.modal('hide');
         return false;
       });
       return $form;
