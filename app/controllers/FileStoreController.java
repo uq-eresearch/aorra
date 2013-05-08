@@ -103,7 +103,7 @@ public final class FileStoreController extends SessionAwareController {
         final FileStore.Manager fm = fileStore.getManager(session);
         final FileStore.Folder folder;
         try {
-          folder = fm.getFolder("/"+folderPath);
+          folder = fm.getFolder("/"+URLDecoder.decode(folderPath, "UTF-8"));
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
