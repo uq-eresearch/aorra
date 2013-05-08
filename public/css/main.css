@@ -4,17 +4,22 @@ span.glyphtree-node-label {
 	min-width: 2em;
 }
 
-.hero-page {
+html.hero-page {
 	background: 
 	 url("/assets/images/bg.jpg")
 	 no-repeat
 	 center
 	 center
 	 fixed;
+	background-size: 100%;
   background-size: cover;
 	overflow: hidden;
 	background-color: black;
-	min-height: 400px;
+	min-height: 100%;
+}
+
+.hero-page body {
+	background: transparent; /* Override Bootstrap default */
 }
 
 .hero-page h1#big-headline {
@@ -67,6 +72,11 @@ span.glyphtree-node-label {
 	font-weight: bold;
 }
 
+
+.hero-page .attribution {
+	float: right;
+}
+
 @media (min-width: 980px) {
 	.hero-page .login-container .control-group {
 	  display: inline;
@@ -78,13 +88,13 @@ span.glyphtree-node-label {
 	  padding-top: 4em;
 	  min-height: 8em;
 	}
-}
 
-.hero-page .attribution {
-	position: absolute;
-	bottom: 0;
-	right: 0;
-	padding-right: 1em;
+	.hero-page .attribution {
+	  position: absolute;
+	  bottom: 0;
+	  right: 0;
+	  padding-right: 1em;
+	}
 }
 
 .hero-page .attribution > a {
