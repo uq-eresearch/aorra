@@ -32,7 +32,12 @@
       $('[rel="tooltip"]').tooltip();
       $('a[rel="back"]').click(function(event) {
         event.preventDefault();
-        window.history.back();
+        if (window.history.previous) {
+          window.history.back();
+        } else {
+          window.location.pathname = "@routes.Application.index()";
+          window.location.hash = "#";
+        }
       });
     });
     </script>
@@ -51,14 +56,16 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <ul id="nav-back" class="nav">
-            <li>
-              <a href="#" rel="back">
-                <i class="icon-double-angle-left icon-large"></i>
-              </a>
-            </li>
-            <li class="divider-vertical"></li>
-          </ul>
+          @subjectPresent() {
+            <ul id="nav-back" class="nav">
+              <li>
+                <a href="#" rel="back">
+                  <i class="icon-double-angle-left icon-large"></i>
+                </a>
+              </li>
+              <li class="divider-vertical"></li>
+            </ul>
+          }
           <a class="brand" href="/" 
              title="Automated Online Reef Report card Application">
             AORRA

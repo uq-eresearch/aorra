@@ -520,7 +520,6 @@
         "folder/:id": "showFolder"
       },
       showStart: function() {
-        console.log("Showing start");
         mainPane.showStart();
         this._setSidebarActive();
       },
