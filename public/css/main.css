@@ -4,8 +4,12 @@ span.glyphtree-node-label {
 	min-width: 2em;
 }
 
+html, body {
+  height: 100%;
+}
+
 html.hero-page {
-	background: 
+	background:
 	 url("/assets/images/bg.jpg")
 	 no-repeat
 	 center
@@ -77,6 +81,10 @@ html.hero-page {
 	float: right;
 }
 
+#nav-back.hidden {
+  display: none;
+}
+
 @media (min-width: 980px) {
 	.hero-page .login-container .control-group {
 	  display: inline;
@@ -84,6 +92,10 @@ html.hero-page {
 }
 
 @media (min-width: 768px) {
+  #nav-back {
+    display: none;
+  }
+
 	.hero-page .above-login {
 	  padding-top: 4em;
 	  min-height: 8em;
@@ -95,6 +107,18 @@ html.hero-page {
 	  right: 0;
 	  padding-right: 1em;
 	}
+}
+
+@media (max-width: 767px) {
+
+  #sidebar, #main {
+    display: none;
+  }
+
+  #sidebar.active, #main.active {
+    display: block;
+  }
+
 }
 
 .hero-page .attribution > a {

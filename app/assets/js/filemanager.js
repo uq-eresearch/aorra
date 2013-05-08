@@ -8,7 +8,7 @@
 
   It it looks like a mess, that's because it probably is.
   */
-  
+
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
       { pattern: /^image/, type: 'image' },
@@ -24,7 +24,7 @@
     }
     return 'file';
   };
-  
+
   var FileOrFolder = Backbone.Model.extend({}, {
     _getNodeAttrs: function(node) {
       return _({
@@ -33,13 +33,13 @@
       }).extend(node.attributes);
     }
   });
-  
+
   var Folder = FileOrFolder.extend({}, {
     fromNode: function(node) {
       return new this(this._getNodeAttrs(node));
     }
   });
-  
+
   var File = FileOrFolder.extend({}, {
     fromNode: function(node) {
       return new this(this._getNodeAttrs(node));
@@ -60,7 +60,7 @@
         }
       }, this);
       hoverHandler = function(e) {
-        $(e.currentTarget).tooltip(e.type == 'mouseenter' ? 'show' : 'hide'); 
+        $(e.currentTarget).tooltip(e.type == 'mouseenter' ? 'show' : 'hide');
       };
       setTooltipText = function(e) {
         $(e.currentTarget).tooltip('show');
@@ -71,7 +71,7 @@
           placement: 'bottom',
           trigger: 'manual',
           delay: { show: 0, hide: 100 },
-          title: function() { 
+          title: function() {
             return (node.isExpanded() ? 'Collapse' : 'Expand') + ' Folder';
           }
         });
@@ -143,7 +143,7 @@
       }
     }
   });
-  
+
   var NotificationFeed = function(config) {
       var obj = _.extend({}, config)
       _.extend(obj, Backbone.Events);
@@ -193,11 +193,11 @@
         }
       }
     });
-    
+
     function catchErrors(f) {
       return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
     }
-    
+
     var tree = _.bind(obj.getTree, this);
     // Event handlers
     obj.on("event:load", function(struct) { tree().load(struct); });
@@ -207,14 +207,14 @@
       catchErrors(function(struct) { tree().update(struct) }));
     obj.on("event:delete",
       catchErrors(function(struct) { tree().remove(struct.id) }));
-    
+
     return obj;
   };
-    
+
   var FileUploadView = Backbone.View.extend({
     url: '/filestore',
     tagName: 'div',
-    initialize: function() { this.render(); }, 
+    initialize: function() { this.render(); },
     render: function() {
       this.$el.empty();
       var $progressbar = $('<div class="progress"></div>')
@@ -249,11 +249,11 @@
       });
     }
   });
-  
+
   var CreateFolderView = Backbone.View.extend({
     url: '/filestore',
     tagName: 'form',
-    initialize: function() { this.render(); }, 
+    initialize: function() { this.render(); },
     render: function() {
       var parentFolder = this.model.get('path');
       var $input = $('<input type="text" name="folder"/>')
@@ -273,7 +273,7 @@
           method: $(form).attr('method'),
           url: '/filestore' + path,
           success: function() {
-            var $alert = $( 
+            var $alert = $(
               '<div class="alert alert-info">' +
               '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
               '<strong>' + path + '</strong> was successfully created.' +
@@ -286,8 +286,17 @@
       });
     }
   });
-  
+
   var FileOrFolderView = Backbone.View.extend({
+    _makeBackElement: function() {
+      var $wrapper = $('<div class="span12 visible-phone" />');
+      var $back = $('<button class="btn"/>');
+      $back.addClass('visible-phone');
+      $back.html('<i class="icon-reply"></i> Back');
+      $back.click(function() { window.history.back(); });
+      $wrapper.append($back);
+      return $wrapper;
+    },
     _makeBreadCrumbElement: function() {
       var breadcrumbs = this.model.get('path').split("/");
       var $breadcrumbs = $('<ul/>');
@@ -347,9 +356,9 @@
       return $link;
     }
   });
-  
+
   var FolderView = FileOrFolderView.extend({
-    initialize: function() { this.render(); }, 
+    initialize: function() { this.render(); },
     render: function() {
       var fileUploadView = new FileUploadView({ model: this.model })
       var mkdirView = new CreateFolderView({ model: this.model });
@@ -360,11 +369,11 @@
         .append(fileUploadView.$el)
         .append('<h3>Create new folder</h3>')
         .append(mkdirView.$el));
-    } 
+    }
   });
-  
+
   var FileView = FileOrFolderView.extend({
-    initialize: function() { this.render(); }, 
+    initialize: function() { this.render(); },
     render: function() {
       var type = typeFromMimeType(this.model.get('mimeType'));
       this.$el.empty();
@@ -382,8 +391,8 @@
     },
     _makeImageElement: function() {
       return $('<div><br /></div>').append(_.template(
-        '<img class="img-polaroid" alt="Image for <%= path %>"' + 
-        ' src="/filestore<%= path %>" />', 
+        '<img class="img-polaroid" alt="Image for <%= path %>"' +
+        ' src="/filestore<%= path %>" />',
         this.model.toJSON()));
     },
     _loadChartElements: function() {
@@ -407,7 +416,7 @@
       });
     }
   });
-  
+
   var DeletedView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
@@ -423,7 +432,7 @@
       this.$el.append($heading)
     }
   });
-  
+
   var LoadingView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
@@ -441,7 +450,7 @@
       this.$el.append($heading)
     }
   });
-  
+
   var StartView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
@@ -451,8 +460,7 @@
         .css('font-size', '5em')
         .addClass("muted")
         .html(
-          '<i class="icon-circle-arrow-up visible-phone"></i>'+
-          '<i class="icon-circle-arrow-left hidden-phone"></i>'
+          '<i class="icon-circle-arrow-left"></i>'
           );
       var $message = $('<small/>');
       $message.text('Select a file or folder by clicking its name.');
@@ -460,7 +468,7 @@
       this.$el.append($heading)
     }
   });
-  
+
   var MainPane = Backbone.View.extend({
     tagName: "div",
     initialize: function() {
@@ -488,9 +496,9 @@
       this.$el.append(this.innerView.$el);
     }
   })
-  
+
   $(function () {
-    
+
     var fileTree = new FileTree();
     var notificationFeed = new NotificationFeed({
       getTree: function() { return fileTree.tree }
@@ -504,7 +512,7 @@
       // Start router (as now we can load existing nodes)
       Backbone.history.start();
     });
-    
+
     var Router = Backbone.Router.extend({
       routes: {
         "": "showStart",
@@ -512,23 +520,39 @@
         "folder/:id": "showFolder"
       },
       showStart: function() {
+        console.log("Showing start");
         mainPane.showStart();
+        this._setSidebarActive();
       },
       showFolder: function(id) {
         var node = fileTree.tree.find(id);
         if (node == null) {
           mainPane.showDeleted()
+        } else {
+          mainPane.showFolder(Folder.fromNode(node));
         }
         this._highlightNode(node);
-        mainPane.showFolder(Folder.fromNode(node));
+        this._setMainActive();
       },
       showFile: function(id) {
         var node = fileTree.tree.find(id);
         if (node == null) {
           mainPane.showDeleted()
+        } else {
+          mainPane.showFile(File.fromNode(node));
         }
         this._highlightNode(node);
-        mainPane.showFile(File.fromNode(node));
+        this._setMainActive();
+      },
+      _setMainActive: function() {
+        $('#main').addClass('active');
+        $('#sidebar').removeClass('active');
+        $('#nav-back').removeClass('hidden');
+      },
+      _setSidebarActive: function() {
+        $('#sidebar').addClass('active');
+        $('#main').removeClass('active');
+        $('#nav-back').addClass('hidden');
       },
       _highlightNode: function(node) {
         // Show the active node on the tree
@@ -537,8 +561,9 @@
           .addClass('label label-info');
       }
     })
+
     var router = new Router();
-    
+
     fileTree.on("folder:select", function(folder) {
       router.navigate("folder/"+folder.id, {trigger: true});
     });
@@ -553,6 +578,6 @@
         mainPane.showDeleted();
       }
     });
-    
+
   });
 })();

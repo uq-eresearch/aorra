@@ -1,4 +1,4 @@
-@(title: String)(content: Html)
+@(title: String, fluid: Boolean = false)(content: Html)
 
 @import be.objectify.deadbolt.java.views.html._
 @import be.objectify.deadbolt.core.utils.TemplateUtils._
@@ -30,6 +30,10 @@
     $(function() {
       $('input, textarea').placeholder();
       $('[rel="tooltip"]').tooltip();
+      $('a[rel="back"]').click(function(event) {
+        event.preventDefault();
+        window.history.back();
+      });
     });
     </script>
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("css/main.css")"/>
@@ -47,6 +51,14 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
+          <ul id="nav-back" class="nav">
+            <li>
+              <a href="#" rel="back">
+                <i class="icon-double-angle-left icon-large"></i>
+              </a>
+            </li>
+            <li class="divider-vertical"></li>
+          </ul>
           <a class="brand" href="/" 
              title="Automated Online Reef Report card Application">
             AORRA
@@ -88,8 +100,8 @@
     
     <div class="visible-desktop" style="height: 60px;"></div>
     
-    <div class="container">
-    <div class="row">
+    <div class="@(if (fluid) "container-fluid" else "container")">
+    <div class="row-fluid">
     @content
     </div>
     </div>
