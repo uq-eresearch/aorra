@@ -8,5 +8,6 @@ script:
   - play-${PLAY_VERSION}/play jacoco:cover
   - _JAVA_OPTIONS="-Dsbt.main.class=sbt.ScriptMain" play coveralls
   - cat target/coveralls.json
+  - curl --form json_file=@target/coveralls.json https://coveralls.io/api/v1/jobs || true
 notifications:
   email: false
