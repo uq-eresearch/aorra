@@ -32,6 +32,7 @@ object ApplicationBuild extends Build {
     parallelExecution in jacoco.Config := false,
     // Jacoco report output
     jacoco.reportFormats in jacoco.Config := Seq(XMLReport("utf-8"), HTMLReport("utf-8"), CSVReport("utf-8")),
+    jacoco.excludes in jacoco.Config := Seq("Route*", "Reverse*", "com*", "views*"),
     jacoco.outputDirectory in jacoco.Config := file("target/jacoco"),
     // Get rid of jBoss logging warning
     javaOptions := Seq("-Dorg.jboss.logging.provider=slf4j"),
