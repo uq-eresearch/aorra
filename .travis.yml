@@ -5,8 +5,8 @@ before_script:
   - wget http://downloads.typesafe.com/play/${PLAY_VERSION}/play-${PLAY_VERSION}.zip
   - unzip -q play-${PLAY_VERSION}.zip 
 script:
-  - play-${PLAY_VERSION}/play jacoco:cover
-  - _JAVA_OPTIONS="-Dsbt.main.class=sbt.ScriptMain" play coveralls
+  - yes "q" | play-${PLAY_VERSION}/play jacoco:cover
+  - yes "q" | _JAVA_OPTIONS="-Dsbt.main.class=sbt.ScriptMain" play-${PLAY_VERSION}/play coveralls
   - cat target/coveralls.json
   - curl --form json_file=@target/coveralls.json https://coveralls.io/api/v1/jobs || true
 notifications:
