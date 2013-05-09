@@ -1,0 +1,91 @@
+#!/bin/env scala
+
+/**
+ * Script which generates coverage JSON for Coveralls.io
+ *
+ * Execute with:
+ * _JAVA_OPTIONS="-Dsbt.main.class=sbt.ScriptMain" play coveralls
+ */
+
+/***
+scalaVersion := "2.10.1"
+
+libraryDependencies ++= Seq(
+  "play" %% "play" % "2.1.+"
+)
+*/
+
+// Handle missing DTD
+import scala.xml.Elem
+import scala.xml.factory.XMLLoader
+import javax.xml.parsers.SAXParser
+object NoDtdXML extends XMLLoader[Elem] {
+  override def parser: SAXParser = {
+    val f = javax.xml.parsers.SAXParserFactory.newInstance()
+    f.setNamespaceAware(false)
+    f.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false)
+    f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    f.newSAXParser()
+  }
+}
+
+import scala.xml._
+import play.api.libs.json._
+
+object CoverallJson {
+
+  def sourceFileJson = {
+    val xmlReport = NoDtdXML.loadFile("target/jacoco/jacoco.xml")
+    val fileJsObjects: Seq[Option[JsValue]] = 
+      for (
+        packageNode <- (xmlReport \\ "package");
+        fileNode <- (packageNode \ "sourcefile")
+      ) yield {
+        val filename = (packageNode \ "@name") + "/" + (fileNode \ "@name")
+        // Find file source (very naive)
+        val source = try { 
+          Some(io.Source.fromFile("app/"+filename))
+        } catch {
+          case _: java.io.FileNotFoundException => None
+        }
+        // Produce JSON object
+        source.map { _.mkString }.map { content =>
+          val lineCount = source.get.reset.getLines.size
+          val lineInfo = (fileNode \ "line").map({ lineNode =>
+            ((lineNode \ "@nr").mkString.toInt, (lineNode \ "@ci").mkString.toInt)
+          }).toMap
+          JsObject(Seq(
+            "name" -> JsString(filename),
+            "source" -> JsString(content),
+            "coverage" -> JsArray((0 until lineCount).map { lineNo =>
+              lineInfo.get(lineNo) match {
+                case Some(i: Int) => JsNumber(i)
+                case None => JsNull
+              }
+            })
+          ))
+        }
+      }
+    JsArray(fileJsObjects.flatten)
+  }
+  
+  def jobId = sys.env.get("TRAVIS_JOB_ID").getOrElse("unknown")
+
+  def toJson = {
+    JsObject(Seq(
+      "service_job_id" -> JsString(jobId),
+      "service_name" -> JsString("travis-ci"),
+      "source_files" -> sourceFileJson
+    ))
+  }
+  
+  override def toString = {
+    toJson.toString
+  }
+
+}
+
+println("Generating Coveralls.io JSON...")
+val out = new java.io.FileWriter("target/coveralls.json")
+out.write(CoverallJson.toString)
+out.close

@@ -3,6 +3,8 @@
 .*
 # except for .gitignore
 !.gitignore
+# and .travis.yml
+!.travis.yml
 # Ignore all temporary files
 *~
 
