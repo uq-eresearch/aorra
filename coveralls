@@ -57,7 +57,7 @@ object CoverallJson {
           JsObject(Seq(
             "name" -> JsString(filename),
             "source" -> JsString(content),
-            "coverage" -> JsArray((0 until lineCount).map { lineNo =>
+            "coverage" -> JsArray((1 until (lineCount + 1)).map { lineNo =>
               lineInfo.get(lineNo) match {
                 case Some(i: Int) => JsNumber(i)
                 case None => JsNull
