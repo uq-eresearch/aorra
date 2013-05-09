@@ -41,10 +41,10 @@ object CoverallJson {
         packageNode <- (xmlReport \\ "package");
         fileNode <- (packageNode \ "sourcefile")
       ) yield {
-        val filename = (packageNode \ "@name") + "/" + (fileNode \ "@name")
+        val filename = "app/" + (packageNode \ "@name") + "/" + (fileNode \ "@name")
         // Find file source (very naive)
         val source = try { 
-          Some(io.Source.fromFile("app/"+filename))
+          Some(io.Source.fromFile(filename))
         } catch {
           case _: java.io.FileNotFoundException => None
         }
