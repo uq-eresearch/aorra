@@ -69,12 +69,17 @@ object CoverallJson {
   
   def jobId = sys.env.get("TRAVIS_JOB_ID").getOrElse("unknown")
 
+  def timestamp = {
+    val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+    df.format(new java.util.Date())
+  }
   
   override def toString = {
     val json = JObject(List(
       JField("service_job_id", JString(jobId)),
       JField("service_name", JString("travis-ci")),
-      JField("source_files", sourceFileJson)
+      JField("source_files", sourceFileJson),
+      JField("run_at", JString(timestamp))
     ))
     pretty(render(json))
   }
