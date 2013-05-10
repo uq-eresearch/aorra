@@ -29,7 +29,7 @@ public abstract class JcrSessionFactory {
    * Get a new admin session.
    * @returns a new admin session
    */
-  public abstract Session newAdminSession();
+  public abstract Session newAdminSession() throws RepositoryException;
 
   /**
    * Get a new session as the Jackrabbit user matching the given credentials.
@@ -72,7 +72,13 @@ public abstract class JcrSessionFactory {
    * @returns return value of the function
    */
   public <R> R inSession(Function<Session, R> func) {
-    return inSession(newAdminSession(), func);
+    Session session;
+    try {
+      session = newAdminSession();
+      return inSession(session, func);
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**

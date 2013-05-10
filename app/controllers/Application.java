@@ -145,7 +145,6 @@ public final class Application extends SessionAwareController {
     });
   }
 
-  @SubjectPresent
   public final Result userUnverified(String encodedEmail) {
     final String email = urlDecode(encodedEmail);
     return sessionFactory.inSession(new F.Function<Session, Result>() {

@@ -70,14 +70,10 @@ public class GuiceInjectionPlugin extends Plugin {
       protected void configure() {
         JcrSessionFactory sessionFactory = new JcrSessionFactory() {
           @Override
-          public Session newAdminSession() {
-            try {
+          public Session newAdminSession() throws RepositoryException {
             return Jcr.login(
                 cfgStr(ConfigConsts.CONF_JCR_USERID),
                 cfgStr(ConfigConsts.CONF_JCR_PASSWORD));
-            } catch (RepositoryException e) {
-              throw new RuntimeException(e);
-            }
           }
 
           private String cfgStr(String key) {

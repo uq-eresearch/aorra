@@ -2,24 +2,35 @@
   user: models.User
 )
 
+@import be.objectify.deadbolt.java.views.html._
+@import be.objectify.deadbolt.core.utils.TemplateUtils._
+
 @main("User now awaiting verification") {
   
   <div class="span12">
   <div class="page-header">
-  <h1>User now awaiting verification</h1>
+  <h1>Awaiting Verification</h1>
   </div>
   
-  <p>The specified user now exists:</p>
-  
-  <address>
-    <strong>@user.getName</strong><br />
-    <a href="mailto:#">@user.getEmail</a>
-  </address>
-  
-  <p>
-  A confirmation email has been sent to them.
-  
-  They will need to follow the included link to set their password.
-  </p>
+  @subjectPresent() {
+    <p>The specified user now exists:</p>
+    
+    <address>
+      <strong>@user.getName</strong><br />
+      <a href="mailto:#">@user.getEmail</a>
+    </address>
+    
+    <p>
+    A confirmation email has been sent to them.
+    
+    They will need to follow the included link to set their password.
+    </p>
+  }
+  @subjectNotPresent() {
+    <p>
+    The specified user exists, but has not verified their email address
+    and set their password.
+    </p>
+  }
 
 }
