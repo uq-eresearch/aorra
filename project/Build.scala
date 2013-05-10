@@ -34,7 +34,7 @@ object ApplicationBuild extends Build {
     parallelExecution in jacoco.Config := false,
     // Jacoco report output
     jacoco.reportFormats in jacoco.Config := Seq(XMLReport("utf-8"), HTMLReport("utf-8"), CSVReport("utf-8")),
-    jacoco.excludes in jacoco.Config := Seq("Route*", "Reverse*", "com*", "views*"),
+    jacoco.excludes in jacoco.Config := Seq("Route*", "Reverse*", "com*", "views*", "controllers.javascript.*"),
     jacoco.outputDirectory in jacoco.Config := file("target/jacoco"),
     // Coveralls
     coveralls := {
