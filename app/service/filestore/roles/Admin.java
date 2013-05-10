@@ -20,6 +20,7 @@ public class Admin {
 
   /**
    * Get the underlying group for the admin instance.
+   *
    * @return Jackrabbit group
    */
   public Group getGroup() {
@@ -28,30 +29,24 @@ public class Admin {
 
   /**
    * Get the admin group instance, creating it if necessary
-   * @param session the session to use to fetch this instance
+   *
+   * @param session
+   *          the session to use to fetch this instance
    * @return admin instance bound to the provided session
    */
-  public static Admin getInstance(final Session session) {
+  public static Admin getInstance(final Session session)
+      throws RepositoryException {
     return new Admin(getUnderlyingGroup((JackrabbitSession) session));
   }
 
-  protected static Group getUnderlyingGroup(final JackrabbitSession session) {
-    try {
-      UserManager um = session.getUserManager();
-      Group group = findAdminGroup(um);
-      if (group == null)
-        return createAdminGroup(um);
-      return group;
-    } catch (RepositoryException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  protected static Group createAdminGroup(final UserManager um)
+  protected static Group getUnderlyingGroup(final JackrabbitSession session)
       throws RepositoryException {
+    final UserManager um = session.getUserManager();
     try {
+      // Create group
       return um.createGroup(GROUP_ID);
     } catch (AuthorizableExistsException e) {
+      // Great! Find it instead
       return findAdminGroup(um);
     }
   }
@@ -60,6 +55,5 @@ public class Admin {
       throws RepositoryException {
     return (Group) um.getAuthorizable(GROUP_ID);
   }
-
 
 }
