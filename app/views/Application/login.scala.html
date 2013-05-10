@@ -43,7 +43,7 @@
   
   <br class="hidden-phone" />
   @helper.form(action = routes.Application.postLogin(), 'class -> "form-inline") {
-    @inlineInput(form("email"), "text", "envelope", "your email address")
+    @inlineInput(form("email"), "email", "envelope", "your email address")
     @inlineInput(form("password"), "password", "asterisk", "your password")
     <button class="btn btn-primary" type="submit">
       <i class="icon-signin"></i> Login
