@@ -15,12 +15,20 @@ public class AorraTestUtils {
   public static final String REPOSITORY_DIRECTORY_PATH = "file:./target/jackrabbittestrepository";
 
   public static FakeApplication fakeAorraApp() {
-    return fakeApplication(additionalConfig());
+    return fakeAorraApp(true);
   }
 
-  private static Map<String, Object> additionalConfig() {
+  public static FakeApplication fakeAorraApp(boolean muteErrors) {
+    return fakeApplication(additionalConfig(muteErrors));
+  }
+
+  private static Map<String, Object> additionalConfig(boolean muteErrors) {
     ImmutableMap.Builder<String, Object> m = ImmutableMap
         .<String, Object> builder();
+    if (muteErrors) {
+      m.put("logger.play", "ERROR");
+      m.put("logger.application", "ERROR");
+    }
     m.put(ConfigConsts.CONF_JCR_REPOSITORY_URI, REPOSITORY_DIRECTORY_PATH);
     m.put(ConfigConsts.CONF_JCR_REPOSITORY_CONFIG, REPOSITORY_CONFIG_PATH);
     m.put(ConfigConsts.CONF_JCR_HAS_RECREATION_REQUIRE, true);
