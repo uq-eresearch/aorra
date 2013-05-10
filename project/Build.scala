@@ -24,6 +24,8 @@ object ApplicationBuild extends Build {
     "org.crsh" % "crsh.shell.telnet" % crshVersion,
     "be.objectify" %% "deadbolt-java" % "2.0-SNAPSHOT"
   )
+  
+  val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
 
   lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*)
 
@@ -34,6 +36,13 @@ object ApplicationBuild extends Build {
     jacoco.reportFormats in jacoco.Config := Seq(XMLReport("utf-8"), HTMLReport("utf-8"), CSVReport("utf-8")),
     jacoco.excludes in jacoco.Config := Seq("Route*", "Reverse*", "com*", "views*"),
     jacoco.outputDirectory in jacoco.Config := file("target/jacoco"),
+    // Coveralls
+    coveralls := {
+      println("Generating Coveralls.io JSON...")
+      val out = new java.io.FileWriter("target/coveralls.json")
+      out.write(CoverallJson.toString)
+      out.close
+    },
     // Get rid of jBoss logging warning
     javaOptions := Seq("-Dorg.jboss.logging.provider=slf4j"),
     // Allows mock Http.Contexts to be built for play-authenticate

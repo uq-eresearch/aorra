@@ -1,5 +1,3 @@
-#!/bin/env scala
-
 /**
  * Script which generates coverage JSON for Coveralls.io
  *
@@ -30,13 +28,13 @@ object NoDtdXML extends XMLLoader[Elem] {
 }
 
 import scala.xml._
-import play.api.libs.json._
+import net.liftweb.json._
 
 object CoverallJson {
 
-  def sourceFileJson = {
+  def sourceFileJson: JArray = {
     val xmlReport = NoDtdXML.loadFile("target/jacoco/jacoco.xml")
-    val fileJsObjects: Seq[Option[JsValue]] = 
+    val fileJsObjects: Seq[Option[JObject]] = 
       for (
         packageNode <- (xmlReport \\ "package");
         fileNode <- (packageNode \ "sourcefile")
@@ -49,43 +47,36 @@ object CoverallJson {
           case _: java.io.FileNotFoundException => None
         }
         // Produce JSON object
-        source.map { _.mkString }.map { content =>
+        source.map { _.mkString }.map { content: String =>
           val lineCount = source.get.reset.getLines.size
           val lineInfo = (fileNode \ "line").map({ lineNode =>
             ((lineNode \ "@nr").mkString.toInt, (lineNode \ "@ci").mkString.toInt)
           }).toMap
-          JsObject(Seq(
-            "name" -> JsString(filename),
-            "source" -> JsString(content),
-            "coverage" -> JsArray((1 until (lineCount + 1)).map { lineNo =>
+          JObject(List(
+            JField("name", JString(filename)),
+            JField("source", JString(content)),
+            JField("coverage", JArray((1 until (lineCount + 1)).map { lineNo =>
               lineInfo.get(lineNo) match {
-                case Some(i: Int) => JsNumber(i)
-                case None => JsNull
+                case Some(i: Int) => JInt(i)
+                case None => JNull
               }
-            })
+            }.toList))
           ))
         }
       }
-    JsArray(fileJsObjects.flatten)
+    JArray(fileJsObjects.flatten.toList)
   }
   
   def jobId = sys.env.get("TRAVIS_JOB_ID").getOrElse("unknown")
 
-  def toJson = {
-    JsObject(Seq(
-      "service_job_id" -> JsString(jobId),
-      "service_name" -> JsString("travis-ci"),
-      "source_files" -> sourceFileJson
-    ))
-  }
   
   override def toString = {
-    toJson.toString
+    val json = JObject(List(
+      JField("service_job_id", JString(jobId)),
+      JField("service_name", JString("travis-ci")),
+      JField("source_files", sourceFileJson)
+    ))
+    pretty(render(json))
   }
 
 }
-
-println("Generating Coveralls.io JSON...")
-val out = new java.io.FileWriter("target/coveralls.json")
-out.write(CoverallJson.toString)
-out.close
