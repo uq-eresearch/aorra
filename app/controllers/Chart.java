@@ -54,7 +54,7 @@ public class Chart extends SessionAwareController {
       this.fileStore = fileStore;
     }
 
-    private String buildUrl(ereefs.charts.Chart chart, String format) throws UnsupportedEncodingException {
+    private String buildUrl(ereefs.charts.Chart chart, String format, String path) throws UnsupportedEncodingException {
         StringBuilder result = new StringBuilder("charts/");
         result.append(chart.getDescription().getType().toString().toLowerCase());
         result.append(".");
@@ -74,6 +74,7 @@ public class Chart extends SessionAwareController {
                 result.append("&");
             }
         }
+        result.append("&path="+URLEncoder.encode(path, "UTF-8"));
         return result.toString();
     }
 
@@ -127,7 +128,7 @@ public class Chart extends SessionAwareController {
                             for(Map.Entry<String, String> me : desc.getProperties().entrySet()) {
                                 chartNode.put(me.getKey(), me.getValue());
                             }
-                            chartNode.put("url", buildUrl(chart, format));
+                            chartNode.put("url", buildUrl(chart, format, request().queryString().get("path")[0]));
                             aNode.add(chartNode);
                         }
                         return ok(json).as("application/json");
