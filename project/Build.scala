@@ -22,7 +22,8 @@ object ApplicationBuild extends Build {
     "com.google.inject" % "guice" % "3.0",
     "org.crsh" % "crsh.shell.core" % crshVersion,
     "org.crsh" % "crsh.shell.telnet" % crshVersion,
-    "be.objectify" %% "deadbolt-java" % "2.0-SNAPSHOT"
+    "be.objectify" %% "deadbolt-java" % "2.0-SNAPSHOT",
+    "com.feth" %% "play-authenticate" % "0.2.5-SNAPSHOT"
   )
   
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
@@ -52,13 +53,13 @@ object ApplicationBuild extends Build {
     //javaOptions in (Test) += "-Xdebug",
     //javaOptions in (Test) += "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9998",
     resolvers += Resolver.url("play-easymail (release)", url("http://joscha.github.com/play-easymail/repo/releases/"))(Resolver.ivyStylePatterns),
-    resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns)
-  ).dependsOn(RootProject(uri(
-      "git://github.com/tjdett/play-authenticate.git#testing-code"))
+    resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
+    resolvers += Resolver.url("play-authenticate (release)", url("http://joscha.github.com/play-authenticate/repo/releases/"))(Resolver.ivyStylePatterns),
+    resolvers += Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
   ).dependsOn(RootProject(uri(
       "git://github.com/schaloner/deadbolt-2-java.git"))
   ).dependsOn(RootProject(uri(
-      "git://github.com/tjdett/play21-jackrabbit-plugin.git#shutdown"))
+      "git://github.com/sgougi/play21-jackrabbit-plugin.git#18648ba65dbda3fb8bd341009d9483f9de5bca35"))
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play2-crash-plugin.git"))
   ).dependsOn(RootProject(uri(
