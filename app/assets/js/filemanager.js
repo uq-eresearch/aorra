@@ -400,7 +400,7 @@
         var $wrapper = $('<div/>')
           .append('<h3>'+chart.region+'</h3>')
           .append(_.template(
-            '<img src="/chart<%= model.path %>?region=<%=chart.region %>"'+
+            '<img src="<%= chart.url %>"'+
             ' alt="Chart for <%= chart.region %>" />'
           , { model: this.model.toJSON(), chart: chart }));
         return $wrapper;
@@ -410,7 +410,7 @@
       }, this);
       $.ajax({
         method: 'GET',
-        url: '/chart' + this.model.get('path'),
+        url: '/charts/?path=' + this.model.get('path'),
         dataType: 'json',
         success: onSuccess
       });
