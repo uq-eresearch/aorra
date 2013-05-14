@@ -396,6 +396,7 @@
         this.model.toJSON()));
     },
     _loadChartElements: function() {
+      var format = Modernizr.svg ? 'svg' : 'png';
       var createChartElement = _.bind(function(chart) {
         var $wrapper = $('<div/>')
           .append('<h3>'+chart.region+'</h3>')
@@ -410,7 +411,7 @@
       }, this);
       $.ajax({
         method: 'GET',
-        url: '/charts/?path=' + this.model.get('path'),
+        url: '/charts/?path=' + this.model.get('path')+"&format="+format,
         dataType: 'json',
         success: onSuccess
       });
