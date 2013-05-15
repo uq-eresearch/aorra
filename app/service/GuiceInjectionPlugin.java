@@ -81,7 +81,8 @@ public class GuiceInjectionPlugin extends Plugin {
           }
         };
         bind(JcrSessionFactory.class).toInstance(sessionFactory);
-        bind(FileStore.class).toInstance(new FileStore(sessionFactory));
+        // No need to specify this
+        //bind(FileStore.class).to(FileStore.class);
         bind(CacheableUserProvider.class).to(DeadboltHandlerImpl.class);
       }
     };
@@ -96,7 +97,6 @@ public class GuiceInjectionPlugin extends Plugin {
         return jcrom;
       }
     };
-
     return Guice.createInjector(pluginModule, sessionModule, jcromModule);
   }
 

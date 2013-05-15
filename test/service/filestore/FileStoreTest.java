@@ -21,6 +21,8 @@ import org.apache.jackrabbit.api.security.user.Group;
 import org.jcrom.Jcrom;
 import org.junit.Test;
 
+import com.google.inject.Injector;
+
 import play.Logger;
 import play.Play;
 import play.libs.F.Function;
@@ -34,10 +36,8 @@ public class FileStoreTest {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
-        final JcrSessionFactory sessionFactory = GuiceInjectionPlugin
-            .getInjector(Play.application())
-            .getInstance(JcrSessionFactory.class);
-        final FileStore fileStore = new FileStore(sessionFactory);
+        final JcrSessionFactory sessionFactory = getSessionFactory();
+        final FileStore fileStore = getFileStore();
         sessionFactory.inSession(new Function<Session,FileStore.Folder>() {
           @Override
           public FileStore.Folder apply(Session session) {
@@ -78,17 +78,15 @@ public class FileStoreTest {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
-        final JcrSessionFactory sessionFactory = GuiceInjectionPlugin
-            .getInjector(Play.application())
-            .getInstance(JcrSessionFactory.class);
-        final FileStore fileStore = new FileStore(sessionFactory);
+        final JcrSessionFactory sessionFactory = getSessionFactory();
+        final FileStore fileStore = getFileStore();
         final String userId = sessionFactory.inSession(
             new Function<Session,String>() {
           @Override
           public String apply(Session session) {
             // Create new user
             final String userId;
-            UserDAO dao = new UserDAO(session, jcrom());
+            UserDAO dao = new UserDAO(session, getJcrom());
             User user = new User();
             user.setEmail("user@example.com");
             user.setName("Test User");
@@ -169,8 +167,17 @@ public class FileStoreTest {
     });
   }
 
+  private JcrSessionFactory getSessionFactory() {
+    return Play.application().plugin(GuiceInjectionPlugin.class)
+        .getInjector().getInstance(JcrSessionFactory.class);
+  }
 
-  private Jcrom jcrom() {
+  private FileStore getFileStore() {
+    return Play.application().plugin(GuiceInjectionPlugin.class)
+        .getInjector().getInstance(FileStore.class);
+  }
+
+  private Jcrom getJcrom() {
     return Play.application().plugin(GuiceInjectionPlugin.class)
         .getInjector().getInstance(Jcrom.class);
   }

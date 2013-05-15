@@ -40,6 +40,7 @@ import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
+import org.jcrom.Jcrom;
 
 import play.Logger;
 import play.libs.Akka;
@@ -71,15 +72,19 @@ public class FileStore {
       StringUtils.stripStart(FILE_STORE_PATH, "/");
 
   private final ActorRef eventManager;
+  private final Jcrom jcrom;
 
   @Inject
-  public FileStore(final JcrSessionFactory sessionFactory) {
+  public FileStore(
+      final JcrSessionFactory sessionFactory,
+      final Jcrom jcrom) {
+    this.jcrom = jcrom;
     eventManager = Akka.system().actorOf(new Props(EventManager.class));
     sessionFactory.inSession(new Function<Session, Node>() {
       @Override
       public Node apply(Session session) {
         try {
-          Node root;
+          final Node root;
           if (session.getRootNode().hasNode(FILE_STORE_NODE_NAME)) {
             root = session.getNode(FILE_STORE_PATH);
           } else {
@@ -98,13 +103,13 @@ public class FileStore {
   }
 
   protected static void debugPermissions(Session session, String path) {
-    Node node;
+    final Node node;
     try {
       node = session.getNode(path);
       Logger.debug("Actual:");
       {
-        AccessControlManager acm = session.getAccessControlManager();
-        AccessControlList acl = AccessControlUtils.getAccessControlList(
+        final AccessControlManager acm = session.getAccessControlManager();
+        final AccessControlList acl = AccessControlUtils.getAccessControlList(
             acm, node.getPath());
         for (AccessControlEntry entry : acl.getAccessControlEntries()) {
           for (Privilege p : entry.getPrivileges()) {
@@ -113,7 +118,7 @@ public class FileStore {
         }
       }
       Logger.debug("Effective:");
-      AccessControlPolicy[] policies = session.getAccessControlManager()
+      final AccessControlPolicy[] policies = session.getAccessControlManager()
           .getEffectivePolicies(node.getPath());
       for (AccessControlPolicy policy : policies) {
         AccessControlList acl = (AccessControlList) policy;
@@ -132,16 +137,16 @@ public class FileStore {
     }
   }
 
-  public Manager getManager(Session session) {
-    return new Manager(session, eventManager);
+  public Manager getManager(final Session session) {
+    return new Manager(session, jcrom, eventManager);
   }
 
   public ActorRef getEventManager() {
     return eventManager;
   }
 
-  protected static FileOrFolder fromNode(Node node,
-      ActorRef eventManager) throws RepositoryException {
+  protected static FileOrFolder fromNode(final Node node,
+      final ActorRef eventManager) throws RepositoryException {
     if (node.getPrimaryNodeType().isNodeType(NodeType.NT_FILE))
       return new File(node, eventManager);
     else
@@ -151,14 +156,16 @@ public class FileStore {
   public static class Manager {
 
     private final Session session;
+    private final Jcrom jcrom;
     private final ActorRef eventManager;
 
-    protected Manager(Session session, ActorRef eventManager) {
+    protected Manager(final Session session, final Jcrom jcrom, final ActorRef eventManager) {
       this.session = session;
+      this.jcrom = jcrom;
       this.eventManager = eventManager;
     }
 
-    public FileStore.Folder getFolder(String absPath)
+    public FileStore.Folder getFolder(final String absPath)
       throws RepositoryException {
       FileOrFolder f = getFileOrFolder(absPath);
       if (f != null && f.isFolder()) {
@@ -168,7 +175,8 @@ public class FileStore {
       }
     }
 
-    public FileOrFolder getFileOrFolder(String absPath) throws RepositoryException {
+    public FileOrFolder getFileOrFolder(final String absPath)
+        throws RepositoryException {
       if (absPath.equals("/")) {
         return getRoot();
       } else {
@@ -178,7 +186,8 @@ public class FileStore {
           if (node != null) {
             return fromNode(node, eventManager);
           }
-        } catch (PathNotFoundException e) {}
+        } catch (PathNotFoundException e) {
+        }
         return null;
       }
     }
@@ -209,48 +218,49 @@ public class FileStore {
       super(node, eventManager);
     }
 
-    public Folder createFolder(String name) throws ItemExistsException,
+    public Folder createFolder(final String name) throws ItemExistsException,
         PathNotFoundException, NoSuchNodeTypeException, LockException,
         VersionException, ConstraintViolationException, RepositoryException {
-      if(getFileOrFolder(name) != null) {
-          throw new RuntimeException(String.format("file or folder already exists '%s'", name));
+      if (getFileOrFolder(name) != null) {
+        throw new RuntimeException(String.format(
+            "file or folder already exists '%s'", name));
       } else {
-        Folder folder = new Folder(
-            node.addNode(name, NodeType.NT_FOLDER), eventManager);
+        Folder folder = new Folder(node.addNode(name, NodeType.NT_FOLDER),
+            eventManager);
         eventManager.tell(FileStoreEvent.create(folder), null);
         return folder;
       }
     }
 
-    public File createFile(String name, String mime, InputStream data)
-        throws RepositoryException {
+    public File createFile(final String name, final String mime,
+        final InputStream data) throws RepositoryException {
       return createOrOverwriteFile(name, mime, data);
     }
 
-    public File createOrOverwriteFile(String name, String mime, InputStream data)
-        throws RepositoryException {
-        FileOrFolder f = getFileOrFolder(name);
-        if(f!=null && f.isFolder()) {
-            throw new RuntimeException(String.format("Can't create file '%s'." +
-                    " Folder with same name already exists", name));
-        } else {
-          File file = new File(node, name, mime, data, eventManager);
-          eventManager.tell(FileStoreEvent.create(file), null);
-          return file;
-        }
+    public File createOrOverwriteFile(final String name, final String mime,
+        final InputStream data) throws RepositoryException {
+      final FileOrFolder f = getFileOrFolder(name);
+      if (f != null && f.isFolder()) {
+        throw new RuntimeException(String.format("Can't create file '%s'."
+            + " Folder with same name already exists", name));
+      } else {
+        final File file = new File(node, name, mime, data, eventManager);
+        eventManager.tell(FileStoreEvent.create(file), null);
+        return file;
+      }
     }
 
-    public File getFile(String name) throws RepositoryException {
-        FileOrFolder f = getFileOrFolder(name);
-        if((f!=null) && (!f.isFolder())) {
-            return (File)f;
-        } else {
-            return null;
-        }
+    public File getFile(final String name) throws RepositoryException {
+      final FileOrFolder f = getFileOrFolder(name);
+      if ((f != null) && (!f.isFolder())) {
+        return (File) f;
+      } else {
+        return null;
+      }
     }
 
     public Set<Folder> getFolders() throws RepositoryException {
-      ImmutableSet.Builder<Folder> set = ImmutableSet.<Folder>builder();
+      final ImmutableSet.Builder<Folder> set = ImmutableSet.<Folder> builder();
       for (final Node child : JcrUtils.getChildNodes(node)) {
         if (child.getPrimaryNodeType().isNodeType(NodeType.NT_FOLDER)) {
           set.add(new Folder(child, eventManager));
@@ -259,26 +269,27 @@ public class FileStore {
       return set.build();
     }
 
-    public Folder getFolder(String name) throws RepositoryException {
-        for(Folder folder : getFolders()) {
-            if(StringUtils.equals(name, folder.getName())) {
-                return folder;
-            }
+    public Folder getFolder(final String name) throws RepositoryException {
+      for (Folder folder : getFolders()) {
+        if (StringUtils.equals(name, folder.getName())) {
+          return folder;
         }
-        return null;
+      }
+      return null;
     }
 
-    public FileOrFolder getFileOrFolder(String name) throws RepositoryException {
-        for (final Node child : JcrUtils.getChildNodes(node)) {
-            if(StringUtils.equals(child.getName(), name)) {
-                return fromNode(child, eventManager);
-            }
+    public FileOrFolder getFileOrFolder(final String name)
+        throws RepositoryException {
+      for (final Node child : JcrUtils.getChildNodes(node)) {
+        if (StringUtils.equals(child.getName(), name)) {
+          return fromNode(child, eventManager);
         }
-        return null;
+      }
+      return null;
     }
 
     public Set<File> getFiles() throws RepositoryException {
-      ImmutableSet.Builder<File> set = ImmutableSet.<File>builder();
+      final ImmutableSet.Builder<File> set = ImmutableSet.<File> builder();
       for (final Node child : JcrUtils.getChildNodes(node)) {
         if (child.getPrimaryNodeType().isNodeType(NodeType.NT_FILE)) {
           set.add(new File(child, eventManager));
@@ -288,11 +299,11 @@ public class FileStore {
     }
 
     public void resetPermissions() throws RepositoryException {
-      Group group = Admin.getInstance(session()).getGroup();
-      AccessControlManager acm = session().getAccessControlManager();
-      JackrabbitAccessControlList acl = AccessControlUtils.getAccessControlList(
-          acm, node.getPath());
-      Principal everyone = EveryonePrincipal.getInstance();
+      final Group group = Admin.getInstance(session()).getGroup();
+      final AccessControlManager acm = session().getAccessControlManager();
+      final JackrabbitAccessControlList acl = AccessControlUtils
+          .getAccessControlList(acm, node.getPath());
+      final Principal everyone = EveryonePrincipal.getInstance();
       for (AccessControlEntry entry : acl.getAccessControlEntries()) {
         if (entry.getPrincipal().equals(everyone)) {
           acl.removeAccessControlEntry(entry);
@@ -300,25 +311,21 @@ public class FileStore {
       }
       if (node.getPath().equals(FILE_STORE_PATH)) {
         // Deny everyone everything by default on root (which should propagate)
-       acl.addEntry(EveryonePrincipal.getInstance(),
-           AccessControlUtils.privilegesFromNames(session(),
-               Privilege.JCR_ALL), false);
+        acl.addEntry(EveryonePrincipal.getInstance(), AccessControlUtils
+            .privilegesFromNames(session(), Privilege.JCR_ALL), false);
       }
       // Explicitly allow read permissions to admin group
-      acl.addEntry(group.getPrincipal(),
-          AccessControlUtils.privilegesFromNames(session(),
-              Privilege.JCR_READ,
-              Privilege.JCR_ADD_CHILD_NODES,
-              Privilege.JCR_REMOVE_CHILD_NODES,
+      acl.addEntry(group.getPrincipal(), AccessControlUtils
+          .privilegesFromNames(session(), Privilege.JCR_READ,
+              Privilege.JCR_ADD_CHILD_NODES, Privilege.JCR_REMOVE_CHILD_NODES,
               Privilege.JCR_MODIFY_PROPERTIES,
-              Privilege.JCR_NODE_TYPE_MANAGEMENT,
-              Privilege.JCR_REMOVE_NODE,
+              Privilege.JCR_NODE_TYPE_MANAGEMENT, Privilege.JCR_REMOVE_NODE,
               Privilege.JCR_REMOVE_CHILD_NODES), true);
       acm.setPolicy(node.getPath(), acl);
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(final Object other) {
       if (other instanceof Folder) {
         return ((Folder) other).equals(node);
       } else if (other instanceof Node) {
@@ -340,7 +347,7 @@ public class FileStore {
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      FileStoreEvent event = FileStoreEvent.delete(this);
+      final FileStoreEvent event = FileStoreEvent.delete(this);
       super.delete();
       eventManager.tell(event, null);
     }
@@ -359,12 +366,11 @@ public class FileStore {
       super(JcrUtils.putFile(parent, name, mime, data), eventManager);
     }
 
-    public File update(final String mime, InputStream data)
+    public File update(final String mime, final InputStream data)
         throws AccessDeniedException, ItemNotFoundException,
         RepositoryException {
-      File f = new File(
-          JcrUtils.putFile(node.getParent(), node.getName(), mime, data),
-          eventManager);
+      File f = new File(JcrUtils.putFile(node.getParent(), node.getName(),
+          mime, data), eventManager);
       eventManager.tell(FileStoreEvent.update(this), null);
       return f;
     }
@@ -386,7 +392,7 @@ public class FileStore {
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      FileStoreEvent event = FileStoreEvent.delete(this);
+      final FileStoreEvent event = FileStoreEvent.delete(this);
       super.delete();
       eventManager.tell(event, null);
     }
@@ -434,9 +440,10 @@ public class FileStore {
       return new Folder(node.getParent(), eventManager);
     }
 
-    public Map<Group, Permission> getGroupPermissions() throws RepositoryException {
-      final ImmutableMap.Builder<Group, Permission> b =
-          ImmutableMap.<Group, Permission>builder();
+    public Map<Group, Permission> getGroupPermissions()
+        throws RepositoryException {
+      final ImmutableMap.Builder<Group, Permission> b = ImmutableMap
+          .<Group, Permission> builder();
       final Set<Group> groups = (new GroupManager(node.getSession())).list();
       final Map<Principal, Permission> perms = getPrincipalPermissions();
       for (Group group : groups) {
@@ -445,14 +452,15 @@ public class FileStore {
       return b.build();
     }
 
-    private Permission resolvePermission(Group group, Map<Principal, Permission> perms) throws RepositoryException {
-      Principal p = group.getPrincipal();
+    private Permission resolvePermission(final Group group,
+        final Map<Principal, Permission> perms) throws RepositoryException {
+      final Principal p = group.getPrincipal();
       if (perms.containsKey(p)) {
         return perms.get(p);
       } else {
-        SortedSet<Permission> inherited = new TreeSet<Permission>();
+        final SortedSet<Permission> inherited = new TreeSet<Permission>();
         // Get all potentially inherited permissions
-        Iterator<Group> iter = group.declaredMemberOf();
+        final Iterator<Group> iter = group.declaredMemberOf();
         while (iter.hasNext()) {
           inherited.add(resolvePermission(iter.next(), perms));
         }
@@ -464,19 +472,21 @@ public class FileStore {
       }
     }
 
-    private Map<Principal, Permission> getPrincipalPermissions() throws RepositoryException {
-      final ImmutableMap.Builder<Principal, Permission> b =
-          ImmutableMap.<Principal, Permission>builder();
-      JackrabbitSession session = (JackrabbitSession) node.getSession();
-      AccessControlPolicy[] policies = session.getAccessControlManager()
+    private Map<Principal, Permission> getPrincipalPermissions()
+        throws RepositoryException {
+      final ImmutableMap.Builder<Principal, Permission> b = ImmutableMap
+          .<Principal, Permission> builder();
+      final JackrabbitSession session = (JackrabbitSession) node.getSession();
+      final AccessControlPolicy[] policies = session.getAccessControlManager()
           .getEffectivePolicies(node.getPath());
       for (AccessControlPolicy policy : policies) {
-        JackrabbitAccessControlList acl = (JackrabbitAccessControlList) policy;
+        final JackrabbitAccessControlList acl = (JackrabbitAccessControlList) policy;
         for (AccessControlEntry entry : acl.getAccessControlEntries()) {
-          final JackrabbitAccessControlEntry jackrabbitEntry =
-              (JackrabbitAccessControlEntry) entry;
+          final JackrabbitAccessControlEntry jackrabbitEntry = (JackrabbitAccessControlEntry) entry;
           // Ignore deny entries (we shouldn't see any other than Everybody)
-          if (!jackrabbitEntry.isAllow()) { continue; }
+          if (!jackrabbitEntry.isAllow()) {
+            continue;
+          }
           final Set<String> privilegeNames = new HashSet<String>();
           for (Privilege privilege : entry.getPrivileges()) {
             // Add privilege
