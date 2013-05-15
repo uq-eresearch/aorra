@@ -1,6 +1,13 @@
 import static play.Play.application
 
-import javax.jcr.Session
+import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.Session;
+import javax.jcr.Workspace;
+import javax.jcr.Repository;
+import javax.jcr.Value;
+
+import org.apache.jackrabbit.core.RepositoryCopier;
+import org.apache.jackrabbit.core.RepositoryImpl;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -11,6 +18,7 @@ import play.Play
 import play.libs.F.Function
 import service.GuiceInjectionPlugin
 import service.JcrSessionFactory
+
 
 @Usage("Repository export")
 class repo {
@@ -56,6 +64,64 @@ class repo {
                 stream.close();
             }
         })
+    }
+    
+    @Usage("export repository")
+    @Command
+    void importXml(
+        @Usage("absolute path of a node")
+        @Argument String path, 
+        @Usage("import from file")
+        @Option(names=["f","file"])
+        String file) {
+        if(StringUtils.isBlank(path)) {
+            path = "/";
+        }
+        sessionFactory().inSession(new Function<Session, String>() {
+            public String apply(Session session) {
+                def stream = new FileInputStream(new File(file));
+                Workspace  workspace = session.getWorkspace();
+                workspace.importXML(path, stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+            }
+        });
+    }
+
+
+    @Usage("list repository descriptors")
+    @Command
+    void descriptors() {
+        sessionFactory().inSession(new Function<Session, String>() {
+            public String apply(Session session) {
+                Repository rep = session.getRepository();
+                String[] keys = rep.getDescriptorKeys();
+                for(String str : keys) {
+                    Value val = rep.getDescriptorValue(str);
+                    String valStr;
+                    if(val != null) {
+                        valStr = val.getString();
+                    } else {
+                        valStr = "";
+                    }
+                    out.println(str+" - "+valStr);
+                }
+            }
+        });
+    }
+
+    @Usage("copy repository to folder")
+    @Command
+    void copy(
+        @Usage("absolute folder path")
+        @Required
+        @Argument String path) {
+        sessionFactory().inSession(new Function<Session, String>() {
+            public String apply(Session session) {
+                out.println(path);
+                File folder = new File(path);
+                RepositoryImpl rep = (RepositoryImpl)session.getRepository();
+                RepositoryCopier.copy(rep, folder);
+            }
+        });
     }
 
   private JcrSessionFactory sessionFactory() {
