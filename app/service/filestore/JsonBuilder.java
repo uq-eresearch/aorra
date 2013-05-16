@@ -15,17 +15,17 @@ import service.filestore.FileStore.Folder;
 
 public class JsonBuilder {
 
-  private final FileStore fileStore;
+  private final FileStore fileStoreImpl;
   private final Session session;
 
-  public JsonBuilder(FileStore fileStore, Session session) {
-    this.fileStore = fileStore;
+  public JsonBuilder(FileStore fileStoreImpl, Session session) {
+    this.fileStoreImpl = fileStoreImpl;
     this.session = session;
   }
 
   public ArrayNode tree() {
     try {
-      Set<Folder> folders = fileStore.getManager(session)
+      Set<Folder> folders = fileStoreImpl.getManager(session)
           .getFolders();
       // Assemble the JSON response
       final ArrayNode json = JsonNodeFactory.instance.arrayNode();

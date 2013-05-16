@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -22,21 +23,23 @@ import play.mvc.Result;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
+import service.filestore.FileStore.Folder;
+import service.filestore.FileStoreImpl;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.google.inject.Inject;
 
 public final class FileStoreController extends SessionAwareController {
 
-  private final FileStore fileStore;
+  private final FileStore fileStoreImpl;
 
   @Inject
   public FileStoreController(final JcrSessionFactory sessionFactory,
       final Jcrom jcrom,
       final CacheableUserProvider sessionHandler,
-      final FileStore fileStore) {
+      final FileStore fileStoreImpl) {
     super(sessionFactory, jcrom, sessionHandler);
-    this.fileStore = fileStore;
+    this.fileStoreImpl = fileStoreImpl;
   }
 
   @SubjectPresent
@@ -44,16 +47,21 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        final FileStore.Manager fm = fileStore.getManager(session);
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
         FileStore.Folder baseFolder = fm.getRoot();
         for (String encodedPart : encodedPath.split("/")) {
           // Skip empty string directories as part oddities
           if (encodedPart.equals("")) continue;
           String part = decodePath(encodedPart);
-          Logger.debug(part);
-          FileStore.Folder nextFolder = baseFolder.getFolder(part);
-          if (nextFolder == null) {
+          final FileStore.FileOrFolder fof = baseFolder.getFileOrFolder(part);
+          final FileStore.Folder nextFolder;
+          if (fof == null) {
             nextFolder = baseFolder.createFolder(part);
+          } else if (fof instanceof FileStore.Folder) {
+            nextFolder = (FileStore.Folder) fof;
+          } else {
+            throw new ItemExistsException(
+                "Path item exists which is not a folder.");
           }
           // Move up
           baseFolder = nextFolder;
@@ -69,7 +77,7 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        final FileStore.Manager fm = fileStore.getManager(session);
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
         FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+path);
         fof.delete();
         return noContent();
@@ -83,10 +91,10 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        final FileStore.Manager fm = fileStore.getManager(session);
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
         FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+filePath);
-        if (fof instanceof FileStore.File) {
-          FileStore.File file = (FileStore.File) fof;
+        if (fof instanceof FileStoreImpl.File) {
+          FileStore.File file = (FileStoreImpl.File) fof;
           return ok(file.getData()).as(file.getMimeType());
         } else {
           return notFound();
@@ -100,15 +108,22 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        final FileStore.Manager fm = fileStore.getManager(session);
-        final FileStore.Folder folder;
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final FileStore.FileOrFolder fof;
         try {
-          folder = fm.getFolder("/"+URLDecoder.decode(folderPath, "UTF-8"));
+          fof = fm.getFileOrFolder("/"+URLDecoder.decode(folderPath, "UTF-8"));
         } catch (Exception e) {
           throw new RuntimeException(e);
         }
-        if (folder == null) {
+        if (fof == null) {
           return badRequest("A valid folder must be specified.")
+              .as("text/plain");
+        }
+        final FileStore.Folder folder;
+        if (fof instanceof FileStore.Folder) {
+          folder = (Folder) fof;
+        } else {
+          return badRequest("Specified destination is not a folder.")
               .as("text/plain");
         }
         final MultipartFormData body = request().body().asMultipartFormData();
@@ -153,14 +168,19 @@ public final class FileStoreController extends SessionAwareController {
   private FileStore.File updateFileContents(FileStore.Folder folder,
       MultipartFormData.FilePart filePart) throws RepositoryException {
     try {
-      FileStore.File f = folder.getFile(filePart.getFilename());
-      if (f == null) {
+      final FileStore.FileOrFolder fof =
+          folder.getFileOrFolder(filePart.getFilename());
+      final FileStore.File f;
+      if (fof == null) {
         f = folder.createFile(filePart.getFilename(),
             filePart.getContentType(),
             new FileInputStream(filePart.getFile()));
-      } else {
+      } else if (fof instanceof FileStore.File) {
+        f = (FileStore.File) fof;
         f.update(filePart.getContentType(),
           new FileInputStream(filePart.getFile()));
+      } else {
+        throw new ItemExistsException("Item exists and is not a file.");
       }
       return f;
     } catch (FileNotFoundException e) {

@@ -29,6 +29,7 @@ import play.mvc.Result;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
+import service.filestore.FileStoreImpl;
 import au.edu.uq.aorra.charts.ChartRenderer;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
@@ -64,7 +65,7 @@ public class Chart extends SessionAwareController {
             result.append("png");
         }
         result.append("?");
-        Iterator<Map.Entry<String, String>> meIter = 
+        Iterator<Map.Entry<String, String>> meIter =
                 chart.getDescription().getProperties().entrySet().iterator();
         while(meIter.hasNext()) {
             Map.Entry<String, String> me = meIter.next();
@@ -91,8 +92,8 @@ public class Chart extends SessionAwareController {
         final FileStore.Manager fm = fileStore.getManager(session);
         for(String path : paths) {
             FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+path);
-            if (fof instanceof FileStore.File) {
-                FileStore.File file = (FileStore.File) fof;
+            if (fof instanceof FileStoreImpl.File) {
+                FileStoreImpl.File file = (FileStoreImpl.File) fof;
                 // Check this is an OpenXML document (no chance otherwise)
                 if (!file.getMimeType().equals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
@@ -147,7 +148,7 @@ public class Chart extends SessionAwareController {
                             return toFormat(svg, format);
                         }
                     }
-                    
+
                     /*
                     ChartFactory f = new ChartFactory();
                     if(StringUtils.isBlank(chart)) {
@@ -182,7 +183,7 @@ public class Chart extends SessionAwareController {
                         }
                     }
                     */
-                    
+
                     /*
                     String format = getParameter("format");
                     if(StringUtils.isBlank(format)) {
@@ -211,7 +212,7 @@ public class Chart extends SessionAwareController {
                         return notFound();
                     }
                     */
-                    
+
                 } catch(Exception e) {
                     throw new RepositoryException(e);
                 }

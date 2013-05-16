@@ -13,6 +13,7 @@ import providers.CacheableUserProvider;
 import providers.DeadboltHandlerImpl;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.FileStore;
+import service.filestore.FileStoreImpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -81,8 +82,7 @@ public class GuiceInjectionPlugin extends Plugin {
           }
         };
         bind(JcrSessionFactory.class).toInstance(sessionFactory);
-        // No need to specify this
-        //bind(FileStore.class).to(FileStore.class);
+        bind(FileStore.class).to(FileStoreImpl.class);
         bind(CacheableUserProvider.class).to(DeadboltHandlerImpl.class);
       }
     };

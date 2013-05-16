@@ -21,8 +21,6 @@ import org.apache.jackrabbit.api.security.user.Group;
 import org.jcrom.Jcrom;
 import org.junit.Test;
 
-import com.google.inject.Injector;
-
 import play.Logger;
 import play.Play;
 import play.libs.F.Function;
@@ -37,13 +35,13 @@ public class FileStoreTest {
       @Override
       public void run() {
         final JcrSessionFactory sessionFactory = getSessionFactory();
-        final FileStore fileStore = getFileStore();
+        final FileStore fileStoreImpl = getFileStore();
         sessionFactory.inSession(new Function<Session,FileStore.Folder>() {
           @Override
           public FileStore.Folder apply(Session session) {
             try {
               Set<FileStore.Folder> folders =
-                  fileStore.getManager(session).getFolders();
+                  fileStoreImpl.getManager(session).getFolders();
               assertThat(folders).hasSize(1);
               FileStore.Folder folder = folders.iterator().next();
               assertThat(folder.getPath()).isEqualTo("/");
@@ -79,7 +77,7 @@ public class FileStoreTest {
       @Override
       public void run() {
         final JcrSessionFactory sessionFactory = getSessionFactory();
-        final FileStore fileStore = getFileStore();
+        final FileStore fileStoreImpl = getFileStore();
         final String userId = sessionFactory.inSession(
             new Function<Session,String>() {
           @Override
@@ -103,7 +101,7 @@ public class FileStoreTest {
           public String apply(Session session) throws RepositoryException {
             // Unprivileged users should see no folders
             Set<FileStore.Folder> folders =
-                fileStore.getManager(session).getFolders();
+                fileStoreImpl.getManager(session).getFolders();
             assertThat(folders).hasSize(0);
             return null;
           }
@@ -116,8 +114,8 @@ public class FileStoreTest {
             final Group gNone = gm.create("testNone");
             Admin.getInstance(session).getGroup().addMember(gAdmin);
             session.save();
-            final FileStore.Folder rootFolder =
-                fileStore.getManager(session).getRoot();
+            final FileStoreImpl.Folder rootFolder = (FileStoreImpl.Folder)
+                fileStoreImpl.getManager(session).getRoot();
             assertThat(rootFolder.getGroupPermissions().containsKey(gAdmin))
                 .as("created admin group has a listed permission")
                 .isTrue();
@@ -140,14 +138,14 @@ public class FileStoreTest {
           public FileStore.Folder apply(Session session)
               throws RepositoryException {
             final FileStore.Folder rootFolder =
-                fileStore.getManager(session).getRoot();
+                fileStoreImpl.getManager(session).getRoot();
             final String filename = "README.txt";
             final String mimeType = "text/plain";
             final String content = "Test content.";
             try {
               rootFolder.createFile(filename, mimeType,
                   new ByteArrayInputStream(content.getBytes()));
-              final FileStore.File file = (FileStore.File) fileStore
+              final FileStoreImpl.File file = (FileStoreImpl.File) fileStoreImpl
                   .getManager(session)
                   .getFileOrFolder("/"+filename);
               assertThat(file.getName()).isEqualTo(filename);
@@ -174,7 +172,7 @@ public class FileStoreTest {
 
   private FileStore getFileStore() {
     return Play.application().plugin(GuiceInjectionPlugin.class)
-        .getInjector().getInstance(FileStore.class);
+        .getInjector().getInstance(FileStoreImpl.class);
   }
 
   private Jcrom getJcrom() {
