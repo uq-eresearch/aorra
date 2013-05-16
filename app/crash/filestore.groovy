@@ -21,6 +21,7 @@ import service.filestore.FileStore.Folder
 import service.filestore.roles.Admin
 import service.GuiceInjectionPlugin
 import service.JcrSessionFactory
+import helpers.FileStoreHelper
 
 @Usage("Filestore operations")
 class filestore {
@@ -36,36 +37,9 @@ class filestore {
         def filestore = fileStore()
         sessionFactory().inSession(new Function<Session, String>() {
           public String apply(Session session) {
-            def mkdir
-            mkdir = { file, parent ->
-              if (file == null || file.getPath() == "/") {
-                return filestore.getManager(session).getRoot();
-              } else {
-                Folder parentFolder = mkdir(file.getParentFile(), true);
-                if(parentFolder == null) {
-                    return null;
-                }
-                Folder folder = parentFolder.getFolder(file.getName());
-                if(folder == null) {
-                  if(parent && (parents == null)) {
-                    out.println(String.format(
-                        "Parent folder %s does not exist, try option --parents",
-                        file.getName()));
-                    return null;
-                  } else {
-                    return parentFolder.createFolder(file.getName());
-                  }
-                } else {
-                  if(!parent) {
-                    out.println(String.format(
-                        "Folder %s already exists", file.getName()));
-                  }
-                  return folder;
-                }
-              }
-            }
+            def fsh = new FileStoreHelper(session);
             directories.each() {
-              mkdir(new File(StringUtils.strip(it)), false);
+              fsh.mkdir(StringUtils.strip(it), parents == true);
             }
           }
         })

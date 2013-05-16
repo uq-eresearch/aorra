@@ -4,6 +4,9 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static play.test.Helpers.running;
 import static test.AorraTestUtils.fakeAorraApp;
+import static test.AorraTestUtils.fileStore;
+import static test.AorraTestUtils.jcrom;
+import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.Scanner;
@@ -18,13 +21,10 @@ import models.User;
 import models.UserDAO;
 
 import org.apache.jackrabbit.api.security.user.Group;
-import org.jcrom.Jcrom;
 import org.junit.Test;
 
 import play.Logger;
-import play.Play;
 import play.libs.F.Function;
-import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.roles.Admin;
 
@@ -34,14 +34,12 @@ public class FileStoreTest {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
-        final JcrSessionFactory sessionFactory = getSessionFactory();
-        final FileStore fileStoreImpl = getFileStore();
-        sessionFactory.inSession(new Function<Session,FileStore.Folder>() {
+        sessionFactory().inSession(new Function<Session,FileStore.Folder>() {
           @Override
           public FileStore.Folder apply(Session session) {
             try {
               Set<FileStore.Folder> folders =
-                  fileStoreImpl.getManager(session).getFolders();
+                  fileStore().getManager(session).getFolders();
               assertThat(folders).hasSize(1);
               FileStore.Folder folder = folders.iterator().next();
               assertThat(folder.getPath()).isEqualTo("/");
@@ -76,15 +74,15 @@ public class FileStoreTest {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
-        final JcrSessionFactory sessionFactory = getSessionFactory();
-        final FileStore fileStoreImpl = getFileStore();
+        final JcrSessionFactory sessionFactory = sessionFactory();
+        final FileStore fileStoreImpl = fileStore();
         final String userId = sessionFactory.inSession(
             new Function<Session,String>() {
           @Override
           public String apply(Session session) {
             // Create new user
             final String userId;
-            UserDAO dao = new UserDAO(session, getJcrom());
+            UserDAO dao = new UserDAO(session, jcrom());
             User user = new User();
             user.setEmail("user@example.com");
             user.setName("Test User");
@@ -163,21 +161,6 @@ public class FileStoreTest {
         });
       }
     });
-  }
-
-  private JcrSessionFactory getSessionFactory() {
-    return Play.application().plugin(GuiceInjectionPlugin.class)
-        .getInjector().getInstance(JcrSessionFactory.class);
-  }
-
-  private FileStore getFileStore() {
-    return Play.application().plugin(GuiceInjectionPlugin.class)
-        .getInjector().getInstance(FileStoreImpl.class);
-  }
-
-  private Jcrom getJcrom() {
-    return Play.application().plugin(GuiceInjectionPlugin.class)
-        .getInjector().getInstance(Jcrom.class);
   }
 
 }

@@ -4,9 +4,18 @@ import static play.test.Helpers.fakeApplication;
 
 import java.util.Map;
 
+import org.jcrom.Jcrom;
+
+import play.Application;
+import play.Play;
 import play.test.FakeApplication;
+import service.GuiceInjectionPlugin;
+import service.JcrSessionFactory;
+import service.filestore.FileStore;
+import service.filestore.FileStoreImpl;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Injector;
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 
 public class AorraTestUtils {
@@ -35,4 +44,22 @@ public class AorraTestUtils {
     m.put("crash.enabled", false);
     return m.build();
   }
+
+  public static JcrSessionFactory sessionFactory() {
+    return injector().getInstance(JcrSessionFactory.class);
+  }
+
+  public static FileStore fileStore() {
+    return injector().getInstance(FileStoreImpl.class);
+  }
+
+  public static Jcrom jcrom() {
+    return injector().getInstance(Jcrom.class);
+  }
+
+  protected static Injector injector() {
+    return Play.application().plugin(GuiceInjectionPlugin.class)
+        .getInjector();
+  }
+
 }

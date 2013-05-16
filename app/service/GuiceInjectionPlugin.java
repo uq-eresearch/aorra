@@ -1,10 +1,13 @@
 package service;
 
+import javax.jcr.Credentials;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
 
 import models.User;
 
+import org.apache.jackrabbit.core.TransientRepository;
 import org.jcrom.Jcrom;
 
 import play.Application;
@@ -67,23 +70,28 @@ public class GuiceInjectionPlugin extends Plugin {
 
     };
     Module sessionModule = new AbstractModule() {
+      protected final TransientRepository repository =
+          new TransientRepository();
+
       @Override
       protected void configure() {
+        final Credentials adminCredentials = new SimpleCredentials(
+            cfgStr(ConfigConsts.CONF_JCR_USERID),
+            cfgStr(ConfigConsts.CONF_JCR_PASSWORD).toCharArray());
+
         JcrSessionFactory sessionFactory = new JcrSessionFactory() {
           @Override
           public Session newAdminSession() throws RepositoryException {
-            return Jcr.login(
-                cfgStr(ConfigConsts.CONF_JCR_USERID),
-                cfgStr(ConfigConsts.CONF_JCR_PASSWORD));
-          }
-
-          private String cfgStr(String key) {
-            return application.configuration().getString(key);
+            return Jcr.getRepository().login(adminCredentials);
           }
         };
         bind(JcrSessionFactory.class).toInstance(sessionFactory);
         bind(FileStore.class).to(FileStoreImpl.class);
         bind(CacheableUserProvider.class).to(DeadboltHandlerImpl.class);
+      }
+
+      private String cfgStr(String key) {
+        return application.configuration().getString(key);
       }
     };
     Module jcromModule = new AbstractModule() {
