@@ -108,9 +108,10 @@ public class FileStoreTest {
           @Override
           public String apply(Session session) throws RepositoryException {
             final GroupManager gm = new GroupManager(session);
-            final Group gAdmin = gm.create("testAdmin");
-            final Group gNone = gm.create("testNone");
-            Admin.getInstance(session).getGroup().addMember(gAdmin);
+            final String gAdmin = "testAdmin";
+            final String gNone = "testNone";
+            Admin.getInstance(session).getGroup().addMember(gm.create(gAdmin));
+            gm.create(gNone);
             session.save();
             final FileStoreImpl.Folder rootFolder = (FileStoreImpl.Folder)
                 fileStoreImpl.getManager(session).getRoot();

@@ -48,34 +48,34 @@ class filestore {
     @Usage("remove files or directories")
     @Command
     void rm(
-        @Required(true)
-        @Argument List<String> files,
-        @Usage("remove directories and their contents recursively")
-        @Option(names=["r", "recursive"])
-        Boolean recursive) {
-        def filestore = fileStore()
-        sessionFactory().inSession(new Function<Session, String>() {
-            public String apply(Session session) {
-                def rm;
-                rm = { path ->
-                    if(path == null) {
-                        return null;
-                    }
-                    def f = filestore.getManager(session).getFileOrFolder(path);
-                    if(f == null) {
-                        out.println(String.format("no such file or directory '%s'", path));
-                    } else if(f.isFolder() && recursive == null) {
-                        out.println(String.format(
-                            "cannot remove '%s': Is a directory, try using --recursive", path));
-                    } else {
-                        f.delete();
-                    }
-                }
-                files.each() {
-                    rm(it);
-                }
+      @Required(true)
+      @Argument List<String> files,
+      @Usage("remove directories and their contents recursively")
+      @Option(names=["r", "recursive"])
+      Boolean recursive) {
+      def filestore = fileStore()
+      sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) {
+          def rm;
+          rm = { path ->
+            if(path == null) {
+              return null;
             }
-        })
+            def f = filestore.getManager(session).getFileOrFolder(path);
+            if(f == null) {
+              out.println(String.format("no such file or directory '%s'", path));
+            } else if(f instanceof FileStore.Folder && recursive == null) {
+              out.println(String.format(
+                  "cannot remove '%s': Is a directory, try using --recursive", path));
+            } else {
+              f.delete();
+            }
+          }
+          files.each() {
+            rm(it);
+          }
+        }
+      })
     }
 
   @Usage("print tree of filestore structure")
@@ -106,11 +106,13 @@ class filestore {
               out.println(format(it, false))
             }
           }
-          def f = m.getFolder(path == null ? "/" : path);
-          if(f!=null) {
-              tree(f);
+          def f = m.getFileOrFolder(path == null ? "/" : path);
+          if (f == null) {
+            out.println(String.format("no such folder %s", path));
+          } else if (f instanceof FileStore.File) {
+            out.println(String.format("%s is a file", path));
           } else {
-              out.println(String.format("no such folder %s", path));
+            tree((FileStore.Folder) f);
           }
         }
       })

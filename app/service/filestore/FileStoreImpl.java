@@ -426,14 +426,14 @@ public class FileStoreImpl implements FileStore {
       return new Folder(node.getParent(), eventManager);
     }
 
-    public Map<Group, Permission> getGroupPermissions()
+    public Map<String, Permission> getGroupPermissions()
         throws RepositoryException {
-      final ImmutableMap.Builder<Group, Permission> b = ImmutableMap
-          .<Group, Permission> builder();
+      final ImmutableMap.Builder<String, Permission> b = ImmutableMap
+          .<String, Permission> builder();
       final Set<Group> groups = (new GroupManager(node.getSession())).list();
       final Map<Principal, Permission> perms = getPrincipalPermissions();
-      for (Group group : groups) {
-        b.put(group, resolvePermission(group, perms));
+      for (final Group group : groups) {
+        b.put(group.getPrincipal().getName(), resolvePermission(group, perms));
       }
       return b.build();
     }

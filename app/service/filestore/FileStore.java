@@ -1,6 +1,7 @@
 package service.filestore;
 
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Set;
 
 import javax.jcr.RepositoryException;
@@ -59,6 +60,9 @@ public interface FileStore {
     Set<File> getFiles() throws RepositoryException;
 
     Set<Folder> getFolders() throws RepositoryException;
+
+    Map<String, Permission> getGroupPermissions()
+        throws RepositoryException;
 
   }
 
