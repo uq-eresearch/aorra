@@ -100,8 +100,10 @@ public class GuiceInjectionPlugin extends Plugin {
 
       @Provides
       Jcrom getJcrom() {
-        final Jcrom jcrom = new Jcrom();
+        final Jcrom jcrom = new Jcrom(false, true);
         jcrom.map(User.class);
+        jcrom.map(models.filestore.File.class);
+        jcrom.map(models.filestore.Folder.class);
         return jcrom;
       }
     };

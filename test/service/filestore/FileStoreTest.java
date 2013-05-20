@@ -20,7 +20,6 @@ import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
-import org.apache.jackrabbit.api.security.user.Group;
 import org.junit.Test;
 
 import play.Logger;
@@ -144,9 +143,11 @@ public class FileStoreTest {
             try {
               rootFolder.createFile(filename, mimeType,
                   new ByteArrayInputStream(content.getBytes()));
-              final FileStoreImpl.File file = (FileStoreImpl.File) fileStoreImpl
+              final FileStore.FileOrFolder fof = fileStoreImpl
                   .getManager(session)
                   .getFileOrFolder("/"+filename);
+              assertThat(fof).isInstanceOf(FileStore.File.class);
+              final FileStoreImpl.File file = (FileStoreImpl.File) fof;
               assertThat(file.getName()).isEqualTo(filename);
               assertThat(file.getMimeType()).isEqualTo(mimeType);
               Scanner scanner = new Scanner(file.getData());

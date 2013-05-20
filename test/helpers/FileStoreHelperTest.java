@@ -99,7 +99,7 @@ public class FileStoreHelperTest {
             }
             try {
               fileStoreHelper.mkdir(absPath, false);
-              fail("Should have thrown FolderExistsException");
+              fail("Should have thrown FileExistsException");
             } catch (FileStoreHelper.FileExistsException e) {
               assertThat(e.getMessage()).contains("foobar");
             }
