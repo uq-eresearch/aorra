@@ -149,6 +149,7 @@ public class FileStoreTest {
               assertThat(fof).isInstanceOf(FileStore.File.class);
               final FileStoreImpl.File file = (FileStoreImpl.File) fof;
               assertThat(file.getName()).isEqualTo(filename);
+              assertThat(file.getPath()).isEqualTo("/"+filename);
               assertThat(file.getMimeType()).isEqualTo(mimeType);
               Scanner scanner = new Scanner(file.getData());
               assertThat(scanner.useDelimiter("\\Z").next())

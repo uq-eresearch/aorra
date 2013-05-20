@@ -289,7 +289,6 @@ public class FileStoreImpl implements FileStore {
     @Override
     public FileOrFolder getFileOrFolder(final String name)
         throws RepositoryException {
-      Logger.debug("Entity has folder map: " + entity.getFolders());
       if (entity.getFolders().containsKey(name)) {
         return new Folder(
             (models.filestore.Folder) entity.getFolders().get(name),
@@ -470,19 +469,19 @@ public class FileStoreImpl implements FileStore {
 
     public String getPath() {
       if (path == null) {
-        if (rawPath().equals(FILE_STORE_PATH)) {
-          path = "/";
-        } else {
-          final Deque<String> q = new LinkedList<String>();
-          Child<models.filestore.Folder> c = this.entity;
-          do {
-            q.addFirst(c.getName());
-            c = c.getParent();
-          } while (c != null);
-          path = StringUtils.join(q, '/');
-        }
+        path = getPath(this.entity);
       }
       return path;
+    }
+
+    protected String getPath(Child<models.filestore.Folder> c) {
+      if (c.getParent() == null)
+        return "/";
+      final StringBuffer sb = new StringBuffer(getPath(c.getParent()));
+      if (sb.charAt(sb.length() - 1) != '/')
+        sb.append('/');
+      sb.append(c.getName());
+      return sb.toString();
     }
 
     protected abstract String rawPath();
