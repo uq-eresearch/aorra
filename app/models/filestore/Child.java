@@ -1,8 +1,8 @@
 package models.filestore;
 
-public interface Child<T> {
+import org.jcrom.JcrEntity;
 
-  public String getPath();
+public interface Child<T> extends JcrEntity {
 
   public T getParent();
 

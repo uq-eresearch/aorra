@@ -4,8 +4,10 @@ import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -37,7 +39,6 @@ import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
-import org.jcrom.JcrMappingException;
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
@@ -164,37 +165,30 @@ public class FileStoreImpl implements FileStore {
         throws RepositoryException {
       if (absPath.equals("/"))
         return getRoot();
-      try {
-        Logger.debug("Finding node at: "+absPath);
-        final Node node = session.getNode(FILE_STORE_PATH).getNode(
-            PathUtils.relativePath(absPath));
-        Logger.debug("Found node: "+node);
-        if (node == null) {
+      final Deque<String> parts = new LinkedList<String>();
+      for (String part : PathUtils.relativePath(absPath).split("/")) {
+        parts.add(part);
+      }
+      FileStore.Folder folder = getRoot();
+      while (!parts.isEmpty()) {
+        String part = parts.removeFirst();
+        final FileOrFolder fof = folder.getFileOrFolder(part);
+        if (fof == null) {
+          Logger.debug("Unable to find file or folder at: "+absPath);
           return null;
         }
-        try {
-          return new FileStoreImpl.Folder(
-              jcrom.fromNode(models.filestore.Folder.class, node),
-              this,
-              eventManager);
-        } catch (JcrMappingException e) {
-          e.printStackTrace();
-          Logger.debug(e.getMessage());
+        if (parts.isEmpty())
+          return fof;
+        if (fof instanceof File) {
+          Logger.debug("File "+part+" is not a folder in "+absPath);
+          return null;
         }
-        try {
-          return new FileStoreImpl.File(
-              jcrom.fromNode(models.filestore.File.class, node),
-              this,
-              eventManager);
-        } catch (JcrMappingException e) {
-          e.printStackTrace();
-          Logger.debug(e.getMessage());
-        }
-      } catch (PathNotFoundException e) {
-        Logger.debug("Unable to find node at: "+absPath);
+        folder = (Folder) fof;
       }
       return null;
     }
+
+
 
     @Override
     public Set<FileStore.Folder> getFolders() throws RepositoryException {
@@ -461,6 +455,7 @@ public class FileStoreImpl implements FileStore {
     protected final T entity;
     protected final FileStoreImpl.Manager filestoreManager;
     protected final ActorRef eventManager;
+    protected String path;
 
     protected NodeWrapper(
         T entity,
@@ -474,9 +469,20 @@ public class FileStoreImpl implements FileStore {
     }
 
     public String getPath() {
-      if (rawPath().equals(FILE_STORE_PATH))
-        return "/";
-      return rawPath().replaceFirst("^"+FILE_STORE_PATH, "");
+      if (path == null) {
+        if (rawPath().equals(FILE_STORE_PATH)) {
+          path = "/";
+        } else {
+          final Deque<String> q = new LinkedList<String>();
+          Child<models.filestore.Folder> c = this.entity;
+          do {
+            q.addFirst(c.getName());
+            c = c.getParent();
+          } while (c != null);
+          path = StringUtils.join(q, '/');
+        }
+      }
+      return path;
     }
 
     protected abstract String rawPath();

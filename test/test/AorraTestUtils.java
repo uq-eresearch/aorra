@@ -24,7 +24,7 @@ public class AorraTestUtils {
   public static final String REPOSITORY_DIRECTORY_PATH = "file:./target/jackrabbittestrepository";
 
   public static FakeApplication fakeAorraApp() {
-    return fakeAorraApp(false);
+    return fakeAorraApp(true);
   }
 
   public static FakeApplication fakeAorraApp(boolean muteErrors) {
