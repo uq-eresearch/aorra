@@ -3,11 +3,13 @@ package service.filestore;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -39,6 +41,7 @@ import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
+import org.jcrom.JcrMappingException;
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
@@ -52,8 +55,10 @@ import service.filestore.roles.Admin;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 
 public class FileStoreImpl implements FileStore {
@@ -70,6 +75,7 @@ public class FileStoreImpl implements FileStore {
       final JcrSessionFactory sessionFactory,
       final Jcrom jcrom) {
     this.jcrom = jcrom;
+    Logger.debug(this+" - Creating file store.");
     eventManager = Akka.system().actorOf(new Props(EventManager.class));
     sessionFactory.inSession(new Function<Session, Session>() {
       @Override
@@ -166,7 +172,7 @@ public class FileStoreImpl implements FileStore {
       if (absPath.equals("/"))
         return getRoot();
       final Deque<String> parts = new LinkedList<String>();
-      for (String part : PathUtils.relativePath(absPath).split("/")) {
+      for (String part : PathUtils.relativePath(absPath).split("/+")) {
         parts.add(part);
       }
       FileStore.Folder folder = getRoot();
@@ -224,7 +230,7 @@ public class FileStoreImpl implements FileStore {
   public static class Folder extends NodeWrapper<models.filestore.Folder> implements FileStore.Folder {
 
     protected Folder(models.filestore.Folder entity, Manager filestoreManager,
-        ActorRef eventManager) {
+        ActorRef eventManager) throws RepositoryException {
       super(entity, filestoreManager, eventManager);
     }
 
@@ -260,7 +266,7 @@ public class FileStoreImpl implements FileStore {
             new models.filestore.File(name, mime, data));
         filestoreManager.getFolderDAO().update(entity);
         file = new File(
-          entity.getFiles().get(name),
+          (models.filestore.File) entity.getFiles().get(name),
           filestoreManager,
           eventManager);
       } else if (fof instanceof Folder) {
@@ -297,7 +303,7 @@ public class FileStoreImpl implements FileStore {
       }
       if (entity.getFiles().containsKey(name)) {
         return new File(
-            entity.getFiles().get(name),
+            (models.filestore.File) entity.getFiles().get(name),
             filestoreManager,
             eventManager);
       }
@@ -308,8 +314,11 @@ public class FileStoreImpl implements FileStore {
     public Set<FileStore.File> getFiles() throws RepositoryException {
       final ImmutableSet.Builder<FileStore.File> set =
           ImmutableSet.<FileStore.File> builder();
-      for (final models.filestore.File child : entity.getFiles().values()) {
-        set.add(new File(child, filestoreManager, eventManager));
+      for (final Object child : entity.getFiles().values()) {
+        set.add(new File(
+            (models.filestore.File) child,
+            filestoreManager,
+            eventManager));
       }
       return set.build();
     }
@@ -342,17 +351,12 @@ public class FileStoreImpl implements FileStore {
 
     @Override
     public boolean equals(final Object other) {
+      if (other == null)
+        return false;
       if (other instanceof Folder) {
-        return ((Folder) other).equals(entity);
-      } else if (other instanceof models.filestore.Folder) {
-        return entity.equals(other);
+        return ((Folder) other).getIdentifier().equals(getIdentifier());
       }
       return false;
-    }
-
-    @Override
-    public int hashCode() {
-      return entity.hashCode();
     }
 
     @Override
@@ -374,19 +378,8 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
-    public int getDepth() {
-      // TODO: Implement
-      return 0;
-    }
-
-    @Override
     protected String rawPath() {
       return entity.getPath();
-    }
-
-    @Override
-    protected Session session() throws RepositoryException {
-      return filestoreManager.getSession();
     }
 
   }
@@ -394,7 +387,7 @@ public class FileStoreImpl implements FileStore {
   public static class File extends NodeWrapper<models.filestore.File> implements FileStore.File {
 
     protected File(models.filestore.File entity, Manager filestoreManager,
-        ActorRef eventManager) {
+        ActorRef eventManager) throws RepositoryException {
       super(entity, filestoreManager, eventManager);
     }
 
@@ -419,6 +412,16 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
+    public boolean equals(final Object other) {
+      if (other == null)
+        return false;
+      if (other instanceof File) {
+        return ((File) other).getIdentifier().equals(getIdentifier());
+      }
+      return false;
+    }
+
+    @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
       final FileStoreEvent event = FileStoreEvent.delete(this);
@@ -431,22 +434,6 @@ public class FileStoreImpl implements FileStore {
       return entity.getId();
     }
 
-    @Override
-    public String getName() {
-      return entity.getName();
-    }
-
-    @Override
-    public int getDepth() {
-      // TODO Auto-generated method stub
-      return 0;
-    }
-
-    @Override
-    protected String rawPath() {
-      return entity.getPath();
-    }
-
   }
 
   protected abstract static class NodeWrapper<T extends Child<models.filestore.Folder>> {
@@ -454,37 +441,48 @@ public class FileStoreImpl implements FileStore {
     protected final T entity;
     protected final FileStoreImpl.Manager filestoreManager;
     protected final ActorRef eventManager;
-    protected String path;
+    protected final Iterable<String> pathParts;
 
     protected NodeWrapper(
         T entity,
         final FileStoreImpl.Manager filestoreManager,
-        final ActorRef eventManager) {
+        final ActorRef eventManager) throws RepositoryException {
       this.filestoreManager = filestoreManager;
       this.eventManager = eventManager;
       if (entity == null)
         throw new NullPointerException("Underlying entity cannot be null.");
       this.entity = entity;
+      this.pathParts = calculatePathParts();
+    }
+
+    public int getDepth() {
+      return Iterables.size(pathParts) - 1;
     }
 
     public String getPath() {
-      if (path == null) {
-        path = getPath(this.entity);
-      }
-      return path;
+      final String path = Joiner.on('/').join(pathParts);
+      return path.isEmpty() ? "/" : path;
     }
 
-    protected String getPath(Child<models.filestore.Folder> c) {
-      if (c.getParent() == null)
-        return "/";
-      final StringBuffer sb = new StringBuffer(getPath(c.getParent()));
-      if (sb.charAt(sb.length() - 1) != '/')
-        sb.append('/');
-      sb.append(c.getName());
-      return sb.toString();
+    public Iterable<String> getPathParts() {
+      return pathParts;
     }
 
-    protected abstract String rawPath();
+    private Iterable<String> calculatePathParts() throws RepositoryException {
+      if (getParent() == null)
+        return Collections.singleton("");
+      return Iterables.concat(
+          ((NodeWrapper<?>) getParent()).getPathParts(),
+          Collections.singleton(getName()));
+    }
+
+    public String getName() {
+      return entity.getName();
+    }
+
+    protected String rawPath() {
+      return entity.getPath();
+    }
 
     protected Session session() throws RepositoryException {
       return filestoreManager.getSession();
@@ -560,16 +558,26 @@ public class FileStoreImpl implements FileStore {
     }
 
     public FileStore.Folder getParent() throws RepositoryException {
-      models.filestore.Folder parent = entity.getParent();
-      if (parent == null) {
-        parent = filestoreManager.getFolderDAO().get(
-            PathUtils.getNode(rawPath(), filestoreManager.getSession())
-              .getParent()
-              .getPath());
+      try {
+        models.filestore.Folder parent = entity.getParent();
+        if (parent == null) {
+          parent = filestoreManager.getFolderDAO().get(
+              PathUtils.getNode(rawPath(), filestoreManager.getSession())
+                .getParent()
+                .getPath());
+        }
+        return new Folder(parent, filestoreManager, eventManager);
+      } catch (NullPointerException npe) {
+        // Parent returned as null
+      } catch (JcrMappingException jme) {
+        // Mapper had a fit with a null parent
       }
-      if (parent == null)
-        return null;
-      return new Folder(parent, filestoreManager, eventManager);
+      return null;
+    }
+
+    @Override
+    public int hashCode() {
+      return entity.hashCode();
     }
 
   }

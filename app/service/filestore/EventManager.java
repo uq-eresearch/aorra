@@ -21,19 +21,20 @@ public class EventManager extends UntypedActor {
   public void onReceive(Object message) throws Exception {
     if (message instanceof FileStoreEvent) {
       final FileStoreEvent event = (FileStoreEvent) message;
-      Logger.info("Pushing event to channels: "+event);
+      Logger.debug(this+" - Pushing event to channels: "+event);
       for (Channel<FileStoreEvent> channel : channels) {
         channel.push(event);
+        Logger.debug(this+"- Pushed to channel: "+channel);
       }
     } else if (message instanceof ChannelMessage) {
       ChannelMessage channelMessage = (ChannelMessage) message;
       switch (channelMessage.type) {
       case ADD:
-        Logger.info(this+" - Adding notification channel.");
+        Logger.debug(this+" - Adding notification channel.");
         channels.add(channelMessage.channel);
         break;
       case REMOVE:
-        Logger.info(this+" - Removing notification channel.");
+        Logger.debug(this+" - Removing notification channel.");
         channels.remove(channelMessage.channel);
         break;
       }

@@ -185,6 +185,7 @@
           });
           _.each(['load', 'create', 'update', 'delete'], function(n) {
             es.addEventListener(n, function(event) {
+              console.log(event.data);
               var struct = JSON.parse(event.data);
               trigger('event:'+n, struct);
             });

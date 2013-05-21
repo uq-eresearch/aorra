@@ -23,6 +23,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.wingnest.play2.jackrabbit.Jcr;
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 
@@ -86,8 +87,10 @@ public class GuiceInjectionPlugin extends Plugin {
           }
         };
         bind(JcrSessionFactory.class).toInstance(sessionFactory);
-        bind(FileStore.class).to(FileStoreImpl.class);
-        bind(CacheableUserProvider.class).to(DeadboltHandlerImpl.class);
+        bind(FileStore.class).to(FileStoreImpl.class).in(Singleton.class);
+        bind(CacheableUserProvider.class)
+          .to(DeadboltHandlerImpl.class)
+          .in(Singleton.class);
       }
 
       private String cfgStr(String key) {

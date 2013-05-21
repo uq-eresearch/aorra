@@ -28,24 +28,26 @@ import service.JcrSessionFactory;
 import service.filestore.roles.Admin;
 
 public class FileStoreTest {
+
   @Test
-  public void canGetFolders() {
+  public void canGetRootFolder() {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
-        sessionFactory().inSession(new Function<Session,FileStore.Folder>() {
+        sessionFactory().inSession(new Function<Session,String>() {
           @Override
-          public FileStore.Folder apply(Session session) {
-            try {
-              Set<FileStore.Folder> folders =
-                  fileStore().getManager(session).getFolders();
-              assertThat(folders).hasSize(1);
-              FileStore.Folder folder = folders.iterator().next();
-              assertThat(folder.getPath()).isEqualTo("/");
-              return folder;
-            } catch (RepositoryException e) {
-              throw new RuntimeException(e);
-            }
+          public String apply(Session session) throws RepositoryException {
+            Set<FileStore.Folder> folders =
+                fileStore().getManager(session).getFolders();
+            assertThat(folders).hasSize(1);
+            FileStore.Folder folder = folders.iterator().next();
+            assertThat(folder.getPath()).isEqualTo("/");
+            assertThat(folder.getParent()).isNull();
+            assertThat(folder.getDepth()).isEqualTo(0);
+            FileStore.FileOrFolder refetchedFolder =
+                fileStore().getManager(session).getFileOrFolder("/");
+            assertThat(refetchedFolder).isEqualTo(folder);
+            return folder.getIdentifier();
           }
         });
       }
@@ -135,22 +137,34 @@ public class FileStoreTest {
           @Override
           public FileStore.Folder apply(Session session)
               throws RepositoryException {
+            {
+              // Check user with admin sees only one root folder
+              Set<FileStore.Folder> folders =
+                  fileStoreImpl.getManager(session).getFolders();
+              assertThat(folders).hasSize(1);
+            }
             final FileStore.Folder rootFolder =
                 fileStoreImpl.getManager(session).getRoot();
             final String filename = "README.txt";
             final String mimeType = "text/plain";
             final String content = "Test content.";
             try {
-              rootFolder.createFile(filename, mimeType,
+              final FileStore.File f = rootFolder.createFile(filename, mimeType,
                   new ByteArrayInputStream(content.getBytes()));
               final FileStore.FileOrFolder fof = fileStoreImpl
                   .getManager(session)
                   .getFileOrFolder("/"+filename);
               assertThat(fof).isInstanceOf(FileStore.File.class);
+              assertThat(fof).isEqualTo(f);
               final FileStoreImpl.File file = (FileStoreImpl.File) fof;
+              assertThat(file.getIdentifier()).isNotNull();
               assertThat(file.getName()).isEqualTo(filename);
               assertThat(file.getPath()).isEqualTo("/"+filename);
+              assertThat(file.getDepth()).isEqualTo(1);
               assertThat(file.getMimeType()).isEqualTo(mimeType);
+              // Check the parent is correct
+              assertThat(file.getParent().getIdentifier())
+                .isEqualTo(rootFolder.getIdentifier());
               Scanner scanner = new Scanner(file.getData());
               assertThat(scanner.useDelimiter("\\Z").next())
                 .isEqualTo(content);

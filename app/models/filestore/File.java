@@ -6,8 +6,11 @@ import java.util.Date;
 
 import javax.jcr.nodetype.NodeType;
 
+import org.jcrom.AbstractJcrEntity;
+import org.jcrom.JcrDataProvider;
 import org.jcrom.JcrDataProviderImpl;
 import org.jcrom.JcrFile;
+import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.annotations.JcrParentNode;
@@ -23,21 +26,24 @@ import org.jcrom.annotations.JcrVersionName;
       NodeType.MIX_VERSIONABLE
     },
     classNameProperty = "className")
-public class File extends JcrFile implements Child<Folder> {
+public class File extends AbstractJcrEntity implements Child<Folder> {
 
   private static final long serialVersionUID = 1L;
 
   @JcrIdentifier
-  private String id;
+  protected String id;
 
   @JcrVersionName
-  private String version;
+  protected String version;
 
   @JcrVersionCreated
-  private Date updatedAt;
+  protected Date updatedAt;
 
   @JcrParentNode
-  private Folder parent;
+  protected Folder parent;
+
+  @JcrFileNode
+  protected JcrFile data;
 
   public File() {
     super();
@@ -46,13 +52,27 @@ public class File extends JcrFile implements Child<Folder> {
   public File(String name, String mime, InputStream data) {
     super();
     this.setName(name);
+    this.data = new JcrFile();
+    this.data.setName(name);
+    this.data.setLastModified(Calendar.getInstance());
     this.setMimeType(mime);
-    this.setLastModified(Calendar.getInstance());
-    this.setDataProvider(new JcrDataProviderImpl(data));
+    this.setData(data);
+  }
+
+  public void setMimeType(final String mime) {
+    this.data.setMimeType(mime);
   }
 
   public void setData(final InputStream data) {
-    this.setDataProvider(new JcrDataProviderImpl(data));
+    this.data.setDataProvider(new JcrDataProviderImpl(data));
+  }
+
+  public String getMimeType() {
+    return this.data.getMimeType();
+  }
+
+  public JcrDataProvider getDataProvider() {
+    return this.data.getDataProvider();
   }
 
   public String getId() {

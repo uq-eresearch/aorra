@@ -32,8 +32,8 @@ public class Folder extends AbstractJcrEntity implements Child<Folder> {
   @JcrChildNode
   private Map<String, Object> folders;
 
-  @JcrFileNode
-  private Map<String, File> files;
+  @JcrChildNode
+  private Map<String, Object> files;
 
   public Folder() {}
 
@@ -51,9 +51,9 @@ public class Folder extends AbstractJcrEntity implements Child<Folder> {
     return folders;
   }
 
-  public Map<String, File> getFiles() {
+  public Map<String, Object> getFiles() {
     if (files == null)
-      files = new TreeMap<String, File>();
+      files = new TreeMap<String, Object>();
     return files;
   }
 
