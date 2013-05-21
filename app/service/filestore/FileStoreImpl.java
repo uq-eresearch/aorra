@@ -3,13 +3,11 @@ package service.filestore;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -558,12 +556,15 @@ public class FileStoreImpl implements FileStore {
     }
 
     public FileStore.Folder getParent() throws RepositoryException {
+      if (rawPath().equals(FILE_STORE_PATH))
+        return null;
       try {
         models.filestore.Folder parent = entity.getParent();
         if (parent == null) {
           parent = filestoreManager.getFolderDAO().get(
               PathUtils.getNode(rawPath(), filestoreManager.getSession())
-                .getParent()
+                .getParent() /* files/folders */
+                .getParent() /* parent */
                 .getPath());
         }
         return new Folder(parent, filestoreManager, eventManager);

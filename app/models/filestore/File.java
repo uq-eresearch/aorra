@@ -84,4 +84,9 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
     return parent;
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s [%s]", getPath(), getId());
+  }
+
 }

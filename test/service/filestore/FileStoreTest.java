@@ -151,6 +151,9 @@ public class FileStoreTest {
             try {
               final FileStore.File f = rootFolder.createFile(filename, mimeType,
                   new ByteArrayInputStream(content.getBytes()));
+              // Check the parent is correct right after save
+              assertThat(f.getParent().getIdentifier())
+                .isEqualTo(rootFolder.getIdentifier());
               final FileStore.FileOrFolder fof = fileStoreImpl
                   .getManager(session)
                   .getFileOrFolder("/"+filename);
@@ -162,7 +165,7 @@ public class FileStoreTest {
               assertThat(file.getPath()).isEqualTo("/"+filename);
               assertThat(file.getDepth()).isEqualTo(1);
               assertThat(file.getMimeType()).isEqualTo(mimeType);
-              // Check the parent is correct
+              // Check the parent is correct on retrieval
               assertThat(file.getParent().getIdentifier())
                 .isEqualTo(rootFolder.getIdentifier());
               Scanner scanner = new Scanner(file.getData());

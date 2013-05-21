@@ -7,7 +7,6 @@ import javax.jcr.nodetype.NodeType;
 
 import org.jcrom.AbstractJcrEntity;
 import org.jcrom.annotations.JcrChildNode;
-import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.annotations.JcrParentNode;
@@ -60,6 +59,11 @@ public class Folder extends AbstractJcrEntity implements Child<Folder> {
   @Override
   public Folder getParent() {
     return parent;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s [%s]", getPath(), getId());
   }
 
 }
