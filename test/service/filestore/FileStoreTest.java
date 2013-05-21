@@ -9,6 +9,8 @@ import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -20,6 +22,7 @@ import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
+import org.apache.tika.io.IOUtils;
 import org.junit.Test;
 
 import play.Logger;
@@ -136,7 +139,7 @@ public class FileStoreTest {
         sessionFactory.inSession(userId, new Function<Session,FileStore.Folder>() {
           @Override
           public FileStore.Folder apply(Session session)
-              throws RepositoryException {
+              throws RepositoryException, IOException {
             {
               // Check user with admin sees only one root folder
               Set<FileStore.Folder> folders =
@@ -168,10 +171,8 @@ public class FileStoreTest {
               // Check the parent is correct on retrieval
               assertThat(file.getParent().getIdentifier())
                 .isEqualTo(rootFolder.getIdentifier());
-              Scanner scanner = new Scanner(file.getData());
-              assertThat(scanner.useDelimiter("\\Z").next())
+              assertThat(IOUtils.toString(file.getData()))
                 .isEqualTo(content);
-              scanner.close();
             } catch (AccessDeniedException ade) {
               Logger.debug("Access unexpectedly denied.", ade);
               fail("An admin user should be able to create a file.");
