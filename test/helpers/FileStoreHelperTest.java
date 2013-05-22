@@ -181,5 +181,40 @@ public class FileStoreHelperTest {
       }
     });
   }
+  
+
+  @Test
+  public void rmFolder() {
+    running(fakeAorraApp(), new Runnable() {
+      @Override
+      public void run() {
+        sessionFactory().inSession(new F.Function<Session,Session>() {
+          @Override
+          public Session apply(Session session) throws Throwable {
+            final FileStoreHelper fileStoreHelper =
+                new FileStoreHelper(session);
+            final String absPath1 = "/foo/bar";
+            FileStore.Manager fm = fileStore().getManager(session);
+            {
+              final FileStore.FileOrFolder fof = fm.getFileOrFolder(absPath1);
+              assertThat(fof).isNull();
+            }
+            fileStoreHelper.mkdir(absPath1, true);
+            {
+              final FileStore.FileOrFolder fof = fm.getFileOrFolder(absPath1);
+              assertThat(fof).isNotNull();
+              assertThat(fof).isInstanceOf(FileStore.Folder.class);
+            }
+            fileStoreHelper.rm(absPath1, true);
+            {
+                final FileStore.FileOrFolder fof = fm.getFileOrFolder(absPath1);
+                assertThat(fof).isNull();
+            }
+            return null;
+          }
+        });
+      }
+    });
+  }
 
 }
