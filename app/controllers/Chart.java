@@ -3,8 +3,7 @@ package controllers;
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +17,9 @@ import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
@@ -55,7 +57,7 @@ public class Chart extends SessionAwareController {
       this.fileStore = fileStore;
     }
 
-    private String buildUrl(ereefs.charts.Chart chart, String format, String path) throws UnsupportedEncodingException {
+    private String buildUrl(ereefs.charts.Chart chart, String format, String[] path) throws UnsupportedEncodingException {
         StringBuilder result = new StringBuilder("charts/");
         result.append(chart.getDescription().getType().toString().toLowerCase());
         result.append(".");
@@ -65,17 +67,14 @@ public class Chart extends SessionAwareController {
             result.append("png");
         }
         result.append("?");
-        Iterator<Map.Entry<String, String>> meIter =
-                chart.getDescription().getProperties().entrySet().iterator();
-        while(meIter.hasNext()) {
-            Map.Entry<String, String> me = meIter.next();
-            result.append(String.format("%s=%s", URLEncoder.encode(me.getKey(), "UTF-8"),
-                    URLEncoder.encode(me.getValue(), "UTF-8")));
-            if(meIter.hasNext()) {
-                result.append("&");
-            }
+        List<NameValuePair> qparams = new ArrayList<NameValuePair>();
+        for(Map.Entry<String, String> me : chart.getDescription().getProperties().entrySet()) {
+            qparams.add(new BasicNameValuePair(me.getKey(), me.getValue()));
         }
-        result.append("&path="+URLEncoder.encode(path, "UTF-8"));
+        for(String p : path) {
+            qparams.add(new BasicNameValuePair("path", p));
+        }
+        result.append(URLEncodedUtils.format(qparams, "UTF-8"));
         return result.toString();
     }
 
@@ -129,7 +128,7 @@ public class Chart extends SessionAwareController {
                             for(Map.Entry<String, String> me : desc.getProperties().entrySet()) {
                                 chartNode.put(me.getKey(), me.getValue());
                             }
-                            chartNode.put("url", buildUrl(chart, format, request().queryString().get("path")[0]));
+                            chartNode.put("url", buildUrl(chart, format, request().queryString().get("path")));
                             aNode.add(chartNode);
                         }
                         return ok(json).as("application/json");
@@ -148,71 +147,6 @@ public class Chart extends SessionAwareController {
                             return toFormat(svg, format);
                         }
                     }
-
-                    /*
-                    ChartFactory f = new ChartFactory();
-                    if(StringUtils.isBlank(chart)) {
-                        String format = getParameter("format");
-                        List<ereefs.charts.Chart> charts = f.getCharts(request().queryString());
-                        final ObjectNode json = Json.newObject();
-                        final ArrayNode aNode = json.putArray("charts");
-                        for(ereefs.charts.Chart chart : charts) {
-                            ChartDescription desc = chart.getDescription();
-                            final ObjectNode chartNode = Json.newObject();
-                            chartNode.put("type", desc.getType().toString());
-                            for(Map.Entry<String, String> me : desc.getProperties().entrySet()) {
-                                chartNode.put(me.getKey(), me.getValue());
-                            }
-                            chartNode.put("url", buildUrl(chart, format));
-                            aNode.add(chartNode);
-                        }
-                        return ok(json).as("application/json");
-                    } else {
-                        ChartType type = ChartType.getChartType(FilenameUtils.removeExtension(chart));
-                        if(type == null) {
-                            return notFound("unknown chart type "+chart);
-                        }
-                        String format = FilenameUtils.getExtension(chart);
-                        List<ereefs.charts.Chart> charts = f.getCharts(type, request().queryString());
-                        if(charts.isEmpty()) {
-                            return notFound();
-                        } else {
-                            ChartRenderer renderer = new ChartRenderer(charts.get(0).getChart());
-                            String svg = renderer.render();
-                            return toFormat(svg, format);
-                        }
-                    }
-                    */
-
-                    /*
-                    String format = getParameter("format");
-                    if(StringUtils.isBlank(format)) {
-                        format = "png";
-                    }
-                    String path = getParameter("path");
-                    final FileStore.Manager fm = fileStore.getManager(session);
-                    FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+path);
-                    if (fof instanceof FileStore.File) {
-                        FileStore.File file = (FileStore.File) fof;
-                        // Check this is an OpenXML document (no chance otherwise)
-                        if (!file.getMimeType().equals(
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-                          return notFound();
-                        }
-                        Spreadsheet spreadsheet = new Spreadsheet(file.getData(), file.getMimeType());
-                        List<ereefs.charts.Chart> charts = spreadsheet.getCharts(request().queryString());
-                        if(charts.isEmpty()) {
-                            return notFound();
-                        } else {
-                            ChartRenderer renderer = new ChartRenderer(charts.get(0).getChart());
-                            String svg = renderer.render();
-                            return toFormat(svg, format);
-                        }
-                    } else {
-                        return notFound();
-                    }
-                    */
-
                 } catch(Exception e) {
                     throw new RepositoryException(e);
                 }
