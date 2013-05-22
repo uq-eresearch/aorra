@@ -37,7 +37,7 @@ class filestore {
         def filestore = fileStore()
         sessionFactory().inSession(new Function<Session, String>() {
           public String apply(Session session) {
-            def fsh = new FileStoreHelper(session);
+            def fsh = new FileStoreHelper(session, out);
             directories.each() {
               fsh.mkdir(StringUtils.strip(it), parents == true);
             }
@@ -56,23 +56,9 @@ class filestore {
       def filestore = fileStore()
       sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
-          def rm;
-          rm = { path ->
-            if(path == null) {
-              return null;
-            }
-            def f = filestore.getManager(session).getFileOrFolder(path);
-            if(f == null) {
-              out.println(String.format("no such file or directory '%s'", path));
-            } else if(f instanceof FileStore.Folder && recursive == null) {
-              out.println(String.format(
-                  "cannot remove '%s': Is a directory, try using --recursive", path));
-            } else {
-              f.delete();
-            }
-          }
+          def fsh = new FileStoreHelper(session, out);
           files.each() {
-            rm(it);
+            fsh.rm(StringUtils.strip(it), Boolean.valueOf(recursive));
           }
         }
       })
@@ -87,38 +73,13 @@ class filestore {
     def filestore = fileStore()
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
-          def sb = new StringBuilder()
-          def m = filestore.getManager(session)
-          def tree
-          tree = { folder ->
-            def format = { nw, isFolder ->
-              ("|   " * nw.getDepth()).replaceAll(/\|   $/,
-                  isFolder ? "|-+ " : "|-- ") +
-              // Make root easier to spot/understand
-              (nw.getPath() == "/" ? "/ (root)" : nw.getName()) + 
-              (showPerms ? " "+nw.getGroupPermissions() : "")
-            }
-            out.println(format(folder, true))
-            folder.getFolders().each {
-              tree(it)
-            }
-            folder.getFiles().each {
-              out.println(format(it, false))
-            }
-          }
-          def f = m.getFileOrFolder(path == null ? "/" : path);
-          if (f == null) {
-            out.println(String.format("no such folder %s", path));
-          } else if (f instanceof FileStore.File) {
-            out.println(String.format("%s is a file", path));
-          } else {
-            tree((FileStore.Folder) f);
-          }
+            def fsh = new FileStoreHelper(session, out);
+            fsh.tree((String)path, showPerms);
         }
       })
   }
 
-  @Usage("make group filestore administrators")
+  @Usage("list group filestore administrators")
   @Command
   String listadmin(
       @Usage("group name")
@@ -126,37 +87,12 @@ class filestore {
       String name) {
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
-          try {
-            def root = Admin.getInstance(session).getGroup()
-            def tree
-            tree = { authorizable, depth ->
-              def isGroup = authorizable instanceof Group
-              // If group, just use ID
-              def n = authorizable.getID()
-              try {
-                // Get user email if user
-                def node = session.getNodeByIdentifier(authorizable.getID())
-                n = node.getProperty("email").getValue().getString()
-              } catch (Exception e) {}
-              out.println(
-                ("|   " * depth).replaceAll(/\|   $/,
-                    isGroup ? "|-+ " : "|-- ") + n
-              )
-              if (isGroup) {
-                ((Group)authorizable).getDeclaredMembers().each {
-                  tree(it, depth + 1)
-                }
-              }
-            }
-            tree(root, 0)
-          } catch (RuntimeException e) {
-            return e.getMessage()
-          }
-          "\n"
+            def fsh = new FileStoreHelper(session, out);
+            fsh.listadmin(name);
         }
       })
   }
-  
+
   @Usage("make group filestore administrators")
   @Command
   String makeadmin(
