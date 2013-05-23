@@ -90,7 +90,7 @@ public class Chart extends SessionAwareController {
         }
         final FileStore.Manager fm = fileStore.getManager(session);
         for(String path : paths) {
-            FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+path);
+            FileStore.FileOrFolder fof = fm.getFileOrFolder(path);
             if (fof instanceof FileStoreImpl.File) {
                 FileStoreImpl.File file = (FileStoreImpl.File) fof;
                 // Check this is an OpenXML document (no chance otherwise)
