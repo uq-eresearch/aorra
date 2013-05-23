@@ -10,9 +10,8 @@ import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.util.Scanner;
 import java.util.Set;
+import java.util.SortedMap;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
@@ -24,6 +23,7 @@ import models.UserDAO;
 
 import org.apache.tika.io.IOUtils;
 import org.junit.Test;
+
 
 import play.Logger;
 import play.libs.F.Function;
@@ -181,6 +181,53 @@ public class FileStoreTest {
           }
         });
       }
+    });
+  }
+
+  @Test
+  public void fileVersioning() {
+    running(fakeAorraApp(), new Runnable() {
+      @Override
+      public void run() {
+        final FileStore fileStoreImpl = fileStore();
+        sessionFactory().inSession(new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException, IOException {
+            FileStore.Folder folder =
+                fileStoreImpl.getManager(session).getRoot();
+            final String filename = "README.txt";
+            final String mimeType = "text/plain";
+            int i;
+            for (i = 1; i <= 10; i++) {
+              folder.createFile(filename, mimeType,
+                  new ByteArrayInputStream(getSomeContent(i).getBytes()));
+              final FileStore.File f = (FileStore.File) fileStoreImpl
+                  .getManager(session)
+                  .getFileOrFolder("/"+filename);
+              assertThat(IOUtils.toString(f.getData()))
+                .isEqualTo(getSomeContent(i));
+            }
+            final FileStore.File f = (FileStore.File) fileStoreImpl
+                .getManager(session)
+                .getFileOrFolder("/"+filename);
+            final SortedMap<String, FileStore.File> versions = f.getVersions();
+            i = 1;
+            for (final String versionName : versions.keySet()) {
+              final FileStore.File v = versions.get(versionName);
+              assertThat(versionName).isEqualTo(String.format("1.%d", i-1));
+              assertThat(IOUtils.toString(v.getData()))
+                .isEqualTo(getSomeContent(i));
+              i++;
+            }
+            return folder.getIdentifier();
+          }
+        });
+      }
+
+      protected String getSomeContent(int seed) {
+        return String.format("Test content, version #%d.", seed);
+      }
+
     });
   }
 

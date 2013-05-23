@@ -3,11 +3,10 @@ package service.filestore;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-
-import service.filestore.FileStore.FileOrFolder;
 
 import akka.actor.ActorRef;
 
@@ -75,6 +74,8 @@ public interface FileStore {
     InputStream getData();
 
     String getMimeType();
+
+    SortedMap<String,File> getVersions() throws RepositoryException;
 
     File update(String mime, InputStream data) throws RepositoryException;
 

@@ -1,5 +1,6 @@
 package models.filestore;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
@@ -10,6 +11,8 @@ import org.jcrom.AbstractJcrEntity;
 import org.jcrom.JcrDataProvider;
 import org.jcrom.JcrDataProviderImpl;
 import org.jcrom.JcrFile;
+import org.jcrom.annotations.JcrBaseVersionCreated;
+import org.jcrom.annotations.JcrBaseVersionName;
 import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
@@ -33,6 +36,12 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
   @JcrIdentifier
   protected String id;
 
+  @JcrBaseVersionName
+  protected String baseVersion;
+
+  @JcrBaseVersionCreated
+  protected Date baseVersionUpdatedAt;
+
   @JcrVersionName
   protected String version;
 
@@ -49,8 +58,9 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
     super();
   }
 
-  public File(String name, String mime, InputStream data) {
+  public File(Folder folder, String name, String mime, InputStream data) {
     super();
+    this.parent = folder;
     this.setName(name);
     this.data = new JcrFile();
     this.data.setName(name);
@@ -77,6 +87,10 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
 
   public String getId() {
     return id;
+  }
+
+  public String getVersion() {
+    return version;
   }
 
   @Override

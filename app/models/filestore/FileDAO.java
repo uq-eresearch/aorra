@@ -11,4 +11,10 @@ public class FileDAO extends AbstractJcrDAO<File> {
     super(session, jcrom);
   }
 
+  @Override
+  public File create(File entity) {
+    File savedEntity = super.create(entity);
+    return get(savedEntity.getPath());
+  }
+
 }

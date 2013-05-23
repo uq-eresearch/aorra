@@ -3,6 +3,7 @@ package service.filestore;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -10,6 +11,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -56,6 +58,7 @@ import akka.actor.Props;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 
@@ -82,7 +85,7 @@ public class FileStoreImpl implements FileStore {
           final FolderDAO dao = new FolderDAO(session, jcrom);
           if (dao.get(FILE_STORE_PATH) == null) {
             final models.filestore.Folder entity =
-                new models.filestore.Folder(FILE_STORE_NODE_NAME);
+                new models.filestore.Folder(null, FILE_STORE_NODE_NAME);
             final String path =
                 FILE_STORE_PATH.replaceFirst(FILE_STORE_NODE_NAME+"$", "");
             Logger.debug("Creating new filestore root at "+path);
@@ -192,8 +195,6 @@ public class FileStoreImpl implements FileStore {
       return null;
     }
 
-
-
     @Override
     public Set<FileStore.Folder> getFolders() throws RepositoryException {
       try {
@@ -213,6 +214,10 @@ public class FileStoreImpl implements FileStore {
 
     public Session getSession() {
       return session;
+    }
+
+    public Jcrom getJcrom() {
+      return jcrom;
     }
 
     public FileDAO getFileDAO() {
@@ -238,10 +243,12 @@ public class FileStoreImpl implements FileStore {
         throw new RuntimeException(String.format(
             "file or folder already exists '%s'", name));
       } else {
-        entity.getFolders().put(name, new models.filestore.Folder(name));
-        filestoreManager.getFolderDAO().update(entity);
+        final models.filestore.Folder newFolderEntity =
+            filestoreManager.getFolderDAO().create(
+                new models.filestore.Folder(entity, name));
+        reload();
         final Folder folder = new Folder(
-            (models.filestore.Folder) entity.getFolders().get(name),
+            newFolderEntity,
             filestoreManager,
             eventManager);
         eventManager.tell(FileStoreEvent.create(folder), null);
@@ -260,13 +267,13 @@ public class FileStoreImpl implements FileStore {
       final FileOrFolder fof = getFileOrFolder(name);
       final File file;
       if (fof == null) {
-        entity.getFiles().put(name,
-            new models.filestore.File(name, mime, data));
-        filestoreManager.getFolderDAO().update(entity);
-        file = new File(
-          (models.filestore.File) entity.getFiles().get(name),
-          filestoreManager,
-          eventManager);
+        final models.filestore.File newFileEntity =
+          filestoreManager.getFileDAO().create(
+              new models.filestore.File(entity, name, mime, data));
+        file = new File(newFileEntity, filestoreManager, eventManager);
+        reload();
+        Logger.debug("New file, version "+newFileEntity.getVersion());
+        eventManager.tell(FileStoreEvent.create(file), null);
       } else if (fof instanceof Folder) {
         throw new RuntimeException(String.format("Can't create file '%s'."
             + " Folder with same name already exists", name));
@@ -274,8 +281,6 @@ public class FileStoreImpl implements FileStore {
         file = ((File) fof);
         file.update(mime, data);
       }
-      filestoreManager.getSession().save();
-      eventManager.tell(FileStoreEvent.create(file), null);
       return file;
     }
 
@@ -295,13 +300,13 @@ public class FileStoreImpl implements FileStore {
         throws RepositoryException {
       if (entity.getFolders().containsKey(name)) {
         return new Folder(
-            (models.filestore.Folder) entity.getFolders().get(name),
+            entity.getFolders().get(name),
             filestoreManager,
             eventManager);
       }
       if (entity.getFiles().containsKey(name)) {
         return new File(
-            (models.filestore.File) entity.getFiles().get(name),
+            entity.getFiles().get(name),
             filestoreManager,
             eventManager);
       }
@@ -380,6 +385,10 @@ public class FileStoreImpl implements FileStore {
       return entity.getPath();
     }
 
+    protected void reload() {
+      entity = filestoreManager.getFolderDAO().get(rawPath());
+    }
+
   }
 
   public static class File extends NodeWrapper<models.filestore.File> implements FileStore.File {
@@ -432,14 +441,27 @@ public class FileStoreImpl implements FileStore {
       return entity.getId();
     }
 
+    @Override
+    public SortedMap<String, service.filestore.FileStore.File> getVersions()
+        throws RepositoryException {
+      final ImmutableSortedMap.Builder<String,FileStore.File> b =
+          ImmutableSortedMap.<String,FileStore.File>naturalOrder();
+      for (models.filestore.File version :
+          filestoreManager.getFileDAO().getVersionList(rawPath())) {
+        b.put(version.getVersion(),
+            new File(version, filestoreManager, eventManager));
+      }
+      return b.build();
+    }
+
   }
 
   protected abstract static class NodeWrapper<T extends Child<models.filestore.Folder>> {
 
-    protected final T entity;
     protected final FileStoreImpl.Manager filestoreManager;
     protected final ActorRef eventManager;
     protected final Iterable<String> pathParts;
+    protected T entity;
 
     protected NodeWrapper(
         T entity,

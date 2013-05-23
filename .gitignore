@@ -12,6 +12,7 @@
 bin
 db
 eclipse
+/lib/*-sources.jar
 log
 logs
 modules
