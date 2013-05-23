@@ -7,6 +7,8 @@ import java.util.Set;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import service.filestore.FileStore.FileOrFolder;
+
 import akka.actor.ActorRef;
 
 public interface FileStore {
@@ -43,6 +45,8 @@ public interface FileStore {
     int getDepth();
 
     String getPath(); /* Globally unique */
+
+    Folder getParent() throws RepositoryException;
 
     void delete() throws RepositoryException;
 

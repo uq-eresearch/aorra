@@ -21,19 +21,20 @@ public class EventManager extends UntypedActor {
   public void onReceive(Object message) throws Exception {
     if (message instanceof FileStoreEvent) {
       final FileStoreEvent event = (FileStoreEvent) message;
-      Logger.info("Pushing event to channels: "+event);
+      Logger.debug(this+" - Pushing event to channels: "+event);
       for (Channel<FileStoreEvent> channel : channels) {
         channel.push(event);
+        Logger.debug(this+"- Pushed to channel: "+channel);
       }
     } else if (message instanceof ChannelMessage) {
       ChannelMessage channelMessage = (ChannelMessage) message;
       switch (channelMessage.type) {
       case ADD:
-        Logger.info(this+" - Adding notification channel.");
+        Logger.debug(this+" - Adding notification channel.");
         channels.add(channelMessage.channel);
         break;
       case REMOVE:
-        Logger.info(this+" - Removing notification channel.");
+        Logger.debug(this+" - Removing notification channel.");
         channels.remove(channelMessage.channel);
         break;
       }
@@ -86,7 +87,7 @@ public class EventManager extends UntypedActor {
       public final NodeType type;
       public final Map<String, Object> attributes;
 
-      NodeInfo(FileStoreImpl.File file) throws RepositoryException {
+      NodeInfo(FileStore.File file) throws RepositoryException {
         this.id = file.getIdentifier();
         this.name = file.getName();
         this.parentId = file.getParent().getIdentifier();
@@ -98,10 +99,11 @@ public class EventManager extends UntypedActor {
         this.attributes = attrs.build();
       }
 
-      NodeInfo(FileStoreImpl.Folder folder) throws RepositoryException {
+      NodeInfo(FileStore.Folder folder) throws RepositoryException {
         this.id = folder.getIdentifier();
         this.name = folder.getName();
-        this.parentId = folder.getParent().getIdentifier();
+        this.parentId = folder.getParent() == null ? null :
+          folder.getParent().getIdentifier();
         this.type = NodeType.FOLDER;
         ImmutableMap.Builder<String, Object> attrs =
             ImmutableMap.<String, Object>builder();
@@ -119,39 +121,39 @@ public class EventManager extends UntypedActor {
     public final EventType type;
     public final NodeInfo info;
 
-    protected FileStoreEvent(EventType type, FileStoreImpl.Folder folder)
+    protected FileStoreEvent(EventType type, FileStore.Folder folder)
         throws RepositoryException {
       this.type = type;
       this.info = new NodeInfo(folder);
     }
 
-    protected FileStoreEvent(EventType type, FileStoreImpl.File file)
+    protected FileStoreEvent(EventType type, FileStore.File file)
         throws RepositoryException {
       this.type = type;
       this.info = new NodeInfo(file);
     }
 
-    public static FileStoreEvent create(FileStoreImpl.File file)
+    public static FileStoreEvent create(FileStore.File file)
         throws RepositoryException {
       return new FileStoreEvent(EventType.CREATE, file);
     }
 
-    public static FileStoreEvent create(FileStoreImpl.Folder folder)
+    public static FileStoreEvent create(FileStore.Folder folder)
         throws RepositoryException {
       return new FileStoreEvent(EventType.CREATE, folder);
     }
 
-    public static FileStoreEvent update(FileStoreImpl.File file)
+    public static FileStoreEvent update(FileStore.File file)
         throws RepositoryException {
       return new FileStoreEvent(EventType.UPDATE, file);
     }
 
-    public static FileStoreEvent delete(FileStoreImpl.File file)
+    public static FileStoreEvent delete(FileStore.File file)
         throws RepositoryException {
       return new FileStoreEvent(EventType.DELETE, file);
     }
 
-    public static FileStoreEvent delete(FileStoreImpl.Folder folder)
+    public static FileStoreEvent delete(FileStore.Folder folder)
         throws RepositoryException {
       return new FileStoreEvent(EventType.DELETE, folder);
     }

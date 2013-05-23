@@ -9,6 +9,8 @@ import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -20,7 +22,7 @@ import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
-import org.apache.jackrabbit.api.security.user.Group;
+import org.apache.tika.io.IOUtils;
 import org.junit.Test;
 
 import play.Logger;
@@ -29,24 +31,26 @@ import service.JcrSessionFactory;
 import service.filestore.roles.Admin;
 
 public class FileStoreTest {
+
   @Test
-  public void canGetFolders() {
+  public void canGetRootFolder() {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
-        sessionFactory().inSession(new Function<Session,FileStore.Folder>() {
+        sessionFactory().inSession(new Function<Session,String>() {
           @Override
-          public FileStore.Folder apply(Session session) {
-            try {
-              Set<FileStore.Folder> folders =
-                  fileStore().getManager(session).getFolders();
-              assertThat(folders).hasSize(1);
-              FileStore.Folder folder = folders.iterator().next();
-              assertThat(folder.getPath()).isEqualTo("/");
-              return folder;
-            } catch (RepositoryException e) {
-              throw new RuntimeException(e);
-            }
+          public String apply(Session session) throws RepositoryException {
+            Set<FileStore.Folder> folders =
+                fileStore().getManager(session).getFolders();
+            assertThat(folders).hasSize(1);
+            FileStore.Folder folder = folders.iterator().next();
+            assertThat(folder.getPath()).isEqualTo("/");
+            assertThat(folder.getParent()).isNull();
+            assertThat(folder.getDepth()).isEqualTo(0);
+            FileStore.FileOrFolder refetchedFolder =
+                fileStore().getManager(session).getFileOrFolder("/");
+            assertThat(refetchedFolder).isEqualTo(folder);
+            return folder.getIdentifier();
           }
         });
       }
@@ -135,24 +139,40 @@ public class FileStoreTest {
         sessionFactory.inSession(userId, new Function<Session,FileStore.Folder>() {
           @Override
           public FileStore.Folder apply(Session session)
-              throws RepositoryException {
+              throws RepositoryException, IOException {
+            {
+              // Check user with admin sees only one root folder
+              Set<FileStore.Folder> folders =
+                  fileStoreImpl.getManager(session).getFolders();
+              assertThat(folders).hasSize(1);
+            }
             final FileStore.Folder rootFolder =
                 fileStoreImpl.getManager(session).getRoot();
             final String filename = "README.txt";
             final String mimeType = "text/plain";
             final String content = "Test content.";
             try {
-              rootFolder.createFile(filename, mimeType,
+              final FileStore.File f = rootFolder.createFile(filename, mimeType,
                   new ByteArrayInputStream(content.getBytes()));
-              final FileStoreImpl.File file = (FileStoreImpl.File) fileStoreImpl
+              // Check the parent is correct right after save
+              assertThat(f.getParent().getIdentifier())
+                .isEqualTo(rootFolder.getIdentifier());
+              final FileStore.FileOrFolder fof = fileStoreImpl
                   .getManager(session)
                   .getFileOrFolder("/"+filename);
+              assertThat(fof).isInstanceOf(FileStore.File.class);
+              assertThat(fof).isEqualTo(f);
+              final FileStoreImpl.File file = (FileStoreImpl.File) fof;
+              assertThat(file.getIdentifier()).isNotNull();
               assertThat(file.getName()).isEqualTo(filename);
+              assertThat(file.getPath()).isEqualTo("/"+filename);
+              assertThat(file.getDepth()).isEqualTo(1);
               assertThat(file.getMimeType()).isEqualTo(mimeType);
-              Scanner scanner = new Scanner(file.getData());
-              assertThat(scanner.useDelimiter("\\Z").next())
+              // Check the parent is correct on retrieval
+              assertThat(file.getParent().getIdentifier())
+                .isEqualTo(rootFolder.getIdentifier());
+              assertThat(IOUtils.toString(file.getData()))
                 .isEqualTo(content);
-              scanner.close();
             } catch (AccessDeniedException ade) {
               Logger.debug("Access unexpectedly denied.", ade);
               fail("An admin user should be able to create a file.");

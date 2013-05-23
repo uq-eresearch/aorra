@@ -509,7 +509,7 @@
     $('#sidebar').append(fileTree.$el);
     $('#main').append(mainPane.$el);
     notificationFeed.open();
-    notificationFeed.on("event:load", function(struct) {
+    notificationFeed.once("event:load", function(struct) {
       // Start router (as now we can load existing nodes)
       Backbone.history.start();
     });
