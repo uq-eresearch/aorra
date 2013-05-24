@@ -365,6 +365,7 @@ var notificationFeed;
       var mkdirView = new CreateFolderView({ model: this.model });
       this.$el.append(this._makeBreadCrumbElement());
       this.$el.append(this._makeDeleteElement().addClass('pull-right'));
+      this.$el.append(this._makeDownloadElement());
       this.$el.append($('<div/>')
         .append('<h3>Upload files</h3>')
         .append(fileUploadView.$el)

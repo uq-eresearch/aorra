@@ -8,6 +8,9 @@ import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.jcr.Session;
 
@@ -181,7 +184,41 @@ public class FileStoreHelperTest {
       }
     });
   }
-  
+
+  @Test
+  public void createZipFile() {
+    running(fakeAorraApp(), new Runnable() {
+      @Override
+      public void run() {
+        sessionFactory().inSession(new F.Function<Session,Session>() {
+          @Override
+          public Session apply(Session session) throws Throwable {
+            final FileStoreHelper fh = new FileStoreHelper(session);
+            final FileStore.Manager fm = fileStore().getManager(session);
+            fh.mkdir("/a/1", true);
+            fh.mkdir("/a/2", true);
+            fh.mkdir("/b/1", true);
+            ((FileStore.Folder) fm.getFileOrFolder("/a/2"))
+              .createFile("test.txt", "text/plain",
+                  new ByteArrayInputStream(
+                      "Some test content.".getBytes()));
+            // Get zip file
+            final InputStream is = fh.createZipFile(fm.getRoot());
+            assertThat(is).isNotNull();
+            final ZipInputStream zis = new ZipInputStream(
+                fh.createZipFile(fm.getRoot()));
+            final ZipEntry ze = zis.getNextEntry();
+            assertThat(ze).isNotNull();
+            assertThat(ze.getName()).isEqualTo("/a/2/test.txt");
+            assertThat(zis.getNextEntry()).isNull();
+            zis.close();
+            return session;
+          }
+        });
+      }
+    });
+  }
+
 
   @Test
   public void rmFolder() {

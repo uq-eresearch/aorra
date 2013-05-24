@@ -1,8 +1,15 @@
 package controllers;
 
+import helpers.FileStoreHelper;
+import helpers.FileStoreHelper.FileExistsException;
+import helpers.FileStoreHelper.FolderExistsException;
+import helpers.FileStoreHelper.FolderNotFoundException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
@@ -47,24 +54,16 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        FileStore.Folder baseFolder = fm.getRoot();
-        for (String encodedPart : encodedPath.split("/")) {
-          // Skip empty string directories as part oddities
-          if (encodedPart.equals("")) continue;
-          String part = decodePath(encodedPart);
-          final FileStore.FileOrFolder fof = baseFolder.getFileOrFolder(part);
-          final FileStore.Folder nextFolder;
-          if (fof == null) {
-            nextFolder = baseFolder.createFolder(part);
-          } else if (fof instanceof FileStore.Folder) {
-            nextFolder = (FileStore.Folder) fof;
-          } else {
-            throw new ItemExistsException(
-                "Path item exists which is not a folder.");
-          }
-          // Move up
-          baseFolder = nextFolder;
+        final FileStoreHelper fh = new FileStoreHelper(session);
+        final String path = decodePath(encodedPath);
+        try {
+          fh.mkdir(path, true);
+        } catch (FileExistsException e) {
+          return badRequest(e.getMessage());
+        } catch (FolderExistsException e) {
+          return badRequest(e.getMessage());
+        } catch (FolderNotFoundException e) {
+          return badRequest(e.getMessage());
         }
         return created();
       }
@@ -90,14 +89,19 @@ public final class FileStoreController extends SessionAwareController {
     final String filePath = decodePath(encodedFilePath);
     return inUserSession(new F.Function<Session, Result>() {
       @Override
-      public final Result apply(Session session) throws RepositoryException {
+      public final Result apply(Session session) throws RepositoryException,
+          IOException {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+filePath);
+        FileStore.FileOrFolder fof = fm.getFileOrFolder("/" + filePath);
         if (fof instanceof FileStoreImpl.File) {
           FileStore.File file = (FileStoreImpl.File) fof;
           return ok(file.getData()).as(file.getMimeType());
         } else {
-          return notFound();
+          final FileStoreHelper fh = new FileStoreHelper(session);
+          ctx().response().setHeader("Content-Disposition",
+              "attachment; filename="+fof.getName()+".zip");
+          return ok(fh.createZipFile((FileStoreImpl.Folder) fof)).as(
+              "multipart/x-zip");
         }
       }
     });

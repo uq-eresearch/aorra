@@ -1,16 +1,25 @@
 package helpers;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.security.user.Authorizable;
@@ -52,7 +61,7 @@ public class FileStoreHelper {
     this.session = session;
     this.out = new PrintWriter(new OutputStreamWriter(System.out));
   }
-  
+
   public FileStoreHelper(final Session session, PrintWriter out) {
     this.session = session;
     this.out = out;
@@ -87,6 +96,31 @@ public class FileStoreHelper {
       }
     }
   }
+
+  public InputStream createZipFile(final FileStore.Folder folder)
+      throws IOException, RepositoryException {
+    final File tempFile = File.createTempFile("zipfile", "");
+    final OutputStream os = new FileOutputStream(tempFile);
+    final ZipOutputStream zos = new ZipOutputStream(os);
+    addFolderToZip(zos, fileStore().getManager(session).getRoot());
+    zos.close();
+    os.close();
+    return new FileInputStream(tempFile);
+  }
+
+  protected void addFolderToZip(final ZipOutputStream zos,
+      final FileStore.Folder folder) throws IOException, RepositoryException {
+    for (final FileStore.Folder subFolder : folder.getFolders()) {
+      addFolderToZip(zos, subFolder);
+    }
+    for (final FileStore.File file : folder.getFiles()) {
+      zos.putNextEntry(new ZipEntry(file.getPath()));
+      InputStream data = file.getData();
+      IOUtils.copy(data, zos);
+      data.close();
+    }
+  }
+
 
   protected Iterable<String> getPathParts(final String absPath) {
     final Deque<String> q = new LinkedList<String>();
@@ -136,7 +170,7 @@ public class FileStoreHelper {
               sb.append(mapToString(((FileStore.Folder)f).getGroupPermissions()));
           }
       }
-      
+
       return sb.toString();
   }
 
