@@ -1,12 +1,15 @@
 package service.filestore;
 
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+
+import models.User;
 
 import akka.actor.ActorRef;
 
@@ -78,6 +81,10 @@ public interface FileStore {
     SortedMap<String,File> getVersions() throws RepositoryException;
 
     File update(String mime, InputStream data) throws RepositoryException;
+
+    User getAuthor();
+
+    Calendar getModificationTime();
 
   }
 

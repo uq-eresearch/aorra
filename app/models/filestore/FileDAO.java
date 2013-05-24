@@ -13,7 +13,15 @@ public class FileDAO extends AbstractJcrDAO<File> {
 
   @Override
   public File create(File entity) {
-    File savedEntity = super.create(entity);
+    entity.setLastModified(session.getUserID());
+    final File savedEntity = super.create(entity);
+    return get(savedEntity.getPath());
+  }
+
+  @Override
+  public File update(File entity) {
+    entity.setLastModified(session.getUserID());
+    final File savedEntity = super.update(entity);
     return get(savedEntity.getPath());
   }
 

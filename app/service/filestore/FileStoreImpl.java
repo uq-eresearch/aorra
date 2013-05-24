@@ -6,6 +6,7 @@ import java.security.Principal;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -18,6 +19,8 @@ import java.util.TreeSet;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.LockException;
@@ -30,6 +33,8 @@ import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 
 import models.GroupManager;
+import models.User;
+import models.UserDAO;
 import models.filestore.Child;
 import models.filestore.FileDAO;
 import models.filestore.FolderDAO;
@@ -160,11 +165,19 @@ public class FileStoreImpl implements FileStore {
     private final Session session;
     private final Jcrom jcrom;
     private final ActorRef eventManager;
+    private final FileDAO fileDAO;
+    private final FolderDAO folderDAO;
+    private final UserDAO userDAO;
+    private final Map<String, User> userCache =
+        new HashMap<String, User>();
 
     protected Manager(final Session session, final Jcrom jcrom, final ActorRef eventManager) {
       this.session = session;
       this.jcrom = jcrom;
       this.eventManager = eventManager;
+      fileDAO = new FileDAO(session, jcrom);
+      folderDAO = new FolderDAO(session, jcrom);
+      userDAO = new UserDAO(session, jcrom);
     }
 
     @Override
@@ -221,11 +234,25 @@ public class FileStoreImpl implements FileStore {
     }
 
     public FileDAO getFileDAO() {
-      return new FileDAO(session, jcrom);
+      return fileDAO;
     }
 
     public FolderDAO getFolderDAO() {
-      return new FolderDAO(session, jcrom);
+      return folderDAO;
+    }
+
+    public User getUserFromJackrabbitID(final String jackrabbitUserId) {
+      if (!userCache.containsKey(jackrabbitUserId)) {
+        userCache.put(jackrabbitUserId,
+            getUserDAO().findByJackrabbitID(jackrabbitUserId));
+        Logger.debug("Adding "+jackrabbitUserId+" to user ID cache: "+
+            userCache.get(jackrabbitUserId));
+      }
+      return userCache.get(jackrabbitUserId);
+    }
+
+    protected UserDAO getUserDAO() {
+      return userDAO;
     }
 
   }
@@ -452,6 +479,17 @@ public class FileStoreImpl implements FileStore {
             new File(version, filestoreManager, eventManager));
       }
       return b.build();
+    }
+
+    @Override
+    public User getAuthor() {
+      return filestoreManager.getUserFromJackrabbitID(
+          entity.getLastModifiedBy());
+    }
+
+    @Override
+    public Calendar getModificationTime() {
+      return entity.getLastModified();
     }
 
   }

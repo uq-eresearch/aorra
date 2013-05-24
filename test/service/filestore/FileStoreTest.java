@@ -75,7 +75,7 @@ public class FileStoreTest {
 
   @Test
   public void adminGroupPermissions() {
-    running(fakeAorraApp(), new Runnable() {
+    running(fakeAorraApp(true), new Runnable() {
       @Override
       public void run() {
         final JcrSessionFactory sessionFactory = sessionFactory();
@@ -162,7 +162,7 @@ public class FileStoreTest {
                   .getFileOrFolder("/"+filename);
               assertThat(fof).isInstanceOf(FileStore.File.class);
               assertThat(fof).isEqualTo(f);
-              final FileStoreImpl.File file = (FileStoreImpl.File) fof;
+              final FileStore.File file = (FileStore.File) fof;
               assertThat(file.getIdentifier()).isNotNull();
               assertThat(file.getName()).isEqualTo(filename);
               assertThat(file.getPath()).isEqualTo("/"+filename);
@@ -171,6 +171,10 @@ public class FileStoreTest {
               // Check the parent is correct on retrieval
               assertThat(file.getParent().getIdentifier())
                 .isEqualTo(rootFolder.getIdentifier());
+              // Check the author info
+              assertThat(file.getAuthor()).isNotNull();
+              assertThat(file.getAuthor().getJackrabbitUserId())
+                .isEqualTo(userId);
               assertThat(IOUtils.toString(file.getData()))
                 .isEqualTo(content);
             } catch (AccessDeniedException ade) {

@@ -1,3 +1,4 @@
+var notificationFeed;
 (function() {
   /*
   Note: This is still very much a work in progress.
@@ -378,6 +379,7 @@
       var type = typeFromMimeType(this.model.get('mimeType'));
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
+      this.$el.append(this._makeAuthorElement());
       this.$el.append(this._makeDeleteElement().addClass('pull-right'));
       this.$el.append(this._makeDownloadElement());
       switch (type) {
@@ -394,6 +396,18 @@
         '<img class="img-polaroid" alt="Image for <%= path %>"' +
         ' src="/filestore<%= path %>" />',
         this.model.toJSON()));
+    },
+    _makeAuthorElement: function() {
+      var $wrapper = $("<p/>");
+      if (this.model.get('authorName')) {
+        $wrapper.text(
+            "Last modified by "+
+            this.model.get('authorName')+" @ "+
+            this.model.get('lastModified'));
+      } else {
+        $wrapper.text("Unknown author");
+      }
+      return $wrapper;
     },
     _loadChartElements: function() {
       var format = Modernizr.svg ? 'svg' : 'png';
@@ -501,7 +515,7 @@
   $(function () {
 
     var fileTree = new FileTree();
-    var notificationFeed = new NotificationFeed({
+    notificationFeed = new NotificationFeed({
       getTree: function() { return fileTree.tree }
     });
     var mainPane = new MainPane();

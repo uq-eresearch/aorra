@@ -1,10 +1,12 @@
 package service.filestore;
 
+import java.text.DateFormat;
 import java.util.Set;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
@@ -64,6 +66,15 @@ public class JsonBuilder {
     final ObjectNode attributes = fileJson.putObject("attributes");
     attributes.put("mimeType", file.getMimeType());
     attributes.put("path", file.getPath());
+    if (file.getAuthor() != null) {
+      attributes.put("authorEmail", file.getAuthor().getEmail());
+      attributes.put("authorName", file.getAuthor().getName());
+    }
+    if (file.getModificationTime() != null) {
+      attributes.put("lastModified",
+        DateFormatUtils.ISO_DATETIME_FORMAT.format(
+            file.getModificationTime()));
+    }
     return fileJson;
   }
 }

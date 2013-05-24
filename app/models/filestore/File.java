@@ -1,6 +1,5 @@
 package models.filestore;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
@@ -11,13 +10,12 @@ import org.jcrom.AbstractJcrEntity;
 import org.jcrom.JcrDataProvider;
 import org.jcrom.JcrDataProviderImpl;
 import org.jcrom.JcrFile;
-import org.jcrom.annotations.JcrBaseVersionCreated;
-import org.jcrom.annotations.JcrBaseVersionName;
 import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.annotations.JcrParentNode;
-import org.jcrom.annotations.JcrVersionCreated;
+import org.jcrom.annotations.JcrProperty;
+import org.jcrom.annotations.JcrProtectedProperty;
 import org.jcrom.annotations.JcrVersionName;
 
 @JcrNode(
@@ -36,17 +34,20 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
   @JcrIdentifier
   protected String id;
 
-  @JcrBaseVersionName
-  protected String baseVersion;
-
-  @JcrBaseVersionCreated
-  protected Date baseVersionUpdatedAt;
-
   @JcrVersionName
   protected String version;
 
-  @JcrVersionCreated
-  protected Date updatedAt;
+  @JcrProtectedProperty(name="jcr:created")
+  protected Calendar created;
+
+  @JcrProtectedProperty(name="jcr:createdBy")
+  protected String createdBy;
+
+  @JcrProperty(name="jcr:lastModified")
+  protected Calendar lastModified;
+
+  @JcrProperty(name="jcr:lastModifiedBy")
+  protected String lastModifiedBy;
 
   @JcrParentNode
   protected Folder parent;
@@ -64,7 +65,6 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
     this.setName(name);
     this.data = new JcrFile();
     this.data.setName(name);
-    this.data.setLastModified(Calendar.getInstance());
     this.setMimeType(mime);
     this.setData(data);
   }
@@ -75,6 +75,7 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
 
   public void setData(final InputStream data) {
     this.data.setDataProvider(new JcrDataProviderImpl(data));
+    this.data.setLastModified(Calendar.getInstance());
   }
 
   public String getMimeType() {
@@ -101,6 +102,19 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
   @Override
   public String toString() {
     return String.format("%s [%s]", getPath(), getId());
+  }
+
+  public String getLastModifiedBy() {
+    return lastModifiedBy;
+  }
+
+  public Calendar getLastModified() {
+    return lastModified;
+  }
+
+  public void setLastModified(String userId) {
+    this.lastModifiedBy = userId;
+    this.lastModified = Calendar.getInstance();
   }
 
 }

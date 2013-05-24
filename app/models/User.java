@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.jcr.SimpleCredentials;
+import javax.jcr.nodetype.NodeType;
 
 import org.apache.commons.codec.binary.Hex;
 import org.jcrom.annotations.JcrIdentifier;
@@ -26,7 +27,14 @@ import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider.U
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 
-@JcrNode
+@JcrNode(
+    nodeType = NodeType.NT_UNSTRUCTURED,
+    mixinTypes = {
+      NodeType.MIX_CREATED,
+      NodeType.MIX_LAST_MODIFIED,
+      NodeType.MIX_REFERENCEABLE
+    },
+    classNameProperty = "className")
 public class User {
 
   @JcrIdentifier private String id;

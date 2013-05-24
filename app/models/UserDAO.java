@@ -10,8 +10,11 @@ import javax.jcr.SimpleCredentials;
 
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
+import org.jcrom.JcrMappingException;
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
+
+import play.Logger;
 
 public class UserDAO extends AbstractJcrDAO<User> {
 
@@ -108,6 +111,18 @@ public class UserDAO extends AbstractJcrDAO<User> {
 
   private String jackrabbitAuthUserId(User user) {
     return user.getJackrabbitUserId();
+  }
+
+  // This is relying on knowing how getJackrabbitUserId() works, which is
+  // probably something that should be fixed.
+  public User findByJackrabbitID(String userId) {
+    try {
+      return loadById(userId);
+    } catch (JcrMappingException e) {
+      Logger.debug("Unable to find user by id: "+userId, e);
+      // Most likely this is the admin user
+      return null;
+    }
   }
 
 }

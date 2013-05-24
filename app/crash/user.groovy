@@ -1,6 +1,7 @@
 import static play.Play.application;
 
 import javax.jcr.Session;
+import javax.jcr.nodetype.NodeType;
 import org.crsh.cli.Command
 import org.crsh.cli.Usage
 import org.crsh.cli.Argument
@@ -80,6 +81,25 @@ class user {
           }
         }
       })
+  }
+  
+  @Usage("update user node format")
+  @Command
+  String update() {
+    sessionFactory().inSession(new Function<Session, String>() {
+      public String apply(Session session) {
+        try {
+          def dao = new UserDAO(session, jcrom())
+          dao.list().collect { user ->
+            session.getNode(user.getNodePath()).addMixin(
+              NodeType.MIX_REFERENCEABLE);
+            user.toString()
+          }.join("\n")
+        } catch (RuntimeException e) {
+          return e.getMessage()
+        }
+      }
+    })+ "\n";
   }
   
   private Jcrom jcrom() {

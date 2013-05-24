@@ -6,6 +6,8 @@ import java.util.Set;
 
 import javax.jcr.RepositoryException;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
+
 import com.google.common.collect.ImmutableMap;
 
 import play.Logger;
@@ -96,6 +98,15 @@ public class EventManager extends UntypedActor {
             ImmutableMap.<String, Object>builder();
         attrs.put("mimeType", file.getMimeType());
         attrs.put("path", file.getPath());
+        if (file.getAuthor() != null) {
+          attrs.put("authorEmail", file.getAuthor().getEmail());
+          attrs.put("authorName", file.getAuthor().getName());
+        }
+        if (file.getModificationTime() != null) {
+          attrs.put("lastModified",
+              DateFormatUtils.ISO_DATETIME_FORMAT.format(
+                  file.getModificationTime()));
+        }
         this.attributes = attrs.build();
       }
 
