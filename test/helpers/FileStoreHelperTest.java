@@ -8,6 +8,7 @@ import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -203,13 +204,13 @@ public class FileStoreHelperTest {
                   new ByteArrayInputStream(
                       "Some test content.".getBytes()));
             // Get zip file
-            final InputStream is = fh.createZipFile(fm.getRoot());
-            assertThat(is).isNotNull();
+            final java.io.File tf = fh.createZipFile(fm.getRoot());
+            assertThat(tf).isNotNull();
             final ZipInputStream zis = new ZipInputStream(
-                fh.createZipFile(fm.getRoot()));
+                new FileInputStream(tf));
             final ZipEntry ze = zis.getNextEntry();
             assertThat(ze).isNotNull();
-            assertThat(ze.getName()).isEqualTo("/a/2/test.txt");
+            assertThat(ze.getName()).isEqualTo("a/2/test.txt");
             assertThat(zis.getNextEntry()).isNull();
             zis.close();
             return session;
