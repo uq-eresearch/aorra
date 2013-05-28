@@ -105,15 +105,16 @@ public class FileStoreHelper {
     return folder;
   }
 
-  public InputStream createZipFile(final FileStore.Folder folder)
+  public File createZipFile(final FileStore.Folder folder)
       throws IOException, RepositoryException {
     final File tempFile = File.createTempFile("zipfile", "");
-    final OutputStream os = new FileOutputStream(tempFile);
-    final ZipOutputStream zos = new ZipOutputStream(os);
+    final ZipOutputStream zos =
+        new ZipOutputStream(new FileOutputStream(tempFile));
+    zos.setMethod(ZipOutputStream.DEFLATED);
+    zos.setLevel(5);
     addFolderToZip(zos, fileStore().getManager(session).getRoot());
     zos.close();
-    os.close();
-    return new FileInputStream(tempFile);
+    return tempFile;
   }
 
   protected void addFolderToZip(final ZipOutputStream zos,
@@ -122,9 +123,11 @@ public class FileStoreHelper {
       addFolderToZip(zos, subFolder);
     }
     for (final FileStore.File file : folder.getFiles()) {
-      zos.putNextEntry(new ZipEntry(file.getPath()));
+      // Paths must not have a leading slash
+      zos.putNextEntry(new ZipEntry(file.getPath().substring(1)));
       InputStream data = file.getData();
       IOUtils.copy(data, zos);
+      zos.closeEntry();
       data.close();
     }
   }

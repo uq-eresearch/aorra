@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
@@ -97,11 +96,20 @@ public final class FileStoreController extends SessionAwareController {
           FileStore.File file = (FileStoreImpl.File) fof;
           return ok(file.getData()).as(file.getMimeType());
         } else {
+          final FileStore.Folder folder = (FileStore.Folder) fof;
           final FileStoreHelper fh = new FileStoreHelper(session);
+          final java.io.File zipFile = fh.createZipFile(folder);
+          ctx().response().setContentType("application/zip");
           ctx().response().setHeader("Content-Disposition",
               "attachment; filename="+fof.getName()+".zip");
-          return ok(fh.createZipFile((FileStoreImpl.Folder) fof)).as(
-              "multipart/x-zip");
+          ctx().response().setHeader("Content-Length", zipFile.length()+"");
+          return ok(new FileInputStream(zipFile) {
+            @Override
+            public void close() throws IOException {
+              super.close();
+              zipFile.delete();
+            }
+          });
         }
       }
     });
