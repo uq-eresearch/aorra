@@ -1,5 +1,7 @@
 package helpers;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,12 +15,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,7 +32,10 @@ import org.apache.jackrabbit.api.security.user.Group;
 import play.Play;
 import service.GuiceInjectionPlugin;
 import service.filestore.FileStore;
+import service.filestore.FileStoreImpl.Folder;
 import service.filestore.roles.Admin;
+import eu.medsea.mimeutil.MimeType;
+import eu.medsea.mimeutil.MimeUtil2;
 
 public class FileStoreHelper {
 
@@ -67,7 +74,7 @@ public class FileStoreHelper {
     this.out = out;
   }
 
-  public void mkdir(final String absPath, final boolean createParents)
+  public FileStore.Folder mkdir(final String absPath, final boolean createParents)
       throws FileExistsException, FolderExistsException,
       FolderNotFoundException, RepositoryException {
     final FileStore.Manager manager = fileStore().getManager(session);
@@ -95,6 +102,7 @@ public class FileStoreHelper {
         throw new FileExistsException((FileStore.File) fof);
       }
     }
+    return folder;
   }
 
   public InputStream createZipFile(final FileStore.Folder folder)
@@ -250,6 +258,69 @@ public class FileStoreHelper {
   public void listadmin(String name) throws RepositoryException {
       Group root = Admin.getInstance(session).getGroup();
       listAdminTree(root, 0);
+  }
+
+  private String makePath(String path1, String path2) {
+      if(StringUtils.endsWith(path1, "/")) {
+          return path1+path2;
+      } else {
+          return path1+"/"+path2;
+      }
+  }
+
+  public void importArchive(String archive, String path) {
+      if(StringUtils.isBlank(path)) {
+          path = "/";
+      }
+      final FileStore.Manager manager = fileStore().getManager(session);
+      File f = new File(archive);
+      try {
+          ZipInputStream zip = new ZipInputStream(new FileInputStream(f));
+          while(true) {
+              ZipEntry entry = zip.getNextEntry();
+              if(entry == null) {
+                  break;
+              }
+              String entrypath = entry.getName();
+              String filename = FilenameUtils.getName(entrypath);
+              String parent = makePath(path, FilenameUtils.getFullPathNoEndSeparator(entrypath));
+              FileStore.Folder parentFolder = (Folder)manager.getFileOrFolder(parent);
+              if(parentFolder == null) {
+                  parentFolder = mkdir(parent, true);
+              }
+              if(!entry.isDirectory()) {
+                  FileStore.File file = getFile(parentFolder, filename);
+                  ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                  IOUtils.copy(zip, bout);
+                  byte[] buf = bout.toByteArray();
+                  if(file == null) {
+                      parentFolder.createFile(filename, getMimetype(filename), new ByteArrayInputStream(buf));
+                  } else {
+                      out.println(String.format("file %s already exists", filename));
+                  }
+              }
+          }
+          zip.close();
+      } catch(Exception e) {
+          out.println(String.format("failed to import archive %s", archive));
+          e.printStackTrace(out);
+      }
+  }
+
+  private FileStore.File getFile(FileStore.Folder folder, String name) throws RepositoryException {
+      for(FileStore.File file : folder.getFiles()) {
+          if(file.getName().equals(name)) {
+              return file;
+          }
+      }
+      return null;
+  }
+
+  private String getMimetype(String filename) {
+      MimeUtil2 mimeUtils = new MimeUtil2();
+      mimeUtils.registerMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
+      MimeType m = MimeUtil2.getMostSpecificMimeType(mimeUtils.getMimeTypes(filename));
+      return m!=null?m.toString():null;
   }
 
   protected FileStore fileStore() {

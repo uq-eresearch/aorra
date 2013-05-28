@@ -22,7 +22,8 @@ object ApplicationBuild extends Build {
     "com.google.inject" % "guice" % "3.0",
     "org.crsh" % "crsh.shell.core" % crshVersion,
     "org.crsh" % "crsh.shell.telnet" % crshVersion,
-    "com.feth" %% "play-authenticate" % "0.2.5-SNAPSHOT"
+    "com.feth" %% "play-authenticate" % "0.2.5-SNAPSHOT",
+    "eu.medsea.mimeutil" % "mime-util" % "2.1.3"
   )
   
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")

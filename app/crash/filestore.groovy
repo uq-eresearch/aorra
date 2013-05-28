@@ -131,6 +131,26 @@ class filestore {
       })
   }
 
+  @Usage("import the contents of a zip file into the filestore")
+  @Command
+  String importArchive(
+    @Required(true)
+    @Usage("path to zip file")
+    @Argument
+    String zipfile,
+    @Required(false)
+    @Usage("import into folder path (defaults to '/')")
+    @Argument
+    String path
+    ) {
+    sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) {
+            def fsh = new FileStoreHelper(session, out);
+            fsh.importArchive(zipfile, path);
+        }
+      })
+  }
+
   private JcrSessionFactory sessionFactory() {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(JcrSessionFactory.class);
