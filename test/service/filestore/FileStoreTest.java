@@ -40,6 +40,7 @@ public class FileStoreTest {
         sessionFactory().inSession(new Function<Session,String>() {
           @Override
           public String apply(Session session) throws RepositoryException {
+            FileStore.Manager fm = fileStore().getManager(session);
             Set<FileStore.Folder> folders =
                 fileStore().getManager(session).getFolders();
             assertThat(folders).hasSize(1);
@@ -47,9 +48,9 @@ public class FileStoreTest {
             assertThat(folder.getPath()).isEqualTo("/");
             assertThat(folder.getParent()).isNull();
             assertThat(folder.getDepth()).isEqualTo(0);
-            FileStore.FileOrFolder refetchedFolder =
-                fileStore().getManager(session).getFileOrFolder("/");
-            assertThat(refetchedFolder).isEqualTo(folder);
+            assertThat(fm.getFileOrFolder("/")).isEqualTo(folder);
+            assertThat(fm.getByIdentifier(folder.getIdentifier()))
+              .isEqualTo(folder);
             return folder.getIdentifier();
           }
         });
@@ -152,14 +153,14 @@ public class FileStoreTest {
             final String mimeType = "text/plain";
             final String content = "Test content.";
             try {
+              final FileStore.Manager fm = fileStoreImpl.getManager(session);
               final FileStore.File f = rootFolder.createFile(filename, mimeType,
                   new ByteArrayInputStream(content.getBytes()));
               // Check the parent is correct right after save
               assertThat(f.getParent().getIdentifier())
                 .isEqualTo(rootFolder.getIdentifier());
-              final FileStore.FileOrFolder fof = fileStoreImpl
-                  .getManager(session)
-                  .getFileOrFolder("/"+filename);
+              final FileStore.FileOrFolder fof =
+                  fm.getFileOrFolder("/"+filename);
               assertThat(fof).isInstanceOf(FileStore.File.class);
               assertThat(fof).isEqualTo(f);
               final FileStore.File file = (FileStore.File) fof;
@@ -177,6 +178,8 @@ public class FileStoreTest {
                 .isEqualTo(userId);
               assertThat(IOUtils.toString(file.getData()))
                 .isEqualTo(content);
+              assertThat(fm.getByIdentifier(file.getIdentifier()))
+                .isEqualTo(file);
             } catch (AccessDeniedException ade) {
               Logger.debug("Access unexpectedly denied.", ade);
               fail("An admin user should be able to create a file.");

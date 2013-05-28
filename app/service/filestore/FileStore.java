@@ -32,6 +32,8 @@ public interface FileStore {
 
     Folder getRoot() throws RepositoryException;
 
+    FileOrFolder getByIdentifier(final String id) throws RepositoryException;
+
     FileOrFolder getFileOrFolder(final String absPath) throws RepositoryException;
 
     Set<Folder> getFolders() throws RepositoryException;

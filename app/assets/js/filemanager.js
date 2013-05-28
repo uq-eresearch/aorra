@@ -30,20 +30,25 @@ var notificationFeed;
     _getNodeAttrs: function(node) {
       return _({
         id: node.id,
-        name: node.name
+        name: node.name,
+        type: node.type
       }).extend(node.attributes);
     }
   });
 
   var Folder = FileOrFolder.extend({}, {
     fromNode: function(node) {
-      return new this(this._getNodeAttrs(node));
+      return new this(_({
+        url: "/folder/" + node.id
+      }).extend(this._getNodeAttrs(node)));
     }
   });
 
   var File = FileOrFolder.extend({}, {
     fromNode: function(node) {
-      return new this(this._getNodeAttrs(node));
+      return new this(_({
+        url: "/file/" + node.id
+      }).extend(this._getNodeAttrs(node)));
     }
   });
 
@@ -213,7 +218,6 @@ var notificationFeed;
   };
 
   var FileUploadView = Backbone.View.extend({
-    url: '/filestore',
     tagName: 'div',
     initialize: function() { this.render(); },
     render: function() {
@@ -230,7 +234,7 @@ var notificationFeed;
       $progressbar.hide();
       this.$el.append($progressbar);
       $input.fileupload({
-        url: this.url+this.model.get('path'),
+        url: this.model.get('url')+"/files",
         dataType: 'json',
         sequentialUploads: true,
         add: _.bind(function (e, data) {
@@ -252,27 +256,23 @@ var notificationFeed;
   });
 
   var CreateFolderView = Backbone.View.extend({
-    url: '/filestore',
     tagName: 'form',
     initialize: function() { this.render(); },
     render: function() {
       var parentFolder = this.model.get('path');
-      var $input = $('<input type="text" name="folder"/>')
+      var $input = $('<input type="text" name="mkdir"/>')
       $input.addClass('span3');
       $input.attr('placeholder', 'folder name');
       this.$el.addClass('form-inline');
-      this.$el.attr('method', 'PUT');
+      this.$el.attr('method', 'POST');
+      this.$el.attr('action', this.model.get('url')+"/folders");
       this.$el.append($input);
       this.$el.append(' <button class="btn" type="submit">Create</mkdir>');
       this.$el.submit(function(e) {
         var form = e.target;
-        var path = parentFolder
-        // Handle possibility parent has a trailing slash
-        if (!_.str.endsWith(path, "/")) path += "/"
-        path += $(form).find('[name="folder"]').val();
         $.ajax({
           method: $(form).attr('method'),
-          url: '/filestore' + path,
+          url: $(form).attr('action')+"?"+$(form).serialize(),
           success: function() {
             var $alert = $(
               '<div class="alert alert-info">' +
@@ -316,7 +316,7 @@ var notificationFeed;
     _makeDeleteElement: function() {
       var $form = $('<form>');
       $form.attr('method', 'DELETE');
-      $form.attr('action', '/filestore' + this.model.get('path'))
+      $form.attr('action', this.model.get('url'));
       var $btn = $('<button class="btn btn-danger"/>');
       $btn.html('<i class="icon-remove"></i> Delete');
       var $modal = $(
@@ -349,12 +349,6 @@ var notificationFeed;
         return false;
       });
       return $form;
-    },
-    _makeDownloadElement: function() {
-      var $link = $('<a class="btn"/>');
-      $link.attr('href', '/filestore' + this.model.get('path'));
-      $link.html('<i class="icon-download-alt"></i> Download');
-      return $link;
     }
   });
 
@@ -371,6 +365,12 @@ var notificationFeed;
         .append(fileUploadView.$el)
         .append('<h3>Create new folder</h3>')
         .append(mkdirView.$el));
+    },
+    _makeDownloadElement: function() {
+      var $link = $('<a class="btn"/>');
+      $link.attr('href', this.model.get('url'));
+      $link.html('<i class="icon-download-alt"></i> Download');
+      return $link;
     }
   });
 
@@ -395,7 +395,7 @@ var notificationFeed;
     _makeImageElement: function() {
       return $('<div><br /></div>').append(_.template(
         '<img class="img-polaroid" alt="Image for <%= path %>"' +
-        ' src="/filestore<%= path %>" />',
+        ' src="<%= url %>/version/latest" />',
         this.model.toJSON()));
     },
     _makeAuthorElement: function() {
@@ -430,6 +430,12 @@ var notificationFeed;
         dataType: 'json',
         success: onSuccess
       });
+    },
+    _makeDownloadElement: function() {
+      var $link = $('<a class="btn"/>');
+      $link.attr('href', this.model.get('url')+"/version/latest");
+      $link.html('<i class="icon-download-alt"></i> Download');
+      return $link;
     }
   });
 
@@ -443,7 +449,7 @@ var notificationFeed;
         .addClass("muted")
         .html('<i class="icon-remove-circle"></i>');
       var $message = $('<small/>');
-      $message.text('This location has no longer exists.');
+      $message.text('This location no longer exists.');
       $heading.append($symbol, '<br />', $message);
       this.$el.append($heading)
     }

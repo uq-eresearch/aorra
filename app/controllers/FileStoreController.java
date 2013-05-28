@@ -20,6 +20,7 @@ import javax.jcr.Session;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
+import org.jcrom.util.PathUtils;
 
 import play.Logger;
 import play.libs.F;
@@ -49,14 +50,18 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result mkdir(final String encodedPath) {
+  public Result mkdir(final String folderId, final String path) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
         final FileStoreHelper fh = new FileStoreHelper(session);
-        final String path = decodePath(encodedPath);
         try {
-          fh.mkdir(path, true);
+          final FileStore.Folder baseFolder =
+              (FileStore.Folder) fm.getByIdentifier(folderId);
+          final String absPath =
+              baseFolder.getPath() + "/" + PathUtils.relativePath(path);
+          fh.mkdir(absPath, true);
         } catch (FileExistsException e) {
           return badRequest(e.getMessage());
         } catch (FolderExistsException e) {
@@ -70,13 +75,12 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result delete(final String encodedPath) {
-    final String path = decodePath(encodedPath);
+  public Result delete(final String fileOrFolderId) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        FileStore.FileOrFolder fof = fm.getFileOrFolder("/"+path);
+        FileStore.FileOrFolder fof = fm.getByIdentifier(fileOrFolderId);
         fof.delete();
         return noContent();
       }
@@ -84,18 +88,19 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result download(final String encodedFilePath) {
-    final String filePath = decodePath(encodedFilePath);
+  public Result downloadFolder(final String folderId) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException,
           IOException {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        FileStore.FileOrFolder fof = fm.getFileOrFolder("/" + filePath);
-        if (fof instanceof FileStoreImpl.File) {
-          FileStore.File file = (FileStoreImpl.File) fof;
-          return ok(file.getData()).as(file.getMimeType());
+        final FileStore.FileOrFolder fof;
+        if (folderId == null) {
+          fof = fm.getRoot();
         } else {
+          fof = fm.getByIdentifier(folderId);
+        }
+        if (fof instanceof FileStoreImpl.Folder) {
           final FileStore.Folder folder = (FileStore.Folder) fof;
           final FileStoreHelper fh = new FileStoreHelper(session);
           final java.io.File zipFile = fh.createZipFile(folder);
@@ -110,23 +115,41 @@ public final class FileStoreController extends SessionAwareController {
               zipFile.delete();
             }
           });
+        } else {
+          return notFound();
         }
       }
     });
   }
 
   @SubjectPresent
-  public Result postUpload(final String folderPath) {
+  public Result downloadFile(final String fileId) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException,
+          IOException {
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
+        if (fof instanceof FileStoreImpl.File) {
+          FileStore.File file = (FileStoreImpl.File) fof;
+          ctx().response().setContentType(file.getMimeType());
+          ctx().response().setHeader("Content-Disposition",
+              "attachment; filename="+file.getName());
+          return ok(file.getData());
+        } else {
+          return notFound();
+        }
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result uploadToFolder(final String folderID) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        final FileStore.FileOrFolder fof;
-        try {
-          fof = fm.getFileOrFolder("/"+URLDecoder.decode(folderPath, "UTF-8"));
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
+        final FileStore.FileOrFolder fof = fm.getByIdentifier(folderID);
         if (fof == null) {
           return badRequest("A valid folder must be specified.")
               .as("text/plain");

@@ -181,6 +181,20 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
+    public FileOrFolder getByIdentifier(final String id)
+        throws RepositoryException {
+      try {
+        return new Folder(getFolderDAO().loadById(id), this, eventManager);
+      } catch (ClassCastException e) {
+      } catch (NullPointerException e) {}
+      try {
+        return new File(getFileDAO().loadById(id), this, eventManager);
+      } catch (ClassCastException e) {
+      } catch (NullPointerException e) {}
+      return null;
+    }
+
+    @Override
     public FileOrFolder getFileOrFolder(final String absPath)
         throws RepositoryException {
       if (absPath.equals("/"))

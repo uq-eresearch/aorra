@@ -10,17 +10,19 @@ POST    /invite                     @controllers.Application.postInvite
 GET     /user-exists/:email         @controllers.Application.userExists(email: String)
 GET     /user-unverified/:email     @controllers.Application.userUnverified(email: String)
 GET     /user/:email/verify/:token  @controllers.Application.verify(email: String, token: String)
-POST    /user/:email/verify/:token @controllers.Application.postVerify(email: String, token: String)
+POST    /user/:email/verify/:token  @controllers.Application.postVerify(email: String, token: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
-GET     /filestore/                 @controllers.FileStoreController.download(fileOrFolder="")
-GET     /filestore/*fileOrFolder    @controllers.FileStoreController.download(fileOrFolder)
-POST    /filestore/                 @controllers.FileStoreController.postUpload(folder="")
-POST    /filestore/*folder          @controllers.FileStoreController.postUpload(folder)
-PUT     /filestore/*folder          @controllers.FileStoreController.mkdir(folder)
-DELETE  /filestore/*fileOrFolder    @controllers.FileStoreController.delete(fileOrFolder)
+GET     /folder/:folderId     @controllers.FileStoreController.downloadFolder(folderId)
+POST    /folder/:folderId/files       @controllers.FileStoreController.uploadToFolder(folderId)
+POST    /folder/:folderId/folders     @controllers.FileStoreController.mkdir(folderId, mkdir: String)
+DELETE  /folder/:folderId     @controllers.FileStoreController.delete(folderId)
+
+GET     /file/:fileId/version/latest    @controllers.FileStoreController.downloadFile(fileId)
+# PUT     /file/:fileId         @controllers.FileStoreController.updateFile(fileId)
+DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)
 
 GET     /notifications              @controllers.FileStoreAsync.notifications
 
