@@ -10,6 +10,7 @@ import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 import java.util.SortedMap;
 
@@ -197,7 +198,8 @@ public class FileStoreTest {
       @Override
       public void run() {
         final FileStore fileStoreImpl = fileStore();
-        sessionFactory().inSession(new Function<Session,String>() {
+        final String userId = getAdminUser(sessionFactory());
+        sessionFactory().inSession(userId, new Function<Session,String>() {
           @Override
           public String apply(Session session) throws RepositoryException, IOException {
             FileStore.Folder folder =
@@ -205,16 +207,23 @@ public class FileStoreTest {
             final String filename = "README.txt";
             final String mimeType = "text/plain";
             int i;
+            FileStore.File f = null;
             for (i = 1; i <= 10; i++) {
-              folder.createFile(filename, mimeType,
-                  new ByteArrayInputStream(getSomeContent(i).getBytes()));
-              final FileStore.File f = (FileStore.File) fileStoreImpl
+              final InputStream data =
+                  new ByteArrayInputStream(getSomeContent(i).getBytes());
+              if (f == null) {
+                folder.createFile(filename, mimeType, data);
+              } else {
+                f.update(mimeType, data);
+              }
+              f = (FileStore.File) fileStoreImpl
                   .getManager(session)
                   .getFileOrFolder("/"+filename);
               assertThat(IOUtils.toString(f.getData()))
                 .isEqualTo(getSomeContent(i));
+              assertThat(f.getVersions().size()).isEqualTo(i);
             }
-            final FileStore.File f = (FileStore.File) fileStoreImpl
+            f = (FileStore.File) fileStoreImpl
                 .getManager(session)
                 .getFileOrFolder("/"+filename);
             final SortedMap<String, FileStore.File> versions = f.getVersions();
@@ -235,6 +244,29 @@ public class FileStoreTest {
         return String.format("Test content, version #%d.", seed);
       }
 
+    });
+  }
+
+  public String getAdminUser(JcrSessionFactory sessionFactory) {
+    return sessionFactory.inSession(new Function<Session,String>() {
+      @Override
+      public String apply(Session session) throws RepositoryException {
+        // Create new user
+        final String userId;
+        UserDAO dao = new UserDAO(session, jcrom());
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setName("Test User");
+        user = dao.create(user);
+        String token = user.createVerificationToken();
+        user.checkVerificationToken(token);
+        dao.setPassword(user, "password");
+        userId = user.getJackrabbitUserId();
+        final GroupManager gm = new GroupManager(session);
+        Admin.getInstance(session).getGroup().addMember(gm.create("testAdmin"));
+        gm.addMember("testAdmin", userId);
+        return userId;
+      }
     });
   }
 

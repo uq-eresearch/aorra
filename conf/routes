@@ -22,7 +22,8 @@ POST    /folder/:folderId/folders       @controllers.FileStoreController.mkdir(f
 DELETE  /folder/:folderId               @controllers.FileStoreController.delete(folderId)
 
 GET     /file/:fileId                   @controllers.FileStoreController.showFile(fileId: String)
-GET     /file/:fileId/version/latest    @controllers.FileStoreController.downloadFile(fileId)
+GET     /file/:fileId/info              @controllers.FileStoreController.fileInfo(fileId: String)
+GET     /file/:fileId/version/:versionName    @controllers.FileStoreController.downloadFile(fileId, versionName)
 # PUT     /file/:fileId         @controllers.FileStoreController.updateFile(fileId)
 DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)
 

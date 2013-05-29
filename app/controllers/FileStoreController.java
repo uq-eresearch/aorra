@@ -17,6 +17,9 @@ import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import models.User;
+
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
@@ -141,7 +144,7 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result downloadFile(final String fileId) {
+  public Result downloadFile(final String fileId, final String versionName) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException,
@@ -150,16 +153,65 @@ public final class FileStoreController extends SessionAwareController {
         final FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
         if (fof instanceof FileStoreImpl.File) {
           FileStore.File file = (FileStoreImpl.File) fof;
-          ctx().response().setContentType(file.getMimeType());
-          ctx().response().setHeader("Content-Disposition",
-              "attachment; filename="+file.getName());
-          return ok(file.getData());
+          if (versionName.equals("latest")) {
+            ctx().response().setContentType(file.getMimeType());
+            ctx().response().setHeader("Content-Disposition",
+                "attachment; filename="+file.getName());
+            return ok(file.getData());
+          } else {
+            if (!file.getVersions().containsKey(versionName)) {
+              return notFound();
+            }
+            final FileStore.File version = file.getVersions().get(versionName);
+            ctx().response().setContentType(version.getMimeType());
+            ctx().response().setHeader("Content-Disposition",
+                "attachment; filename="+file.getName());
+            return ok(version.getData());
+          }
         } else {
           return notFound();
         }
       }
     });
   }
+
+  @SubjectPresent
+  public Result fileInfo(final String fileId) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException,
+          IOException {
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
+        if (fof instanceof FileStoreImpl.File) {
+          final FileStore.File file = (FileStoreImpl.File) fof;
+          final ObjectNode json = Json.newObject();
+          {
+            final ArrayNode aNode = json.putArray("versions");
+            for (String versionName : file.getVersions().keySet()) {
+              final FileStore.File version =
+                  file.getVersions().get(versionName);
+              final User author = version.getAuthor();
+              final ObjectNode authorInfo = Json.newObject();
+              authorInfo.put("name", author.getName());
+              authorInfo.put("email", author.getEmail());
+              final ObjectNode versionInfo = Json.newObject();
+              versionInfo.put("name", versionName);
+              versionInfo.put("author", authorInfo);
+              versionInfo.put("timestamp",
+                  DateFormatUtils.ISO_DATETIME_FORMAT.format(
+                      version.getModificationTime()));
+              aNode.add(versionInfo);
+            }
+          }
+          return ok(json).as("application/json");
+        } else {
+          return notFound();
+        }
+      }
+    });
+  }
+
 
   @SubjectPresent
   public Result uploadToFolder(final String folderID) {

@@ -25,6 +25,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
@@ -389,6 +390,7 @@ public class FileStoreImpl implements FileStore {
               Privilege.JCR_ADD_CHILD_NODES, Privilege.JCR_REMOVE_CHILD_NODES,
               Privilege.JCR_MODIFY_PROPERTIES,
               Privilege.JCR_NODE_TYPE_MANAGEMENT, Privilege.JCR_REMOVE_NODE,
+              Privilege.JCR_VERSION_MANAGEMENT,
               Privilege.JCR_REMOVE_CHILD_NODES), true);
       acm.setPolicy(rawPath(), acl);
     }
