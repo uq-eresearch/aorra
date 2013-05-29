@@ -15,11 +15,13 @@ POST    /user/:email/verify/:token  @controllers.Application.postVerify(email: S
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
-GET     /folder/:folderId     @controllers.FileStoreController.downloadFolder(folderId)
-POST    /folder/:folderId/files       @controllers.FileStoreController.uploadToFolder(folderId)
-POST    /folder/:folderId/folders     @controllers.FileStoreController.mkdir(folderId, mkdir: String)
-DELETE  /folder/:folderId     @controllers.FileStoreController.delete(folderId)
+GET     /folder/:folderId               @controllers.FileStoreController.showFolder(folderId: String)
+GET     /folder/:folderId/archive       @controllers.FileStoreController.downloadFolder(folderId)
+POST    /folder/:folderId/files         @controllers.FileStoreController.uploadToFolder(folderId)
+POST    /folder/:folderId/folders       @controllers.FileStoreController.mkdir(folderId, mkdir: String)
+DELETE  /folder/:folderId               @controllers.FileStoreController.delete(folderId)
 
+GET     /file/:fileId                   @controllers.FileStoreController.showFile(fileId: String)
 GET     /file/:fileId/version/latest    @controllers.FileStoreController.downloadFile(fileId)
 # PUT     /file/:fileId         @controllers.FileStoreController.updateFile(fileId)
 DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)

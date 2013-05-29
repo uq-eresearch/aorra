@@ -23,11 +23,13 @@ import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
+import play.Play;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import providers.CacheableUserProvider;
+import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
@@ -35,6 +37,7 @@ import service.filestore.FileStoreImpl;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 public final class FileStoreController extends SessionAwareController {
 
@@ -73,6 +76,21 @@ public final class FileStoreController extends SessionAwareController {
       }
     });
   }
+
+  @SubjectPresent
+  public Result showFolder(final String folderId) {
+    return appIndex();
+  }
+
+  @SubjectPresent
+  public Result showFile(final String folderId) {
+    return appIndex();
+  }
+
+  private Result appIndex() {
+    return getInjector().getInstance(Application.class).index();
+  }
+
 
   @SubjectPresent
   public Result delete(final String fileOrFolderId) {
@@ -230,6 +248,10 @@ public final class FileStoreController extends SessionAwareController {
       // Should never happen
       throw new RuntimeException(e);
     }
+  }
+
+  private Injector getInjector() {
+    return GuiceInjectionPlugin.getInjector(Play.application());
   }
 
 }

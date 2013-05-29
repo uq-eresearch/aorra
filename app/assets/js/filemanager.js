@@ -167,7 +167,11 @@ var notificationFeed;
             document.body.appendChild(ifrDiv);
             ifrDiv.appendChild(iframe);
             iframe.src = url;
-            iframe.onload = function() { iframe.currentWindow.location.reload(); };
+            iframe.onload = function() {
+              try {
+                iframe.currentWindow.location.reload();
+              } catch (e) {}
+            };
             // From: http://davidwalsh.name/window-iframe
             function eventHandler(w, eventName, handler) {
               var eMethod = w.addEventListener ? "addEventListener" : "attachEvent";
@@ -368,7 +372,7 @@ var notificationFeed;
     },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');
-      $link.attr('href', this.model.get('url'));
+      $link.attr('href', this.model.get('url')+"/archive");
       $link.html('<i class="icon-download-alt"></i> Download');
       return $link;
     }
@@ -532,7 +536,7 @@ var notificationFeed;
     notificationFeed.open();
     notificationFeed.once("event:load", function(struct) {
       // Start router (as now we can load existing nodes)
-      Backbone.history.start();
+      Backbone.history.start({pushState: true, hashChange: false});
     });
 
     var Router = Backbone.Router.extend({

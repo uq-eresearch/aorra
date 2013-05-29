@@ -58,7 +58,7 @@ public class Chart extends SessionAwareController {
     }
 
     private String buildUrl(ereefs.charts.Chart chart, String format, String[] path) throws UnsupportedEncodingException {
-        StringBuilder result = new StringBuilder("charts/");
+        StringBuilder result = new StringBuilder();
         result.append(chart.getDescription().getType().toString().toLowerCase());
         result.append(".");
         if(StringUtils.isNotBlank(format)) {
@@ -75,7 +75,7 @@ public class Chart extends SessionAwareController {
             qparams.add(new BasicNameValuePair("path", p));
         }
         result.append(URLEncodedUtils.format(qparams, "UTF-8"));
-        return result.toString();
+        return controllers.routes.Chart.charts(result.toString()).url();
     }
 
     private String getParameter(String key) {
