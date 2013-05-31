@@ -8,3 +8,6 @@ addSbtPlugin("play" % "sbt-plugin" % "2.1.1")
 
 // Test coverage reporting
 addSbtPlugin("de.johoop" % "jacoco4sbt" % "1.2.4")
+
+// Dust client-side templating
+addSbtPlugin("com.typesafe" % "play-plugins-dust" % "1.4.1-09122012")

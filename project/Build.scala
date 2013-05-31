@@ -31,6 +31,9 @@ object ApplicationBuild extends Build {
   lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*)
 
   val main = play.Project(appName, appVersion, appDependencies, settings = s).settings(
+    requireJs ++= Seq("views.js") ,
+    requireJsShim += "main.js",
+    requireJsFolder += "js",
     // Play Framework can't do parallel testing
     parallelExecution in jacoco.Config := false,
     // Jacoco report output

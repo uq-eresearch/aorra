@@ -1,4 +1,5 @@
 define(function() {
+  'use strict';
   var FileOrFolder = Backbone.Model.extend({}, {
     _getNodeAttrs: function(node) {
       return _({

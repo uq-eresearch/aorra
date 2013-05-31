@@ -1,11 +1,5 @@
-/*
-Note: This is still very much a work in progress.
-
-It it looks like a mess, that's because it probably is.
-*/
-
 require(['models', 'views'], function(models, views) {
-
+  'use strict';
   var NotificationFeed = function(config) {
       var obj = _.extend({}, config)
       _.extend(obj, Backbone.Events);
@@ -16,7 +10,7 @@ require(['models', 'views'], function(models, views) {
         // Are we using a modern browser, or are we using IE?
         if (typeof(window.EventSource) == 'undefined') {
           // HTML iframe
-          function connect_htmlfile(url, callback) {
+          var connect_htmlfile = function (url, callback) {
             var ifrDiv = document.createElement("div");
             var iframe = document.createElement("iframe");
             ifrDiv.setAttribute("style", "display: none");

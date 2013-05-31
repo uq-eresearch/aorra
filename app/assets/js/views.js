@@ -1,4 +1,11 @@
-define(['models'], function(models) {
+define([
+        'models', 
+        'tmpl/breadcrumbs',
+        'jquery.bootstrap',
+        'jquery.iframe-transport',
+        'jquery.fileupload'
+        ], function(models) {
+  'use strict';
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
       { pattern: /^image/, type: 'image' },
@@ -19,7 +26,7 @@ define(['models'], function(models) {
     tagName: "div",
     render: function() {
       var tree = glyphtree(this.$el, this.options);
-      selectHandler = _.bind(function(event, node) {
+      var selectHandler = _.bind(function(event, node) {
         var m = _.defaults({}, node.attributes);
         // Emit select event
         if (node.type == 'folder') {
@@ -28,13 +35,13 @@ define(['models'], function(models) {
           this.trigger("file:select", models.File.fromNode(node));
         }
       }, this);
-      hoverHandler = function(e) {
+      var hoverHandler = function(e) {
         $(e.currentTarget).tooltip(e.type == 'mouseenter' ? 'show' : 'hide');
       };
-      setTooltipText = function(e) {
+      var setTooltipText = function(e) {
         $(e.currentTarget).tooltip('show');
       };
-      createTooltip = function(e, node) {
+      var createTooltip = function(e, node) {
         if (node.isLeaf()) return;
         $(e.currentTarget).tooltip({
           placement: 'bottom',
