@@ -196,18 +196,9 @@ define([
     modelEvents: {
       "change": "render"
     },
-    serializeData: function() {
-      return _(this.model.toJSON()).extend({ url: this.model.url() });
-    },
-    template: function(serialized_model) {
-      return _.template(
-          '<td><%= v.timestamp %></td>'+
-          '<td><a href="mailto:<%= v.author.email %>"><%= v.author.name %></a></td>'+
-          '<td><a class="btn btn-small" href="<%= v.url %>">'+
-            '<i class="icon-download-alt"></i> Download'+
-          '</a></td>',
-          serialized_model,
-          { variable: 'v'});
+    render: function() {
+      var data = _(this.model.toJSON()).extend({ url: this.model.url() });
+      return templates.renderInto(this.$el, 'version_row', data);
     }
   });
   
