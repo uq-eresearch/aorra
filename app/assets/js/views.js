@@ -4,7 +4,7 @@ define([
         'jquery.bootstrap',
         'jquery.iframe-transport',
         'jquery.fileupload'
-        ], function(models) {
+        ], function(models, templates) {
   'use strict';
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
@@ -250,53 +250,31 @@ define([
     },
     _makeBreadCrumbElement: function() {
       var breadcrumbs = this.model.get('path').split("/");
-      var $breadcrumbs = $('<ul/>');
-      $breadcrumbs.addClass('breadcrumb');
-      $breadcrumbs.append(_.map(_.initial(breadcrumbs), function(v) {
-        var $li = $('<li/>');
-        $li.append($('<span>'+_.escape(v)+'</span>'));
-        $li.append($('<span class="divider"> / </span>'));
-        return $li;
-      }));
-      var $active = $('<li class="active"/>')
-      $active.append($('<span>'+_.escape(_(breadcrumbs).last())+'</span>'));
-      $breadcrumbs.append($active);
-      return $breadcrumbs;
+      var context = {
+        parents: _.initial(breadcrumbs),
+        current: _.last(breadcrumbs)
+      };
+      return templates.renderInto($('<div/>'), 'breadcrumbs', context);
     },
     _makeDeleteElement: function() {
       var $form = $('<form>');
       $form.attr('method', 'DELETE');
       $form.attr('action', this.model.url());
-      var $btn = $('<button class="btn btn-danger"/>');
-      $btn.html('<i class="icon-remove"></i> Delete');
-      var $modal = $(
-        '<div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">' +
-        '  <div class="modal-header">' +
-        '    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' +
-        '    <h3>Are you sure? There is no undo!</h3>' +
-        '  </div>' +
-        '  <div class="modal-body">' +
-        '    <p>Please confirm you realy want to delete this item.</p>' +
-        '  </div>' +
-        '  <div class="modal-footer">' +
-        '    <button type="submit" class="btn btn-danger">Yes, I want it gone forever!</button>' +
-        '    <button class="btn" data-dismiss="modal" aria-hidden="true">No, leave it.</button>' +
-        '  </div>' +
-        '</div>'
-        ).modal({ show: false });
-      $btn.click(function() { $modal.modal('show'); return false; });
-      $form.append($btn);
-      $form.append($modal);
-      $form.submit(function(e) {
-        $.ajax({
-          method: $form.attr('method'),
-          url: $form.attr('action'),
-          success: function() {
-            // need to implement sensible handling for deletion
-          }
+      templates.renderInto($form, 'delete_button', {}, function($container) {
+        var $btn = $container.find('button').first();
+        var $modal = $container.find('.modal').modal({ show: false });
+        $btn.click(function() { $modal.modal('show'); return false; });
+        $form.submit(function(e) {
+          $.ajax({
+            method: $form.attr('method'),
+            url: $form.attr('action'),
+            success: function() {
+              // need to implement sensible handling for deletion
+            }
+          });
+          $modal.modal('hide');
+          return false;
         });
-        $modal.modal('hide');
-        return false;
       });
       return $form;
     }
