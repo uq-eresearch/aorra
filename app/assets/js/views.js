@@ -1,6 +1,6 @@
 define([
-        'models', 
-        'tmpl/breadcrumbs',
+        'models',
+        'templates',
         'jquery.bootstrap',
         'jquery.iframe-transport',
         'jquery.fileupload'

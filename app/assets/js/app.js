@@ -81,11 +81,11 @@ require(['models', 'views'], function(models, views) {
     fileTree.render();
     $('#sidebar').append(fileTree.$el);
     $('#main').append(mainPane.$el);
-    notificationFeed.open();
     notificationFeed.once("event:load", function(struct) {
       // Start router (as now we can load existing nodes)
       Backbone.history.start({ pushState: true, hashChange: false });
     });
+    notificationFeed.open();
 
     var Router = Backbone.Router.extend({
       routes: {

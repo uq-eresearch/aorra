@@ -5,7 +5,6 @@ It it looks like a mess, that's because it probably is.
 */
 
 requirejs.config({
-    baseUrl: '/assets/js',
     paths: {
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min',
       'jquery.iframe-transport': 'lib/jquery.iframe-transport',
@@ -21,4 +20,4 @@ requirejs.config({
     }
 });
 
-requirejs('app');
+requirejs(['app']);
