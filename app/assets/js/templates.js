@@ -1,6 +1,7 @@
 define([
         'tmpl/breadcrumbs',
         'tmpl/delete_button',
+        'tmpl/version_table',
         'tmpl/version_row'
         ], function() {
   var baseContext = dust.makeBase({});

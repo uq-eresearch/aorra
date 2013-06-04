@@ -215,30 +215,17 @@ define([
       this.model.on('change', _.bind(this.render, this));
     },
     render: function(obj) {
-      var $table = $('<table><thead><tr></tr></thead></table>');
-      $table.addClass('table');
-      $table.find('thead tr').append(_.map(
-        ['Uploaded At', 'Author', ''],
-        function(v) {
-          return $('<th/>').text(v);
-        }
-      ));
-      $table.append(this.vlv.$el);
-      this.$el.append('<h3>Versions</h3>');
-      this.$el.append($table);
+      return templates.renderInto(
+          this.$el, 
+          'version_table', 
+          {}, 
+          _.bind(function($container) {
+            $container.find('tbody').replaceWith(this.vlv.$el);
+          }, this));
     }
   });
 
   var FileOrFolderView = Backbone.View.extend({
-    _makeBackElement: function() {
-      var $wrapper = $('<div class="span12 visible-phone" />');
-      var $back = $('<button class="btn"/>');
-      $back.addClass('visible-phone');
-      $back.html('<i class="icon-reply"></i> Back');
-      $back.click(function() { window.history.back(); });
-      $wrapper.append($back);
-      return $wrapper;
-    },
     _makeBreadCrumbElement: function() {
       var breadcrumbs = this.model.get('path').split("/");
       var context = {
