@@ -212,6 +212,69 @@ public final class FileStoreController extends SessionAwareController {
     });
   }
 
+  @SubjectPresent
+  public Result updateFile(final String fileID) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session)
+          throws RepositoryException, FileNotFoundException {
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final FileStore.FileOrFolder fof = fm.getByIdentifier(fileID);
+        if (fof == null) {
+          return badRequest("A valid folder must be specified.")
+              .as("text/plain");
+        }
+        final FileStore.File f;
+        if (fof instanceof FileStore.File) {
+          f = (FileStore.File) fof;
+        } else {
+          return badRequest("Specified destination is not a folder.")
+              .as("text/plain");
+        }
+        final MultipartFormData body = request().body().asMultipartFormData();
+        if (body == null) {
+          return badRequest("POST must contain multipart form data.")
+              .as("text/plain");
+        }
+        if (body.getFiles().size() > 1) {
+          return badRequest("POST cannot contain multiple files.")
+              .as("text/plain");
+        }
+        // Assemble the JSON response
+        final ObjectNode json = Json.newObject();
+        {
+          final ArrayNode aNode = json.putArray("files");
+          for (MultipartFormData.FilePart filePart : body.getFiles()) {
+            final ObjectNode jsonFileData = Json.newObject();
+            final String fileName = filePart.getFilename();
+            final File file = filePart.getFile();
+            jsonFileData.put("name", fileName);
+            jsonFileData.put("size", file.length());
+            try {
+              f.update(filePart.getContentType(),
+                  new FileInputStream(filePart.getFile()));
+              session.save();
+              Logger.info(String.format(
+                "file %s content type %s uploaded to %s by %s",
+                fileName, filePart.getContentType(),
+                f.getPath(),
+                getUser()));
+            } catch (ItemExistsException iee) {
+              jsonFileData.put("error", iee.getMessage());
+            } catch (AccessDeniedException ade) {
+              jsonFileData.put("error",
+                  "Insufficient permissions to upload files to folder.");
+            }
+            aNode.add(jsonFileData);
+          }
+        }
+        // even though we return json set the content type to text/html
+        // to prevent IE/Opera from opening a download dialog as described here:
+        // https://github.com/blueimp/jQuery-File-Upload/wiki/Setup
+        return ok(json).as("text/html");
+      }
+    });
+  }
 
   @SubjectPresent
   public Result uploadToFolder(final String folderID) {
@@ -242,22 +305,23 @@ public final class FileStoreController extends SessionAwareController {
           final ArrayNode aNode = json.putArray("files");
           for (MultipartFormData.FilePart filePart : body.getFiles()) {
             final ObjectNode jsonFileData = Json.newObject();
+            final String fileName = filePart.getFilename();
+            final File file = filePart.getFile();
+            jsonFileData.put("name", fileName);
+            jsonFileData.put("size", file.length());
             try {
               FileStore.File f = updateFileContents(folder, filePart);
               session.save();
-              final String fileName = filePart.getFilename();
-              final File file = filePart.getFile();
               Logger.info(String.format(
                 "file %s content type %s uploaded to %s by %s",
                 fileName, filePart.getContentType(),
                 f.getPath(),
                 getUser()));
-              jsonFileData.put("name", fileName);
-              jsonFileData.put("size", file.length());
+            } catch (ItemExistsException iee) {
+              jsonFileData.put("error", iee.getMessage());
             } catch (AccessDeniedException ade) {
-              return forbidden(String.format(
-                  "Insufficient permissions to upload files to %s",
-                  folder.getPath()));
+              jsonFileData.put("error",
+                  "Insufficient permissions to upload files to folder.");
             }
             aNode.add(jsonFileData);
           }
@@ -281,9 +345,8 @@ public final class FileStoreController extends SessionAwareController {
             filePart.getContentType(),
             new FileInputStream(filePart.getFile()));
       } else if (fof instanceof FileStore.File) {
-        f = (FileStore.File) fof;
-        f.update(filePart.getContentType(),
-          new FileInputStream(filePart.getFile()));
+        throw new ItemExistsException(
+            "File already exists. Add a new version instead.");
       } else {
         throw new ItemExistsException("Item exists and is not a file.");
       }

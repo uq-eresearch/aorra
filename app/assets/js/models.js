@@ -11,7 +11,10 @@ define(function() {
   });
 
   var Folder = FileOrFolder.extend({
-    urlRoot: '/folder'
+    urlRoot: '/folder',
+    uploadUrl: function() {
+      return this.url()+'/files';
+    }
   }, {
     fromNode: function(node) {
       return new Folder(this._getNodeAttrs(node));
@@ -61,7 +64,10 @@ define(function() {
   });
   
   var File = FileOrFolder.extend({
-    urlRoot: '/file'
+    urlRoot: '/file',
+    uploadUrl: function() {
+      return this.url()+'/version/new';
+    }
   }, {
     fromNode: function(node) {
       var instance = new File(this._getNodeAttrs(node));

@@ -125,6 +125,7 @@ define([
     initialize: function() { this.render(); },
     render: function() {
       this.$el.empty();
+      var $alerts = $('<div/>');
       var $progressbar = $('<div class="progress"></div>')
           .append('<div class="bar"></div>');
       var setProgress = function(current, total) {
@@ -136,8 +137,12 @@ define([
       this.$el.append($input);
       $progressbar.hide();
       this.$el.append($progressbar);
+      this.$el.append($alerts);
       $input.fileupload({
-        url: this.model.url()+"/files",
+        url: this.model.uploadUrl(),
+        type: 'POST',
+        limitMultiFileUploads: 
+          (this.model.urlRoot == '/file' ? 1 : undefined),
         dataType: 'json',
         sequentialUploads: true,
         add: _.bind(function (e, data) {
@@ -151,9 +156,29 @@ define([
             setProgress(0, 1);
           }
         },
-        done: function (e, data) {
-          // No need to do anything
-        }
+        done: _.bind(function (e, data) {
+          _.each(data.result.files, function(file) {
+            var $alert = $('<div/>');
+            var render = function(type, msg) {
+              templates.renderInto($alert, 'alert_box', { 
+                type: type, 
+                message: _.template(
+                    "<strong><%= f.name %></strong>: <%= f.msg %>", 
+                    { name: file.name, msg: msg }, 
+                    { variable: 'f' })
+              });
+            };
+            if (_.isUndefined(file['error'])) {
+              render('success', 'Uploaded successfully.');
+            } else {
+              render('error', file.error);
+            }
+            $alerts.append($alert);
+          });
+          if (_.isObject(this.model.get('info'))) {
+            this.model.get('info').fetch();
+          }
+        }, this)
       });
     }
   });
@@ -284,7 +309,10 @@ define([
   var FolderView = FileOrFolderView.extend({
     initialize: function() { this.render(); },
     render: function() {
-      var fileUploadView = new FileUploadView({ model: this.model })
+      var fileUploadView = new FileUploadView({
+        type: 'folder',
+        model: this.model
+      })
       var mkdirView = new CreateFolderView({ model: this.model });
       this.$el.append(this._makeBreadCrumbElement());
       this.$el.append(this._makeDeleteElement().addClass('pull-right'));
@@ -312,8 +340,15 @@ define([
       var fileInfoView = new FileInfoView({
         model: this.model.get('info')
       });
+      var fileUploadView = new FileUploadView({
+        type: 'file',
+        model: this.model
+      })
       this.$el.append(this._makeDeleteElement().addClass('pull-right'));
       this.$el.append(this._makeDownloadElement());
+      this.$el.append($('<div/>')
+        .append('<h3>Upload new Version</h3>')
+        .append(fileUploadView.$el));
       this.$el.append(fileInfoView.$el);
       switch (type) {
       case 'spreadsheet':

@@ -1,4 +1,5 @@
 define([
+        'tmpl/alert_box',
         'tmpl/breadcrumbs',
         'tmpl/delete_button',
         'tmpl/version_table',
