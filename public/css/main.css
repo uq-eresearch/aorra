@@ -9,14 +9,18 @@ html, body {
 }
 
 html.hero-page {
+	background-color: #4394CA;
+  min-height: 100%;
+}
+
+html.hero-page.backgroundsize {
 	background:
 	 url("/assets/images/bg.jpg")
 	 no-repeat
 	 center
 	 center
 	 fixed;
-	background-size: 100%;
-  background-size: cover;
+	background-size: cover;
 	overflow: hidden;
 	background-color: black;
 	min-height: 100%;
@@ -76,11 +80,6 @@ html.hero-page {
 	font-weight: bold;
 }
 
-
-.hero-page .attribution {
-	float: right;
-}
-
 #nav-back.hidden {
   display: none;
 }
@@ -91,26 +90,37 @@ html.hero-page {
 	}
 }
 
-@media (min-width: 768px) {
-  #nav-back {
-    display: none;
-  }
+#nav-back {
+  display: none;
+}
 
+
+@media (min-height: 480px) {
 	.hero-page .above-login {
 	  padding-top: 4em;
 	  min-height: 8em;
 	}
+}
 
-	.hero-page .attribution {
-	  position: absolute;
-	  bottom: 0;
-	  right: 0;
-	  padding-right: 1em;
-	}
+.hero-page .attribution {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding-right: 1em;
 }
 
 @media (max-width: 767px) {
 
+	#nav-back {
+    display: block;
+  }
+
+  .hero-page .attribution {
+    position: relative;
+    float: right;
+    margin: auto;
+  }
+	
   #sidebar, #main {
     display: none;
   }

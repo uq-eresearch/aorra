@@ -66,6 +66,9 @@
       src="//ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
     <script src="@routes.Assets.at("js/suggestchromeframe.js")"></script>
     <![endif]-->
+    <!--[if lte IE 8]>
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome-ie7.min.css" rel="stylesheet">
+    <![endif]-->
     @defining(play.Play.application.configuration.getString("ga.key")) { analyticsKey =>
       @analyticsKey match {
         case null => { <!-- No analytics key --> }
