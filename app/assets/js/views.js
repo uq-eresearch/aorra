@@ -224,6 +224,45 @@ define([
           }, this));
     }
   });
+  
+  var DeleteButtonView = Backbone.View.extend({
+    events: {
+      'click .delete-button': 'showModal',
+      'submit form': 'formSubmit'
+    },
+    render: function() {
+      return templates.renderInto(
+          this.$el,
+          'delete_button', 
+          { action: this.model.url() },
+          _.bind(function($container) {
+            this.getModal().modal({ show: false });
+          },this));
+    },
+    getModal: function() {
+      return this.$el.find('.modal');
+    },
+    showModal: function() {
+      this.getModal().modal('show');
+      return false;
+    },
+    hideModal: function() {
+      this.getModal().modal('hide');
+      return false;
+    },
+    formSubmit: function(e) {
+      var $form = $(e.target);
+      $.ajax({
+        method: $form.attr('method'),
+        url: $form.attr('action'),
+        success: function() {
+          // need to implement sensible handling for deletion
+        }
+      });
+      this.hideModal();
+      return false;
+    }
+  })
 
   var FileOrFolderView = Backbone.View.extend({
     _makeBreadCrumbElement: function() {
@@ -235,26 +274,10 @@ define([
       return templates.renderInto($('<div/>'), 'breadcrumbs', context);
     },
     _makeDeleteElement: function() {
-      var $form = $('<form>');
-      $form.attr('method', 'DELETE');
-      $form.attr('action', this.model.url());
-      templates.renderInto($form, 'delete_button', {}, function($container) {
-        var $btn = $container.find('button').first();
-        var $modal = $container.find('.modal').modal({ show: false });
-        $btn.click(function() { $modal.modal('show'); return false; });
-        $form.submit(function(e) {
-          $.ajax({
-            method: $form.attr('method'),
-            url: $form.attr('action'),
-            success: function() {
-              // need to implement sensible handling for deletion
-            }
-          });
-          $modal.modal('hide');
-          return false;
-        });
-      });
-      return $form;
+      var deleteButton = new DeleteButtonView({ model: this.model });
+      _.defer(function() { deleteButton.render() });
+      this.deleteButton = deleteButton;
+      return deleteButton.$el;
     }
   });
 
