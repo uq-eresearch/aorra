@@ -65,10 +65,12 @@ class FileStoreAsync @Inject()(
   }
 
   def cometEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
-    val cometFormatter = Enumeratee.map[FileStoreEvent] { event =>
+    val cometFormatter = Enumeratee.map[(String, FileStoreEvent)] {
+      case (id, event) =>
       <script>
       parent.postMessage(
         JSON.stringify({{
+          'id': '{id}',
           'type': '{event.`type`}',
           'data': {scala.xml.Unparsed(event2json(event).toString())}
           }}), '*');
@@ -82,8 +84,9 @@ class FileStoreAsync @Inject()(
   }
 
   def serverSentEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
-    val eventSourceFormatter = Enumeratee.map[FileStoreEvent] { event =>
-      s"event: ${event.`type`}\ndata: ${event2json(event)}\n\n"
+    val eventSourceFormatter = Enumeratee.map[(String, FileStoreEvent)] {
+      case (id, event) =>
+        s"id: ${id}\nevent: ${event.`type`}\ndata: ${event2json(event)}\n\n"
     }
     Ok.feed(
         Enumerator(initialEventSourceSetup(authUser)) andThen
@@ -111,9 +114,9 @@ class FileStoreAsync @Inject()(
 
   private def fsEvents(authUser: AuthUser) = {
     val em = filestore.getEventManager
-    var c: Channel[FileStoreEvent] = null;
-    Concurrent.unicast[FileStoreEvent](
-      onStart = { channel: Channel[FileStoreEvent] =>
+    var c: Channel[(String, FileStoreEvent)] = null;
+    Concurrent.unicast[(String, FileStoreEvent)](
+      onStart = { channel: Channel[(String, FileStoreEvent)] =>
         c = channel
         em ! ChannelMessage.add(c)
       },
@@ -124,7 +127,7 @@ class FileStoreAsync @Inject()(
         // not when the socket closes.
         em ! ChannelMessage.remove(c)
       },
-      onError = { (s: String, i: Input[FileStoreEvent]) =>
+      onError = { (s: String, i: Input[(String, FileStoreEvent)]) =>
         em ! ChannelMessage.remove(c)
       }
     )

@@ -12,24 +12,36 @@ import com.google.common.collect.ImmutableMap;
 
 import play.Logger;
 import play.api.libs.iteratee.Concurrent.Channel;
+import scala.Tuple2;
+import service.EventTimeline;
+import service.InMemoryEventTimeline;
 import akka.actor.UntypedActor;
 
 public class EventManager extends UntypedActor {
 
-  private final Set<Channel<FileStoreEvent>> channels =
-      new HashSet<Channel<FileStoreEvent>>();
+  private final EventTimeline<String, FileStoreEvent> history =
+      new InMemoryEventTimeline<FileStoreEvent>();
+
+  private final Set<Channel<Tuple2<String, FileStoreEvent>>> channels =
+      new HashSet<Channel<Tuple2<String, FileStoreEvent>>>();
 
   @Override
   public void onReceive(Object message) throws Exception {
     if (message instanceof FileStoreEvent) {
       final FileStoreEvent event = (FileStoreEvent) message;
+      Logger.debug(this+" - Adding event to history: "+event);
+      history.record(event);
       Logger.debug(this+" - Pushing event to channels: "+event);
-      for (Channel<FileStoreEvent> channel : channels) {
-        channel.push(event);
+      for (Channel<Tuple2<String, FileStoreEvent>> channel : channels) {
+        // Push event ID and event
+        channel.push(new Tuple2<String, FileStoreEvent>(
+            history.getLastEventId(), event));
         Logger.debug(this+"- Pushed to channel: "+channel);
       }
     } else if (message instanceof ChannelMessage) {
-      ChannelMessage channelMessage = (ChannelMessage) message;
+      @SuppressWarnings("unchecked")
+      ChannelMessage<Tuple2<String, FileStoreEvent>> channelMessage =
+          (ChannelMessage<Tuple2<String, FileStoreEvent>>) message;
       switch (channelMessage.type) {
       case ADD:
         Logger.debug(this+" - Adding notification channel.");
@@ -45,24 +57,24 @@ public class EventManager extends UntypedActor {
     }
   }
 
-  public static class ChannelMessage {
+  public static class ChannelMessage<T> {
 
     private static enum MessageType { ADD, REMOVE }
 
     public final MessageType type;
-    public final Channel<FileStoreEvent> channel;
+    public final Channel<T> channel;
 
-    protected ChannelMessage(MessageType type, Channel<FileStoreEvent> channel) {
+    protected ChannelMessage(MessageType type, Channel<T> channel) {
       this.type = type;
       this.channel = channel;
     }
 
-    public static ChannelMessage add(Channel<FileStoreEvent> channel) {
-      return new ChannelMessage(MessageType.ADD, channel);
+    public static <T> ChannelMessage<T> add(Channel<T> channel) {
+      return new ChannelMessage<T>(MessageType.ADD, channel);
     }
 
-    public static ChannelMessage remove(Channel<FileStoreEvent> channel) {
-      return new ChannelMessage(MessageType.REMOVE, channel);
+    public static <T> ChannelMessage<T> remove(Channel<T> channel) {
+      return new ChannelMessage<T>(MessageType.REMOVE, channel);
     }
 
   }

@@ -23,7 +23,6 @@ import models.UserDAO;
 import org.jcrom.Jcrom;
 import org.junit.Test;
 
-import play.Logger;
 import play.Play;
 import play.libs.F;
 import play.mvc.Result;
@@ -103,8 +102,8 @@ public class ApplicationTest {
         final String password = "password";
         final User user = createNewUser("user@domain.com", "differentpassword");
         final Map<String,String> data = new HashMap<String,String>();
-        data.put("email", "user@domain.com");
-        data.put("password", "password");
+        data.put("email", user.getEmail());
+        data.put("password", password);
         Result result;
         {
           final FakeRequest request =
