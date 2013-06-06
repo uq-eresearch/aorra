@@ -84,6 +84,7 @@ class FileStoreAsync @Inject()(
   }
 
   def serverSentEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
+    val lastEventId = request.headers.get("Last-Event-ID").getOrElse(null)
     val eventSourceFormatter = Enumeratee.map[(String, FileStoreEvent)] {
       case (id, event) =>
         s"id: ${id}\nevent: ${event.`type`}\ndata: ${event2json(event)}\n\n"
@@ -91,7 +92,7 @@ class FileStoreAsync @Inject()(
     Ok.feed(
         Enumerator(initialEventSourceSetup(authUser)) andThen
         pingEnumerator('sse).interleave(
-            fsEvents(authUser) &> eventSourceFormatter)
+            fsEvents(authUser, lastEventId) &> eventSourceFormatter)
       ).as("text/event-stream")
   }
 
@@ -112,13 +113,13 @@ class FileStoreAsync @Inject()(
     )
   }
 
-  private def fsEvents(authUser: AuthUser) = {
+  private def fsEvents(authUser: AuthUser, lastEventId: String = null) = {
     val em = filestore.getEventManager
     var c: Channel[(String, FileStoreEvent)] = null;
     Concurrent.unicast[(String, FileStoreEvent)](
       onStart = { channel: Channel[(String, FileStoreEvent)] =>
         c = channel
-        em ! ChannelMessage.add(c)
+        em ! ChannelMessage.add(c, lastEventId)
       },
       // This is a pass-by-name (ie. lazy evaluation) parameter
       // (no () => required)

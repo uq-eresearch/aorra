@@ -14,6 +14,7 @@ import play.Logger;
 import play.api.libs.iteratee.Concurrent.Channel;
 import scala.Tuple2;
 import service.EventTimeline;
+import service.EventTimeline.ForgottenEventException;
 import service.InMemoryEventTimeline;
 import akka.actor.UntypedActor;
 
@@ -45,6 +46,7 @@ public class EventManager extends UntypedActor {
       switch (channelMessage.type) {
       case ADD:
         Logger.debug(this+" - Adding notification channel.");
+        performCatchup(channelMessage.channel, channelMessage.lastId);
         channels.add(channelMessage.channel);
         break;
       case REMOVE:
@@ -57,24 +59,46 @@ public class EventManager extends UntypedActor {
     }
   }
 
+  protected void performCatchup(
+      final Channel<Tuple2<String, FileStoreEvent>> channel,
+      final String lastId) {
+    if (lastId == null) {
+      // TODO: Handle this by sending full load
+    } else {
+      try {
+        final Map<String, FileStoreEvent> missed = history.getSince(lastId);
+        for (Map.Entry<String, FileStoreEvent> e : missed.entrySet()) {
+          // Push event ID and event
+          channel.push(new Tuple2<String, FileStoreEvent>(
+              e.getKey(), e.getValue()));
+        }
+      } catch (ForgottenEventException e) {
+        // TODO: Handle this by sending full load
+      }
+    }
+  }
+
   public static class ChannelMessage<T> {
 
     private static enum MessageType { ADD, REMOVE }
 
     public final MessageType type;
     public final Channel<T> channel;
+    public final String lastId;
 
-    protected ChannelMessage(MessageType type, Channel<T> channel) {
+    protected ChannelMessage(final MessageType type, final Channel<T> channel,
+        final String lastId) {
       this.type = type;
       this.channel = channel;
+      this.lastId = lastId;
     }
 
-    public static <T> ChannelMessage<T> add(Channel<T> channel) {
-      return new ChannelMessage<T>(MessageType.ADD, channel);
+    public static <T> ChannelMessage<T> add(Channel<T> channel, String lastId) {
+      return new ChannelMessage<T>(MessageType.ADD, channel, lastId);
     }
 
     public static <T> ChannelMessage<T> remove(Channel<T> channel) {
-      return new ChannelMessage<T>(MessageType.REMOVE, channel);
+      return new ChannelMessage<T>(MessageType.REMOVE, channel, null);
     }
 
   }
