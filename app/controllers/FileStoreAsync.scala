@@ -178,8 +178,8 @@ class FileStoreAsync @Inject()(
 
   private def getInitialTree(user: AuthUser): ArrayNode = {
     inUserSession(user, { (session: Session) =>
-      val builder = new service.filestore.JsonBuilder(filestore, session)
-      builder.tree()
+      val builder = new service.filestore.JsonBuilder()
+      builder.tree(filestore.getManager(session).getFolders())
     })
   }
 

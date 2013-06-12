@@ -27,6 +27,7 @@ import org.jcrom.util.PathUtils;
 
 import play.Logger;
 import play.Play;
+import play.api.http.MediaRange;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
@@ -37,6 +38,7 @@ import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStoreImpl;
+import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.google.inject.Inject;
@@ -82,18 +84,80 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result showFolder(final String folderId) {
-    return appIndex();
+    for (final MediaRange m : ctx().request().acceptedTypes()) {
+      if (m.accepts("application/json") || m.accepts("text/javascript")) {
+        return folderJson(folderId);
+      } else if (m.accepts("text/html")) {
+        return appIndex();
+      }
+    }
+    return status(UNSUPPORTED_MEDIA_TYPE);
   }
 
   @SubjectPresent
-  public Result showFile(final String folderId) {
-    return appIndex();
+  public Result showFile(final String fileId) {
+    for (final MediaRange m : ctx().request().acceptedTypes()) {
+      if (m.accepts("application/json") || m.accepts("text/javascript")) {
+        return fileJson(fileId);
+      } else if (m.accepts("text/html")) {
+        return appIndex();
+      }
+    }
+    return status(UNSUPPORTED_MEDIA_TYPE);
   }
 
   private Result appIndex() {
     return getInjector().getInstance(Application.class).index();
   }
 
+  @SubjectPresent
+  public Result filestoreJson() {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        return ok(jb.toJson(fm.getFolders())).as("application/json");
+      }
+    });
+  }
+
+  protected Result folderJson(final String folderId) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
+        if (fof instanceof FileStore.Folder) {
+          return ok(jb.toJsonShallow((FileStore.Folder) fof))
+              .as("application/json");
+        } else if (fof instanceof FileStore.File) {
+          return ok(jb.toJsonShallow((FileStore.File) fof))
+              .as("application/json");
+        } else {
+          return notFound();
+        }
+      }
+    });
+  }
+
+  protected Result fileJson(final String fileId) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
+        if (fof instanceof FileStore.File) {
+          return ok(jb.toJsonShallow((FileStore.File) fof))
+              .as("application/json");
+        } else {
+          return notFound();
+        }
+      }
+    });
+  }
 
   @SubjectPresent
   public Result delete(final String fileOrFolderId) {

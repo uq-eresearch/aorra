@@ -73,6 +73,8 @@ require(['models', 'views'], function(models, views) {
 
   $(function () {
 
+    window.fs = new models.FileStore();
+    
     var fileTree = new views.FileTree();
     var notificationFeed = new NotificationFeed({
       getTree: function() { return fileTree.tree }

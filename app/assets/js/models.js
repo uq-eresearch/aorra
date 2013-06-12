@@ -1,5 +1,17 @@
 define(function() {
   'use strict';
+  
+  var FileStore = Backbone.Collection.extend({
+    url: '/filestore',
+    model: function(attrs, options) {
+      if (attrs.type == 'folder') {
+        return new Folder(attrs, options);
+      } else {
+        return new File(attrs, options);
+      }
+    }
+  });
+  
   var FileOrFolder = Backbone.Model.extend({}, {
     _getNodeAttrs: function(node) {
       return _({
@@ -81,6 +93,7 @@ define(function() {
     File: File,
     FileInfo: FileInfo,
     FileOrFolder: FileOrFolder,
+    FileStore: FileStore,
     Folder: Folder,
     VersionInfo: VersionInfo,
     VersionList: VersionList

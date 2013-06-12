@@ -1,10 +1,6 @@
 package service.filestore;
 
-import java.text.DateFormat;
-import java.util.Set;
-
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.node.ArrayNode;
@@ -17,18 +13,57 @@ import service.filestore.FileStore.Folder;
 
 public class JsonBuilder {
 
-  private final FileStore fileStoreImpl;
-  private final Session session;
+  public JsonBuilder() {}
 
-  public JsonBuilder(FileStore fileStoreImpl, Session session) {
-    this.fileStoreImpl = fileStoreImpl;
-    this.session = session;
+  public ArrayNode toJson(final Iterable<FileStore.Folder> folders)
+      throws RepositoryException {
+    final ArrayNode l = JsonNodeFactory.instance.arrayNode();
+    for (final FileStore.Folder folder : folders) {
+      l.addAll(toJson(folder));
+    }
+    return l;
   }
 
-  public ArrayNode tree() {
+  public ArrayNode toJson(final FileStore.Folder folder)
+      throws RepositoryException {
+    final ArrayNode l = JsonNodeFactory.instance.arrayNode();
+    l.add(toJsonShallow(folder));
+    l.addAll(toJson(folder.getFolders()));
+    for (final FileStore.File childFile : folder.getFiles()) {
+      l.add(toJsonShallow(childFile));
+    }
+    return l;
+  }
+
+  public ObjectNode toJsonShallow(final FileStore.Folder folder)
+      throws RepositoryException {
+    final ObjectNode json = JsonNodeFactory.instance.objectNode();
+    json.put("id", folder.getIdentifier());
+    json.put("name", folder.getName());
+    json.put("path", folder.getPath());
+    json.put("type", "folder");
+    if (folder.getParent() != null) {
+      json.put("parent", folder.getParent().getIdentifier());
+    }
+    return json;
+  }
+
+  public ObjectNode toJsonShallow(final FileStore.File file)
+      throws RepositoryException {
+    final ObjectNode json = JsonNodeFactory.instance.objectNode();
+    json.put("id", file.getIdentifier());
+    json.put("name", file.getName());
+    json.put("path", file.getPath());
+    json.put("mime", file.getMimeType());
+    json.put("type", "file");
+    if (file.getParent() != null) {
+      json.put("parent", file.getParent().getIdentifier());
+    }
+    return json;
+  }
+
+  public ArrayNode tree(final Iterable<FileStore.Folder> folders) {
     try {
-      Set<Folder> folders = fileStoreImpl.getManager(session)
-          .getFolders();
       // Assemble the JSON response
       final ArrayNode json = JsonNodeFactory.instance.arrayNode();
       for (Folder folder : folders) {
