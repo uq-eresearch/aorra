@@ -183,10 +183,10 @@ public class User {
   @Override
   public String toString() {
     if (verified) {
-      return String.format("%s <%s>", getName(), getEmail());
+      return String.format("%s <%s> [id: %s]", getName(), getEmail(), getId());
     } else {
-      return String.format("%s <%s> [VT: %s]",
-          getName(), getEmail(), verificationToken);
+      return String.format("%s <%s> [VT: %s][id: %s]",
+          getName(), getEmail(), verificationToken, getId());
     }
   }
 
