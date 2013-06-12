@@ -1,9 +1,17 @@
 import static play.Play.application;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.security.AccessControlManager;
+
 import play.Application;
 import play.GlobalSettings;
+import play.libs.F.Function;
 import play.mvc.Call;
 import service.GuiceInjectionPlugin;
+import service.JcrSessionFactory;
+import aorra.jackrabbit.AorraAccessManager;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.PlayAuthenticate.Resolver;
@@ -22,6 +30,11 @@ public class Global extends GlobalSettings {
   private Injector getInjector() {
     return GuiceInjectionPlugin.getInjector(application());
   }
+
+  private JcrSessionFactory sessionFactory() {
+      return GuiceInjectionPlugin.getInjector(application())
+                                 .getInstance(JcrSessionFactory.class);
+    }
 
   @Override
   public void onStart(final Application app) {
@@ -80,6 +93,13 @@ public class Global extends GlobalSettings {
         return null;
       }
     });
+    sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) throws UnsupportedRepositoryOperationException, RepositoryException {
+            final AccessControlManager acm = session.getAccessControlManager();
+            ((AorraAccessManager)acm).initStore(session);
+            return null;
+        }
+      });
   }
 
 }

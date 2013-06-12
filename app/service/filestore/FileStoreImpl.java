@@ -19,13 +19,10 @@ import java.util.TreeSet;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeType;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
@@ -57,9 +54,9 @@ import play.libs.F.Function;
 import service.JcrSessionFactory;
 import service.filestore.EventManager.FileStoreEvent;
 import service.filestore.roles.Admin;
-
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import aorra.jackrabbit.AorraAccessManager;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -370,29 +367,10 @@ public class FileStoreImpl implements FileStore {
 
     public void resetPermissions() throws RepositoryException {
       final Group group = Admin.getInstance(session()).getGroup();
-      final AccessControlManager acm = session().getAccessControlManager();
-      final JackrabbitAccessControlList acl = AccessControlUtils
-          .getAccessControlList(acm, rawPath());
+      final AorraAccessManager acm = (AorraAccessManager)session().getAccessControlManager();
       final Principal everyone = EveryonePrincipal.getInstance();
-      for (AccessControlEntry entry : acl.getAccessControlEntries()) {
-        if (entry.getPrincipal().equals(everyone)) {
-          acl.removeAccessControlEntry(entry);
-        }
-      }
-      if (rawPath().equals(FILE_STORE_PATH)) {
-        // Deny everyone everything by default on root (which should propagate)
-        acl.addEntry(EveryonePrincipal.getInstance(), AccessControlUtils
-            .privilegesFromNames(session(), Privilege.JCR_ALL), false);
-      }
-      // Explicitly allow read permissions to admin group
-      acl.addEntry(group.getPrincipal(), AccessControlUtils
-          .privilegesFromNames(session(), Privilege.JCR_READ,
-              Privilege.JCR_ADD_CHILD_NODES, Privilege.JCR_REMOVE_CHILD_NODES,
-              Privilege.JCR_MODIFY_PROPERTIES,
-              Privilege.JCR_NODE_TYPE_MANAGEMENT, Privilege.JCR_REMOVE_NODE,
-              Privilege.JCR_VERSION_MANAGEMENT,
-              Privilege.JCR_REMOVE_CHILD_NODES), true);
-      acm.setPolicy(rawPath(), acl);
+      acm.grant(everyone, FILE_STORE_PATH, aorra.jackrabbit.Permission.NONE);
+      acm.grant(group.getPrincipal(), FILE_STORE_PATH, aorra.jackrabbit.Permission.RW);
     }
 
     @Override

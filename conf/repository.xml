@@ -60,8 +60,7 @@
             access manager:
             class: FQN of class implementing the AccessManager interface
         -->
-        <AccessManager class="org.apache.jackrabbit.core.security.DefaultAccessManager">
-            <!-- <param name="config" value="${rep.home}/access.xml"/> -->
+        <AccessManager class="aorra.jackrabbit.AorraAccessManager">
         </AccessManager>
 
         <LoginModule class="org.apache.jackrabbit.core.security.authentication.DefaultLoginModule">

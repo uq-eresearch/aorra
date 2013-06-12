@@ -14,7 +14,7 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     javaCore,
     "javax.jcr" % "jcr" % "2.0",
-    "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.0",
+    "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.2",
     "com.h2database" % "h2" % "1.3.170",
     //"org.jcrom" % "jcrom" % "2.0.1",
     "com.fasterxml.uuid" % "java-uuid-generator" % "3.1.3",
@@ -68,6 +68,7 @@ object ApplicationBuild extends Build {
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play2-crash-plugin.git#ec950e4c5e7347a681e23b9dde3e4ce1783d9383"))
   ).dependsOn(RootProject(uri(
-      "git://github.com/uq-eresearch/aorra-graph-demo.git#64a0193687dc891dddde417baeb0e4931c0ce6f0")))
-
+      "git://github.com/uq-eresearch/aorra-graph-demo.git#64a0193687dc891dddde417baeb0e4931c0ce6f0"))
+  ).dependsOn(RootProject(uri(
+      "git://github.com/uq-eresearch/aorraacm.git")))
 }
