@@ -13,6 +13,9 @@ define([
       { pattern: /wordprocessingml.document$/, type: 'document' },
       { pattern: /spreadsheetml.sheet$/, type: 'spreadsheet' }
     ];
+    if (!mimeType) {
+      return 'folder';
+    }
     var match = _.find(mimeTypePatterns, function(entry) {
       return mimeType.match(entry.pattern);
     });
@@ -30,9 +33,9 @@ define([
         var m = _.defaults({}, node.attributes);
         // Emit select event
         if (node.type == 'folder') {
-          this.trigger("folder:select", models.Folder.fromNode(node));
+          this.trigger("folder:select", node.id);
         } else {
-          this.trigger("file:select", models.File.fromNode(node));
+          this.trigger("file:select", node.id);
         }
       }, this);
       var hoverHandler = function(e) {
@@ -56,7 +59,13 @@ define([
       tree.events.icon.click.push(setTooltipText);
       tree.events.icon.mouseenter = [createTooltip, hoverHandler];
       tree.events.icon.mouseleave = [hoverHandler];
-      this.tree = tree;
+      this._tree = tree;
+    },
+    tree: function() {
+      if (!this._tree) {
+        this.render();
+      }
+      return this._tree;
     },
     options: {
       startExpanded: true,
@@ -64,8 +73,11 @@ define([
         if (struct.type == 'folder') {
           return 'folder';
         }
-        if (struct['attributes'] && struct['attributes']['mimeType']) {
-          return typeFromMimeType(struct.attributes.mimeType);
+        if (struct['attributes']) {
+          var mimeType = struct['attributes']['mimeType'];
+          if (mimeType) {
+            return typeFromMimeType(mimeType);
+          }
         }
         return 'file';
       },
@@ -198,6 +210,7 @@ define([
       this.$el.append(' <button class="btn" type="submit">Create</mkdir>');
       this.$el.submit(function(e) {
         var form = e.target;
+        var path = $(form).find('input').val();
         $.ajax({
           method: $(form).attr('method'),
           url: $(form).attr('action')+"?"+$(form).serialize(),
@@ -234,10 +247,12 @@ define([
   
   var FileInfoView = Backbone.View.extend({
     initialize: function() {
+      console.debug(this.model);
       this.vlv = new VersionListView({
-        collection: this.model.get('versions')
+        collection: this.model.versionList()
       });
       this.model.on('change', _.bind(this.render, this));
+      this.model.fetch();
     },
     render: function(obj) {
       return templates.renderInto(
@@ -338,7 +353,7 @@ define([
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
       var fileInfoView = new FileInfoView({
-        model: this.model.get('info')
+        model: this.model.info()
       });
       var fileUploadView = new FileUploadView({
         type: 'file',

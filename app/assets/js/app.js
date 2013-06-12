@@ -43,7 +43,7 @@ require(['models', 'views'], function(models, views) {
           es.addEventListener('ping', function(event) {
             trigger('event:ping', event.data);
           });
-          _.each(['load', 'create', 'update', 'delete'], function(n) {
+          _.each(['create', 'update', 'delete'], function(n) {
             es.addEventListener(n, function(event) {
               var struct = JSON.parse(event.data);
               trigger('event:'+n, struct);
@@ -54,39 +54,64 @@ require(['models', 'views'], function(models, views) {
       }
     });
 
-    function catchErrors(f) {
-      return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
-    }
-
-    var tree = _.bind(obj.getTree, this);
-    // Event handlers
-    obj.on("event:load", function(struct) { tree().load(struct); });
-    obj.on("event:create",
-      catchErrors(function(struct) { tree().add(struct, struct.parentId) }));
-    obj.on("event:update",
-      catchErrors(function(struct) { tree().update(struct) }));
-    obj.on("event:delete",
-      catchErrors(function(struct) { tree().remove(struct.id) }));
-
     return obj;
   };
 
   $(function () {
 
-    window.fs = new models.FileStore();
-    
+    function catchErrors(f) {
+      return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
+    }
+
+    var fs = new models.FileStore();
     var fileTree = new views.FileTree();
-    var notificationFeed = new NotificationFeed({
-      getTree: function() { return fileTree.tree }
-    });
+    var notificationFeed = new NotificationFeed({});
+    // Event handlers
+    notificationFeed.on("event:create",
+      catchErrors(function(struct) { 
+        var m = fs.add({
+          id: struct.id,
+          name: struct.name,
+          path: struct.attributes.path,
+          parent: struct.parentId,
+          type: struct.type});
+        m.on("change sync", function(m) {
+          if (fileTree.tree().find(m.id))
+            fileTree.tree().update(m.asNodeStruct());
+          else
+            fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+        });
+        fs.get(id).fetch();
+      }));
+    notificationFeed.on("event:update",
+      catchErrors(function(struct) { 
+        fs.get(struct.id).fetch();
+      }));
+    notificationFeed.on("event:delete",
+      catchErrors(function(struct) { 
+        fs.remove(fs.get(struct.id)) 
+      }));
+    
+    window.fs = fs;
+    
     var mainPane = new views.MainPane();
     fileTree.render();
     $('#sidebar').append(fileTree.$el);
     $('#main').append(mainPane.$el);
-    notificationFeed.once("event:load", function(struct) {
-      // Start router (as now we can load existing nodes)
-      Backbone.history.start({ pushState: true, hashChange: false });
+
+    fs.on('sync', function() {
+      try {
+        // Start router (as now we can load existing nodes)
+        Backbone.history.start({ pushState: true, hashChange: false });
+      } catch (e) {}
     });
+    fs.on('add', function(m) {
+      fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+    });
+    fs.on('remove', function(m) {
+      fileTree.tree().remove(m.get('id'));
+    });
+    fs.fetch();
     notificationFeed.open();
 
     var Router = Backbone.Router.extend({
@@ -100,23 +125,23 @@ require(['models', 'views'], function(models, views) {
         this._setSidebarActive();
       },
       showFolder: function(id) {
-        var node = fileTree.tree.find(id);
+        var node = fileTree.tree().find(id);
         if (node == null) {
           mainPane.showDeleted()
         } else {
-          mainPane.showFolder(models.Folder.fromNode(node));
+          mainPane.showFolder(fs.get(node.id));
+          this._highlightNode(node);
         }
-        this._highlightNode(node);
         this._setMainActive();
       },
       showFile: function(id) {
-        var node = fileTree.tree.find(id);
+        var node = fileTree.tree().find(id);
         if (node == null) {
           mainPane.showDeleted()
         } else {
-          mainPane.showFile(models.File.fromNode(node));
+          mainPane.showFile(fs.get(node.id));
+          this._highlightNode(node);
         }
-        this._highlightNode(node);
         this._setMainActive();
       },
       _setMainActive: function() {
@@ -139,17 +164,17 @@ require(['models', 'views'], function(models, views) {
 
     var router = new Router();
 
-    fileTree.on("folder:select", function(folder) {
-      router.navigate("folder/"+folder.id, {trigger: true});
+    fileTree.on("folder:select", function(folderId) {
+      router.navigate("folder/"+folderId, {trigger: true});
     });
-    fileTree.on("file:select", function(file) {
-      router.navigate("file/"+file.id, {trigger: true});
+    fileTree.on("file:select", function(fileId) {
+      router.navigate("file/"+fileId, {trigger: true});
     });
-    notificationFeed.on("event:delete", function(struct) {
+    fs.on("remove", function(m) {
       // Handle being on the deleted page already
       if (_.isUndefined(mainPane.innerView.model)) return;
       // If the current path has been deleted, then hide it.
-      if (fileTree.tree.find(mainPane.innerView.model.id) == null) {
+      if (m.id == mainPane.innerView.model.id) {
         mainPane.showDeleted();
       }
     });

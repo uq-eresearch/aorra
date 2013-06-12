@@ -77,7 +77,7 @@ class FileStoreAsync @Inject()(
       </script>+"\n"
     }
     Ok.feed(
-        Enumerator(initialCometSetup(authUser)) andThen
+        Enumerator(initialCometSetup()) andThen
         pingEnumerator('comet).interleave(
             fsEvents(authUser) &> cometFormatter)
       ).as("text/html")
@@ -90,7 +90,7 @@ class FileStoreAsync @Inject()(
         s"id: ${id}\nevent: ${event.`type`}\ndata: ${event2json(event)}\n\n"
     }
     Ok.feed(
-        Enumerator(initialEventSourceSetup(authUser)) andThen
+        Enumerator(initialEventSourceSetup()) andThen
         pingEnumerator('sse).interleave(
             fsEvents(authUser, lastEventId) &> eventSourceFormatter)
       ).as("text/event-stream")
@@ -155,32 +155,15 @@ class FileStoreAsync @Inject()(
     })
   }
 
-  private def initialCometSetup(user: AuthUser): String = {
-    val jsonText = scala.xml.Unparsed(getInitialTree(user).toString())
+  private def initialCometSetup(): String = {
     " " * pow(2, 11).toInt + "\n" + // Pad it to kick IE into action
     // Oh, and IE8 may not know what JSON is (if in compatibility mode)
     <script src="//cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script> +
-    <script>
-    parent.postMessage(
-      JSON.stringify({{
-        'type': 'load',
-        'data': {jsonText}
-      }}), '*');
-    </script>+"\n"
+    "\n"
   }
 
-  private def initialEventSourceSetup(user: AuthUser): String = {
-    Seq(
-      "retry: 2000",
-      s"event: load\ndata: ${getInitialTree(user)}"
-    ).foldLeft("") { _ + _ + "\n\n" } // Turn into EventSource messages
-  }
-
-  private def getInitialTree(user: AuthUser): ArrayNode = {
-    inUserSession(user, { (session: Session) =>
-      val builder = new service.filestore.JsonBuilder()
-      builder.tree(filestore.getManager(session).getFolders())
-    })
+  private def initialEventSourceSetup(): String = {
+    "retry: 2000\n\n"
   }
 
   private def inUserSession[A](authUser: AuthUser, f: Session => A): A = {

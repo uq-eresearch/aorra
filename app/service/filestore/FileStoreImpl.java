@@ -187,10 +187,12 @@ public class FileStoreImpl implements FileStore {
       try {
         return new Folder(getFolderDAO().loadById(id), this, eventManager);
       } catch (ClassCastException e) {
+      } catch (JcrMappingException e) {
       } catch (NullPointerException e) {}
       try {
         return new File(getFileDAO().loadById(id), this, eventManager);
       } catch (ClassCastException e) {
+      } catch (JcrMappingException e) {
       } catch (NullPointerException e) {}
       return null;
     }

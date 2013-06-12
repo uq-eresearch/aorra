@@ -166,8 +166,12 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         FileStore.FileOrFolder fof = fm.getByIdentifier(fileOrFolderId);
-        fof.delete();
-        return noContent();
+        if (fof == null) {
+          return notFound();
+        } else {
+          fof.delete();
+          return noContent();
+        }
       }
     });
   }
