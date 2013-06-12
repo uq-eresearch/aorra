@@ -247,7 +247,6 @@ define([
   
   var FileInfoView = Backbone.View.extend({
     initialize: function() {
-      console.debug(this.model);
       this.vlv = new VersionListView({
         collection: this.model.versionList()
       });

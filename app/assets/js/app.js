@@ -93,6 +93,9 @@ require(['models', 'views'], function(models, views) {
       }));
     
     window.fs = fs;
+    var startRouting = function() {
+      Backbone.history.start({ pushState: true, hashChange: false });
+    };
     
     var mainPane = new views.MainPane();
     fileTree.render();
@@ -102,8 +105,14 @@ require(['models', 'views'], function(models, views) {
     fs.on('sync', function() {
       try {
         // Start router (as now we can load existing nodes)
-        Backbone.history.start({ pushState: true, hashChange: false });
+        startRouting();
       } catch (e) {}
+    });
+    fs.on('reset', function() {
+      fileTree.tree().load([]);
+      fs.each(function(m) {
+        fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+      });
     });
     fs.on('add', function(m) {
       fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
@@ -111,8 +120,6 @@ require(['models', 'views'], function(models, views) {
     fs.on('remove', function(m) {
       fileTree.tree().remove(m.get('id'));
     });
-    fs.fetch();
-    notificationFeed.open();
 
     var Router = Backbone.Router.extend({
       routes: {
@@ -178,6 +185,14 @@ require(['models', 'views'], function(models, views) {
         mainPane.showDeleted();
       }
     });
+    
+    if (_.isUndefined(window.filestoreJSON)) {
+      fs.fetch();
+    } else {
+      fs.reset(window.filestoreJSON);
+      startRouting();
+    }
+    notificationFeed.open();
 
   });
 });

@@ -58,6 +58,19 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
+  public Result index() {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        return ok(views.html.FileStoreController.index.render(
+            jb.toJson(fm.getFolders()))).as("text/html");
+      }
+    });
+  }
+
+  @SubjectPresent
   public Result mkdir(final String folderId, final String path) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
@@ -88,7 +101,7 @@ public final class FileStoreController extends SessionAwareController {
       if (m.accepts("application/json") || m.accepts("text/javascript")) {
         return folderJson(folderId);
       } else if (m.accepts("text/html")) {
-        return appIndex();
+        return index();
       }
     }
     return status(UNSUPPORTED_MEDIA_TYPE);
@@ -100,14 +113,10 @@ public final class FileStoreController extends SessionAwareController {
       if (m.accepts("application/json") || m.accepts("text/javascript")) {
         return fileJson(fileId);
       } else if (m.accepts("text/html")) {
-        return appIndex();
+        return index();
       }
     }
     return status(UNSUPPORTED_MEDIA_TYPE);
-  }
-
-  private Result appIndex() {
-    return getInjector().getInstance(Application.class).index();
   }
 
   @SubjectPresent
