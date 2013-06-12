@@ -69,19 +69,7 @@ require(['models', 'views'], function(models, views) {
     // Event handlers
     notificationFeed.on("event:create",
       catchErrors(function(struct) { 
-        var m = fs.add({
-          id: struct.id,
-          name: struct.name,
-          path: struct.attributes.path,
-          parent: struct.parentId,
-          type: struct.type});
-        m.on("change sync", function(m) {
-          if (fileTree.tree().find(m.id))
-            fileTree.tree().update(m.asNodeStruct());
-          else
-            fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
-        });
-        fs.get(id).fetch();
+        fs.fetch();
       }));
     notificationFeed.on("event:update",
       catchErrors(function(struct) { 
