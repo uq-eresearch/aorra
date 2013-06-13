@@ -56,7 +56,7 @@ import service.filestore.EventManager.FileStoreEvent;
 import service.filestore.roles.Admin;
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import aorra.jackrabbit.AorraAccessManager;
+import jackrabbit.AorraAccessManager;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -369,8 +369,8 @@ public class FileStoreImpl implements FileStore {
       final Group group = Admin.getInstance(session()).getGroup();
       final AorraAccessManager acm = (AorraAccessManager)session().getAccessControlManager();
       final Principal everyone = EveryonePrincipal.getInstance();
-      acm.grant(everyone, FILE_STORE_PATH, aorra.jackrabbit.Permission.NONE);
-      acm.grant(group.getPrincipal(), FILE_STORE_PATH, aorra.jackrabbit.Permission.RW);
+      acm.grant(everyone, FILE_STORE_PATH, jackrabbit.Permission.NONE);
+      acm.grant(group.getPrincipal(), FILE_STORE_PATH, jackrabbit.Permission.RW);
     }
 
     @Override

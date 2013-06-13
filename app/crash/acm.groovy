@@ -19,11 +19,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.api.security.user.Group
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlList
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils
-//import org.apache.jackrabbit.core.security.authorization.AccessControlEntryImpl
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlEntry;
 
-import aorra.jackrabbit.PermissionKey;
-import aorra.jackrabbit.Permission;
+import jackrabbit.PermissionKey;
+import jackrabbit.Permission;
 
 import org.crsh.cli.Command
 import org.crsh.cli.Usage

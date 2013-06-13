@@ -72,7 +72,7 @@
             access manager:
             class: FQN of class implementing the AccessManager interface
         -->
-        <AccessManager class="aorra.jackrabbit.AorraAccessManager">
+        <AccessManager class="jackrabbit.AorraAccessManager">
         </AccessManager>
 
         <LoginModule class="org.apache.jackrabbit.core.security.authentication.DefaultLoginModule">

@@ -11,7 +11,7 @@ import play.libs.F.Function;
 import play.mvc.Call;
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
-import aorra.jackrabbit.AorraAccessManager;
+import jackrabbit.AorraAccessManager;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.PlayAuthenticate.Resolver;
