@@ -22,11 +22,13 @@ import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.iteratee.Enumeratee
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.iteratee.Input
+import play.api.libs.json.JsArray
 import play.api.libs.json.JsNull
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.libs.json.Json
+import play.api.mvc.Accepting
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.Controller
@@ -56,40 +58,38 @@ class FileStoreAsync @Inject()(
     extends Controller {
 
   def notifications: EssentialAction = isAuthenticated { authUser => implicit request =>
-    if (request.accepts(MimeTypes.HTML)) {
-      cometEventNotifications(authUser, request)
-    } else if (request.accepts(MimeTypes.EVENT_STREAM)) {
-      serverSentEventNotifications(authUser, request)
-    } else {
-      Status(UNSUPPORTED_MEDIA_TYPE)
+    val AcceptsEventStream = Accepting(MimeTypes.EVENT_STREAM)
+    render {
+      case Accepts.Json() => pollingJsonResponse(authUser, request)
+      case AcceptsEventStream() =>
+        serverSentEventNotifications(authUser, request)
     }
   }
 
-  def cometEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
-    val cometFormatter = Enumeratee.map[(String, FileStoreEvent)] {
-      case (id, event) =>
-      <script>
-      parent.postMessage(
-        JSON.stringify({{
-          'id': '{id}',
-          'type': '{event.`type`}',
-          'data': {scala.xml.Unparsed(event2json(event).toString())}
-          }}), '*');
-      </script>+"\n"
+  def pollingJsonResponse(authUser: AuthUser, request: Request[AnyContent]) = {
+    val eventId = lastIdInQuery(request)
+    val response = JsArray(
+      filestore.getEventManager().getSince(eventId) map { case (id, event) =>
+        Json.obj(
+          "id" -> id,
+          "type" -> event.`type`.toString(),
+          "data" -> event2json(event)
+        )
+      } toSeq
+    )
+    Ok(response).as("application/json")
+  }
+
+  private def lastIdInQuery(request: Request[AnyContent]) = {
+    request.queryString.get("from") match {
+      case Some(Seq(a, _*)) => a.toString
+      case None => null
     }
-    Ok.feed(
-        Enumerator(initialCometSetup()) andThen
-        pingEnumerator('comet).interleave(
-            fsEvents(authUser) &> cometFormatter)
-      ).as("text/html")
   }
 
   def serverSentEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
     val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
-      request.queryString.get("from") match {
-        case Some(Seq(a, _*)) => a.toString
-        case None => null
-      }
+      lastIdInQuery(request)
     }
     val eventSourceFormatter = Enumeratee.map[(String, FileStoreEvent)] {
       case (id, event) =>
@@ -159,13 +159,6 @@ class FileStoreAsync @Inject()(
           s"event: ping\ndata: ${msg}\n\n"
       }
     })
-  }
-
-  private def initialCometSetup(): String = {
-    " " * pow(2, 11).toInt + "\n" + // Pad it to kick IE into action
-    // Oh, and IE8 may not know what JSON is (if in compatibility mode)
-    <script src="//cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script> +
-    "\n"
   }
 
   private def initialEventSourceSetup(): String = {

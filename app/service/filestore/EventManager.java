@@ -16,6 +16,8 @@ public interface EventManager {
 
   public abstract String getLastEventId();
 
+  public abstract Iterable<Tuple2<String, FileStoreEvent>> getSince(String eventId);
+
   public abstract void tell(
       ChannelMessage<Tuple2<String, FileStoreEvent>> message);
 

@@ -1,9 +1,13 @@
 package service.filestore;
 
+import groovy.lang.Immutable;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.common.collect.ImmutableList;
 
 import play.Logger;
 import play.api.libs.iteratee.Concurrent.Channel;
@@ -21,10 +25,27 @@ public class EventManagerImpl implements EventManager {
       Collections.synchronizedSet(
           new HashSet<Channel<Tuple2<String, FileStoreEvent>>>());
 
-
   @Override
   public String getLastEventId() {
     return history.getLastEventId();
+  }
+
+  @Override
+  public Iterable<Tuple2<String,FileStoreEvent>> getSince(final String lastId) {
+    final ImmutableList.Builder<Tuple2<String,FileStoreEvent>> b =
+        ImmutableList.<Tuple2<String,FileStoreEvent>>builder();
+    Map<String, FileStoreEvent> missed;
+    try {
+      missed = history.getSince(lastId);
+    } catch (ForgottenEventException e1) {
+      // TODO Handle forgotten history
+      return ImmutableList.of();
+    }
+    for (Map.Entry<String, FileStoreEvent> e : missed.entrySet()) {
+      // Push event ID and event
+      b.add(new Tuple2<String, FileStoreEvent>(e.getKey(), e.getValue()));
+    }
+    return b.build();
   }
 
   @Override

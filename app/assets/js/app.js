@@ -11,35 +11,28 @@ require(['models', 'views'], function(models, views) {
       open: function() {
         var trigger = _.bind(this.trigger, this);
         // Are we using a modern browser, or are we using IE?
-        if (typeof(window.EventSource) == 'undefined') {
-          // HTML iframe
-          var connect_htmlfile = function (url, callback) {
-            var ifrDiv = document.createElement("div");
-            var iframe = document.createElement("iframe");
-            ifrDiv.setAttribute("style", "display: none");
-            document.body.appendChild(ifrDiv);
-            ifrDiv.appendChild(iframe);
-            iframe.src = url;
-            iframe.onload = function() {
-              try {
-                iframe.currentWindow.location.reload();
-              } catch (e) {}
-            };
-            // From: http://davidwalsh.name/window-iframe
-            function eventHandler(w, eventName, handler) {
-              var eMethod = w.addEventListener ? "addEventListener" : "attachEvent";
-              var eName = w.addEventListener ? eventName : "on" + eventName;
-              return w[eMethod](eName, handler, false);
-            }
-            // Receive messages from iframe
-            eventHandler(window, 'message', function(e) {
-              var msg = JSON.parse(e.data);
-              callback(msg.type, msg.data);
+        if (_.isUndefined(window.EventSource)) {
+          var lastId = window.lastEventID;
+          var poll = _.bind(function(callback) {
+            $.ajax({
+              url: this._feedFromEventID(lastId),
+              dataType: 'json',
+              success: function(data) {
+                _(data).each(function(v) {
+                  lastId = v.id;
+                  console.log(v.type);
+                  trigger('event:'+v.type, v.data);
+                });
+                callback();
+              }
+            });
+          }, this);
+          var pollLoop = function() {
+            poll(function() {
+              _.delay(pollLoop, 2000);
             });
           }
-          connect_htmlfile(this.url, function(eventType, data) {
-            trigger('event:'+eventType, data);
-          });
+          pollLoop();
         } else {
           // EventSource
           var es = new EventSource(this._feedFromEventID(window.lastEventID));
@@ -71,23 +64,23 @@ require(['models', 'views'], function(models, views) {
     var notificationFeed = new NotificationFeed({});
     // Event handlers
     notificationFeed.on("event:create",
-      catchErrors(function(struct) { 
+      catchErrors(function(struct) {
         fs.fetch();
       }));
     notificationFeed.on("event:update",
-      catchErrors(function(struct) { 
+      catchErrors(function(struct) {
         fs.get(struct.id).fetch();
       }));
     notificationFeed.on("event:delete",
-      catchErrors(function(struct) { 
-        fs.remove(fs.get(struct.id)) 
+      catchErrors(function(struct) {
+        fs.remove(fs.get(struct.id))
       }));
-    
+
     window.fs = fs;
     var startRouting = function() {
       Backbone.history.start({ pushState: true, hashChange: false });
     };
-    
+
     var mainPane = new views.MainPane();
     fileTree.render();
     $('#sidebar').append(fileTree.$el);
@@ -176,7 +169,7 @@ require(['models', 'views'], function(models, views) {
         mainPane.showDeleted();
       }
     });
-    
+
     if (_.isUndefined(window.filestoreJSON)) {
       fs.fetch();
     } else {
