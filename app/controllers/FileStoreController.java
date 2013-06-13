@@ -65,6 +65,7 @@ public final class FileStoreController extends SessionAwareController {
         final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         return ok(views.html.FileStoreController.index.render(
+            fileStoreImpl.getEventManager().getLastEventId(),
             jb.toJson(fm.getFolders()))).as("text/html");
       }
     });

@@ -1,4 +1,5 @@
 @(
+  lastEventId: String,
   filestoreJson: org.codehaus.jackson.node.ArrayNode
 )
 
@@ -15,5 +16,6 @@
   folder = "/js")
 }
 <script type="text/javascript">
+window.lastEventID = "@lastEventId";
 window.filestoreJSON = @Html(filestoreJson.toString());
 </script>

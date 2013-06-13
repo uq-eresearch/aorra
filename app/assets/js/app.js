@@ -1,10 +1,13 @@
 require(['models', 'views'], function(models, views) {
   'use strict';
   var NotificationFeed = function(config) {
-      var obj = _.extend({}, config)
-      _.extend(obj, Backbone.Events);
-      _.extend(obj, {
+    var obj = _.extend({}, config)
+    _.extend(obj, Backbone.Events);
+    _.extend(obj, {
       url: '/notifications',
+      _feedFromEventID: function(eventId) {
+        return this.url+"?from="+eventId;
+      },
       open: function() {
         var trigger = _.bind(this.trigger, this);
         // Are we using a modern browser, or are we using IE?
@@ -39,7 +42,7 @@ require(['models', 'views'], function(models, views) {
           });
         } else {
           // EventSource
-          var es = new EventSource(this.url);
+          var es = new EventSource(this._feedFromEventID(window.lastEventID));
           es.addEventListener('ping', function(event) {
             trigger('event:ping', event.data);
           });

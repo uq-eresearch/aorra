@@ -29,7 +29,7 @@ GET     /file/:fileId/version/:versionName    @controllers.FileStoreController.d
 POST    /file/:fileId/version/new       @controllers.FileStoreController.updateFile(fileId)
 DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)
 
-GET     /notifications              @controllers.FileStoreAsync.notifications
+GET     /notifications              @controllers.FileStoreAsync.notifications()
 
 # play-authenticate
 GET     /logout                     com.feth.play.module.pa.controllers.Authenticate.logout

@@ -1,86 +1,29 @@
 package service.filestore;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 
+import play.api.libs.iteratee.Concurrent.Channel;
+
 import com.google.common.collect.ImmutableMap;
 
-import play.Logger;
-import play.api.libs.iteratee.Concurrent.Channel;
 import scala.Tuple2;
-import service.EventTimeline;
-import service.EventTimeline.ForgottenEventException;
-import service.InMemoryEventTimeline;
-import akka.actor.UntypedActor;
 
-public class EventManager extends UntypedActor {
+public interface EventManager {
 
-  private final EventTimeline<String, FileStoreEvent> history =
-      new InMemoryEventTimeline<FileStoreEvent>();
+  public abstract String getLastEventId();
 
-  private final Set<Channel<Tuple2<String, FileStoreEvent>>> channels =
-      new HashSet<Channel<Tuple2<String, FileStoreEvent>>>();
+  public abstract void tell(
+      ChannelMessage<Tuple2<String, FileStoreEvent>> message);
 
-  @Override
-  public void onReceive(Object message) throws Exception {
-    if (message instanceof FileStoreEvent) {
-      final FileStoreEvent event = (FileStoreEvent) message;
-      Logger.debug(this+" - Adding event to history: "+event);
-      history.record(event);
-      Logger.debug(this+" - Pushing event to channels: "+event);
-      for (Channel<Tuple2<String, FileStoreEvent>> channel : channels) {
-        // Push event ID and event
-        channel.push(new Tuple2<String, FileStoreEvent>(
-            history.getLastEventId(), event));
-        Logger.debug(this+"- Pushed to channel: "+channel);
-      }
-    } else if (message instanceof ChannelMessage) {
-      @SuppressWarnings("unchecked")
-      ChannelMessage<Tuple2<String, FileStoreEvent>> channelMessage =
-          (ChannelMessage<Tuple2<String, FileStoreEvent>>) message;
-      switch (channelMessage.type) {
-      case ADD:
-        Logger.debug(this+" - Adding notification channel.");
-        performCatchup(channelMessage.channel, channelMessage.lastId);
-        channels.add(channelMessage.channel);
-        break;
-      case REMOVE:
-        Logger.debug(this+" - Removing notification channel.");
-        channels.remove(channelMessage.channel);
-        break;
-      }
-    } else {
-      unhandled(message);
-    }
-  }
-
-  protected void performCatchup(
-      final Channel<Tuple2<String, FileStoreEvent>> channel,
-      final String lastId) {
-    if (lastId == null) {
-      // TODO: Handle this by sending full load
-    } else {
-      try {
-        final Map<String, FileStoreEvent> missed = history.getSince(lastId);
-        for (Map.Entry<String, FileStoreEvent> e : missed.entrySet()) {
-          // Push event ID and event
-          channel.push(new Tuple2<String, FileStoreEvent>(
-              e.getKey(), e.getValue()));
-        }
-      } catch (ForgottenEventException e) {
-        // TODO: Handle this by sending full load
-      }
-    }
-  }
+  public abstract void tell(FileStoreEvent event);
 
   public static class ChannelMessage<T> {
 
-    private static enum MessageType { ADD, REMOVE }
+    public static enum MessageType { ADD, REMOVE }
 
     public final MessageType type;
     public final Channel<T> channel;
@@ -105,7 +48,7 @@ public class EventManager extends UntypedActor {
 
   public static class FileStoreEvent {
 
-    private static enum EventType {
+    public static enum EventType {
       CREATE, UPDATE, DELETE;
       @Override
       public String toString() { return super.toString().toLowerCase(); }
@@ -211,6 +154,5 @@ public class EventManager extends UntypedActor {
     }
 
   }
-
 
 }

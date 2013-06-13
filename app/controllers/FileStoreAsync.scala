@@ -1,44 +1,45 @@
 package controllers
 
+import ScalaSecured.isAuthenticated
 import akka.actor.Actor
+import akka.actor.Props
+import com.feth.play.module.pa.PlayAuthenticate
+import com.feth.play.module.pa.user.AuthUser
+import com.feth.play.module.pa.user.EmailIdentity
 import com.google.inject.Inject
-import play.api.mvc.Controller
-import play.api.libs.iteratee.Input
+import java.text.DateFormat
+import java.util.Calendar
+import javax.jcr.Credentials
+import javax.jcr.Session
+import models.UserDAO
+import org.codehaus.jackson.node.ArrayNode
+import org.jcrom.Jcrom
+import play.api.Logger
+import play.api.http.MimeTypes
+import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.iteratee.Concurrent.Channel
-import play.api.libs.concurrent.Akka
-import akka.actor.Props
-import service.filestore.EventManager.ChannelMessage
-import service.filestore.EventManager.FileStoreEvent
 import play.api.libs.iteratee.Enumeratee
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.iteratee.Input
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import javax.jcr.Session
-import play.api.libs.iteratee.Enumerator
-import com.feth.play.module.pa.PlayAuthenticate
-import ScalaSecured.isAuthenticated
-import com.feth.play.module.pa.user.AuthUser
-import org.jcrom.Jcrom
-import play.libs.F
-import javax.jcr.Credentials
-import com.feth.play.module.pa.user.EmailIdentity
-import models.UserDAO
-import scala.math.pow
-import scala.concurrent.future
-import scala.concurrent.ExecutionContext
-import java.util.Calendar
-import java.text.DateFormat
-import play.api.Logger
-import play.api.mvc.Request
 import play.api.mvc.AnyContent
-import play.api.http.MimeTypes
+import play.api.mvc.Controller
 import play.api.mvc.EssentialAction
-import org.codehaus.jackson.node.ArrayNode
-import play.api.libs.json.JsObject
+import play.api.mvc.Request
+import play.libs.F
 import scala.collection.JavaConversions._
-import play.api.libs.json.JsString
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsNull
+import scala.concurrent.ExecutionContext
+import scala.concurrent.future
+import scala.math.pow
+import service.filestore.EventManager
+import service.filestore.EventManager.ChannelMessage
+import service.filestore.EventManager.FileStoreEvent
 
 /**
  *
@@ -84,7 +85,12 @@ class FileStoreAsync @Inject()(
   }
 
   def serverSentEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
-    val lastEventId = request.headers.get("Last-Event-ID").getOrElse(null)
+    val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
+      request.queryString.get("from") match {
+        case Some(Seq(a, _*)) => a.toString
+        case None => null
+      }
+    }
     val eventSourceFormatter = Enumeratee.map[(String, FileStoreEvent)] {
       case (id, event) =>
         s"id: ${id}\nevent: ${event.`type`}\ndata: ${event2json(event)}\n\n"
@@ -119,17 +125,17 @@ class FileStoreAsync @Inject()(
     Concurrent.unicast[(String, FileStoreEvent)](
       onStart = { channel: Channel[(String, FileStoreEvent)] =>
         c = channel
-        em ! ChannelMessage.add(c, lastEventId)
+        em tell ChannelMessage.add(c, lastEventId)
       },
       // This is a pass-by-name (ie. lazy evaluation) parameter
       // (no () => required)
       onComplete = {
         // Note: This only triggers when a new event happens and gets rejected,
         // not when the socket closes.
-        em ! ChannelMessage.remove(c)
+        em tell ChannelMessage.remove(c)
       },
       onError = { (s: String, i: Input[(String, FileStoreEvent)]) =>
-        em ! ChannelMessage.remove(c)
+        em tell ChannelMessage.remove(c)
       }
     )
   }
