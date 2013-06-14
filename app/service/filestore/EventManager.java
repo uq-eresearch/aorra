@@ -1,76 +1,57 @@
 package service.filestore;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 
+import play.api.libs.iteratee.Concurrent.Channel;
+
 import com.google.common.collect.ImmutableMap;
 
-import play.Logger;
-import play.api.libs.iteratee.Concurrent.Channel;
-import akka.actor.UntypedActor;
+import scala.Tuple2;
 
-public class EventManager extends UntypedActor {
+public interface EventManager {
 
-  private final Set<Channel<FileStoreEvent>> channels =
-      new HashSet<Channel<FileStoreEvent>>();
+  public abstract String getLastEventId();
 
-  @Override
-  public void onReceive(Object message) throws Exception {
-    if (message instanceof FileStoreEvent) {
-      final FileStoreEvent event = (FileStoreEvent) message;
-      Logger.debug(this+" - Pushing event to channels: "+event);
-      for (Channel<FileStoreEvent> channel : channels) {
-        channel.push(event);
-        Logger.debug(this+"- Pushed to channel: "+channel);
-      }
-    } else if (message instanceof ChannelMessage) {
-      ChannelMessage channelMessage = (ChannelMessage) message;
-      switch (channelMessage.type) {
-      case ADD:
-        Logger.debug(this+" - Adding notification channel.");
-        channels.add(channelMessage.channel);
-        break;
-      case REMOVE:
-        Logger.debug(this+" - Removing notification channel.");
-        channels.remove(channelMessage.channel);
-        break;
-      }
-    } else {
-      unhandled(message);
-    }
-  }
+  public abstract Iterable<Tuple2<String, FileStoreEvent>> getSince(String eventId);
 
-  public static class ChannelMessage {
+  public abstract void tell(
+      ChannelMessage<Tuple2<String, FileStoreEvent>> message);
 
-    private static enum MessageType { ADD, REMOVE }
+  public abstract void tell(FileStoreEvent event);
+
+  public static class ChannelMessage<T> {
+
+    public static enum MessageType { ADD, REMOVE }
 
     public final MessageType type;
-    public final Channel<FileStoreEvent> channel;
+    public final Channel<T> channel;
+    public final String lastId;
 
-    protected ChannelMessage(MessageType type, Channel<FileStoreEvent> channel) {
+    protected ChannelMessage(final MessageType type, final Channel<T> channel,
+        final String lastId) {
       this.type = type;
       this.channel = channel;
+      this.lastId = lastId;
     }
 
-    public static ChannelMessage add(Channel<FileStoreEvent> channel) {
-      return new ChannelMessage(MessageType.ADD, channel);
+    public static <T> ChannelMessage<T> add(Channel<T> channel, String lastId) {
+      return new ChannelMessage<T>(MessageType.ADD, channel, lastId);
     }
 
-    public static ChannelMessage remove(Channel<FileStoreEvent> channel) {
-      return new ChannelMessage(MessageType.REMOVE, channel);
+    public static <T> ChannelMessage<T> remove(Channel<T> channel) {
+      return new ChannelMessage<T>(MessageType.REMOVE, channel, null);
     }
 
   }
 
   public static class FileStoreEvent {
 
-    private static enum EventType {
-      CREATE, UPDATE, DELETE;
+    public static enum EventType {
+      CREATE, UPDATE, DELETE, OUTOFDATE;
       @Override
       public String toString() { return super.toString().toLowerCase(); }
     }
@@ -132,6 +113,11 @@ public class EventManager extends UntypedActor {
     public final EventType type;
     public final NodeInfo info;
 
+    protected FileStoreEvent(EventType type) {
+      this.type = type;
+      this.info = null;
+    }
+
     protected FileStoreEvent(EventType type, FileStore.Folder folder)
         throws RepositoryException {
       this.type = type;
@@ -142,6 +128,10 @@ public class EventManager extends UntypedActor {
         throws RepositoryException {
       this.type = type;
       this.info = new NodeInfo(file);
+    }
+
+    public static FileStoreEvent outOfDate() {
+      return new FileStoreEvent(EventType.OUTOFDATE);
     }
 
     public static FileStoreEvent create(FileStore.File file)
@@ -175,6 +165,5 @@ public class EventManager extends UntypedActor {
     }
 
   }
-
 
 }

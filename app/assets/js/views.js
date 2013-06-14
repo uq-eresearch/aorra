@@ -13,6 +13,9 @@ define([
       { pattern: /wordprocessingml.document$/, type: 'document' },
       { pattern: /spreadsheetml.sheet$/, type: 'spreadsheet' }
     ];
+    if (!mimeType) {
+      return 'folder';
+    }
     var match = _.find(mimeTypePatterns, function(entry) {
       return mimeType.match(entry.pattern);
     });
@@ -21,7 +24,7 @@ define([
     }
     return 'file';
   };
-  
+
   var FileTree = Backbone.View.extend({
     tagName: "div",
     render: function() {
@@ -30,9 +33,9 @@ define([
         var m = _.defaults({}, node.attributes);
         // Emit select event
         if (node.type == 'folder') {
-          this.trigger("folder:select", models.Folder.fromNode(node));
+          this.trigger("folder:select", node.id);
         } else {
-          this.trigger("file:select", models.File.fromNode(node));
+          this.trigger("file:select", node.id);
         }
       }, this);
       var hoverHandler = function(e) {
@@ -56,7 +59,13 @@ define([
       tree.events.icon.click.push(setTooltipText);
       tree.events.icon.mouseenter = [createTooltip, hoverHandler];
       tree.events.icon.mouseleave = [hoverHandler];
-      this.tree = tree;
+      this._tree = tree;
+    },
+    tree: function() {
+      if (!this._tree) {
+        this.render();
+      }
+      return this._tree;
     },
     options: {
       startExpanded: true,
@@ -64,8 +73,11 @@ define([
         if (struct.type == 'folder') {
           return 'folder';
         }
-        if (struct['attributes'] && struct['attributes']['mimeType']) {
-          return typeFromMimeType(struct.attributes.mimeType);
+        if (struct['attributes']) {
+          var mimeType = struct['attributes']['mimeType'];
+          if (mimeType) {
+            return typeFromMimeType(mimeType);
+          }
         }
         return 'file';
       },
@@ -119,7 +131,7 @@ define([
       }
     }
   });
-  
+
   var FileUploadView = Backbone.View.extend({
     tagName: 'div',
     initialize: function() { this.render(); },
@@ -141,7 +153,7 @@ define([
       $input.fileupload({
         url: this.model.uploadUrl(),
         type: 'POST',
-        limitMultiFileUploads: 
+        limitMultiFileUploads:
           (this.model.urlRoot == '/file' ? 1 : undefined),
         dataType: 'json',
         sequentialUploads: true,
@@ -160,11 +172,11 @@ define([
           _.each(data.result.files, function(file) {
             var $alert = $('<div/>');
             var render = function(type, msg) {
-              templates.renderInto($alert, 'alert_box', { 
-                type: type, 
+              templates.renderInto($alert, 'alert_box', {
+                type: type,
                 message: _.template(
-                    "<strong><%= f.name %></strong>: <%= f.msg %>", 
-                    { name: file.name, msg: msg }, 
+                    "<strong><%= f.name %></strong>: <%= f.msg %>",
+                    { name: file.name, msg: msg },
                     { variable: 'f' })
               });
             };
@@ -198,6 +210,7 @@ define([
       this.$el.append(' <button class="btn" type="submit">Create</mkdir>');
       this.$el.submit(function(e) {
         var form = e.target;
+        var path = $(form).find('input').val();
         $.ajax({
           method: $(form).attr('method'),
           url: $(form).attr('action')+"?"+$(form).serialize(),
@@ -215,7 +228,7 @@ define([
       });
     }
   });
-  
+
   var VersionView = Backbone.Marionette.ItemView.extend({
     tagName: 'tr',
     modelEvents: {
@@ -226,30 +239,31 @@ define([
       return templates.renderInto(this.$el, 'version_row', data);
     }
   });
-  
+
   var VersionListView = Backbone.Marionette.CollectionView.extend({
     tagName: 'tbody',
     itemView: VersionView
   });
-  
+
   var FileInfoView = Backbone.View.extend({
     initialize: function() {
       this.vlv = new VersionListView({
-        collection: this.model.get('versions')
+        collection: this.model.versionList()
       });
       this.model.on('change', _.bind(this.render, this));
+      this.model.fetch();
     },
     render: function(obj) {
       return templates.renderInto(
-          this.$el, 
-          'version_table', 
-          {}, 
+          this.$el,
+          'version_table',
+          {},
           _.bind(function($container) {
             $container.find('tbody').replaceWith(this.vlv.$el);
           }, this));
     }
   });
-  
+
   var DeleteButtonView = Backbone.View.extend({
     events: {
       'click .delete-button': 'showModal',
@@ -258,7 +272,7 @@ define([
     render: function() {
       return templates.renderInto(
           this.$el,
-          'delete_button', 
+          'delete_button',
           { action: this.model.url() },
           _.bind(function($container) {
             this.getModal().modal({ show: false });
@@ -276,14 +290,7 @@ define([
       return false;
     },
     formSubmit: function(e) {
-      var $form = $(e.target);
-      $.ajax({
-        method: $form.attr('method'),
-        url: $form.attr('action'),
-        success: function() {
-          // need to implement sensible handling for deletion
-        }
-      });
+      this.model.destroy({wait: true});
       this.hideModal();
       return false;
     }
@@ -338,7 +345,7 @@ define([
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
       var fileInfoView = new FileInfoView({
-        model: this.model.get('info')
+        model: this.model.info()
       });
       var fileUploadView = new FileUploadView({
         type: 'file',
@@ -473,7 +480,7 @@ define([
       this.$el.append(this.innerView.$el);
     }
   });
-  
+
   return {
     MainPane: MainPane,
     FileTree: FileTree

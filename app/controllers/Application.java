@@ -24,14 +24,17 @@ import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
 import com.feth.play.module.pa.user.AuthUser;
 import com.feth.play.module.pa.user.EmailIdentity;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 import static play.data.Form.form;
+import play.Play;
 import play.Logger;
 import play.data.Form;
 import play.libs.F;
 import play.mvc.Result;
 import providers.CacheableUserProvider;
 import providers.JackrabbitEmailPasswordAuthProvider;
+import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 
 public final class Application extends SessionAwareController {
@@ -46,7 +49,7 @@ public final class Application extends SessionAwareController {
 
   public final Result index() {
     if (!isAuthenticated()) return login();
-    return ok(views.html.Application.index.render());
+    return getInjector().getInstance(FileStoreController.class).index();
   }
 
   @SubjectPresent
@@ -202,6 +205,10 @@ public final class Application extends SessionAwareController {
       // Should never happen
       throw new RuntimeException(e);
     }
+  }
+
+  private Injector getInjector() {
+    return GuiceInjectionPlugin.getInjector(Play.application());
   }
 
 }

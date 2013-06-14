@@ -1,12 +1,27 @@
 define(function() {
   'use strict';
-  var FileOrFolder = Backbone.Model.extend({}, {
-    _getNodeAttrs: function(node) {
-      return _({
-        id: node.id,
-        name: node.name,
-        type: node.type
-      }).extend(node.attributes);
+  
+  var FileStore = Backbone.Collection.extend({
+    url: '/filestore',
+    model: function(attrs, options) {
+      if (attrs.type == 'folder') {
+        return new Folder(attrs, options);
+      } else {
+        return new File(attrs, options);
+      }
+    }
+  });
+  
+  var FileOrFolder = Backbone.Model.extend({
+    asNodeStruct: function() {
+      return {
+        id: this.id,
+        name: this.get('name'),
+        type: this.get('type'),
+        attributes: {
+          mimeType: this.get('mime')
+        }
+      };
     }
   });
 
@@ -14,10 +29,6 @@ define(function() {
     urlRoot: '/folder',
     uploadUrl: function() {
       return this.url()+'/files';
-    }
-  }, {
-    fromNode: function(node) {
-      return new Folder(this._getNodeAttrs(node));
     }
   });
   
@@ -27,6 +38,9 @@ define(function() {
     }
   });
   var VersionList = Backbone.Collection.extend({
+    initialize: function(attributes, options) {
+      this.file = options.file;
+    },
     // Reverse sort by time
     comparator: function(a,b) {
       if (a.get('timestamp') < b.get('timestamp')) return 1;
@@ -40,26 +54,24 @@ define(function() {
   });
   
   var FileInfo = Backbone.Model.extend({
-    initialize: function() {
-      this.versionList = new VersionList({});
+    initialize: function(attributes, options) {
+      this.file = options.file;
       this.set('versions', this.versionList);
     },
     parse: function(response) {
-      this.versionList.reset(response.versions);
-      response.versions = this.versionList;
+      this.versionList().reset(response.versions);
+      response.versions = this.versionList();
       response.dummy = new Date(); // ensure change triggers
       return response;
     },
+    versionList: function() {
+      if (!this._versionList) {
+        this._versionList = new VersionList({}, {file: this.file});
+      }
+      return this._versionList;
+    },
     url: function() {
       return this.file.url() + "/info";
-    }
-  }, {
-    fromFile: function(file) {
-      var instance = new FileInfo({});
-      instance.file = file;
-      instance.versionList.file = file;
-      instance.fetch();
-      return instance;
     }
   });
   
@@ -67,13 +79,12 @@ define(function() {
     urlRoot: '/file',
     uploadUrl: function() {
       return this.url()+'/version/new';
-    }
-  }, {
-    fromNode: function(node) {
-      var instance = new File(this._getNodeAttrs(node));
-      instance.set("info", FileInfo.fromFile(instance));
-      window.fileModel = instance;
-      return instance;
+    },
+    info: function() {
+      if (!this.infoModel) {
+        this._infoModel = new FileInfo({}, {file: this});
+      }
+      return this._infoModel;
     }
   });
 
@@ -81,6 +92,7 @@ define(function() {
     File: File,
     FileInfo: FileInfo,
     FileOrFolder: FileOrFolder,
+    FileStore: FileStore,
     Folder: Folder,
     VersionInfo: VersionInfo,
     VersionList: VersionList

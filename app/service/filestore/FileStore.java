@@ -11,8 +11,6 @@ import javax.jcr.Session;
 
 import models.User;
 
-import akka.actor.ActorRef;
-
 public interface FileStore {
 
   public enum Permission {
@@ -26,7 +24,7 @@ public interface FileStore {
 
   Manager getManager(Session session);
 
-  ActorRef getEventManager();
+  EventManager getEventManager();
 
   static interface Manager {
 

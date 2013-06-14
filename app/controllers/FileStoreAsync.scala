@@ -1,44 +1,47 @@
 package controllers
 
+import ScalaSecured.isAuthenticated
 import akka.actor.Actor
+import akka.actor.Props
+import com.feth.play.module.pa.PlayAuthenticate
+import com.feth.play.module.pa.user.AuthUser
+import com.feth.play.module.pa.user.EmailIdentity
 import com.google.inject.Inject
-import play.api.mvc.Controller
-import play.api.libs.iteratee.Input
+import java.text.DateFormat
+import java.util.Calendar
+import javax.jcr.Credentials
+import javax.jcr.Session
+import models.UserDAO
+import org.codehaus.jackson.node.ArrayNode
+import org.jcrom.Jcrom
+import play.api.Logger
+import play.api.http.MimeTypes
+import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.iteratee.Concurrent.Channel
-import play.api.libs.concurrent.Akka
-import akka.actor.Props
+import play.api.libs.iteratee.Enumeratee
+import play.api.libs.iteratee.Enumerator
+import play.api.libs.iteratee.Input
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
+import play.api.libs.json.Json
+import play.api.mvc.Accepting
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
+import play.api.mvc.Controller
+import play.api.mvc.EssentialAction
+import play.api.mvc.Request
+import play.libs.F
+import scala.collection.JavaConversions._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.future
+import scala.math.pow
+import service.filestore.EventManager
 import service.filestore.EventManager.ChannelMessage
 import service.filestore.EventManager.FileStoreEvent
-import play.api.libs.iteratee.Enumeratee
-import play.api.libs.json.Json
-import play.api.mvc.Action
-import javax.jcr.Session
-import play.api.libs.iteratee.Enumerator
-import com.feth.play.module.pa.PlayAuthenticate
-import ScalaSecured.isAuthenticated
-import com.feth.play.module.pa.user.AuthUser
-import org.jcrom.Jcrom
-import play.libs.F
-import javax.jcr.Credentials
-import com.feth.play.module.pa.user.EmailIdentity
-import models.UserDAO
-import scala.math.pow
-import scala.concurrent.future
-import scala.concurrent.ExecutionContext
-import java.util.Calendar
-import java.text.DateFormat
-import play.api.Logger
-import play.api.mvc.Request
-import play.api.mvc.AnyContent
-import play.api.http.MimeTypes
-import play.api.mvc.EssentialAction
-import org.codehaus.jackson.node.ArrayNode
-import play.api.libs.json.JsObject
-import scala.collection.JavaConversions._
-import play.api.libs.json.JsString
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsNull
 
 /**
  *
@@ -55,77 +58,81 @@ class FileStoreAsync @Inject()(
     extends Controller {
 
   def notifications: EssentialAction = isAuthenticated { authUser => implicit request =>
-    if (request.accepts(MimeTypes.HTML)) {
-      cometEventNotifications(authUser, request)
-    } else if (request.accepts(MimeTypes.EVENT_STREAM)) {
-      serverSentEventNotifications(authUser, request)
-    } else {
-      Status(UNSUPPORTED_MEDIA_TYPE)
+    val AcceptsEventStream = Accepting(MimeTypes.EVENT_STREAM)
+    render {
+      case Accepts.Json() => pollingJsonResponse(authUser, request)
+      case AcceptsEventStream() =>
+        serverSentEventNotifications(authUser, request)
     }
   }
 
-  def cometEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
-    val cometFormatter = Enumeratee.map[FileStoreEvent] { event =>
-      <script>
-      parent.postMessage(
-        JSON.stringify({{
-          'type': '{event.`type`}',
-          'data': {scala.xml.Unparsed(event2json(event).toString())}
-          }}), '*');
-      </script>+"\n"
+  def pollingJsonResponse(authUser: AuthUser, request: Request[AnyContent]) = {
+    val eventId = lastIdInQuery(request)
+    val response = JsArray(
+      filestore.getEventManager().getSince(eventId) map { case (id, event) =>
+        event.info match {
+          case null =>
+            Json.obj(
+              "id" -> id,
+              "type" -> event.`type`.toString()
+            )
+          case _ =>
+            Json.obj(
+              "id" -> id,
+              "type" -> event.`type`.toString(),
+              "data" -> event.info.id
+            )
+        }
+      } toSeq
+    )
+    Ok(response).as("application/json")
+      .withHeaders("Cache-Control" -> "no-cache")
+  }
+
+  private def lastIdInQuery(request: Request[AnyContent]) = {
+    request.queryString.get("from") match {
+      case Some(Seq(a, _*)) => a.toString
+      case None => null
     }
-    Ok.feed(
-        Enumerator(initialCometSetup(authUser)) andThen
-        pingEnumerator('comet).interleave(
-            fsEvents(authUser) &> cometFormatter)
-      ).as("text/html")
   }
 
   def serverSentEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
-    val eventSourceFormatter = Enumeratee.map[FileStoreEvent] { event =>
-      s"event: ${event.`type`}\ndata: ${event2json(event)}\n\n"
+    val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
+      lastIdInQuery(request)
+    }
+    val eventSourceFormatter = Enumeratee.map[(String, FileStoreEvent)] {
+      case (id, event) =>
+        event.info match {
+          case null =>
+            s"id: ${id}\nevent: ${event.`type`}\ndata: ${id}\n\n"
+          case _ =>
+            s"id: ${id}\nevent: ${event.`type`}\ndata: ${event.info.id}\n\n"
+        }
     }
     Ok.feed(
-        Enumerator(initialEventSourceSetup(authUser)) andThen
+        Enumerator(initialEventSourceSetup()) andThen
         pingEnumerator('sse).interleave(
-            fsEvents(authUser) &> eventSourceFormatter)
+            fsEvents(authUser, lastEventId) &> eventSourceFormatter)
       ).as("text/event-stream")
   }
 
-  private def event2json(event: FileStoreEvent): JsObject = {
-    Json.obj(
-      "id" -> event.info.id,
-      "name" -> event.info.name,
-      "parentId" -> event.info.parentId,
-      "attributes" -> JsObject(event.info.attributes.toSeq.map {
-        case (k,v) =>
-          (k, v match {
-            case s: String => JsString(s)
-            case n: BigDecimal => JsNumber(n)
-            case _ => JsNull
-          })
-      }),
-      "type" -> event.info.`type`.toString
-    )
-  }
-
-  private def fsEvents(authUser: AuthUser) = {
+  private def fsEvents(authUser: AuthUser, lastEventId: String = null) = {
     val em = filestore.getEventManager
-    var c: Channel[FileStoreEvent] = null;
-    Concurrent.unicast[FileStoreEvent](
-      onStart = { channel: Channel[FileStoreEvent] =>
+    var c: Channel[(String, FileStoreEvent)] = null;
+    Concurrent.unicast[(String, FileStoreEvent)](
+      onStart = { channel: Channel[(String, FileStoreEvent)] =>
         c = channel
-        em ! ChannelMessage.add(c)
+        em tell ChannelMessage.add(c, lastEventId)
       },
       // This is a pass-by-name (ie. lazy evaluation) parameter
       // (no () => required)
       onComplete = {
         // Note: This only triggers when a new event happens and gets rejected,
         // not when the socket closes.
-        em ! ChannelMessage.remove(c)
+        em tell ChannelMessage.remove(c)
       },
-      onError = { (s: String, i: Input[FileStoreEvent]) =>
-        em ! ChannelMessage.remove(c)
+      onError = { (s: String, i: Input[(String, FileStoreEvent)]) =>
+        em tell ChannelMessage.remove(c)
       }
     )
   }
@@ -151,32 +158,8 @@ class FileStoreAsync @Inject()(
     })
   }
 
-  private def initialCometSetup(user: AuthUser): String = {
-    val jsonText = scala.xml.Unparsed(getInitialTree(user).toString())
-    " " * pow(2, 11).toInt + "\n" + // Pad it to kick IE into action
-    // Oh, and IE8 may not know what JSON is (if in compatibility mode)
-    <script src="//cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script> +
-    <script>
-    parent.postMessage(
-      JSON.stringify({{
-        'type': 'load',
-        'data': {jsonText}
-      }}), '*');
-    </script>+"\n"
-  }
-
-  private def initialEventSourceSetup(user: AuthUser): String = {
-    Seq(
-      "retry: 2000",
-      s"event: load\ndata: ${getInitialTree(user)}"
-    ).foldLeft("") { _ + _ + "\n\n" } // Turn into EventSource messages
-  }
-
-  private def getInitialTree(user: AuthUser): ArrayNode = {
-    inUserSession(user, { (session: Session) =>
-      val builder = new service.filestore.JsonBuilder(filestore, session)
-      builder.tree()
-    })
+  private def initialEventSourceSetup(): String = {
+    "retry: 2000\n\n"
   }
 
   private def inUserSession[A](authUser: AuthUser, f: Session => A): A = {

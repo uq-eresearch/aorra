@@ -53,7 +53,10 @@ import service.JcrSessionFactory;
 import service.filestore.EventManager.FileStoreEvent;
 import service.filestore.roles.Admin;
 import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.actor.TypedActor;
+import akka.actor.TypedProps;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -68,7 +71,7 @@ public class FileStoreImpl implements FileStore {
   public static final String FILE_STORE_NODE_NAME =
       StringUtils.stripStart(FILE_STORE_PATH, "/");
 
-  private final ActorRef eventManager;
+  private final EventManager eventManagerImpl;
   private final Jcrom jcrom;
 
   @Inject
@@ -77,7 +80,11 @@ public class FileStoreImpl implements FileStore {
       final Jcrom jcrom) {
     this.jcrom = jcrom;
     Logger.debug(this+" - Creating file store.");
-    eventManager = Akka.system().actorOf(new Props(EventManager.class));
+    final ActorSystem system = ActorSystem.create();
+    eventManagerImpl =
+        TypedActor.get(system).typedActorOf(
+            new TypedProps<EventManagerImpl>(
+                EventManager.class, EventManagerImpl.class));
     sessionFactory.inSession(new Function<Session, Session>() {
       @Override
       public Session apply(Session session) {
@@ -144,32 +151,32 @@ public class FileStoreImpl implements FileStore {
    */
   @Override
   public Manager getManager(final Session session) {
-    return new Manager(session, jcrom, eventManager);
+    return new Manager(session, jcrom, eventManagerImpl);
   }
 
   /* (non-Javadoc)
    * @see service.filestore.FileStore#getEventManager()
    */
   @Override
-  public ActorRef getEventManager() {
-    return eventManager;
+  public EventManager getEventManager() {
+    return eventManagerImpl;
   }
 
   public static class Manager implements FileStore.Manager {
 
     private final Session session;
     private final Jcrom jcrom;
-    private final ActorRef eventManager;
+    private final EventManager eventManagerImpl;
     private final FileDAO fileDAO;
     private final FolderDAO folderDAO;
     private final UserDAO userDAO;
     private final Map<String, User> userCache =
         new HashMap<String, User>();
 
-    protected Manager(final Session session, final Jcrom jcrom, final ActorRef eventManager) {
+    protected Manager(final Session session, final Jcrom jcrom, final EventManager eventManagerImpl) {
       this.session = session;
       this.jcrom = jcrom;
-      this.eventManager = eventManager;
+      this.eventManagerImpl = eventManagerImpl;
       fileDAO = new FileDAO(session, jcrom);
       folderDAO = new FolderDAO(session, jcrom);
       userDAO = new UserDAO(session, jcrom);
@@ -179,12 +186,14 @@ public class FileStoreImpl implements FileStore {
     public FileOrFolder getByIdentifier(final String id)
         throws RepositoryException {
       try {
-        return new Folder(getFolderDAO().loadById(id), this, eventManager);
+        return new Folder(getFolderDAO().loadById(id), this, eventManagerImpl);
       } catch (ClassCastException e) {
+      } catch (JcrMappingException e) {
       } catch (NullPointerException e) {}
       try {
-        return new File(getFileDAO().loadById(id), this, eventManager);
+        return new File(getFileDAO().loadById(id), this, eventManagerImpl);
       } catch (ClassCastException e) {
+      } catch (JcrMappingException e) {
       } catch (NullPointerException e) {}
       return null;
     }
@@ -231,7 +240,7 @@ public class FileStoreImpl implements FileStore {
     @Override
     public FileStore.Folder getRoot() throws RepositoryException {
       return new FileStoreImpl.Folder(
-          getFolderDAO().get(FILE_STORE_PATH), this, eventManager);
+          getFolderDAO().get(FILE_STORE_PATH), this, eventManagerImpl);
     }
 
     public Session getSession() {
@@ -269,8 +278,8 @@ public class FileStoreImpl implements FileStore {
   public static class Folder extends NodeWrapper<models.filestore.Folder> implements FileStore.Folder {
 
     protected Folder(models.filestore.Folder entity, Manager filestoreManager,
-        ActorRef eventManager) throws RepositoryException {
-      super(entity, filestoreManager, eventManager);
+        EventManager eventManagerImpl) throws RepositoryException {
+      super(entity, filestoreManager, eventManagerImpl);
     }
 
     @Override
@@ -286,8 +295,8 @@ public class FileStoreImpl implements FileStore {
         final Folder folder = new Folder(
             newFolderEntity,
             filestoreManager,
-            eventManager);
-        eventManager.tell(FileStoreEvent.create(folder), null);
+            eventManagerImpl);
+        eventManagerImpl.tell(FileStoreEvent.create(folder));
         return folder;
       }
     }
@@ -306,10 +315,10 @@ public class FileStoreImpl implements FileStore {
         final models.filestore.File newFileEntity =
           filestoreManager.getFileDAO().create(
               new models.filestore.File(entity, name, mime, data));
-        file = new File(newFileEntity, filestoreManager, eventManager);
+        file = new File(newFileEntity, filestoreManager, eventManagerImpl);
         reload();
         Logger.debug("New file, version "+newFileEntity.getVersion());
-        eventManager.tell(FileStoreEvent.create(file), null);
+        eventManagerImpl.tell(FileStoreEvent.create(file));
       } else if (fof instanceof Folder) {
         throw new RuntimeException(String.format("Can't create file '%s'."
             + " Folder with same name already exists", name));
@@ -326,7 +335,7 @@ public class FileStoreImpl implements FileStore {
           ImmutableSet.<FileStore.Folder>builder();
       for (final Object child : entity.getFolders().values()) {
         set.add(new Folder((models.filestore.Folder)
-            child, filestoreManager, eventManager));
+            child, filestoreManager, eventManagerImpl));
       }
       return set.build();
     }
@@ -338,13 +347,13 @@ public class FileStoreImpl implements FileStore {
         return new Folder(
             entity.getFolders().get(name),
             filestoreManager,
-            eventManager);
+            eventManagerImpl);
       }
       if (entity.getFiles().containsKey(name)) {
         return new File(
             entity.getFiles().get(name),
             filestoreManager,
-            eventManager);
+            eventManagerImpl);
       }
       return null;
     }
@@ -357,7 +366,7 @@ public class FileStoreImpl implements FileStore {
         set.add(new File(
             (models.filestore.File) child,
             filestoreManager,
-            eventManager));
+            eventManagerImpl));
       }
       return set.build();
     }
@@ -385,7 +394,7 @@ public class FileStoreImpl implements FileStore {
         LockException, ConstraintViolationException, RepositoryException {
       final FileStoreEvent event = FileStoreEvent.delete(this);
       filestoreManager.getFolderDAO().remove(rawPath());
-      eventManager.tell(event, null);
+      eventManagerImpl.tell(event);
     }
 
     @Override
@@ -412,8 +421,8 @@ public class FileStoreImpl implements FileStore {
   public static class File extends NodeWrapper<models.filestore.File> implements FileStore.File {
 
     protected File(models.filestore.File entity, Manager filestoreManager,
-        ActorRef eventManager) throws RepositoryException {
-      super(entity, filestoreManager, eventManager);
+        EventManager eventManagerImpl) throws RepositoryException {
+      super(entity, filestoreManager, eventManagerImpl);
     }
 
     @Override
@@ -422,7 +431,7 @@ public class FileStoreImpl implements FileStore {
       entity.setMimeType(mime);
       entity.setData(data);
       filestoreManager.getFileDAO().update(entity);
-      eventManager.tell(FileStoreEvent.update(this), null);
+      eventManagerImpl.tell(FileStoreEvent.update(this));
       return this;
     }
 
@@ -451,7 +460,7 @@ public class FileStoreImpl implements FileStore {
         LockException, ConstraintViolationException, RepositoryException {
       final FileStoreEvent event = FileStoreEvent.delete(this);
       filestoreManager.getFileDAO().remove(rawPath());
-      eventManager.tell(event, null);
+      eventManagerImpl.tell(event);
     }
 
     @Override
@@ -467,7 +476,7 @@ public class FileStoreImpl implements FileStore {
       for (models.filestore.File version :
           filestoreManager.getFileDAO().getVersionList(rawPath())) {
         b.put(version.getVersion(),
-            new File(version, filestoreManager, eventManager));
+            new File(version, filestoreManager, eventManagerImpl));
       }
       return b.build();
     }
@@ -488,16 +497,16 @@ public class FileStoreImpl implements FileStore {
   protected abstract static class NodeWrapper<T extends Child<models.filestore.Folder>> {
 
     protected final FileStoreImpl.Manager filestoreManager;
-    protected final ActorRef eventManager;
+    protected final EventManager eventManagerImpl;
     protected final Iterable<String> pathParts;
     protected T entity;
 
     protected NodeWrapper(
         T entity,
         final FileStoreImpl.Manager filestoreManager,
-        final ActorRef eventManager) throws RepositoryException {
+        final EventManager eventManagerImpl) throws RepositoryException {
       this.filestoreManager = filestoreManager;
-      this.eventManager = eventManager;
+      this.eventManagerImpl = eventManagerImpl;
       if (entity == null)
         throw new NullPointerException("Underlying entity cannot be null.");
       this.entity = entity;
@@ -601,7 +610,7 @@ public class FileStoreImpl implements FileStore {
                 .getParent() /* parent */
                 .getPath());
         }
-        return new Folder(parent, filestoreManager, eventManager);
+        return new Folder(parent, filestoreManager, eventManagerImpl);
       } catch (NullPointerException npe) {
         // Parent returned as null
       } catch (JcrMappingException jme) {

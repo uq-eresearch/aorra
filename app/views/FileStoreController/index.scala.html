@@ -1,3 +1,9 @@
+@(
+  lastEventId: String,
+  filestoreJson: org.codehaus.jackson.node.ArrayNode
+)
+
+
 @import views.html.Application.main
 
 @main("AORRA Files and Folders", true) {
@@ -9,3 +15,7 @@
   module = routes.Assets.at("js/main.js").url,
   folder = "/js")
 }
+<script type="text/javascript">
+window.lastEventID = "@lastEventId";
+window.filestoreJSON = @Html(filestoreJson.toString());
+</script>

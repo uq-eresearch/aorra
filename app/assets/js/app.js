@@ -1,91 +1,130 @@
 require(['models', 'views'], function(models, views) {
   'use strict';
   var NotificationFeed = function(config) {
-      var obj = _.extend({}, config)
-      _.extend(obj, Backbone.Events);
-      _.extend(obj, {
-      url: '/notifications',
+    var obj = _.extend({}, config)
+    _.extend(obj, Backbone.Events);
+    _.extend(obj, {
+      url: function() {
+        return '/notifications?from='+obj.lastEventId
+      },
+      updateLastId: function(id) {
+        obj.lastEventId = id;
+      },
       open: function() {
         var trigger = _.bind(this.trigger, this);
+        var triggerRecheck = function() {
+          trigger('recheck');
+        };
         // Are we using a modern browser, or are we using IE?
-        if (typeof(window.EventSource) == 'undefined') {
-          // HTML iframe
-          var connect_htmlfile = function (url, callback) {
-            var ifrDiv = document.createElement("div");
-            var iframe = document.createElement("iframe");
-            ifrDiv.setAttribute("style", "display: none");
-            document.body.appendChild(ifrDiv);
-            ifrDiv.appendChild(iframe);
-            iframe.src = url;
-            iframe.onload = function() {
-              try {
-                iframe.currentWindow.location.reload();
-              } catch (e) {}
-            };
-            // From: http://davidwalsh.name/window-iframe
-            function eventHandler(w, eventName, handler) {
-              var eMethod = w.addEventListener ? "addEventListener" : "attachEvent";
-              var eName = w.addEventListener ? eventName : "on" + eventName;
-              return w[eMethod](eName, handler, false);
-            }
-            // Receive messages from iframe
-            eventHandler(window, 'message', function(e) {
-              var msg = JSON.parse(e.data);
-              callback(msg.type, msg.data);
+        if (_.isUndefined(window.EventSource)) {
+          var poll = _.bind(function(callback) {
+            var updateLastId = _.bind(this.updateLastId, this);
+            $.ajax({
+              url: this.url(),
+              dataType: 'json',
+              success: function(data) {
+                var canContinue = _(data).all(function(v) {
+                  if (v.type == 'outofdate') {
+                    trigger('event:outofdate', v.id);
+                    return false;
+                  } else {
+                    updateLastId(v.id);
+                    trigger('event:'+v.type, v.data);
+                    return true;
+                  }
+                });
+                if (canContinue) {
+                  callback();
+                }
+              },
+              error: callback
             });
-          }
-          connect_htmlfile(this.url, function(eventType, data) {
-            trigger('event:'+eventType, data);
+          }, this);
+          this.on('recheck', function() {
+            poll(function() {
+              _.delay(triggerRecheck, 5000);
+            });
           });
         } else {
-          // EventSource
-          var es = new EventSource(this.url);
-          es.addEventListener('ping', function(event) {
-            trigger('event:ping', event.data);
-          });
-          _.each(['load', 'create', 'update', 'delete'], function(n) {
-            es.addEventListener(n, function(event) {
-              var struct = JSON.parse(event.data);
-              trigger('event:'+n, struct);
+          this.on('recheck', function() {
+            // EventSource
+            var es = new EventSource(this.url());
+            es.addEventListener('outofdate', function(event) {
+              trigger('event:outofdate', event.data);
+              es.close();
             });
+            _.each(['create', 'update', 'delete', 'ping'], function(n) {
+              es.addEventListener(n, function(event) {
+                trigger('event:'+n, event.data);
+              });
+            });
+            this.es = es;
           });
-          this.es = es;
         }
+        triggerRecheck();
       }
     });
-
-    function catchErrors(f) {
-      return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
-    }
-
-    var tree = _.bind(obj.getTree, this);
-    // Event handlers
-    obj.on("event:load", function(struct) { tree().load(struct); });
-    obj.on("event:create",
-      catchErrors(function(struct) { tree().add(struct, struct.parentId) }));
-    obj.on("event:update",
-      catchErrors(function(struct) { tree().update(struct) }));
-    obj.on("event:delete",
-      catchErrors(function(struct) { tree().remove(struct.id) }));
 
     return obj;
   };
 
   $(function () {
 
+    function catchErrors(f) {
+      return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
+    }
+
+    var fs = new models.FileStore();
     var fileTree = new views.FileTree();
     var notificationFeed = new NotificationFeed({
-      getTree: function() { return fileTree.tree }
+      lastEventId: window.lastEventID
     });
+    // Event handlers
+    notificationFeed.on("event:create",
+      catchErrors(function(id) {
+        fs.fetch();
+      }));
+    notificationFeed.on("event:update",
+      catchErrors(function(id) {
+        fs.get(id).fetch();
+      }));
+    notificationFeed.on("event:delete",
+      catchErrors(function(id) {
+        fs.remove(fs.get(id))
+      }));
+
+    window.fs = fs;
+    var startRouting = function() {
+      // If we're using IE8 heavily, then push state is just trouble
+      if (window.location.pathname != '/') {
+        window.location.href = "/#"+window.location.pathname.replace(/^\//,'');
+      }
+      Backbone.history.start({ pushState: false });
+    };
+
     var mainPane = new views.MainPane();
     fileTree.render();
     $('#sidebar').append(fileTree.$el);
     $('#main').append(mainPane.$el);
-    notificationFeed.once("event:load", function(struct) {
-      // Start router (as now we can load existing nodes)
-      Backbone.history.start({ pushState: true, hashChange: false });
+
+    fs.on('sync', function() {
+      try {
+        // Start router (as now we can load existing nodes)
+        startRouting();
+      } catch (e) {}
     });
-    notificationFeed.open();
+    fs.on('reset', function() {
+      fileTree.tree().load([]);
+      fs.each(function(m) {
+        fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+      });
+    });
+    fs.on('add', function(m) {
+      fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+    });
+    fs.on('remove', function(m) {
+      fileTree.tree().remove(m.get('id'));
+    });
 
     var Router = Backbone.Router.extend({
       routes: {
@@ -98,23 +137,23 @@ require(['models', 'views'], function(models, views) {
         this._setSidebarActive();
       },
       showFolder: function(id) {
-        var node = fileTree.tree.find(id);
+        var node = fileTree.tree().find(id);
         if (node == null) {
           mainPane.showDeleted()
         } else {
-          mainPane.showFolder(models.Folder.fromNode(node));
+          mainPane.showFolder(fs.get(node.id));
+          this._highlightNode(node);
         }
-        this._highlightNode(node);
         this._setMainActive();
       },
       showFile: function(id) {
-        var node = fileTree.tree.find(id);
+        var node = fileTree.tree().find(id);
         if (node == null) {
           mainPane.showDeleted()
         } else {
-          mainPane.showFile(models.File.fromNode(node));
+          mainPane.showFile(fs.get(node.id));
+          this._highlightNode(node);
         }
-        this._highlightNode(node);
         this._setMainActive();
       },
       _setMainActive: function() {
@@ -137,20 +176,38 @@ require(['models', 'views'], function(models, views) {
 
     var router = new Router();
 
-    fileTree.on("folder:select", function(folder) {
-      router.navigate("folder/"+folder.id, {trigger: true});
+    fileTree.on("folder:select", function(folderId) {
+      router.navigate("folder/"+folderId, {trigger: true});
     });
-    fileTree.on("file:select", function(file) {
-      router.navigate("file/"+file.id, {trigger: true});
+    fileTree.on("file:select", function(fileId) {
+      router.navigate("file/"+fileId, {trigger: true});
     });
-    notificationFeed.on("event:delete", function(struct) {
+    fs.on("remove", function(m) {
       // Handle being on the deleted page already
       if (_.isUndefined(mainPane.innerView.model)) return;
       // If the current path has been deleted, then hide it.
-      if (fileTree.tree.find(mainPane.innerView.model.id) == null) {
+      if (m.id == mainPane.innerView.model.id) {
         mainPane.showDeleted();
       }
     });
 
+    if (_.isUndefined(window.filestoreJSON)) {
+      fs.fetch();
+    } else {
+      fs.reset(window.filestoreJSON);
+      startRouting();
+    }
+
+    // If our data is out-of-date, refresh and reopen event feed.
+    notificationFeed.on("event:outofdate", function(id) {
+      fs.reset();
+      fs.fetch().done(function() {
+        notificationFeed.updateLastId(id);
+        notificationFeed.trigger('recheck');
+      });
+    });
+
+    // Open feed
+    notificationFeed.open();
   });
 });
