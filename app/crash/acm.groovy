@@ -252,6 +252,20 @@ class acm {
         })
      }
 
+    @Usage("show permissions for path")
+    @Command
+    void permissions(@Usage("node path to revoke permission to") @Argument String path) {
+        sessionFactory().inSession(new Function<Session, String>() {
+          public String apply(Session session) {
+            final AccessControlManager acm = session.getAccessControlManager();
+            Map<Principal, Permission> permissions = acm.getPermissions(path);
+            for(Map.Entry<Principal, Permission> me : permissions.entrySet()) {
+                out.println(String.format("%s - %s", me.getKey().getName(), me.getValue().toString()));
+            }
+          }
+        })
+     }
+
   private JcrSessionFactory sessionFactory() {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(JcrSessionFactory.class);

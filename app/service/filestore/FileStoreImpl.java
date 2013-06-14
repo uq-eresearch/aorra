@@ -1,5 +1,7 @@
 package service.filestore;
 
+import jackrabbit.AorraAccessManager;
+
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
@@ -7,7 +9,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -38,9 +39,6 @@ import models.filestore.FileDAO;
 import models.filestore.FolderDAO;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.jackrabbit.api.JackrabbitSession;
-import org.apache.jackrabbit.api.security.JackrabbitAccessControlEntry;
-import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
@@ -56,7 +54,6 @@ import service.filestore.EventManager.FileStoreEvent;
 import service.filestore.roles.Admin;
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import jackrabbit.AorraAccessManager;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -577,34 +574,17 @@ public class FileStoreImpl implements FileStore {
         throws RepositoryException {
       final ImmutableMap.Builder<Principal, Permission> b = ImmutableMap
           .<Principal, Permission> builder();
-      final JackrabbitSession session = (JackrabbitSession) session();
-      final AccessControlPolicy[] policies = session.getAccessControlManager()
-          .getEffectivePolicies(rawPath());
-      for (AccessControlPolicy policy : policies) {
-        final JackrabbitAccessControlList acl = (JackrabbitAccessControlList) policy;
-        for (AccessControlEntry entry : acl.getAccessControlEntries()) {
-          final JackrabbitAccessControlEntry jackrabbitEntry = (JackrabbitAccessControlEntry) entry;
-          // Ignore deny entries (we shouldn't see any other than Everybody)
-          if (!jackrabbitEntry.isAllow()) {
-            continue;
+      AorraAccessManager aam = (AorraAccessManager)session().getAccessControlManager();
+      Map<Principal, jackrabbit.Permission> permissions = aam.getPermissions(rawPath());
+      for(Map.Entry<Principal, jackrabbit.Permission> me : permissions.entrySet()) {
+          Principal principal = me.getKey();
+          if(me.getValue() == jackrabbit.Permission.RW) {
+              b.put(principal, Permission.RW);
+          } else if(me.getValue() == jackrabbit.Permission.RO) {
+              b.put(principal, Permission.RO);
+          } else if(me.getValue() == jackrabbit.Permission.NONE) {
+              b.put(principal, Permission.NONE);
           }
-          final Set<String> privilegeNames = new HashSet<String>();
-          for (Privilege privilege : entry.getPrivileges()) {
-            // Add privilege
-            privilegeNames.add(privilege.getName());
-            // Add constituent privileges
-            for (Privilege rp : privilege.getAggregatePrivileges()) {
-              privilegeNames.add(rp.getName());
-            }
-          }
-          if (privilegeNames.contains("jcr:addChildNodes")) {
-            b.put(entry.getPrincipal(), Permission.RW);
-          } else if (privilegeNames.contains("jcr:read")) {
-            b.put(entry.getPrincipal(), Permission.RO);
-          } else {
-            b.put(entry.getPrincipal(), Permission.NONE);
-          }
-        }
       }
       return b.build();
     }

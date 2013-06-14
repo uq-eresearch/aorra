@@ -21,6 +21,8 @@ import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 import javax.security.auth.Subject;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.core.id.ItemId;
 import org.apache.jackrabbit.core.id.NodeId;
 import org.apache.jackrabbit.core.id.PropertyId;
@@ -33,6 +35,7 @@ import org.apache.jackrabbit.spi.Path;
 import org.apache.jackrabbit.spi.commons.name.PathBuilder;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class AorraAccessManager implements AccessControlManager, AccessManager  {
 
@@ -403,6 +406,33 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
 
     public void initStore(Session session) throws RepositoryException {
         PermissionStore.getInstance().init(session);
+    }
+
+    public Map<Principal, Permission> getPermissions(String workspace,
+            String path) throws RepositoryException {
+        out(String.format("getPermissions %s %s", workspace, path));
+        Map<Principal, Permission> result = Maps.newHashMap();
+        Path p = ctx.getNamePathResolver().getQPath(path);
+        ItemId id = this.resolvePath(p);
+        if(id == null) {
+            return result;
+        }
+        for(Map.Entry<PermissionKey, Permission> me : PermissionStore.getInstance().getPermissions().entrySet()) {
+            PermissionKey key = me.getKey();
+            if(StringUtils.equals(workspace, key.getWorkspace()) &&
+                    StringUtils.equals(id.toString(), key.getId())) {
+                Principal principal = ((JackrabbitSession)ctx.getSession()).getPrincipalManager(
+                        ).getPrincipal(key.getPrincipal());
+                if(principal != null) {
+                    result.put(principal, me.getValue());
+                }
+            }
+        }
+        return result;
+    }
+
+    public Map<Principal, Permission> getPermissions(String path) throws RepositoryException {
+        return getPermissions(ctx.getWorkspaceName(), path);
     }
 
 }
