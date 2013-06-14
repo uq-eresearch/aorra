@@ -359,7 +359,7 @@ define([
       this.$el.append(fileInfoView.$el);
       switch (type) {
       case 'spreadsheet':
-        this._loadChartElements();
+        this.$el.append(this._makeChartElements());
         break;
       case 'image':
         this.$el.append(this._makeImageElement());
@@ -372,19 +372,11 @@ define([
         ' src="<%= model.url() %>/version/latest" />',
         { model: this.model }));
     },
-    _loadChartElements: function() {
+    _makeChartElements: function() {
+      var $wrapper = $('<div/>');
       var format = Modernizr.svg ? 'svg' : 'png';
-      var createChartElement = _.bind(function(chart) {
-        var $wrapper = $('<div/>')
-          .append('<h3>'+chart.region+'</h3>')
-          .append(_.template(
-            '<img src="<%= chart.url %>"'+
-            ' alt="Chart for <%= chart.region %>" />'
-          , { model: this.model.toJSON(), chart: chart }));
-        return $wrapper;
-      }, this);
       var onSuccess = _.bind(function(data) {
-        this.$el.append(_.map(data.charts, createChartElement));
+        return templates.renderInto($wrapper, 'charts', data);
       }, this);
       $.ajax({
         method: 'GET',
@@ -392,6 +384,7 @@ define([
         dataType: 'json',
         success: onSuccess
       });
+      return $wrapper;
     },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');
