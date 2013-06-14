@@ -9,11 +9,6 @@ html, body {
 }
 
 html.hero-page {
-	background-color: #4394CA;
-  min-height: 100%;
-}
-
-html.hero-page.backgroundsize {
 	background:
 	 url("/assets/images/bg.jpg")
 	 no-repeat
@@ -24,6 +19,8 @@ html.hero-page.backgroundsize {
 	overflow: hidden;
 	background-color: black;
 	min-height: 100%;
+	/* Polyfill for IE8 */
+	-ms-behavior: url(/assets/htc/backgroundsize.min.htc);
 }
 
 .hero-page body {
