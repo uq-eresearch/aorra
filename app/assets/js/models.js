@@ -1,6 +1,6 @@
 define(function() {
   'use strict';
-  
+
   var FileStore = Backbone.Collection.extend({
     url: '/filestore',
     model: function(attrs, options) {
@@ -11,12 +11,13 @@ define(function() {
       }
     }
   });
-  
+
   var FileOrFolder = Backbone.Model.extend({
     asNodeStruct: function() {
       return {
         id: this.id,
-        name: this.get('name'),
+        // Root notes should show their path
+        name: this.get('parent') ? this.get('name') : this.get('path'),
         type: this.get('type'),
         attributes: {
           mimeType: this.get('mime')
@@ -31,7 +32,7 @@ define(function() {
       return this.url()+'/files';
     }
   });
-  
+
   var VersionInfo = Backbone.Model.extend({
     url: function() {
       return this.collection.url() + '/' + this.get('name');
@@ -52,7 +53,7 @@ define(function() {
       return this.file.url() + '/version';
     }
   });
-  
+
   var FileInfo = Backbone.Model.extend({
     initialize: function(attributes, options) {
       this.file = options.file;
@@ -74,7 +75,7 @@ define(function() {
       return this.file.url() + "/info";
     }
   });
-  
+
   var File = FileOrFolder.extend({
     urlRoot: '/file',
     uploadUrl: function() {
