@@ -341,7 +341,7 @@ define([
   var FileView = FileOrFolderView.extend({
     initialize: function() { this.render(); },
     render: function() {
-      var type = typeFromMimeType(this.model.get('mimeType'));
+      var type = typeFromMimeType(this.model.get('mime'));
       this.$el.empty();
       this.$el.append(this._makeBreadCrumbElement());
       var fileInfoView = new FileInfoView({
