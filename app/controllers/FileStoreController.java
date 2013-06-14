@@ -127,6 +127,7 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        ctx().response().setHeader("Cache-Control", "no-cache");
         return ok(jb.toJson(fm.getFolders())).as("application/json");
       }
     });
@@ -139,6 +140,7 @@ public final class FileStoreController extends SessionAwareController {
         final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
+        ctx().response().setHeader("Cache-Control", "no-cache");
         if (fof instanceof FileStore.Folder) {
           return ok(jb.toJsonShallow((FileStore.Folder) fof))
               .as("application/json");

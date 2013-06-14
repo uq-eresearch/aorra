@@ -51,7 +51,7 @@ public interface EventManager {
   public static class FileStoreEvent {
 
     public static enum EventType {
-      CREATE, UPDATE, DELETE;
+      CREATE, UPDATE, DELETE, OUTOFDATE;
       @Override
       public String toString() { return super.toString().toLowerCase(); }
     }
@@ -113,6 +113,11 @@ public interface EventManager {
     public final EventType type;
     public final NodeInfo info;
 
+    protected FileStoreEvent(EventType type) {
+      this.type = type;
+      this.info = null;
+    }
+
     protected FileStoreEvent(EventType type, FileStore.Folder folder)
         throws RepositoryException {
       this.type = type;
@@ -123,6 +128,10 @@ public interface EventManager {
         throws RepositoryException {
       this.type = type;
       this.info = new NodeInfo(file);
+    }
+
+    public static FileStoreEvent outOfDate() {
+      return new FileStoreEvent(EventType.OUTOFDATE);
     }
 
     public static FileStoreEvent create(FileStore.File file)

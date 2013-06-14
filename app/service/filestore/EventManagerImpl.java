@@ -36,10 +36,10 @@ public class EventManagerImpl implements EventManager {
         ImmutableList.<Tuple2<String,FileStoreEvent>>builder();
     Map<String, FileStoreEvent> missed;
     try {
-      missed = history.getSince(lastId);
+      missed = lastId == null ? history.getKnown() : history.getSince(lastId);
     } catch (ForgottenEventException e1) {
       // TODO Handle forgotten history
-      return ImmutableList.of();
+      return ImmutableList.of(outOfDateTuple());
     }
     for (Map.Entry<String, FileStoreEvent> e : missed.entrySet()) {
       // Push event ID and event
@@ -81,7 +81,8 @@ public class EventManagerImpl implements EventManager {
       final String lastId) {
     Logger.debug("Catching up from "+lastId);
     if (lastId == null) {
-      // TODO: Handle this by sending full load
+      channel.push(outOfDateTuple());
+      channel.end();
     } else {
       try {
         final Map<String, FileStoreEvent> missed = history.getSince(lastId);
@@ -92,9 +93,16 @@ public class EventManagerImpl implements EventManager {
               e.getKey(), e.getValue()));
         }
       } catch (ForgottenEventException e) {
-        // TODO: Handle this by sending full load
+        channel.push(outOfDateTuple());
+        // Close the channel
+        channel.end(e);
       }
     }
+  }
+
+  protected Tuple2<String, FileStoreEvent> outOfDateTuple() {
+    return new Tuple2<String, FileStoreEvent>(
+        history.getLastEventId(), FileStoreEvent.outOfDate());
   }
 
 }

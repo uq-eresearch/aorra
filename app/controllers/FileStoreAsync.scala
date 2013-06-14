@@ -70,14 +70,23 @@ class FileStoreAsync @Inject()(
     val eventId = lastIdInQuery(request)
     val response = JsArray(
       filestore.getEventManager().getSince(eventId) map { case (id, event) =>
-        Json.obj(
-          "id" -> id,
-          "type" -> event.`type`.toString(),
-          "data" -> event2json(event)
-        )
+        event.info match {
+          case null =>
+            Json.obj(
+              "id" -> id,
+              "type" -> event.`type`.toString()
+            )
+          case _ =>
+            Json.obj(
+              "id" -> id,
+              "type" -> event.`type`.toString(),
+              "data" -> event.info.id
+            )
+        }
       } toSeq
     )
     Ok(response).as("application/json")
+      .withHeaders("Cache-Control" -> "no-cache")
   }
 
   private def lastIdInQuery(request: Request[AnyContent]) = {
@@ -93,30 +102,18 @@ class FileStoreAsync @Inject()(
     }
     val eventSourceFormatter = Enumeratee.map[(String, FileStoreEvent)] {
       case (id, event) =>
-        s"id: ${id}\nevent: ${event.`type`}\ndata: ${event2json(event)}\n\n"
+        event.info match {
+          case null =>
+            s"id: ${id}\nevent: ${event.`type`}\ndata: ${id}\n\n"
+          case _ =>
+            s"id: ${id}\nevent: ${event.`type`}\ndata: ${event.info.id}\n\n"
+        }
     }
     Ok.feed(
         Enumerator(initialEventSourceSetup()) andThen
         pingEnumerator('sse).interleave(
             fsEvents(authUser, lastEventId) &> eventSourceFormatter)
       ).as("text/event-stream")
-  }
-
-  private def event2json(event: FileStoreEvent): JsObject = {
-    Json.obj(
-      "id" -> event.info.id,
-      "name" -> event.info.name,
-      "parentId" -> event.info.parentId,
-      "attributes" -> JsObject(event.info.attributes.toSeq.map {
-        case (k,v) =>
-          (k, v match {
-            case s: String => JsString(s)
-            case n: BigDecimal => JsNumber(n)
-            case _ => JsNull
-          })
-      }),
-      "type" -> event.info.`type`.toString
-    )
   }
 
   private def fsEvents(authUser: AuthUser, lastEventId: String = null) = {

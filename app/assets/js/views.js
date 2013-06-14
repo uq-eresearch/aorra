@@ -24,7 +24,7 @@ define([
     }
     return 'file';
   };
-  
+
   var FileTree = Backbone.View.extend({
     tagName: "div",
     render: function() {
@@ -131,7 +131,7 @@ define([
       }
     }
   });
-  
+
   var FileUploadView = Backbone.View.extend({
     tagName: 'div',
     initialize: function() { this.render(); },
@@ -153,7 +153,7 @@ define([
       $input.fileupload({
         url: this.model.uploadUrl(),
         type: 'POST',
-        limitMultiFileUploads: 
+        limitMultiFileUploads:
           (this.model.urlRoot == '/file' ? 1 : undefined),
         dataType: 'json',
         sequentialUploads: true,
@@ -172,11 +172,11 @@ define([
           _.each(data.result.files, function(file) {
             var $alert = $('<div/>');
             var render = function(type, msg) {
-              templates.renderInto($alert, 'alert_box', { 
-                type: type, 
+              templates.renderInto($alert, 'alert_box', {
+                type: type,
                 message: _.template(
-                    "<strong><%= f.name %></strong>: <%= f.msg %>", 
-                    { name: file.name, msg: msg }, 
+                    "<strong><%= f.name %></strong>: <%= f.msg %>",
+                    { name: file.name, msg: msg },
                     { variable: 'f' })
               });
             };
@@ -228,7 +228,7 @@ define([
       });
     }
   });
-  
+
   var VersionView = Backbone.Marionette.ItemView.extend({
     tagName: 'tr',
     modelEvents: {
@@ -239,12 +239,12 @@ define([
       return templates.renderInto(this.$el, 'version_row', data);
     }
   });
-  
+
   var VersionListView = Backbone.Marionette.CollectionView.extend({
     tagName: 'tbody',
     itemView: VersionView
   });
-  
+
   var FileInfoView = Backbone.View.extend({
     initialize: function() {
       this.vlv = new VersionListView({
@@ -255,15 +255,15 @@ define([
     },
     render: function(obj) {
       return templates.renderInto(
-          this.$el, 
-          'version_table', 
-          {}, 
+          this.$el,
+          'version_table',
+          {},
           _.bind(function($container) {
             $container.find('tbody').replaceWith(this.vlv.$el);
           }, this));
     }
   });
-  
+
   var DeleteButtonView = Backbone.View.extend({
     events: {
       'click .delete-button': 'showModal',
@@ -272,7 +272,7 @@ define([
     render: function() {
       return templates.renderInto(
           this.$el,
-          'delete_button', 
+          'delete_button',
           { action: this.model.url() },
           _.bind(function($container) {
             this.getModal().modal({ show: false });
@@ -290,14 +290,7 @@ define([
       return false;
     },
     formSubmit: function(e) {
-      var $form = $(e.target);
-      $.ajax({
-        method: $form.attr('method'),
-        url: $form.attr('action'),
-        success: function() {
-          // need to implement sensible handling for deletion
-        }
-      });
+      this.model.destroy({wait: true});
       this.hideModal();
       return false;
     }
@@ -487,7 +480,7 @@ define([
       this.$el.append(this.innerView.$el);
     }
   });
-  
+
   return {
     MainPane: MainPane,
     FileTree: FileTree

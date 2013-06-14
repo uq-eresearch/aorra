@@ -4,49 +4,64 @@ require(['models', 'views'], function(models, views) {
     var obj = _.extend({}, config)
     _.extend(obj, Backbone.Events);
     _.extend(obj, {
-      url: '/notifications',
-      _feedFromEventID: function(eventId) {
-        return this.url+"?from="+eventId;
+      url: function() {
+        return '/notifications?from='+obj.lastEventId
+      },
+      updateLastId: function(id) {
+        obj.lastEventId = id;
       },
       open: function() {
         var trigger = _.bind(this.trigger, this);
+        var triggerRecheck = function() {
+          trigger('recheck');
+        };
         // Are we using a modern browser, or are we using IE?
         if (_.isUndefined(window.EventSource)) {
-          var lastId = window.lastEventID;
           var poll = _.bind(function(callback) {
+            var updateLastId = _.bind(this.updateLastId, this);
             $.ajax({
-              url: this._feedFromEventID(lastId),
+              url: this.url(),
               dataType: 'json',
               success: function(data) {
-                _(data).each(function(v) {
-                  lastId = v.id;
-                  console.log(v.type);
-                  trigger('event:'+v.type, v.data);
+                var canContinue = _(data).all(function(v) {
+                  if (v.type == 'outofdate') {
+                    trigger('event:outofdate', v.id);
+                    return false;
+                  } else {
+                    updateLastId(v.id);
+                    trigger('event:'+v.type, v.data);
+                    return true;
+                  }
                 });
-                callback();
-              }
+                if (canContinue) {
+                  callback();
+                }
+              },
+              error: callback
             });
           }, this);
-          var pollLoop = function() {
+          this.on('recheck', function() {
             poll(function() {
-              _.delay(pollLoop, 2000);
+              _.delay(triggerRecheck, 5000);
             });
-          }
-          pollLoop();
+          });
         } else {
-          // EventSource
-          var es = new EventSource(this._feedFromEventID(window.lastEventID));
-          es.addEventListener('ping', function(event) {
-            trigger('event:ping', event.data);
-          });
-          _.each(['create', 'update', 'delete'], function(n) {
-            es.addEventListener(n, function(event) {
-              var struct = JSON.parse(event.data);
-              trigger('event:'+n, struct);
+          this.on('recheck', function() {
+            // EventSource
+            var es = new EventSource(this.url());
+            es.addEventListener('outofdate', function(event) {
+              trigger('event:outofdate', event.data);
+              es.close();
             });
+            _.each(['create', 'update', 'delete', 'ping'], function(n) {
+              es.addEventListener(n, function(event) {
+                trigger('event:'+n, event.data);
+              });
+            });
+            this.es = es;
           });
-          this.es = es;
         }
+        triggerRecheck();
       }
     });
 
@@ -61,24 +76,30 @@ require(['models', 'views'], function(models, views) {
 
     var fs = new models.FileStore();
     var fileTree = new views.FileTree();
-    var notificationFeed = new NotificationFeed({});
+    var notificationFeed = new NotificationFeed({
+      lastEventId: window.lastEventID
+    });
     // Event handlers
     notificationFeed.on("event:create",
-      catchErrors(function(struct) {
+      catchErrors(function(id) {
         fs.fetch();
       }));
     notificationFeed.on("event:update",
-      catchErrors(function(struct) {
-        fs.get(struct.id).fetch();
+      catchErrors(function(id) {
+        fs.get(id).fetch();
       }));
     notificationFeed.on("event:delete",
-      catchErrors(function(struct) {
-        fs.remove(fs.get(struct.id))
+      catchErrors(function(id) {
+        fs.remove(fs.get(id))
       }));
 
     window.fs = fs;
     var startRouting = function() {
-      Backbone.history.start({ pushState: true, hashChange: false });
+      // If we're using IE8 heavily, then push state is just trouble
+      if (window.location.pathname != '/') {
+        window.location.href = "/#"+window.location.pathname.replace(/^\//,'');
+      }
+      Backbone.history.start({ pushState: false });
     };
 
     var mainPane = new views.MainPane();
@@ -176,7 +197,17 @@ require(['models', 'views'], function(models, views) {
       fs.reset(window.filestoreJSON);
       startRouting();
     }
-    notificationFeed.open();
 
+    // If our data is out-of-date, refresh and reopen event feed.
+    notificationFeed.on("event:outofdate", function(id) {
+      fs.reset();
+      fs.fetch().done(function() {
+        notificationFeed.updateLastId(id);
+        notificationFeed.trigger('recheck');
+      });
+    });
+
+    // Open feed
+    notificationFeed.open();
   });
 });
