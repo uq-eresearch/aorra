@@ -57,7 +57,7 @@ public class InMemoryEventTimeline<E> implements EventTimeline<String, E> {
   public synchronized String record(E event) {
     cleanup();
     final String id = getNewIdentifier();
-    timeline.put(id, new SoftReference<E>(event));
+    timeline.put(id, getReference(event));
     return id;
   }
 
@@ -81,6 +81,13 @@ public class InMemoryEventTimeline<E> implements EventTimeline<String, E> {
       timeline.remove(k);
       lastLostEventId = k;
     }
+  }
+
+  /*
+   * This method can be overridden for testing purposes.
+   */
+  protected Reference<E> getReference(E referent) {
+    return new SoftReference<E>(referent);
   }
 
   private String getNewIdentifier() {

@@ -3,11 +3,15 @@ package service;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NavigableMap;
 
 import org.junit.Test;
+
+import com.sun.jna.platform.unix.X11.GC;
 
 import service.EventTimeline.ForgottenEventException;
 
@@ -23,11 +27,20 @@ public class InMemoryEventTimelineTest {
     assertThat(events).hasSize(1);
     assertThat(events.lastEntry().getValue()).isEqualTo("Hello World!");
     assertThat(et.getSince(events.lastKey())).isEmpty();
+    // Check that we can handle garbage collection
+    System.gc();
+    assertThat(et.getKnown()).hasSize(1);
   }
 
   @Test
   public void canForget() throws ForgottenEventException {
-    final EventTimeline<String,Object> et = new InMemoryEventTimeline<Object>();
+    final EventTimeline<String,Object> et = new InMemoryEventTimeline<Object>() {
+      // This version will forget on garbage collection
+      @Override
+      protected Reference<Object> getReference(Object obj) {
+        return new WeakReference<Object>(obj);
+      }
+    };
     final String id1;
     final String id2;
     {
@@ -40,7 +53,7 @@ public class InMemoryEventTimelineTest {
     assertThat(et.getKnown()).hasSize(2);
     assertThat(et.getSince(id1)).hasSize(1);
     assertThat(et.getSince(id2)).hasSize(0);
-    forceOutOfMemory();
+    System.gc(); // References should disappear now
     assertThat(et.getKnown()).isEmpty();
     try {
       et.getSince(id1);
@@ -49,17 +62,6 @@ public class InMemoryEventTimelineTest {
       // All good
     }
     assertThat(et.getLastEventId()).isEqualTo(id2);
-  }
-
-  public void forceOutOfMemory() {
-    try {
-      final List<Object[]> memhog = new LinkedList<Object[]>();
-      while (true) {
-        memhog.add(new Object[102400]);
-      }
-    } catch (OutOfMemoryError e) {
-      return;
-    }
   }
 
 }
