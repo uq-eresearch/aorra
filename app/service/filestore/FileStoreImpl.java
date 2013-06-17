@@ -111,41 +111,6 @@ public class FileStoreImpl implements FileStore {
 
   }
 
-  protected static void debugPermissions(Session session, String path) {
-    final Node node;
-    try {
-      node = session.getNode(path);
-      Logger.debug("Actual:");
-      {
-        final AccessControlManager acm = session.getAccessControlManager();
-        final AccessControlList acl = AccessControlUtils.getAccessControlList(
-            acm, node.getPath());
-        for (AccessControlEntry entry : acl.getAccessControlEntries()) {
-          for (Privilege p : entry.getPrivileges()) {
-            Logger.debug(entry.getPrincipal().getName()+" "+p.getName());
-          }
-        }
-      }
-      Logger.debug("Effective:");
-      final AccessControlPolicy[] policies = session.getAccessControlManager()
-          .getEffectivePolicies(node.getPath());
-      for (AccessControlPolicy policy : policies) {
-        AccessControlList acl = (AccessControlList) policy;
-        for (AccessControlEntry entry : acl.getAccessControlEntries()) {
-          for (Privilege p : entry.getPrivileges()) {
-            Logger.debug(entry.getPrincipal().getName()+" "+p.getName());
-          }
-        }
-      }
-    } catch (PathNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (RepositoryException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-
   /* (non-Javadoc)
    * @see service.filestore.FileStore#getManager(javax.jcr.Session)
    */

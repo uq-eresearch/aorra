@@ -22,9 +22,9 @@ import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
-import org.apache.tika.io.IOUtils;
 import org.junit.Test;
 
+import com.google.common.io.ByteStreams;
 
 import play.Logger;
 import play.libs.F.Function;
@@ -177,8 +177,8 @@ public class FileStoreTest {
               assertThat(file.getAuthor()).isNotNull();
               assertThat(file.getAuthor().getJackrabbitUserId())
                 .isEqualTo(userId);
-              assertThat(IOUtils.toString(file.getData()))
-                .isEqualTo(content);
+              assertThat(ByteStreams.toByteArray(file.getData()))
+                .isEqualTo(content.getBytes());
               assertThat(fm.getByIdentifier(file.getIdentifier()))
                 .isEqualTo(file);
             } catch (AccessDeniedException ade) {
@@ -219,8 +219,8 @@ public class FileStoreTest {
               f = (FileStore.File) fileStoreImpl
                   .getManager(session)
                   .getFileOrFolder("/"+filename);
-              assertThat(IOUtils.toString(f.getData()))
-                .isEqualTo(getSomeContent(i));
+              assertThat(ByteStreams.toByteArray(f.getData()))
+                .isEqualTo(getSomeContent(i).getBytes());
               assertThat(f.getVersions().size()).isEqualTo(i);
             }
             f = (FileStore.File) fileStoreImpl
@@ -231,8 +231,8 @@ public class FileStoreTest {
             for (final String versionName : versions.keySet()) {
               final FileStore.File v = versions.get(versionName);
               assertThat(versionName).isEqualTo(String.format("1.%d", i-1));
-              assertThat(IOUtils.toString(v.getData()))
-                .isEqualTo(getSomeContent(i));
+              assertThat(ByteStreams.toByteArray(v.getData()))
+                .isEqualTo(getSomeContent(i).getBytes());
               i++;
             }
             return folder.getIdentifier();

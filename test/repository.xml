@@ -105,9 +105,9 @@
             persistence manager of the workspace:
             class: FQN of class implementing the PersistenceManager interface
         -->
-        <PersistenceManager class="org.apache.jackrabbit.core.persistence.mem.InMemPersistenceManager">
-            <param name="persistent" value="false"/>
-        </PersistenceManager>
+        <PersistenceManager class="org.apache.jackrabbit.core.persistence.bundle.BundleFsPersistenceManager">
+            <param name="blobFSBlockSize" value="1" /><!-- store in memory -->
+        </PersistenceManager> 
         <!--
             Search index and the file system it uses.
             class: FQN of class implementing the QueryHandler interface
@@ -135,8 +135,8 @@
             a 'normal' persistence manager, but this could change in future
             implementations.
         -->
-        <PersistenceManager class="org.apache.jackrabbit.core.persistence.mem.InMemPersistenceManager">
-          <param name="persistent" value="false"/>
+        <PersistenceManager class="org.apache.jackrabbit.core.persistence.bundle.BundleFsPersistenceManager">
+            <param name="blobFSBlockSize" value="1" /><!-- store in memory -->
         </PersistenceManager>
     </Versioning>
 
