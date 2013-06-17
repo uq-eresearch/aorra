@@ -135,7 +135,14 @@ define([
 
   var FileUploadView = Backbone.View.extend({
     tagName: 'div',
-    initialize: function() { this.render(); },
+    initialize: function() {
+      if (_.isFunction(this.model.info)) {
+        this.listenTo(this.model, 'sync', function() {
+          this.model.info().fetch();
+        });
+      }
+      this.render();
+    },
     render: function() {
       this.$el.empty();
       var $alerts = $('<div/>');
