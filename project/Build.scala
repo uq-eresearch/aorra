@@ -64,7 +64,7 @@ object ApplicationBuild extends Build {
   ).dependsOn(RootProject(uri(
       "git://github.com/schaloner/deadbolt-2-java.git"))
   ).dependsOn(RootProject(uri(
-      "git://github.com/tjdett/play21-jackrabbit-plugin.git#play-classloader"))
+      "git://github.com/sgougi/play21-jackrabbit-plugin.git#d63c594e6ff921e859810cd52237cd3a12ce730f"))
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play2-crash-plugin.git#ec950e4c5e7347a681e23b9dde3e4ce1783d9383"))
   ).dependsOn(RootProject(uri(
