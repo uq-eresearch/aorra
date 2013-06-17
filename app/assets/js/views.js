@@ -1,10 +1,11 @@
 define([
         'models',
         'templates',
+        'moment',
         'jquery.bootstrap',
         'jquery.iframe-transport',
         'jquery.fileupload'
-        ], function(models, templates) {
+        ], function(models, templates, moment) {
   'use strict';
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
@@ -187,8 +188,8 @@ define([
             }
             $alerts.append($alert);
           });
-          if (_.isObject(this.model.get('info'))) {
-            this.model.get('info').fetch();
+          if (_.isFunction(this.model.info)) {
+            this.model.info().fetch();
           }
         }, this)
       });
@@ -236,7 +237,15 @@ define([
     },
     render: function() {
       var data = _(this.model.toJSON()).extend({ url: this.model.url() });
-      return templates.renderInto(this.$el, 'version_row', data);
+      return templates.renderInto(this.$el, 'version_row', data, function($e) {
+        $.each($e.find('.timestamp'), function(i, n) {
+          var $n = $(n);
+          $n.attr('title', $n.text());
+          $n.text(moment($n.text()).format( 
+              'dddd, D MMMM YYYY @ h:mm:ss a'
+          ));
+        });
+      });
     }
   });
 

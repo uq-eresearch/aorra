@@ -57,7 +57,7 @@ define(function() {
   var FileInfo = Backbone.Model.extend({
     initialize: function(attributes, options) {
       this.file = options.file;
-      this.set('versions', this.versionList);
+      this.set('versions', this.versionList());
     },
     parse: function(response) {
       this.versionList().reset(response.versions);
@@ -66,7 +66,7 @@ define(function() {
       return response;
     },
     versionList: function() {
-      if (!this._versionList) {
+      if (_.isUndefined(this._versionList)) {
         this._versionList = new VersionList({}, {file: this.file});
       }
       return this._versionList;
@@ -82,7 +82,7 @@ define(function() {
       return this.url()+'/version/new';
     },
     info: function() {
-      if (!this.infoModel) {
+      if (_.isUndefined(this._infoModel)) {
         this._infoModel = new FileInfo({}, {file: this});
       }
       return this._infoModel;

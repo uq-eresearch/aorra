@@ -243,9 +243,14 @@ public final class FileStoreController extends SessionAwareController {
               return notFound();
             }
             final FileStore.File version = file.getVersions().get(versionName);
+            final String filename = file.getName().replaceAll(
+                "(\\.?[^\\.]+$)",
+                String.format("(%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS %2$s)",
+                    version.getModificationTime(),
+                    version.getAuthor().getName()) + "$1" );
             ctx().response().setContentType(version.getMimeType());
             ctx().response().setHeader("Content-Disposition",
-                "attachment; filename="+file.getName());
+                "attachment; filename="+filename);
             return ok(version.getData());
           }
         } else {

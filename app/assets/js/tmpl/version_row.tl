@@ -1,4 +1,6 @@
-<td>{timestamp}</td>
+<td>
+  <span class="timestamp">{timestamp}</span>
+</td>
 <td>
   {#author}
   <a href="mailto:{email}">{name}</a>
