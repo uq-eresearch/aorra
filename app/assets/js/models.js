@@ -67,7 +67,7 @@ define(function() {
     },
     versionList: function() {
       if (_.isUndefined(this._versionList)) {
-        this._versionList = new VersionList({}, {file: this.file});
+        this._versionList = new VersionList([], {file: this.file});
       }
       return this._versionList;
     },

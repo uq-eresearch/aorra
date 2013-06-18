@@ -243,41 +243,36 @@ define([
       "change": "render"
     },
     render: function() {
+      // Get data to render
       var data = _(this.model.toJSON()).extend({ url: this.model.url() });
+      // Render asynchronously into row
       return templates.renderInto(this.$el, 'version_row', data, function($e) {
         $.each($e.find('.timestamp'), function(i, n) {
           var $n = $(n);
+          var dt = moment($n.text());
           $n.attr('title', $n.text());
-          $n.text(moment($n.text()).format( 
-              'dddd, D MMMM YYYY @ h:mm:ss a'
-          ));
+          $n.text(dt.format('dddd, D MMMM YYYY @ h:mm:ss a'));
         });
       });
     }
   });
 
-  var VersionListView = Backbone.Marionette.CollectionView.extend({
-    tagName: 'tbody',
-    itemView: VersionView
-  });
-
-  var FileInfoView = Backbone.View.extend({
+  var FileInfoView = Backbone.Marionette.CompositeView.extend({
     initialize: function() {
-      this.vlv = new VersionListView({
-        collection: this.model.versionList()
-      });
-      this.model.on('change', _.bind(this.render, this));
+      this.collection = this.model.versionList();
+      this.render();
       this.model.fetch();
     },
-    render: function(obj) {
-      this.vlv.$el.detach();
-      return templates.renderInto(
-          this.$el,
-          'version_table',
-          {},
-          _.bind(function($container) {
-            $container.find('tbody').replaceWith(this.vlv.$el);
-          }, this));
+    itemView: VersionView,
+    itemViewContainer: 'tbody',
+    onCompositeCollectionRendered: function() {
+      if (this.collection.isEmpty())
+        this.$el.hide();
+      else
+        this.$el.show();
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('version_table', serialized_model);
     }
   });
 

@@ -8,6 +8,17 @@ define([
         ], function() {
   'use strict';
   var baseContext = dust.makeBase({});
+  var doRender = function(templateName, context, callback) {
+    dust.render(
+        'js/tmpl/'+templateName,
+        baseContext.push(context),
+        function(error, output) {
+          if (error) {
+            throw new Error(error);
+          }
+          callback(output);
+        });
+  };
 
   // Add access to Underscore.String functions as filters
   dust.filters['slug'] = _.str.slugify;
@@ -25,19 +36,19 @@ define([
 
   return {
     renderInto: function(container, templateName, context, callback) {
-      dust.render(
-          'js/tmpl/'+templateName,
-          baseContext.push(context),
-          function(error, output) {
-            if (error) {
-              throw new Error(error);
-            }
-            container.html(output);
-            if (_.isFunction(callback)) {
-              callback(container);
-            }
-          });
+      doRender(templateName, context, function(output) {
+        container.html(output);
+        if (_.isFunction(callback)) {
+          callback(container);
+        }
+      });
       return container;
+    },
+    // Only safe if nothing asynchronous is likely to happen.
+    renderSync: function(templateName, context) {
+      var content;
+      doRender(templateName, context, function(output) { content = output; });
+      return content;
     }
   };
 });
