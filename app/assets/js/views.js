@@ -270,6 +270,7 @@ define([
       this.model.fetch();
     },
     render: function(obj) {
+      this.vlv.$el.detach();
       return templates.renderInto(
           this.$el,
           'version_table',

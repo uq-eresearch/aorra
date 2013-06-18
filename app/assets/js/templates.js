@@ -6,6 +6,7 @@ define([
         'tmpl/version_table',
         'tmpl/version_row'
         ], function() {
+  'use strict';
   var baseContext = dust.makeBase({});
 
   // Add access to Underscore.String functions as filters
