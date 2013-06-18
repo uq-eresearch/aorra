@@ -9,8 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
@@ -26,14 +24,13 @@ import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
-import play.Play;
 import play.api.http.MediaRange;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
+import play.mvc.With;
 import providers.CacheableUserProvider;
-import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
@@ -42,8 +39,8 @@ import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 
+@With(UncacheableAction.class)
 public final class FileStoreController extends SessionAwareController {
 
   private final FileStore fileStoreImpl;
@@ -127,7 +124,6 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        ctx().response().setHeader("Cache-Control", "no-cache");
         return ok(jb.toJson(fm.getFolders())).as("application/json");
       }
     });
@@ -439,19 +435,6 @@ public final class FileStoreController extends SessionAwareController {
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private static String decodePath(String path) {
-    try {
-      return URLDecoder.decode(path, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      // Should never happen
-      throw new RuntimeException(e);
-    }
-  }
-
-  private Injector getInjector() {
-    return GuiceInjectionPlugin.getInjector(Play.application());
   }
 
 }

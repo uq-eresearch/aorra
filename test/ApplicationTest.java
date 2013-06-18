@@ -35,11 +35,12 @@ public class ApplicationTest {
 
   @Test
 	public void indexShowsLoginPage() {
-		running(fakeAorraApp(), new Runnable() {
+		running(fakeAorraApp(false), new Runnable() {
 			@Override
 			public void run() {
 				Result result = callAction(controllers.routes.ref.Application.index());
 				assertThat(status(result)).isEqualTo(OK);
+				assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
 				String pageContent = contentAsString(result);
 				assertThat(pageContent).contains("name=\"email\"");
         assertThat(pageContent).contains("name=\"password\"");

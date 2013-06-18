@@ -32,6 +32,7 @@ import play.Logger;
 import play.data.Form;
 import play.libs.F;
 import play.mvc.Result;
+import play.mvc.With;
 import providers.CacheableUserProvider;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.GuiceInjectionPlugin;
@@ -47,6 +48,7 @@ public final class Application extends SessionAwareController {
     super(sessionFactory, jcrom, sessionHandler);
   }
 
+  @With(UncacheableAction.class)
   public final Result index() {
     if (!isAuthenticated()) return login();
     return getInjector().getInstance(FileStoreController.class).index();
