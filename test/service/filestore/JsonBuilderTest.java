@@ -31,7 +31,7 @@ import service.filestore.FileStore.Permission;
 public class JsonBuilderTest {
 
   @Test
-  public void test() throws RepositoryException {
+  public void testFromRoot() throws RepositoryException {
     final JsonBuilder jb = new JsonBuilder();
     final FileStore.Folder folder = new TestFolder("filestore", "/", null);
     final FileStore.Folder subfolder = folder.createFolder("a");
@@ -50,6 +50,8 @@ public class JsonBuilderTest {
       assertThat(json.get("parent")).isNull();
       assertThat(json.get("type")).isNotNull();
       assertThat(json.get("type").asText()).isEqualTo("folder");
+      assertThat(json.get("accessLevel")).isNotNull();
+      assertThat(json.get("accessLevel").asText()).isEqualTo("RO");
     }
     {
       final JsonNode json = jsonArray.get(1);
@@ -64,6 +66,8 @@ public class JsonBuilderTest {
           subfolder.getParent().getIdentifier());
       assertThat(json.get("type")).isNotNull();
       assertThat(json.get("type").asText()).isEqualTo("folder");
+      assertThat(json.get("accessLevel")).isNotNull();
+      assertThat(json.get("accessLevel").asText()).isEqualTo("RO");
     }
     {
       final JsonNode json = jsonArray.get(2);
@@ -81,8 +85,32 @@ public class JsonBuilderTest {
       assertThat(json.get("mime")).isNotNull();
       assertThat(json.get("mime").asText()).isEqualTo(file1.getMimeType());
       assertThat(json.get("data")).isNull();
+      assertThat(json.get("accessLevel")).isNotNull();
+      assertThat(json.get("accessLevel").asText()).isEqualTo("RO");
     }
+  }
 
+  @Test
+  public void testFromSubfolder() throws RepositoryException {
+    final JsonBuilder jb = new JsonBuilder();
+    final FileStore.Folder folder = new TestFolder("filestore", "/", null);
+    final FileStore.Folder subfolder = folder.createFolder("a");
+    folder.createFile("README.txt", "text/plain",
+        new ByteArrayInputStream("This is a test file.".getBytes()));
+
+    final ArrayNode jsonArray = jb.toJson(subfolder);
+    {
+      final JsonNode json = jsonArray.get(0);
+      assertThat(json.get("id")).isNotNull();
+      assertThat(json.get("id").asText()).isEqualTo(subfolder.getIdentifier());
+      assertThat(json.get("name")).isNotNull();
+      assertThat(json.get("name").asText()).isEqualTo(subfolder.getName());
+      assertThat(json.get("path")).isNotNull();
+      assertThat(json.get("path").asText()).isEqualTo(subfolder.getPath());
+      assertThat(json.get("parent")).isNull();
+      assertThat(json.get("accessLevel")).isNotNull();
+      assertThat(json.get("accessLevel").asText()).isEqualTo("RO");
+    }
   }
 
 
@@ -176,7 +204,27 @@ public class JsonBuilderTest {
 
     @Override
     public Map<String, Permission> getGroupPermissions() {
+      final Map<String, Permission> m = new HashMap<String, Permission>();
+      m.put("a", Permission.RW);
+      m.put("b", Permission.RO);
+      m.put("c", Permission.NONE);
+      return m;
+    }
+
+    @Override
+    public void grantAccess(String groupName, Permission permission)
+        throws RepositoryException {
       throw new NotImplementedException();
+    }
+
+    @Override
+    public void revokeAccess(String groupName) throws RepositoryException {
+      throw new NotImplementedException();
+    }
+
+    @Override
+    public Permission getAccessLevel() {
+      return Permission.RO;
     }
 
   }
@@ -278,6 +326,11 @@ public class JsonBuilderTest {
     @Override
     public Calendar getModificationTime() {
       return modificationTime;
+    }
+
+    @Override
+    public Permission getAccessLevel() {
+      return Permission.RO;
     }
 
   }

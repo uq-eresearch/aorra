@@ -51,6 +51,7 @@ import play.libs.Akka;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
 import service.filestore.EventManager.FileStoreEvent;
+import service.filestore.FileStore.Permission;
 import service.filestore.roles.Admin;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -194,12 +195,23 @@ public class FileStoreImpl implements FileStore {
     @Override
     public Set<FileStore.Folder> getFolders() throws RepositoryException {
       try {
-        session.checkPermission(FILE_STORE_PATH, "read");
-        return ImmutableSet.<FileStore.Folder>of(getRoot());
-      } catch (AccessControlException e) {
-        // TODO: Handle access for users without read on the root node
+        return getFolders(getRoot());
+      } catch (NullPointerException e) {
+        // Root probably doesn't exist
+        return Collections.emptySet();
       }
-      return Collections.emptySet();
+    }
+
+    private Set<FileStore.Folder> getFolders(final FileStore.Folder rootFolder)
+        throws RepositoryException {
+      if (rootFolder.getAccessLevel() != Permission.NONE) {
+        return ImmutableSet.<FileStore.Folder>of(rootFolder);
+      }
+      final ImmutableSet.Builder<FileStore.Folder> b = ImmutableSet.builder();
+      for (FileStore.Folder folder : rootFolder.getFolders()) {
+        b.addAll(getFolders(folder));
+      }
+      return b.build();
     }
 
     @Override
@@ -381,6 +393,38 @@ public class FileStoreImpl implements FileStore {
       entity = filestoreManager.getFolderDAO().get(rawPath());
     }
 
+    @Override
+    public void grantAccess(String groupName, Permission permission)
+        throws RepositoryException {
+      final AorraAccessManager aam = (AorraAccessManager)
+          session().getAccessControlManager();
+      final Group group = (new GroupManager(session())).find(groupName);
+      aam.grant(group.getPrincipal(),
+          this.rawPath(), permission.toJackrabbitPermission());
+    }
+
+    @Override
+    public void revokeAccess(final String groupName)
+        throws RepositoryException {
+      final AorraAccessManager aam = (AorraAccessManager)
+          session().getAccessControlManager();
+      aam.revoke(session().getWorkspace().getName(),
+          groupName, this.getIdentifier());
+    }
+
+    @Override
+    public Permission getAccessLevel() throws RepositoryException {
+      final Permission onEntity = super.getAccessLevel();
+      if (onEntity == Permission.RO) {
+        // Exclude permissions based purely on ancestry by accessing child node
+        // which should exist, but won't appear in those cases.
+        if (!session().itemExists(rawPath()+"/files")) {
+          return Permission.NONE;
+        }
+      }
+      return onEntity;
+    }
+
   }
 
   public static class File extends NodeWrapper<models.filestore.File> implements FileStore.File {
@@ -551,14 +595,7 @@ public class FileStoreImpl implements FileStore {
       AorraAccessManager aam = (AorraAccessManager)session().getAccessControlManager();
       Map<Principal, jackrabbit.Permission> permissions = aam.getPermissions(rawPath());
       for(Map.Entry<Principal, jackrabbit.Permission> me : permissions.entrySet()) {
-          Principal principal = me.getKey();
-          if(me.getValue() == jackrabbit.Permission.RW) {
-              b.put(principal, Permission.RW);
-          } else if(me.getValue() == jackrabbit.Permission.RO) {
-              b.put(principal, Permission.RO);
-          } else if(me.getValue() == jackrabbit.Permission.NONE) {
-              b.put(principal, Permission.NONE);
-          }
+        b.put(me.getKey(), Permission.fromJackrabbitPermission(me.getValue()));
       }
       return b.build();
     }
@@ -587,6 +624,20 @@ public class FileStoreImpl implements FileStore {
     @Override
     public int hashCode() {
       return entity.hashCode();
+    }
+
+    public Permission getAccessLevel() throws RepositoryException {
+      try {
+        session().checkPermission(FILE_STORE_PATH, "read");
+      } catch (AccessControlException e) {
+        return Permission.NONE;
+      }
+      try {
+        session().checkPermission(FILE_STORE_PATH, "set_property");
+      } catch (AccessControlException e) {
+        return Permission.RO;
+      }
+      return Permission.RW;
     }
 
   }

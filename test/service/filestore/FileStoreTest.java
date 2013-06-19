@@ -29,6 +29,7 @@ import com.google.common.io.ByteStreams;
 import play.Logger;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
+import service.filestore.FileStore.Folder;
 import service.filestore.roles.Admin;
 
 public class FileStoreTest {
@@ -186,6 +187,74 @@ public class FileStoreTest {
               fail("An admin user should be able to create a file.");
             }
             return rootFolder;
+          }
+        });
+      }
+    });
+  }
+
+  @Test
+  public void groupPermissions() {
+    running(fakeAorraApp(true), new Runnable() {
+      @Override
+      public void run() {
+        final JcrSessionFactory sessionFactory = sessionFactory();
+        final FileStore fileStoreImpl = fileStore();
+        final String userId = sessionFactory.inSession(
+            new Function<Session,String>() {
+          @Override
+          public String apply(Session session) {
+            // Create new user
+            final String userId;
+            UserDAO dao = new UserDAO(session, jcrom());
+            User user = new User();
+            user.setEmail("user@example.com");
+            user.setName("Test User");
+            user = dao.create(user);
+            String token = user.createVerificationToken();
+            user.checkVerificationToken(token);
+            dao.setPassword(user, "password");
+            userId = user.getJackrabbitUserId();
+            return userId;
+          }
+        });
+        sessionFactory.inSession(userId, new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException {
+            // Unprivileged users should see no folders
+            Set<FileStore.Folder> folders =
+                fileStoreImpl.getManager(session).getFolders();
+            assertThat(folders).hasSize(0);
+            return null;
+          }
+        });
+        sessionFactory.inSession(new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException {
+            final GroupManager gm = new GroupManager(session);
+            final String g = "testGroup";
+            gm.create(g);
+            session.save();
+            final FileStoreImpl.Folder rootFolder = (FileStoreImpl.Folder)
+                fileStoreImpl.getManager(session).getRoot();
+            // Assign new user to admin group
+            gm.addMember(g, userId);
+            final FileStore.Folder testFolder =
+                rootFolder.createFolder("test");
+            testFolder.grantAccess(g, FileStore.Permission.RW);
+            return userId;
+          }
+        });
+        sessionFactory.inSession(userId, new Function<Session,FileStore.Folder>() {
+          @Override
+          public FileStore.Folder apply(Session session)
+              throws RepositoryException, IOException {
+            final Set<FileStore.Folder> folders =
+                fileStoreImpl.getManager(session).getFolders();
+            assertThat(folders).hasSize(1);
+            final FileStore.Folder folder = folders.iterator().next();
+            assertThat(folder.getPath()).isEqualTo("/test");
+            return folder;
           }
         });
       }
