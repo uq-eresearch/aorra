@@ -327,19 +327,24 @@ define([
 
   var FolderView = FileOrFolderView.extend({
     render: function() {
-      var fileUploadView = new FileUploadView({
-        type: 'folder',
-        model: this.model
-      })
-      var mkdirView = new CreateFolderView({ model: this.model });
-      this.$el.append(this._makeBreadCrumbElement());
-      this.$el.append(this._makeDeleteElement().addClass('pull-right'));
-      this.$el.append(this._makeDownloadElement());
-      this.$el.append($('<div/>')
-        .append('<h3>Upload files</h3>')
-        .append(fileUploadView.$el)
-        .append('<h3>Create new folder</h3>')
-        .append(mkdirView.$el));
+      if (this.model.get('accessLevel') == 'RW') {
+        var fileUploadView = new FileUploadView({
+          type: 'folder',
+          model: this.model
+        })
+        var mkdirView = new CreateFolderView({ model: this.model });
+        this.$el.append(this._makeBreadCrumbElement());
+        this.$el.append(this._makeDeleteElement().addClass('pull-right'));
+        this.$el.append(this._makeDownloadElement());
+        this.$el.append($('<div/>')
+          .append('<h3>Upload files</h3>')
+          .append(fileUploadView.$el)
+          .append('<h3>Create new folder</h3>')
+          .append(mkdirView.$el));
+      } else {
+        this.$el.append(this._makeBreadCrumbElement());
+        this.$el.append(this._makeDownloadElement());
+      }
     },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');
@@ -357,15 +362,19 @@ define([
       var fileInfoView = new FileInfoView({
         model: this.model.info()
       });
-      var fileUploadView = new FileUploadView({
-        type: 'file',
-        model: this.model
-      })
-      this.$el.append(this._makeDeleteElement().addClass('pull-right'));
-      this.$el.append(this._makeDownloadElement());
-      this.$el.append($('<div/>')
-        .append('<h3>Upload new Version</h3>')
-        .append(fileUploadView.$el));
+      if (this.model.get('accessLevel') == 'RW') {
+        var fileUploadView = new FileUploadView({
+          type: 'file',
+          model: this.model
+        })
+        this.$el.append(this._makeDeleteElement().addClass('pull-right'));
+        this.$el.append(this._makeDownloadElement());
+        this.$el.append($('<div/>')
+            .append('<h3>Upload new Version</h3>')
+            .append(fileUploadView.$el));
+      } else {
+        this.$el.append(this._makeDownloadElement());
+      }
       this.$el.append(fileInfoView.$el);
       switch (type) {
       case 'spreadsheet':
