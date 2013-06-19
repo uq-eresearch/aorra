@@ -414,11 +414,23 @@
         };
 
         NodeContainer.prototype.remove = function(node) {
+          var n;
+
           if (__indexOf.call(this.nodes, node) >= 0) {
             node.element().remove();
-            return this.nodes = this.nodes.filter(function(n) {
-              return n !== node;
-            });
+            return this.nodes = (function() {
+              var _i, _len, _ref1, _results;
+
+              _ref1 = this.nodes;
+              _results = [];
+              for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+                n = _ref1[_i];
+                if (n !== node) {
+                  _results.push(n);
+                }
+              }
+              return _results;
+            }).call(this);
           } else {
             throw new Error('Node not in this container');
           }

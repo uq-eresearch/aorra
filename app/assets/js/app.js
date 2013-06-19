@@ -90,7 +90,7 @@ require(['models', 'views'], function(models, views) {
       }));
     notificationFeed.on("event:delete",
       catchErrors(function(id) {
-        fs.remove(fs.get(id))
+        fs.remove(fs.get(id));
       }));
 
     window.fs = fs;
@@ -127,6 +127,12 @@ require(['models', 'views'], function(models, views) {
     });
     fs.on('remove', function(m) {
       fileTree.tree().remove(m.get('id'));
+      // Handle being on the deleted page already
+      if (_.isUndefined(layout.main.currentView.model)) return;
+      // If the current path has been deleted, then hide it.
+      if (m.id == layout.main.currentView.model.id) {
+        layout.showDeleted(m);
+      }
     });
 
     var Router = Backbone.Router.extend({
@@ -184,14 +190,6 @@ require(['models', 'views'], function(models, views) {
     });
     fileTree.on("file:select", function(fileId) {
       router.navigate("file/"+fileId, {trigger: true});
-    });
-    fs.on("remove", function(m) {
-      // Handle being on the deleted page already
-      if (_.isUndefined(layout.main.currentView.model)) return;
-      // If the current path has been deleted, then hide it.
-      if (m.id == layout.main.currentView.model.id) {
-        layout.showDeleted();
-      }
     });
 
     if (_.isUndefined(window.filestoreJSON)) {
