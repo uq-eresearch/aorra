@@ -102,10 +102,13 @@ require(['models', 'views'], function(models, views) {
       Backbone.history.start({ pushState: false });
     };
 
-    var mainPane = new views.MainPane();
+    var layout = new views.AppLayout();
+    window.layout = layout;
+    layout.render();
+    $('#content').append(layout.$el);
+
     fileTree.render();
-    $('#sidebar').append(fileTree.$el);
-    $('#main').append(mainPane.$el);
+    layout.sidebar.show(fileTree);
 
     fs.on('sync', function() {
       try {
@@ -133,15 +136,15 @@ require(['models', 'views'], function(models, views) {
         "folder/:id": "showFolder"
       },
       showStart: function() {
-        mainPane.showStart();
+        layout.showStart();
         this._setSidebarActive();
       },
       showFolder: function(id) {
         var node = fileTree.tree().find(id);
         if (node == null) {
-          mainPane.showDeleted()
+          layout.showDeleted();
         } else {
-          mainPane.showFolder(fs.get(node.id));
+          layout.showFolder(fs.get(node.id));
           this._highlightNode(node);
         }
         this._setMainActive();
@@ -149,21 +152,21 @@ require(['models', 'views'], function(models, views) {
       showFile: function(id) {
         var node = fileTree.tree().find(id);
         if (node == null) {
-          mainPane.showDeleted()
+          layout.showDeleted();
         } else {
-          mainPane.showFile(fs.get(node.id));
+          layout.showFile(fs.get(node.id));
           this._highlightNode(node);
         }
         this._setMainActive();
       },
       _setMainActive: function() {
-        $('#main').addClass('active');
-        $('#sidebar').removeClass('active');
+        layout.main.$el.addClass('active');
+        layout.sidebar.$el.removeClass('active');
         $('#nav-back').removeClass('hidden');
       },
       _setSidebarActive: function() {
-        $('#sidebar').addClass('active');
-        $('#main').removeClass('active');
+        layout.sidebar.$el.addClass('active');
+        layout.main.$el.removeClass('active');
         $('#nav-back').addClass('hidden');
       },
       _highlightNode: function(node) {
@@ -184,10 +187,10 @@ require(['models', 'views'], function(models, views) {
     });
     fs.on("remove", function(m) {
       // Handle being on the deleted page already
-      if (_.isUndefined(mainPane.innerView.model)) return;
+      if (_.isUndefined(layout.main.currentView.model)) return;
       // If the current path has been deleted, then hide it.
-      if (m.id == mainPane.innerView.model.id) {
-        mainPane.showDeleted();
+      if (m.id == layout.main.currentView.model.id) {
+        layout.showDeleted();
       }
     });
 

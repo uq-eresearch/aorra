@@ -3,6 +3,9 @@ define([
         'tmpl/breadcrumbs',
         'tmpl/charts',
         'tmpl/delete_button',
+        'tmpl/deleted_page',
+        'tmpl/loading_page',
+        'tmpl/start_page',
         'tmpl/version_table',
         'tmpl/version_row'
         ], function() {

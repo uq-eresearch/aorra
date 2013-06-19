@@ -326,7 +326,6 @@ define([
   });
 
   var FolderView = FileOrFolderView.extend({
-    initialize: function() { this.render(); },
     render: function() {
       var fileUploadView = new FileUploadView({
         type: 'folder',
@@ -351,7 +350,6 @@ define([
   });
 
   var FileView = FileOrFolderView.extend({
-    initialize: function() { this.render(); },
     render: function() {
       var type = typeFromMimeType(this.model.get('mime'));
       this.$el.empty();
@@ -409,85 +407,52 @@ define([
   var DeletedView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
-      var $heading = $('<h1/>')
-        .css('text-align', 'center');
-      var $symbol = $('<span/>')
-        .css('font-size', '5em')
-        .addClass("muted")
-        .html('<i class="icon-remove-circle"></i>');
-      var $message = $('<small/>');
-      $message.text('This location no longer exists.');
-      $heading.append($symbol, '<br />', $message);
-      this.$el.append($heading)
+      return templates.renderInto(this.$el, 'deleted_page', {});
     }
   });
 
   var LoadingView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
-      var $heading = $('<h1/>')
-        .css('text-align', 'center');
-      var $symbol = $('<span/>')
-        .css('font-size', '5em')
-        .addClass("muted")
-        .html(
-          '<i class="icon-refresh icon-spin"></i>'
-          );
-      var $message = $('<small/>');
-      $message.html('Please wait - data loading&hellip;');
-      $heading.append($symbol, '<br />', $message);
-      this.$el.append($heading)
+      return templates.renderInto(this.$el, 'loading_page', {});
     }
   });
 
   var StartView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
-      var $heading = $('<h1/>')
-        .css('text-align', 'center');
-      var $symbol = $('<span/>')
-        .css('font-size', '5em')
-        .addClass("muted")
-        .html(
-          '<i class="icon-circle-arrow-left"></i>'
-          );
-      var $message = $('<small/>');
-      $message.text('Select a file or folder by clicking its name.');
-      $heading.append($symbol, '<br />', $message);
-      this.$el.append($heading)
+      return templates.renderInto(this.$el, 'start_page', {});
     }
   });
-
-  var MainPane = Backbone.View.extend({
-    tagName: "div",
+  
+  var AppLayout = Backbone.Marionette.Layout.extend({
+    template: "#main-layout",
+    regions: {
+      main: "#main",
+      sidebar: "#sidebar"
+    },
     initialize: function() {
-      this.innerView = new LoadingView();
-      this.render();
+      this.showLoading();
+    },
+    showLoading: function() {
+      this.main.show(new LoadingView());
     },
     showStart: function() {
-      this.innerView = new StartView();
-      this.render();
+      this.main.show(new StartView());
     },
     showFolder: function(folder) {
-      this.innerView = new FolderView({ model: folder });
-      this.render();
+      this.main.show(new FolderView({ model: folder }));
     },
     showFile: function(file) {
-      this.innerView = new FileView({ model: file });
-      this.render();
+      this.main.show(new FileView({ model: file }));
     },
     showDeleted: function(fof) {
-      this.innerView = new DeletedView({ model: fof});
-      this.render();
-    },
-    render: function() {
-      this.$el.empty();
-      this.$el.append(this.innerView.$el);
+      this.main.show(new DeletedView({ model: fof}));
     }
   });
 
   return {
-    MainPane: MainPane,
+    AppLayout: AppLayout,
     FileTree: FileTree
   };
 });

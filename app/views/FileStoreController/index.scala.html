@@ -7,8 +7,14 @@
 @import views.html.Application.main
 
 @main("AORRA Files and Folders", true) {
-<div class="span4" id="sidebar"></div>
-<div class="span8" id="main"></div>
+
+<script id="main-layout" type="text/html">
+  <section>
+    <navigation class="span4" id="sidebar"></navigation>
+    <article class="span8" id="main"></article>
+  </section>
+</script>
+
 <script src="@routes.Assets.at("js/lib/glyphtree.js")"></script>
 @helper.requireJs(
   core = routes.Assets.at("javascripts/require.js").url, 
