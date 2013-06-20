@@ -25,17 +25,29 @@ define(function() {
       };
     }
   });
+  
+  var GroupPermission = Backbone.Model.extend({});
+  
+  var GroupPermissions = Backbone.Collection.extend({
+    model: GroupPermission,
+    initialize: function(attributes, options) {
+      this.folder = options.folder;
+    },
+    url: function() {
+      return this.folder.url() + "/permissions";
+    }
+  });
 
   var Folder = FileOrFolder.extend({
     urlRoot: '/folder',
     uploadUrl: function() {
       return this.url()+'/files';
     },
-    info: function() {
-      if (_.isUndefined(this._infoModel)) {
-        this._infoModel = new FolderInfo({}, {folder: this});
+    permissions: function() {
+      if (_.isUndefined(this._permissionsCollection)) {
+        this._permissionsCollection = new GroupPermissions([], {folder: this});
       }
-      return this._infoModel;
+      return this._permissionsCollection;
     }
   });
 
@@ -57,18 +69,6 @@ define(function() {
     model: VersionInfo,
     url: function() {
       return this.file.url() + '/version';
-    }
-  });
-
-  var FolderInfo = Backbone.Model.extend({
-    initialize: function(attributes, options) {
-      this.folder = options.folder;
-    },
-    permissionsUrl: function() {
-      return this.folder.url() + "/permissions";
-    },
-    url: function() {
-      return this.folder.url() + "/info";
     }
   });
 

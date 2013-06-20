@@ -23,7 +23,9 @@ import models.User;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.jackrabbit.api.security.user.Group;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
@@ -31,6 +33,7 @@ import org.jcrom.util.PathUtils;
 import play.Logger;
 import play.api.http.MediaRange;
 import play.libs.F;
+import play.libs.F.Function;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
@@ -263,43 +266,54 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result folderInfo(final String folderId) {
-    return inUserSession(new F.Function<Session, Result>() {
+  public Result groupPermissionList(final String folderId) {
+    return folderBasedResult(folderId, new FolderOp() {
       @Override
-      public final Result apply(Session session) throws RepositoryException,
-          IOException {
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        final FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
-        if (fof instanceof FileStoreImpl.Folder) {
-          final FileStore.Folder folder = (FileStoreImpl.Folder) fof;
-          final ObjectNode json = Json.newObject();
-          {
-            final ObjectNode perms = json.putObject("permissions");
-            for (final Map.Entry<String, Permission> e :
-                folder.getGroupPermissions().entrySet()) {
-              perms.put(e.getKey(), e.getValue().toString());
-            }
-          }
-          return ok(json).as("application/json");
-        } else {
-          return notFound();
+      public final Result apply(Session session, Folder folder)
+          throws RepositoryException {
+        final ArrayNode perms = JsonNodeFactory.instance.arrayNode();
+        for (final Map.Entry<String, Permission> e :
+            folder.getGroupPermissions().entrySet()) {
+          perms.add(groupJson(e.getKey(), e.getValue()));
         }
+        return ok(perms).as("application/json");
       }
     });
   }
 
   @SubjectPresent
+  public Result groupPermission(final String folderId, final String groupName) {
+    return folderBasedResult(folderId, new FolderOp() {
+      @Override
+      public final Result apply(Session session, Folder folder)
+          throws RepositoryException {
+        final Map<String, Permission> permissions =
+            folder.getGroupPermissions();
+        if (!permissions.containsKey(groupName)) {
+          return notFound();
+        }
+        final Permission access = permissions.get(groupName);
+        return ok(groupJson(groupName, access)).as("application/json");
+      }
+    });
+  }
+
+  protected ObjectNode groupJson(String groupName, Permission permission) {
+    final ObjectNode obj = Json.newObject();
+    obj.put("name", groupName);
+    obj.put("access", permission.toString());
+    return obj;
+  }
+
+  @SubjectPresent
   public Result permissionUpdate(final String folderId) {
-    final Map<String, String[]> params =
-        ctx().request().body().asFormUrlEncoded();
-    final String groupName;
-    final Permission accessLevel;
-    try {
-      groupName = params.get("group")[0];
-      accessLevel = Permission.valueOf(params.get("accessLevel")[0]);
-    } catch (NullPointerException e) {
+    final JsonNode params = ctx().request().body().asJson();
+    if (!params.has("name") || !params.has("access")) {
       return badRequest();
     }
+    final String groupName = params.get("name").asText();
+    final Permission accessLevel = Permission.valueOf(
+        params.get("access").asText());
     final String id = inUserSession(new F.Function<Session, String>() {
       @Override
       public final String apply(Session session) throws RepositoryException,
@@ -339,60 +353,40 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result fileInfo(final String fileId) {
-    return inUserSession(new F.Function<Session, Result>() {
+    return fileBasedResult(fileId, new FileOp() {
       @Override
-      public final Result apply(Session session) throws RepositoryException,
-          IOException {
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        final FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
-        if (fof instanceof FileStoreImpl.File) {
-          final FileStore.File file = (FileStoreImpl.File) fof;
-          final ObjectNode json = Json.newObject();
-          {
-            final ArrayNode aNode = json.putArray("versions");
-            for (String versionName : file.getVersions().keySet()) {
-              final FileStore.File version =
-                  file.getVersions().get(versionName);
-              final User author = version.getAuthor();
-              final ObjectNode authorInfo = Json.newObject();
-              authorInfo.put("name", author.getName());
-              authorInfo.put("email", author.getEmail());
-              final ObjectNode versionInfo = Json.newObject();
-              versionInfo.put("name", versionName);
-              versionInfo.put("author", authorInfo);
-              versionInfo.put("timestamp",
-                  DateFormatUtils.ISO_DATETIME_FORMAT.format(
-                      version.getModificationTime()));
-              aNode.add(versionInfo);
-            }
+      public final Result apply(final Session session, final FileStore.File file)
+          throws RepositoryException {
+        final ObjectNode json = Json.newObject();
+        {
+          final ArrayNode aNode = json.putArray("versions");
+          for (String versionName : file.getVersions().keySet()) {
+            final FileStore.File version =
+                file.getVersions().get(versionName);
+            final User author = version.getAuthor();
+            final ObjectNode authorInfo = Json.newObject();
+            authorInfo.put("name", author.getName());
+            authorInfo.put("email", author.getEmail());
+            final ObjectNode versionInfo = Json.newObject();
+            versionInfo.put("name", versionName);
+            versionInfo.put("author", authorInfo);
+            versionInfo.put("timestamp",
+                DateFormatUtils.ISO_DATETIME_FORMAT.format(
+                    version.getModificationTime()));
+            aNode.add(versionInfo);
           }
-          return ok(json).as("application/json");
-        } else {
-          return notFound();
         }
+        return ok(json).as("application/json");
       }
     });
   }
 
   @SubjectPresent
   public Result updateFile(final String fileID) {
-    return inUserSession(new F.Function<Session, Result>() {
+    return fileBasedResult(fileID, new FileOp() {
       @Override
-      public final Result apply(Session session)
+      public final Result apply(Session session, FileStore.File f)
           throws RepositoryException, FileNotFoundException {
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        final FileStore.FileOrFolder fof = fm.getByIdentifier(fileID);
-        if (fof == null) {
-          return badRequest("A valid folder must be specified.")
-              .as("text/plain");
-        }
-        final FileStore.File f;
-        if (fof instanceof FileStore.File) {
-          f = (FileStore.File) fof;
-        } else {
-          return badRequest("Specified destination is not a folder.")
-              .as("text/plain");
-        }
         final MultipartFormData body = request().body().asMultipartFormData();
         if (body == null) {
           return badRequest("POST must contain multipart form data.")
@@ -440,22 +434,10 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result uploadToFolder(final String folderID) {
-    return inUserSession(new F.Function<Session, Result>() {
+    return folderBasedResult(folderID, new FolderOp() {
       @Override
-      public final Result apply(Session session) throws RepositoryException {
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        final FileStore.FileOrFolder fof = fm.getByIdentifier(folderID);
-        if (fof == null) {
-          return badRequest("A valid folder must be specified.")
-              .as("text/plain");
-        }
-        final FileStore.Folder folder;
-        if (fof instanceof FileStore.Folder) {
-          folder = (Folder) fof;
-        } else {
-          return badRequest("Specified destination is not a folder.")
-              .as("text/plain");
-        }
+      public final Result apply(Session session, FileStore.Folder folder)
+          throws RepositoryException {
         final MultipartFormData body = request().body().asMultipartFormData();
         if (body == null) {
           return badRequest("POST must contain multipart form data.")
@@ -492,6 +474,47 @@ public final class FileStoreController extends SessionAwareController {
         // to prevent IE/Opera from opening a download dialog as described here:
         // https://github.com/blueimp/jQuery-File-Upload/wiki/Setup
         return ok(json).as("text/html");
+      }
+    });
+  }
+
+  private interface FofOp<T extends FileStore.FileOrFolder>
+    extends F.Function2<Session, T, Result> {}
+  private interface FolderOp extends FofOp<FileStore.Folder> {}
+  private interface FileOp extends FofOp<FileStore.File> {}
+
+  protected Result folderBasedResult(
+      final String folderId,
+      final FolderOp operation) {
+    return fofBasedResult(folderId, FileStore.Folder.class, operation);
+  }
+
+  protected Result fileBasedResult(
+      final String folderId,
+      final FileOp operation) {
+    return fofBasedResult(folderId, FileStore.File.class, operation);
+  }
+
+  protected <T extends FileStore.FileOrFolder> Result fofBasedResult(
+      final String fofId,
+      final Class<T> fofClass,
+      final FofOp<T> operation) {
+    final String typeName = fofClass.getSimpleName().toLowerCase();
+    return inUserSession(new F.Function<Session, Result>() {
+      @SuppressWarnings("unchecked")
+      @Override
+      public final Result apply(Session session) throws Throwable {
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final FileStore.FileOrFolder fof = fm.getByIdentifier(fofId);
+        if (fof == null) {
+          return notFound("The "+typeName+" specified does not exist.")
+              .as("text/plain");
+        } else if (!fofClass.isInstance(fof)) {
+          return badRequest(fofId+" is not a "+typeName+".")
+              .as("text/plain");
+        } else {
+          return operation.apply(session, (T) fof);
+        }
       }
     });
   }
