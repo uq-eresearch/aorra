@@ -79,7 +79,7 @@ class FileStoreAsync @Inject()(
           case _ =>
             Json.obj(
               "id" -> id,
-              "type" -> event.`type`.toString(),
+              "type" -> eventType(event),
               "data" -> event.info.id
             )
         }
@@ -87,6 +87,10 @@ class FileStoreAsync @Inject()(
     )
     Ok(response).as("application/json")
       .withHeaders("Cache-Control" -> "no-cache")
+  }
+
+  private def eventType(event: FileStoreEvent) = {
+    Seq(event.info.`type`.toString(), event.`type`.toString()).mkString(":")
   }
 
   private def lastIdInQuery(request: Request[AnyContent]) = {
@@ -106,7 +110,7 @@ class FileStoreAsync @Inject()(
           case null =>
             s"id: ${id}\nevent: ${event.`type`}\ndata: ${id}\n\n"
           case _ =>
-            s"id: ${id}\nevent: ${event.`type`}\ndata: ${event.info.id}\n\n"
+            s"id: ${id}\nevent: ${eventType(event)}\ndata: ${event.info.id}\n\n"
         }
     }
     Ok.feed(

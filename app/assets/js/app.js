@@ -25,11 +25,11 @@ require(['models', 'views'], function(models, views) {
               success: function(data) {
                 var canContinue = _(data).all(function(v) {
                   if (v.type == 'outofdate') {
-                    trigger('event:outofdate', v.id);
+                    trigger('outofdate', v.id);
                     return false;
                   } else {
                     updateLastId(v.id);
-                    trigger('event:'+v.type, v.data);
+                    trigger(v.type, v.data);
                     return true;
                   }
                 });
@@ -50,14 +50,21 @@ require(['models', 'views'], function(models, views) {
             // EventSource
             var es = new EventSource(this.url());
             es.addEventListener('outofdate', function(event) {
-              trigger('event:outofdate', event.data);
+              trigger('outofdate', event.data);
               es.close();
             });
-            _.each(['create', 'update', 'delete', 'ping'], function(n) {
-              es.addEventListener(n, function(event) {
-                trigger('event:'+n, event.data);
-              });
+            es.addEventListener('ping', function(event) {
+              trigger('ping', event.data);
             });
+            _.each(['folder', 'file'], function(t) {
+              _.each(['create', 'update', 'delete'], function(n) {
+                var eventName = t+":"+n;
+                es.addEventListener(eventName, function(event) {
+                  trigger(eventName, event.data);
+                });
+              });  
+            })
+            
             this.es = es;
           });
         }
@@ -70,28 +77,36 @@ require(['models', 'views'], function(models, views) {
 
   $(function () {
 
-    function catchErrors(f) {
-      return function(struct) { try { f.apply(this, arguments); } catch (e) {} };
-    }
-
     var fs = new models.FileStore();
     var fileTree = new views.FileTree();
     var notificationFeed = new NotificationFeed({
       lastEventId: window.lastEventID
     });
     // Event handlers
-    notificationFeed.on("event:create",
-      catchErrors(function(id) {
-        fs.fetch();
-      }));
-    notificationFeed.on("event:update",
-      catchErrors(function(id) {
+    notificationFeed.on("folder:create", function(id) {
+        // Create a stand-alone folder
+        var folder = new models.Folder({ id: id });
+        // Get the data for it
+        folder.fetch().done(function() {
+          // It exists, so add it to the collection
+          fs.add([folder.toJSON()]);
+        });
+      });
+    notificationFeed.on("file:create",
+      function(id) {
+        var file = new models.File({ id: id })
+        file.fetch().done(function() {
+          fs.add([file.toJSON()]);
+        });
+      });
+    notificationFeed.on("folder:update file:update",
+      function(id) {
         fs.get(id).fetch();
-      }));
-    notificationFeed.on("event:delete",
-      catchErrors(function(id) {
+      });
+    notificationFeed.on("folder:delete file:delete",
+      function(id) {
         fs.remove(fs.get(id));
-      }));
+      });
 
     window.fs = fs;
     var startRouting = function() {
@@ -200,7 +215,7 @@ require(['models', 'views'], function(models, views) {
     }
 
     // If our data is out-of-date, refresh and reopen event feed.
-    notificationFeed.on("event:outofdate", function(id) {
+    notificationFeed.on("outofdate", function(id) {
       fs.reset();
       fs.fetch().done(function() {
         notificationFeed.updateLastId(id);
