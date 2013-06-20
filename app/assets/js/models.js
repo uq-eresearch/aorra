@@ -39,6 +39,11 @@ define(function() {
   });
 
   var Folder = FileOrFolder.extend({
+    initialize: function() {
+      this.on('sync', function() {
+        this.permissions().fetch();
+      })
+    },
     urlRoot: '/folder',
     uploadUrl: function() {
       return this.url()+'/files';

@@ -56,56 +56,35 @@ public interface EventManager {
       public String toString() { return super.toString().toLowerCase(); }
     }
 
+    public static enum NodeType {
+      FILE, FOLDER;
+      @Override
+      public String toString() { return super.toString().toLowerCase(); }
+    }
+
     public static class NodeInfo {
 
-      public static enum NodeType {
-        FILE, FOLDER;
-        @Override
-        public String toString() { return super.toString().toLowerCase(); }
-      }
-
-      public final String id;
-      public final String name;
-      public final String parentId;
       public final NodeType type;
-      public final Map<String, Object> attributes;
+      public final String id;
 
-      NodeInfo(FileStore.File file) throws RepositoryException {
-        this.id = file.getIdentifier();
-        this.name = file.getName();
-        this.parentId = file.getParent().getIdentifier();
-        this.type = NodeType.FILE;
-        ImmutableMap.Builder<String, Object> attrs =
-            ImmutableMap.<String, Object>builder();
-        attrs.put("mimeType", file.getMimeType());
-        attrs.put("path", file.getPath());
-        if (file.getAuthor() != null) {
-          attrs.put("authorEmail", file.getAuthor().getEmail());
-          attrs.put("authorName", file.getAuthor().getName());
-        }
-        if (file.getModificationTime() != null) {
-          attrs.put("lastModified",
-              DateFormatUtils.ISO_DATETIME_FORMAT.format(
-                  file.getModificationTime()));
-        }
-        this.attributes = attrs.build();
+      NodeInfo(NodeType type, String id) {
+        this.type = type;
+        this.id = id;
       }
 
-      NodeInfo(FileStore.Folder folder) throws RepositoryException {
-        this.id = folder.getIdentifier();
-        this.name = folder.getName();
-        this.parentId = folder.getParent() == null ? null :
-          folder.getParent().getIdentifier();
+      NodeInfo(FileStore.Folder folder) {
         this.type = NodeType.FOLDER;
-        ImmutableMap.Builder<String, Object> attrs =
-            ImmutableMap.<String, Object>builder();
-        attrs.put("path", folder.getPath());
-        this.attributes = attrs.build();
+        this.id = folder.getIdentifier();
+      }
+
+      NodeInfo(FileStore.File file) {
+        this.type = NodeType.FILE;
+        this.id = file.getIdentifier();
       }
 
       @Override
       public String toString() {
-        return String.format("%s (%s: %s)", id, type, name);
+        return String.format("%s (%s)", id, type);
       }
 
     }
@@ -118,16 +97,10 @@ public interface EventManager {
       this.info = null;
     }
 
-    protected FileStoreEvent(EventType type, FileStore.Folder folder)
+    protected FileStoreEvent(EventType type, NodeInfo info)
         throws RepositoryException {
       this.type = type;
-      this.info = new NodeInfo(folder);
-    }
-
-    protected FileStoreEvent(EventType type, FileStore.File file)
-        throws RepositoryException {
-      this.type = type;
-      this.info = new NodeInfo(file);
+      this.info = info;
     }
 
     public static FileStoreEvent outOfDate() {
@@ -136,27 +109,33 @@ public interface EventManager {
 
     public static FileStoreEvent create(FileStore.File file)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.CREATE, file);
+      return new FileStoreEvent(EventType.CREATE, new NodeInfo(file));
     }
 
     public static FileStoreEvent create(FileStore.Folder folder)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.CREATE, folder);
+      return new FileStoreEvent(EventType.CREATE, new NodeInfo(folder));
+    }
+
+    public static FileStoreEvent updateFolder(String folderId)
+        throws RepositoryException {
+      return new FileStoreEvent(EventType.UPDATE,
+          new NodeInfo(NodeType.FOLDER, folderId));
     }
 
     public static FileStoreEvent update(FileStore.File file)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.UPDATE, file);
+      return new FileStoreEvent(EventType.UPDATE, new NodeInfo(file));
     }
 
     public static FileStoreEvent delete(FileStore.File file)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.DELETE, file);
+      return new FileStoreEvent(EventType.DELETE, new NodeInfo(file));
     }
 
     public static FileStoreEvent delete(FileStore.Folder folder)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.DELETE, folder);
+      return new FileStoreEvent(EventType.DELETE, new NodeInfo(folder));
     }
 
     @Override

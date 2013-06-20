@@ -40,6 +40,7 @@ import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
+import service.filestore.EventManager.FileStoreEvent;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
@@ -346,6 +347,7 @@ public final class FileStoreController extends SessionAwareController {
         acm.grant(group.getPrincipal(),
             session.getNodeByIdentifier(id).getPath(),
             accessLevel.toJackrabbitPermission());
+        fileStoreImpl.getEventManager().tell(FileStoreEvent.updateFolder(id));
         return ok();
       }
     });
