@@ -408,7 +408,20 @@
         };
 
         NodeContainer.prototype.add = function(node) {
-          this.nodes.push(node);
+          var splicePoint;
+
+          splicePoint = function(nodes) {
+            var i, n, _i, _len;
+
+            for (i = _i = 0, _len = nodes.length; _i < _len; i = ++_i) {
+              n = nodes[i];
+              if (n.name > node.name) {
+                return i;
+              }
+            }
+            return nodes.length;
+          };
+          this.nodes.splice(splicePoint(this.nodes), 0, node);
           node.container = this;
           return this._rebuildElement();
         };
