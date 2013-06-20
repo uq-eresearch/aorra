@@ -30,6 +30,12 @@ define(function() {
     urlRoot: '/folder',
     uploadUrl: function() {
       return this.url()+'/files';
+    },
+    info: function() {
+      if (_.isUndefined(this._infoModel)) {
+        this._infoModel = new FolderInfo({}, {folder: this});
+      }
+      return this._infoModel;
     }
   });
 
@@ -51,6 +57,18 @@ define(function() {
     model: VersionInfo,
     url: function() {
       return this.file.url() + '/version';
+    }
+  });
+
+  var FolderInfo = Backbone.Model.extend({
+    initialize: function(attributes, options) {
+      this.folder = options.folder;
+    },
+    permissionsUrl: function() {
+      return this.folder.url() + "/permissions";
+    },
+    url: function() {
+      return this.folder.url() + "/info";
     }
   });
 

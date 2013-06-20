@@ -257,6 +257,47 @@ define([
     }
   });
 
+  var FolderInfoView = Backbone.Marionette.ItemView.extend({
+    initialize: function() {
+      this.render();
+      this.model.fetch();
+    },
+    modelEvents: {
+      "change": "render"
+    },
+    onRender: function() {
+      var postUrl = this.model.permissionsUrl();
+      // Select correct values
+      this.$el.find('select').each(function(i, v) {
+        var value = $(v).data('value');
+        $(v).find('option[value="'+value+'"]').prop('selected', true);
+      });
+      // Attach change hook
+      this.$el.find('select').change(function(e) {
+        var data = {
+          'group': $(e.target).attr('name'),
+          'accessLevel': $(e.target).val()
+        };
+        $.ajax({
+          type: 'POST',
+          url: postUrl,
+          data: data
+        });
+      });
+    },
+    template: function(serialized_model) {
+      if (!_.has(serialized_model, 'permissions')) {
+        return '';
+      }
+      var data = {
+        'groups': _.map(serialized_model.permissions, function(v, k) {
+          return { name: k, access: v };
+        })
+      };
+      return templates.renderSync('permission_table', data);
+    }
+  });
+  
   var FileInfoView = Backbone.Marionette.CompositeView.extend({
     initialize: function() {
       this.collection = this.model.versionList();
@@ -327,6 +368,9 @@ define([
 
   var FolderView = FileOrFolderView.extend({
     render: function() {
+      var folderInfoView = new FolderInfoView({
+        model: this.model.info()
+      });
       if (this.model.get('accessLevel') == 'RW') {
         var fileUploadView = new FileUploadView({
           type: 'folder',
@@ -345,6 +389,7 @@ define([
         this.$el.append(this._makeBreadCrumbElement());
         this.$el.append(this._makeDownloadElement());
       }
+      this.$el.append(folderInfoView.$el);
     },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');

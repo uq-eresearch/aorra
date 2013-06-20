@@ -58,11 +58,6 @@ public class JsonBuilder {
     json.put("id", folder.getIdentifier());
     json.put("name", folder.getName());
     json.put("path", folder.getPath());
-    final ObjectNode perms = json.putObject("permissions");
-    for (final Map.Entry<String, Permission> e :
-        folder.getGroupPermissions().entrySet()) {
-      perms.put(e.getKey(), e.getValue().toString());
-    }
     json.put("type", "folder");
     if (folder.getParent() != null && !hideParent) {
       json.put("parent", folder.getParent().getIdentifier());

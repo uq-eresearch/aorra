@@ -18,6 +18,8 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET     /filestore                  @controllers.FileStoreController.filestoreJson()
 
 GET     /folder/:folderId               @controllers.FileStoreController.showFolder(folderId: String)
+GET     /folder/:folderId/info          @controllers.FileStoreController.folderInfo(folderId: String)
+POST    /folder/:folderId/permissions   @controllers.FileStoreController.permissionUpdate(folderId: String)
 GET     /folder/:folderId/archive       @controllers.FileStoreController.downloadFolder(folderId)
 POST    /folder/:folderId/files         @controllers.FileStoreController.uploadToFolder(folderId)
 POST    /folder/:folderId/folders       @controllers.FileStoreController.mkdir(folderId, mkdir: String)

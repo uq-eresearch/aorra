@@ -5,6 +5,7 @@ define([
         'tmpl/delete_button',
         'tmpl/deleted_page',
         'tmpl/loading_page',
+        'tmpl/permission_table',
         'tmpl/start_page',
         'tmpl/version_table',
         'tmpl/version_row'

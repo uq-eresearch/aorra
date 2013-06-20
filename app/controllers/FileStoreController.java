@@ -5,19 +5,24 @@ import helpers.FileStoreHelper.FileExistsException;
 import helpers.FileStoreHelper.FolderExistsException;
 import helpers.FileStoreHelper.FolderNotFoundException;
 
+import jackrabbit.AorraAccessManager;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import models.GroupManager;
 import models.User;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.jackrabbit.api.security.user.Group;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
@@ -34,6 +39,7 @@ import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
+import service.filestore.FileStore.Permission;
 import service.filestore.FileStoreImpl;
 import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
@@ -252,6 +258,81 @@ public final class FileStoreController extends SessionAwareController {
         } else {
           return notFound();
         }
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result folderInfo(final String folderId) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException,
+          IOException {
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
+        if (fof instanceof FileStoreImpl.Folder) {
+          final FileStore.Folder folder = (FileStoreImpl.Folder) fof;
+          final ObjectNode json = Json.newObject();
+          {
+            final ObjectNode perms = json.putObject("permissions");
+            for (final Map.Entry<String, Permission> e :
+                folder.getGroupPermissions().entrySet()) {
+              perms.put(e.getKey(), e.getValue().toString());
+            }
+          }
+          return ok(json).as("application/json");
+        } else {
+          return notFound();
+        }
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result permissionUpdate(final String folderId) {
+    final Map<String, String[]> params =
+        ctx().request().body().asFormUrlEncoded();
+    final String groupName;
+    final Permission accessLevel;
+    try {
+      groupName = params.get("group")[0];
+      accessLevel = Permission.valueOf(params.get("accessLevel")[0]);
+    } catch (NullPointerException e) {
+      return badRequest();
+    }
+    final String id = inUserSession(new F.Function<Session, String>() {
+      @Override
+      public final String apply(Session session) throws RepositoryException,
+          IOException {
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
+        if (!(fof instanceof FileStoreImpl.Folder)) {
+          return null;
+        }
+        // Check this user has appropriate permissions
+        if (fof.getAccessLevel() == FileStore.Permission.RW) {
+          return fof.getIdentifier();
+        } else {
+          return null;
+        }
+      }
+    });
+    if (id == null) {
+      return notFound();
+    }
+    return sessionFactory.inSession(new F.Function<Session, Result>() {
+      @Override
+      public Result apply(final Session session) throws Throwable {
+        final GroupManager gm = new GroupManager(session);
+        final Group group = gm.find(groupName);
+        if (group == null)
+          return notFound();
+        final AorraAccessManager acm = (AorraAccessManager)
+            session.getAccessControlManager();
+        acm.grant(group.getPrincipal(),
+            session.getNodeByIdentifier(id).getPath(),
+            accessLevel.toJackrabbitPermission());
+        return ok();
       }
     });
   }
