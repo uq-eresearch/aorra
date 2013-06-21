@@ -151,6 +151,25 @@ class filestore {
       })
   }
 
+  @Usage("show file versions")
+  @Command
+  String versions(
+    @Required(true)
+    @Usage("path to file")
+    @Argument
+    String path) {
+    sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) {
+            def manager = fileStore().getManager(session);
+            def fof = manager.getFileOrFolder(path);
+            SortedMap<String,FileStore.File> versions = fof.getVersions();
+            for(Map.Entry<String, FileStore.File> me : versions) {
+                out.println(me.getKey()+" - "+me.getValue().getPath());
+            }
+        }
+      })
+  }
+
   private JcrSessionFactory sessionFactory() {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(JcrSessionFactory.class);
