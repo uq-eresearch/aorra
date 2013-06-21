@@ -429,9 +429,12 @@ public class FileStoreImpl implements FileStore {
 
   public static class File extends NodeWrapper<models.filestore.File> implements FileStore.File {
 
+    private boolean hasRetrievedData;
+
     protected File(models.filestore.File entity, Manager filestoreManager,
         EventManager eventManagerImpl) throws RepositoryException {
       super(entity, filestoreManager, eventManagerImpl);
+      this.hasRetrievedData = false;
     }
 
     @Override
@@ -446,7 +449,13 @@ public class FileStoreImpl implements FileStore {
 
     @Override
     public InputStream getData() {
-      return entity.getDataProvider().getInputStream();
+      // Unsafe to use the same underlying entity twice when getting an
+      // input stream, so load again if necessary.
+      final models.filestore.File f = this.hasRetrievedData ?
+          filestoreManager.getFileDAO().get(rawPath()) :
+          entity;
+      this.hasRetrievedData = true;
+      return f.getDataProvider().getInputStream();
     }
 
     @Override

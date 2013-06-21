@@ -6,16 +6,16 @@ import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.sessionFactory;
 import static org.apache.tika.metadata.Office.AUTHOR;
-import static org.apache.tika.metadata.Office.WORD_COUNT;
+import static org.apache.tika.metadata.Office.PAGE_COUNT;
 
 import java.io.FileInputStream;
 
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
-import play.Logger;
 import play.libs.F;
 import service.filestore.FileStore;
 
@@ -39,19 +39,32 @@ public class ExtractionHelperTest {
             {
               final ExtractionHelper eh =
                   new ExtractionHelper(session, file.getPath());
-              assertThat(eh.getPlainText())
-                .startsWith("This is a test document.");
+              testPlainText(eh);
+              testMetadata(eh);
             }
             // Test using existing file object
             {
               final ExtractionHelper eh = new ExtractionHelper(file);
-              assertThat(eh.getPlainText())
-                .startsWith("This is a test document.");
+              testPlainText(eh);
+              testMetadata(eh);
             }
             return session;
           }
         });
       }
+
+      private void testPlainText(ExtractionHelper eh)
+          throws RepositoryException {
+        assertThat(eh.getPlainText()).startsWith("This is a test document.");
+      }
+
+      private void testMetadata(ExtractionHelper eh)
+          throws RepositoryException {
+        final Metadata metadata = eh.getMetadata();
+        assertThat(metadata.get(AUTHOR)).isEqualTo("Tim Dettrick");
+        assertThat(metadata.get(PAGE_COUNT)).isEqualTo("1");
+      }
+
     });
   }
 
