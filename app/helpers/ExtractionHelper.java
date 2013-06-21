@@ -1,5 +1,6 @@
 package helpers;
 
+import java.io.IOException;
 import java.util.Map;
 
 import javax.jcr.PathNotFoundException;
@@ -7,11 +8,16 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import scala.Tuple2;
 
 import play.Play;
 import service.GuiceInjectionPlugin;
@@ -27,41 +33,45 @@ public class ExtractionHelper {
 
   public ExtractionHelper(Session session, String path)
       throws RepositoryException {
-    this(session, path, null);
+    this.file = getFile(session, path);
   }
 
   public ExtractionHelper(Session session, String path, String version)
+      throws RepositoryException {
+    this.file = getVersion(version, getFile(session, path));
+  }
+
+  protected FileStore.File getFile(Session session, String path)
       throws RepositoryException {
     final FileStore.FileOrFolder fof = fileStore().getManager(session)
         .getFileOrFolder(path);
     if (!(fof instanceof FileStore.File)) {
       throw new PathNotFoundException("not a file: " + path);
     }
-    final FileStore.File file = (FileStore.File) fof;
-    this.file = (version == null) ? file : getVersion(version, file);
+    return (FileStore.File) fof;
   }
 
-  public String getPlainText() throws RepositoryException {
-    BodyContentHandler handler = new BodyContentHandler();
-    parse(handler, new Metadata());
-    return handler.toString();
+  public String getPlainText() {
+    return parse(new BodyContentHandler())._1().toString();
   }
 
-  public Metadata getMetadata() throws RepositoryException {
-    Metadata metadata = new Metadata();
-    parse(new BodyContentHandler(), metadata);
-    return metadata;
+  public Metadata getMetadata() {
+    return parse(new DefaultHandler())._2();
   }
 
-  private void parse(ContentHandler handler, Metadata metadata)
-      throws RepositoryException {
+  private Tuple2<ContentHandler,Metadata> parse(ContentHandler handler) {
+    final Metadata metadata = new Metadata();
+    final AutoDetectParser parser = new AutoDetectParser();
     try {
-      AutoDetectParser parser = new AutoDetectParser();
-      ParseContext ctx = new ParseContext();
-      parser.parse(file.getData(), handler, metadata, ctx);
-    } catch (Exception e) {
+      parser.parse(file.getData(), handler, metadata, new ParseContext());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } catch (SAXException e) {
+      throw new RuntimeException(e);
+    } catch (TikaException e) {
       throw new RuntimeException(e);
     }
+    return new Tuple2<ContentHandler,Metadata>(handler, metadata);
   }
 
   private FileStore.File getVersion(String version, FileStore.File file)
@@ -78,5 +88,6 @@ public class ExtractionHelper {
     return GuiceInjectionPlugin.getInjector(Play.application()).getInstance(
         FileStore.class);
   }
+
 
 }

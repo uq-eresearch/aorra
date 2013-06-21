@@ -23,7 +23,7 @@ public class ExtractionHelperTest {
 
   @Test
   public void extractSimpleDocx() {
-    running(fakeAorraApp(false), new Runnable() {
+    running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
         sessionFactory().inSession(new F.Function<Session,Session>() {
@@ -35,6 +35,12 @@ public class ExtractionHelperTest {
                 "test.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 data);
+            // Test using existing file object
+            {
+              final ExtractionHelper eh = new ExtractionHelper(file);
+              testPlainText(eh);
+              testMetadata(eh);
+            }
             // Test using interface from CRaSH scripts
             {
               final ExtractionHelper eh =
@@ -42,9 +48,10 @@ public class ExtractionHelperTest {
               testPlainText(eh);
               testMetadata(eh);
             }
-            // Test using existing file object
+            // Test using interface from CRaSH scripts with version
             {
-              final ExtractionHelper eh = new ExtractionHelper(file);
+              final ExtractionHelper eh =
+                  new ExtractionHelper(session, file.getPath(), "1.0");
               testPlainText(eh);
               testMetadata(eh);
             }
