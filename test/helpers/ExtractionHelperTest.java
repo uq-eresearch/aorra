@@ -55,6 +55,12 @@ public class ExtractionHelperTest {
               testPlainText(eh);
               testMetadata(eh);
             }
+            {
+              final ExtractionHelper eh =
+                  new ExtractionHelper(session, file.getPath(), null);
+              testPlainText(eh);
+              testMetadata(eh);
+            }
             return session;
           }
         });

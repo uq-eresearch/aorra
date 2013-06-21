@@ -76,12 +76,12 @@ public class ExtractionHelper {
 
   private FileStore.File getVersion(String version, FileStore.File file)
       throws RepositoryException {
-    for (Map.Entry<String, FileStore.File> me : file.getVersions().entrySet()) {
-      if (StringUtils.equals(version, me.getKey())) {
-        return me.getValue();
-      }
+    final Map<String, FileStore.File> versions = file.getVersions();
+    if (versions.containsKey(version)) {
+      return versions.get(version);
+    } else {
+      return file;
     }
-    return file;
   }
 
   protected FileStore fileStore() {
