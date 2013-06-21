@@ -13,6 +13,9 @@ define(function() {
   });
 
   var FileOrFolder = Backbone.Model.extend({
+    displayUrl: function() {
+      return this.url().replace(/^\//, '/#');
+    },
     asNodeStruct: function() {
       return {
         id: this.id,
@@ -40,9 +43,13 @@ define(function() {
 
   var Folder = FileOrFolder.extend({
     initialize: function() {
-      this.on('sync', function() {
+      // Sync permissions when the folder changes
+      var fetchPermissions = _.bind(function() {
         this.permissions().fetch();
-      })
+      }, this);
+      this.on('sync', fetchPermissions);
+      // When the folder is deleted, so are the permissions.
+      this.on('remove', function() { this.off('sync', fetchPermissions); });
     },
     urlRoot: '/folder',
     uploadUrl: function() {

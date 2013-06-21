@@ -348,7 +348,16 @@ define([
 
   var FileOrFolderView = Backbone.View.extend({
     _makeBreadCrumbElement: function() {
-      var breadcrumbs = this.model.get('path').split("/");
+      var collection = this.model.collection;
+      var path = [];
+      var m = this.model;
+      while (m != null) {
+        path.unshift(m);
+        m = collection.get(m.get('parent'));
+      }
+      var breadcrumbs = _.map(path, function(m) { 
+        return _.extend(m.asNodeStruct(), { url: m.displayUrl() }); 
+      });
       var context = {
         parents: _.initial(breadcrumbs),
         current: _.last(breadcrumbs)

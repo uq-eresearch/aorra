@@ -1,11 +1,13 @@
 <ul class="breadcrumb">
   {#parents}
   <li>
-    <span>{.}</span>
+    <a href="{url}">{name}</a>
     <span class="divider"> / </span>
   </li>
   {/parents}
+  {#current}
   <li class="active">
-    <span>{current}</span>
+    <span>{name}</span>
   </li>
+  {/current}
 </ul>
