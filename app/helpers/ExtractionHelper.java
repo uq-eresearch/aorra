@@ -2,6 +2,7 @@ package helpers;
 
 import java.util.Map;
 
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -18,64 +19,64 @@ import service.filestore.FileStore;
 
 public class ExtractionHelper {
 
-    private Session session;
+  private final FileStore.File file;
 
-    private String path;
+  public ExtractionHelper(FileStore.File file) {
+    this.file = file;
+  }
 
-    private String version;
+  public ExtractionHelper(Session session, String path)
+      throws RepositoryException {
+    this(session, path, null);
+  }
 
-    public ExtractionHelper(Session session, String path) {
-        this.session = session;
-        this.path = path;
+  public ExtractionHelper(Session session, String path, String version)
+      throws RepositoryException {
+    final FileStore.FileOrFolder fof = fileStore().getManager(session)
+        .getFileOrFolder(path);
+    if (!(fof instanceof FileStore.File)) {
+      throw new PathNotFoundException("not a file: " + path);
     }
+    final FileStore.File file = (FileStore.File) fof;
+    this.file = (version == null) ? file : getVersion(version, file);
+  }
 
-    public ExtractionHelper(Session session, String path, String version) {
-        this(session, path);
-        this.version = version;
-    }
+  public String getPlainText() throws RepositoryException {
+    BodyContentHandler handler = new BodyContentHandler();
+    parse(handler, new Metadata());
+    return handler.toString();
+  }
 
-    public String getPlainText() throws RepositoryException {
-        BodyContentHandler handler = new BodyContentHandler();
-        parse(handler, new Metadata());
-        return handler.toString();
-    }
+  public Metadata getMetadata() throws RepositoryException {
+    Metadata metadata = new Metadata();
+    parse(new BodyContentHandler(), metadata);
+    return metadata;
+  }
 
-    public Metadata getMetadata() throws RepositoryException {
-        Metadata metadata = new Metadata();
-        parse(new BodyContentHandler(), metadata);
-        return metadata;
+  private void parse(ContentHandler handler, Metadata metadata)
+      throws RepositoryException {
+    try {
+      AutoDetectParser parser = new AutoDetectParser();
+      ParseContext ctx = new ParseContext();
+      parser.parse(file.getData(), handler, metadata, ctx);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    private void parse(ContentHandler handler, Metadata metadata) throws RepositoryException {
-        FileStore.File file;
-        FileStore.FileOrFolder fof = fileStore().getManager(session).getFileOrFolder(path);
-        if(fof instanceof FileStore.File) {
-            file = (FileStore.File)fof;
-        } else {
-            throw new RuntimeException("not a file: "+path);
-        }
-        file = getVersion(version, file);
-        try {
-            AutoDetectParser parser = new AutoDetectParser();
-            ParseContext ctx = new ParseContext();
-            parser.parse(file.getData(), handler, metadata, ctx);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
+  private FileStore.File getVersion(String version, FileStore.File file)
+      throws RepositoryException {
+    for (Map.Entry<String, FileStore.File> me : file.getVersions().entrySet()) {
+      if (StringUtils.equals(version, me.getKey())) {
+        return me.getValue();
+      }
     }
+    return file;
+  }
 
-    private FileStore.File getVersion(String version, FileStore.File file) throws RepositoryException {
-        for(Map.Entry<String, FileStore.File> me : file.getVersions().entrySet()) {
-            if(StringUtils.equals(version, me.getKey())) {
-                return me.getValue();
-            }
-        }
-        return file;
-    }
-
-    protected FileStore fileStore() {
-        return GuiceInjectionPlugin.getInjector(Play.application())
-                                   .getInstance(FileStore.class);
-    }
+  protected FileStore fileStore() {
+    return GuiceInjectionPlugin.getInjector(Play.application()).getInstance(
+        FileStore.class);
+  }
 
 }
