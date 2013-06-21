@@ -166,7 +166,6 @@ require(['models', 'views'], function(models, views) {
           layout.showDeleted();
         } else {
           layout.showFolder(fs.get(node.id));
-          this._highlightNode(node);
         }
         this._setMainActive();
       },
@@ -176,7 +175,6 @@ require(['models', 'views'], function(models, views) {
           layout.showDeleted();
         } else {
           layout.showFile(fs.get(node.id));
-          this._highlightNode(node);
         }
         this._setMainActive();
       },
@@ -189,12 +187,6 @@ require(['models', 'views'], function(models, views) {
         layout.sidebar.$el.addClass('active');
         layout.main.$el.removeClass('active');
         $('#nav-back').addClass('hidden');
-      },
-      _highlightNode: function(node) {
-        // Show the active node on the tree
-        $('.label.label-info').removeClass('label label-info');
-        $(node.element()).children('.glyphtree-node-label')
-          .addClass('label label-info');
       }
     })
 

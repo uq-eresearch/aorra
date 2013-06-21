@@ -335,7 +335,7 @@
 
           $li = $('<li/>').addClass(this._cr.node()).addClass(this._cr.type(this.type));
           $icon = $('<span/>').addClass(this._cr.node('icon'));
-          $label = $('<span/>').addClass(this._cr.node('label')).text(this.name);
+          $label = $('<span/>').addClass(this._cr.node('label')).attr('tabindex', -1).text(this.name);
           $li.append($icon);
           $li.append($label);
           if (this.isLeaf()) {

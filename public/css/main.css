@@ -4,6 +4,12 @@ span.glyphtree-node-label {
 	min-width: 2em;
 }
 
+/* How labels should look when focused */
+span.glyphtree-node-label:focus {
+	outline: 0;
+	font-weight: bold;
+}
+
 html, body {
   height: 100%;
 }
