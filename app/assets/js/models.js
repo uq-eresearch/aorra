@@ -64,6 +64,24 @@ define(function() {
   });
 
   var VersionInfo = Backbone.Model.extend({
+    idAttribute: "name",
+    // Return a promise of a text summary
+    textSummary: function() {
+      var deferred = $.Deferred();
+      if (_.isUndefined(this._textSummary)) {
+        // Get fresh data from server
+        $.get(this.url()+"/text-summary", _.bind(function(data) {
+          this._textSummary = data;
+          deferred.resolve(data);
+        }, this));
+      } else {
+        // Use cached result
+        _.defer(_.bind(function() {
+          deferred.resolve(this._textSummary);
+        }, this));
+      }
+      return deferred.promise();
+    },
     url: function() {
       return this.collection.url() + '/' + this.get('name');
     }

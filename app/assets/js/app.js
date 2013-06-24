@@ -108,7 +108,6 @@ require(['models', 'views'], function(models, views) {
         fs.remove(fs.get(id));
       });
 
-    window.fs = fs;
     var startRouting = function() {
       // If we're using IE8 heavily, then push state is just trouble
       if (window.location.pathname != '/') {
@@ -154,7 +153,8 @@ require(['models', 'views'], function(models, views) {
       routes: {
         "": "showStart",
         "file/:id": "showFile",
-        "folder/:id": "showFolder"
+        "folder/:id": "showFolder",
+        "file/:id/version/:version/diff": "showFileDiff"
       },
       showStart: function() {
         layout.showStart();
@@ -175,6 +175,15 @@ require(['models', 'views'], function(models, views) {
           layout.showDeleted();
         } else {
           layout.showFile(fs.get(node.id));
+        }
+        this._setMainActive();
+      },
+      showFileDiff: function(id, version) {
+        var node = fileTree.tree().find(id);
+        if (node == null) {
+          layout.showDeleted();
+        } else {
+          layout.showFileDiff(fs.get(node.id), version);
         }
         this._setMainActive();
       },

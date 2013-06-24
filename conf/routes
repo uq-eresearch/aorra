@@ -28,9 +28,9 @@ DELETE  /folder/:folderId               @controllers.FileStoreController.delete(
 
 GET     /file/:fileId                   @controllers.FileStoreController.showFile(fileId: String)
 GET     /file/:fileId/info              @controllers.FileStoreController.fileInfo(fileId: String)
+POST    /file/:fileId/version/new       @controllers.FileStoreController.updateFile(fileId)
 GET     /file/:fileId/version/:vn       @controllers.FileStoreController.downloadFile(fileId, vn)
 GET     /file/:fileId/version/:vn/text-summary    @controllers.FileStoreController.fileTextSummary(fileId, vn)
-POST    /file/:fileId/version/new       @controllers.FileStoreController.updateFile(fileId)
 DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)
 
 GET     /notifications              @controllers.FileStoreAsync.notifications()

@@ -8,8 +8,9 @@ define([
         'tmpl/permission_row',
         'tmpl/permission_table',
         'tmpl/start_page',
-        'tmpl/version_table',
-        'tmpl/version_row'
+        'tmpl/version_comparison',
+        'tmpl/version_row',
+        'tmpl/version_table'
         ], function() {
   'use strict';
   var baseContext = dust.makeBase({});

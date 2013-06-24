@@ -2,10 +2,11 @@ define([
         'models',
         'templates',
         'moment',
+        'diff_match_patch',
         'jquery.bootstrap',
         'jquery.iframe-transport',
         'jquery.fileupload'
-        ], function(models, templates, moment) {
+        ], function(models, templates, moment, diff_match_patch) {
   'use strict';
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
@@ -244,7 +245,10 @@ define([
     },
     render: function() {
       // Get data to render
-      var data = _(this.model.toJSON()).extend({ url: this.model.url() });
+      var data = _(this.model.toJSON()).extend({
+        compareUrl: this.model.url().replace(/^\//, '#') + '/diff',
+        downloadUrl: this.model.url() 
+      });
       // Render asynchronously into row
       return templates.renderInto(this.$el, 'version_row', data, function($e) {
         $.each($e.find('.timestamp'), function(i, n) {
@@ -465,6 +469,83 @@ define([
     }
   });
 
+  var FileDiffView = FileOrFolderView.extend({
+    initialize: function(attrs) {
+      var versionName = attrs.versionName;
+      var info = this.model.info();
+      info.fetch().done(_.bind(function() {
+        this.version = info.versionList().findWhere({ name: versionName });
+        this.render();
+      }, this));
+    },
+    doDiff: function(version1, version2, callback) {
+      $.when(version1.textSummary(), version2.textSummary()).done(
+          function(text1, text2) {
+        var dmp = new diff_match_patch;
+        var diff = dmp.diff_main(text1, text2);
+        dmp.diff_cleanupSemantic(diff);
+        var $txt = $('<p/>');
+        var docFragments = _.map(diff, function(v) {
+          var $el;
+          switch (v[0]) {
+          case -1:
+            $el = $('<del/>');
+            $el.addClass('alert-danger');
+            break;
+          case 1:
+            $el = $('<ins/>')
+            $el.addClass('alert-success');
+            break;
+          default:
+            $el = $('<span/>')
+          }
+          $el.text(v[1]);
+          return $el;
+        });
+        $txt.css('white-space', 'pre-wrap');
+        $txt.html(docFragments);
+        callback($txt);
+      });
+    },
+    render: function() {
+      this.$el.empty();
+      this.$el.append(this._makeBreadCrumbElement());
+      var $backLink = 
+        $('<a class="btn"><i class="icon-arrow-left"></i> Back to file</a>');
+      $backLink.attr('href', this.model.url().replace(/^\//,'#'));
+      this.$el.append($backLink);
+      var $s = $('<div/>');
+      this.$el.append($s);
+      var $txt = $('<div/>');
+      this.$el.append($txt);
+      if (_.isObject(this.version)) {
+        var model = this.model;
+        var version = this.version;
+        var data = {
+          version: this.version.toJSON(),
+          otherVersions: this.model.info().versionList().reject(function(m) {
+              return m.id == version.id;
+            }).map(function(m) {
+              return m.toJSON();
+            })
+        };
+        var onSelectChange = _.bind(function(e) {
+          var versionList = this.model.info().versionList();
+          var otherVersion = versionList.findWhere({ name: $(e.target).val() });
+          this.doDiff(version, otherVersion, function($e) {
+            $txt.empty();
+            $txt.append($e);
+          });
+        }, this);
+        templates.renderInto($s, 'version_comparison', data, function() {
+          var $select = $s.find('select');
+          $select.change(onSelectChange);
+          $select.trigger('change');
+        });
+      }
+    }
+  });
+  
   var DeletedView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
@@ -506,6 +587,12 @@ define([
     },
     showFile: function(file) {
       this.main.show(new FileView({ model: file }));
+    },
+    showFileDiff: function(file, versionName) {
+      this.main.show(new FileDiffView({
+        model: file,
+        versionName: versionName
+      }));
     },
     showDeleted: function(fof) {
       this.main.show(new DeletedView({ model: fof}));
