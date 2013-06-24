@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.google.common.io.ByteStreams;
 
+import service.filestore.FileStore.File;
 import service.filestore.FileStore.FileOrFolder;
 import service.filestore.FileStore.Permission;
 
@@ -308,7 +309,8 @@ public class JsonBuilderTest {
     }
 
     @Override
-    public SortedMap<String, FileStore.File> getVersions() throws RepositoryException {
+    public SortedMap<String, FileStore.File> getVersions()
+        throws RepositoryException {
       throw new NotImplementedException();
     }
 
@@ -331,6 +333,11 @@ public class JsonBuilderTest {
     @Override
     public Permission getAccessLevel() {
       return Permission.RO;
+    }
+
+    @Override
+    public File getLatestVersion() throws RepositoryException {
+      throw new NotImplementedException();
     }
 
   }

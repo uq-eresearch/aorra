@@ -1,5 +1,6 @@
 package controllers;
 
+import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileExistsException;
 import helpers.FileStoreHelper.FolderExistsException;
@@ -231,37 +232,37 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result downloadFile(final String fileId, final String versionName) {
-    return inUserSession(new F.Function<Session, Result>() {
+    return versionBasedResult(fileId, versionName, new FileVersionOp() {
       @Override
-      public final Result apply(Session session) throws RepositoryException,
-          IOException {
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        final FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
-        if (fof instanceof FileStoreImpl.File) {
-          FileStore.File file = (FileStoreImpl.File) fof;
-          if (versionName.equals("latest")) {
-            ctx().response().setContentType(file.getMimeType());
-            ctx().response().setHeader("Content-Disposition",
-                "attachment; filename="+file.getName());
-            return ok(file.getData());
-          } else {
-            if (!file.getVersions().containsKey(versionName)) {
-              return notFound();
-            }
-            final FileStore.File version = file.getVersions().get(versionName);
-            final String filename = file.getName().replaceAll(
-                "(\\.?[^\\.]+$)",
-                String.format("(%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS %2$s)",
-                    version.getModificationTime(),
-                    version.getAuthor().getName()) + "$1" );
-            ctx().response().setContentType(version.getMimeType());
-            ctx().response().setHeader("Content-Disposition",
-                "attachment; filename="+filename);
-            return ok(version.getData());
-          }
-        } else {
-          return notFound();
-        }
+      public final Result apply(
+          final Session session,
+          final FileStore.File file,
+          final FileStore.File version)
+          throws RepositoryException, IOException {
+        final String filename = file.getName().replaceAll(
+            "(\\.?[^\\.]+$)",
+            String.format("(%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS %2$s)",
+                version.getModificationTime(),
+                version.getAuthor().getName()) + "$1" );
+        ctx().response().setContentType(version.getMimeType());
+        ctx().response().setHeader("Content-Disposition",
+            "attachment; filename="+filename);
+        return ok(version.getData());
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result fileTextSummary(final String fileId, final String versionName) {
+    return versionBasedResult(fileId, versionName, new FileVersionOp() {
+      @Override
+      public final Result apply(
+          final Session session,
+          final FileStore.File file,
+          final FileStore.File version)
+          throws RepositoryException, IOException {
+        final ExtractionHelper eh = new ExtractionHelper(version);
+        return ok(eh.getPlainText()).as("text/plain");
       }
     });
   }
@@ -484,6 +485,8 @@ public final class FileStoreController extends SessionAwareController {
     extends F.Function2<Session, T, Result> {}
   private interface FolderOp extends FofOp<FileStore.Folder> {}
   private interface FileOp extends FofOp<FileStore.File> {}
+  private interface FileVersionOp
+    extends F.Function3<Session, FileStore.File, FileStore.File, Result> {}
 
   protected Result folderBasedResult(
       final String folderId,
@@ -495,6 +498,27 @@ public final class FileStoreController extends SessionAwareController {
       final String folderId,
       final FileOp operation) {
     return fofBasedResult(folderId, FileStore.File.class, operation);
+  }
+
+
+  public Result versionBasedResult(
+      final String fileId,
+      final String versionName,
+      final FileVersionOp operation) {
+    return fileBasedResult(fileId, new FileOp() {
+      @Override
+      public final Result apply(Session session, FileStore.File file)
+          throws Throwable {
+        final Map<String, FileStore.File> versions = file.getVersions();
+        if (versionName.equals("latest")) {
+          return operation.apply(session, file, file.getLatestVersion());
+        }
+        if (versions.containsKey(versionName)) {
+          return operation.apply(session, file, versions.get(versionName));
+        }
+        return notFound(versionName + " is not a valid version for this file.");
+      }
+    });
   }
 
   protected <T extends FileStore.FileOrFolder> Result fofBasedResult(

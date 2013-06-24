@@ -487,6 +487,15 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
+    public FileStore.File getLatestVersion()
+        throws RepositoryException {
+      return new File(
+          filestoreManager.getFileDAO().getVersion(rawPath(),
+              entity.getLatestVersion()),
+          filestoreManager, eventManagerImpl);
+    }
+
+    @Override
     public SortedMap<String, service.filestore.FileStore.File> getVersions()
         throws RepositoryException {
       final ImmutableSortedMap.Builder<String,FileStore.File> b =

@@ -9,6 +9,7 @@ import org.jcrom.AbstractJcrEntity;
 import org.jcrom.JcrDataProvider;
 import org.jcrom.JcrDataProviderImpl;
 import org.jcrom.JcrFile;
+import org.jcrom.annotations.JcrBaseVersionName;
 import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
@@ -32,6 +33,13 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
 
   @JcrIdentifier
   protected String id;
+
+  /**
+   * Immediate predecessor of the next version created.
+   * (In this case, also the latest version.)
+   */
+  @JcrBaseVersionName
+  protected String latestVersion;
 
   @JcrVersionName
   protected String version;
@@ -90,6 +98,10 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
   }
 
   public String getVersion() {
+    return version;
+  }
+
+  public String getLatestVersion() {
     return version;
   }
 

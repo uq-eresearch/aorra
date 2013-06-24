@@ -112,6 +112,8 @@ public interface FileStore {
 
     String getMimeType();
 
+    File getLatestVersion() throws RepositoryException;
+
     SortedMap<String,File> getVersions() throws RepositoryException;
 
     File update(String mime, InputStream data) throws RepositoryException;
