@@ -603,7 +603,6 @@ define([
           version: this.version.toJSON(),
           // Only show earlier versions
           otherVersions: this.model.info().versionList().filter(function(m) {
-              console.debug(idxOf(version), idxOf(m));
               return idxOf(version) < idxOf(m);
             }).map(function(m) {
               return m.toJSON();
