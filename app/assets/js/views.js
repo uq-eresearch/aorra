@@ -506,7 +506,9 @@ define([
       var scrollToFunc = function(eOrSel) {
         var margin = 100;
         return function() {
-          $('body').animate({ scrollTop: $(eOrSel).offset().top - margin });
+          $('html, body').animate({
+            scrollTop: $(eOrSel).offset().top - margin
+          });
         };
       };
       $.when(version1.textSummary(), version2.textSummary()).done(
