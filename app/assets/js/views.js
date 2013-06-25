@@ -479,31 +479,84 @@ define([
       }, this));
     },
     doDiff: function(version1, version2, callback) {
+      var scrollToFunc = function(eOrSel) {
+        var margin = 100;
+        return function() {
+          $('body').animate({ scrollTop: $(eOrSel).offset().top - margin });
+        };
+      };
       $.when(version1.textSummary(), version2.textSummary()).done(
           function(text1, text2) {
         var dmp = new diff_match_patch;
+        // Perform diff calculation and cleanup
         var diff = dmp.diff_main(text1, text2);
         dmp.diff_cleanupSemantic(diff);
-        var $txt = $('<p/>');
-        var docFragments = _.map(diff, function(v) {
+        // Add IDs for all fragments of the diff
+        _.each(diff, function(v) { v.push(_.uniqueId('diff-fragment-')); });
+        var $txt = $('<div/>');
+        var $summary = $('<div/>');
+        var $docFragments = _.map(diff, function(v) {
           var $el;
           switch (v[0]) {
           case -1:
             $el = $('<del/>');
             $el.addClass('alert-danger');
+            $el.css('cursor', 'pointer');
+            $el.click(scrollToFunc($summary));
             break;
           case 1:
             $el = $('<ins/>')
             $el.addClass('alert-success');
+            $el.css('cursor', 'pointer');
+            $el.click(scrollToFunc($summary));
             break;
           default:
             $el = $('<span/>')
           }
+          $el.attr('id', v[2]);
           $el.text(v[1]);
           return $el;
         });
-        $txt.css('white-space', 'pre-wrap');
-        $txt.html(docFragments);
+        var stats = _.reduce(diff,
+            function(h, v) {
+              if (v[0] == 1) {
+                h['additions']++;
+              } else if (v[0] == -1) {
+                h['deletions']++;
+              }
+              return h;
+            },
+            { additions: 0, deletions: 0 });
+        $summary.append($('<p/>').text(_.template(
+            "<%=additions%> additions & <%=deletions%> deletions", stats)));
+        var makeBoxes = function(v) {
+          var $icon = $('<i/>')
+            .click(scrollToFunc('#'+v[2]))
+            .attr('data-content', v[1])
+            .css('margin-right', '1ex')
+            .css('cursor', 'pointer');
+          if (v[0] == 1) {
+            $icon.addClass('icon-plus-sign-alt alert-success');
+            $icon.attr('title', 'Added text');
+          } else {
+            $icon.addClass('icon-minus-sign-alt alert-danger');
+            $icon.attr('title', 'Deleted text');
+          }
+          $icon.popover({ placement: 'bottom', trigger: 'hover'});
+          return $icon;
+        };
+        $summary.append(
+          $('<p/>').html(
+            _(diff).reject(function(v) {
+              return v[0] == 0;
+            }).map(makeBoxes))
+        );
+        $txt
+          .append($summary)
+          .append($('<hr/>'))
+          .append($('<p/>')
+            .append($docFragments)
+            .css('white-space', 'pre-wrap'));
         callback($txt);
       });
     },
