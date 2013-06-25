@@ -246,9 +246,13 @@ define([
     render: function() {
       // Get data to render
       var data = _(this.model.toJSON()).extend({
-        compareUrl: this.model.url().replace(/^\//, '#') + '/diff',
-        downloadUrl: this.model.url() 
+        downloadUrl: this.model.url()
       });
+      if (this.model != this.model.collection.last()) {
+        data = _(data).extend({
+          compareUrl: this.model.url().replace(/^\//, '#') + '/diff'
+        });
+      }
       // Render asynchronously into row
       return templates.renderInto(this.$el, 'version_row', data, function($e) {
         $.each($e.find('.timestamp'), function(i, n) {
@@ -389,8 +393,14 @@ define([
         })
         var mkdirView = new CreateFolderView({ model: this.model });
         this.$el.append(this._makeBreadCrumbElement());
-        this.$el.append(this._makeDeleteElement().addClass('pull-right'));
-        this.$el.append(this._makeDownloadElement());
+        var $buttons = $('<ul class="inline"/>');
+        $buttons.addClass('pull-right');
+        this.$el.append($buttons);
+        $buttons.append(
+            $('<li/>').append(this._makeDeleteElement()));
+        $buttons.append(
+            $('<li/>').append(this._makeDownloadElement()));
+        this.$el.append($('<h2/>').text(this.model.get('name')));
         this.$el.append($('<div/>')
           .append('<h3>Upload files</h3>')
           .append(fileUploadView.$el)
@@ -398,7 +408,7 @@ define([
           .append(mkdirView.$el));
       } else {
         this.$el.append(this._makeBreadCrumbElement());
-        this.$el.append(this._makeDownloadElement());
+        this.$el.append(this._makeDownloadElement().addClass('pull-right'));
       }
       this.$el.append(groupPermissionsView.$el);
     },
@@ -423,13 +433,20 @@ define([
           type: 'file',
           model: this.model
         })
-        this.$el.append(this._makeDeleteElement().addClass('pull-right'));
-        this.$el.append(this._makeDownloadElement());
+        var $buttons = $('<ul class="inline"/>');
+        $buttons.addClass('pull-right');
+        this.$el.append($buttons);
+        $buttons.append(
+            $('<li/>').append(this._makeDeleteElement()));
+        $buttons.append(
+            $('<li/>').append(this._makeDownloadElement()));
+        this.$el.append($('<h2/>').text(this.model.get('name')));
         this.$el.append($('<div/>')
             .append('<h3>Upload new Version</h3>')
             .append(fileUploadView.$el));
       } else {
-        this.$el.append(this._makeDownloadElement());
+        this.$el.append($('<h2/>').text(this.model.get('name')));
+        this.$el.append(this._makeDownloadElement().addClass('pull-right'));
       }
       this.$el.append(fileInfoView.$el);
       switch (type) {
@@ -566,7 +583,7 @@ define([
       var $backLink = 
         $('<a class="btn"><i class="icon-arrow-left"></i> Back to file</a>');
       $backLink.attr('href', this.model.url().replace(/^\//,'#'));
-      this.$el.append($backLink);
+      this.$el.append($('<p/>').append($backLink));
       var $s = $('<div/>');
       this.$el.append($s);
       var $txt = $('<div/>');
@@ -574,10 +591,13 @@ define([
       if (_.isObject(this.version)) {
         var model = this.model;
         var version = this.version;
+        var idxOf = _.bind(this.model.info().versionList().indexOf, this.model.info().versionList());
         var data = {
           version: this.version.toJSON(),
-          otherVersions: this.model.info().versionList().reject(function(m) {
-              return m.id == version.id;
+          // Only show earlier versions
+          otherVersions: this.model.info().versionList().filter(function(m) {
+              console.debug(idxOf(version), idxOf(m));
+              return idxOf(version) < idxOf(m);
             }).map(function(m) {
               return m.toJSON();
             })
@@ -585,7 +605,7 @@ define([
         var onSelectChange = _.bind(function(e) {
           var versionList = this.model.info().versionList();
           var otherVersion = versionList.findWhere({ name: $(e.target).val() });
-          this.doDiff(version, otherVersion, function($e) {
+          this.doDiff(otherVersion, version, function($e) {
             $txt.empty();
             $txt.append($e);
           });
