@@ -355,6 +355,16 @@ define([
   })
 
   var FileOrFolderView = Backbone.View.extend({
+    _inlineList: function() {
+      var $list = $('<ul class="inline"/>');
+      _.each(arguments, function(arg) {
+        $list.append($('<li/>').append(arg));
+      });
+      return $list;
+    },
+    _makeHeading: function() {
+      return $('<h2/>').text(this.model.get('name'));
+    },
     _makeBreadCrumbElement: function() {
       var collection = this.model.collection;
       var path = [];
@@ -382,7 +392,6 @@ define([
 
   var FolderView = FileOrFolderView.extend({
     render: function() {
-      window.folder = this.model;
       var groupPermissionsView = new GroupPermissionsView({
         model: this.model
       });
@@ -392,25 +401,25 @@ define([
           model: this.model
         })
         var mkdirView = new CreateFolderView({ model: this.model });
-        this.$el.append(this._makeBreadCrumbElement());
-        var $buttons = $('<ul class="inline"/>');
-        $buttons.addClass('pull-right');
-        this.$el.append($buttons);
-        $buttons.append(
-            $('<li/>').append(this._makeDeleteElement()));
-        $buttons.append(
-            $('<li/>').append(this._makeDownloadElement()));
-        this.$el.append($('<h2/>').text(this.model.get('name')));
-        this.$el.append($('<div/>')
+        this.$el
+          .append(this._makeBreadCrumbElement())
+          .append(this._inlineList(
+              this._makeDownloadElement(),
+              this._makeDeleteElement()
+            ).addClass('pull-right'))
+          .append(this._makeHeading())
+          .append($('<div/>')
           .append('<h3>Upload files</h3>')
           .append(fileUploadView.$el)
           .append('<h3>Create new folder</h3>')
-          .append(mkdirView.$el));
+          .append(mkdirView.$el))
+          .append(groupPermissionsView.$el);
       } else {
-        this.$el.append(this._makeBreadCrumbElement());
-        this.$el.append(this._makeDownloadElement().addClass('pull-right'));
+        this.$el
+          .append(this._makeBreadCrumbElement())
+          .append(this._makeDownloadElement().addClass('pull-right'))
+          .append(this._makeHeading());
       }
-      this.$el.append(groupPermissionsView.$el);
     },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');
@@ -433,20 +442,18 @@ define([
           type: 'file',
           model: this.model
         })
-        var $buttons = $('<ul class="inline"/>');
-        $buttons.addClass('pull-right');
-        this.$el.append($buttons);
-        $buttons.append(
-            $('<li/>').append(this._makeDeleteElement()));
-        $buttons.append(
-            $('<li/>').append(this._makeDownloadElement()));
-        this.$el.append($('<h2/>').text(this.model.get('name')));
-        this.$el.append($('<div/>')
-            .append('<h3>Upload new Version</h3>')
-            .append(fileUploadView.$el));
+        this.$el
+          .append(this._inlineList(
+              this._makeDownloadElement(),
+              this._makeDeleteElement()
+            ).addClass('pull-right'))
+          .append(this._makeHeading())
+          .append($('<div/>').append('<h3>Upload new Version</h3>')
+              .append(fileUploadView.$el));
       } else {
-        this.$el.append($('<h2/>').text(this.model.get('name')));
-        this.$el.append(this._makeDownloadElement().addClass('pull-right'));
+        this.$el
+          .append(this._makeDownloadElement().addClass('pull-right'))
+          .append(this._makeHeading());
       }
       this.$el.append(fileInfoView.$el);
       switch (type) {
