@@ -97,6 +97,13 @@ html.hero-page {
   display: none;
 }
 
+.green-text {
+  color: #468847;
+}
+
+.red-text {
+	color: #b94a48;
+}
 
 @media (min-height: 480px) {
 	.hero-page .above-login {

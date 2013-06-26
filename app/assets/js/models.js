@@ -1,4 +1,4 @@
-define(function() {
+define(['backbone'], function(Backbone) {
   'use strict';
 
   var FileStore = Backbone.Collection.extend({

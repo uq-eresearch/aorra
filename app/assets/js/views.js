@@ -3,10 +3,12 @@ define([
         'templates',
         'moment',
         'diff_match_patch',
+        'glyphtree',
         'jquery.bootstrap',
+        'marionette',
         'jquery.iframe-transport',
         'jquery.fileupload'
-        ], function(models, templates, moment, diff_match_patch) {
+        ], function(models, templates, moment, diff_match_patch, glyphtree, $, Backbone) {
   'use strict';
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
@@ -526,13 +528,13 @@ define([
           switch (v[0]) {
           case -1:
             $el = $('<del/>');
-            $el.addClass('alert-danger');
+            $el.addClass('red-text');
             $el.css('cursor', 'pointer');
             $el.click(scrollToFunc($summary));
             break;
           case 1:
             $el = $('<ins/>')
-            $el.addClass('alert-success');
+            $el.addClass('green-text');
             $el.css('cursor', 'pointer');
             $el.click(scrollToFunc($summary));
             break;
@@ -562,10 +564,10 @@ define([
             .css('margin-right', '1ex')
             .css('cursor', 'pointer');
           if (v[0] == 1) {
-            $icon.addClass('icon-plus-sign-alt alert-success');
+            $icon.addClass('icon-plus-sign-alt green-text');
             $icon.attr('title', 'Added text');
           } else {
-            $icon.addClass('icon-minus-sign-alt alert-danger');
+            $icon.addClass('icon-minus-sign-alt red-text');
             $icon.attr('title', 'Deleted text');
           }
           $icon.popover({ placement: 'bottom', trigger: 'hover'});
