@@ -2,7 +2,7 @@
   <button class="btn btn-danger delete-button">
     <i class="icon-remove"></i> Delete
   </button>
-  <div class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal hide" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-header">
       <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
       <h3>Are you sure? There is no undo!</h3>
