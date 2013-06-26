@@ -1,7 +1,5 @@
 package service.filestore;
 
-import groovy.lang.Immutable;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;

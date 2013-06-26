@@ -1,15 +1,8 @@
 package service.filestore;
 
-import java.util.Map;
-
 import javax.jcr.RepositoryException;
 
-import org.apache.commons.lang3.time.DateFormatUtils;
-
 import play.api.libs.iteratee.Concurrent.Channel;
-
-import com.google.common.collect.ImmutableMap;
-
 import scala.Tuple2;
 
 public interface EventManager {
