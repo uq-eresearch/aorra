@@ -208,7 +208,6 @@ define([
 
   var CreateFolderView = Backbone.View.extend({
     tagName: 'form',
-    initialize: function() { this.render(); },
     render: function() {
       var parentFolder = this.model.get('path');
       var $input = $('<input type="text" name="mkdir"/>')
@@ -354,9 +353,29 @@ define([
       this.hideModal();
       return false;
     }
-  })
+  });
+  
+  var BreadcrumbView = Backbone.View.extend({
+    render: function() {
+      var collection = this.model.collection;
+      var path = [];
+      var m = this.model;
+      while (m != null) {
+        path.unshift(m);
+        m = collection.get(m.get('parent'));
+      }
+      var breadcrumbs = _.map(path, function(m) { 
+        return _.extend(m.asNodeStruct(), { url: m.displayUrl() }); 
+      });
+      var context = {
+        parents: _.initial(breadcrumbs),
+        current: _.last(breadcrumbs)
+      };
+      return templates.renderInto(this.$el, 'breadcrumbs', context);
+    }
+  });
 
-  var FileOrFolderView = Backbone.View.extend({
+  var FileOrFolderView = Backbone.Marionette.Layout.extend({
     _inlineList: function() {
       var $list = $('<ul class="inline"/>');
       _.each(arguments, function(arg) {
@@ -391,36 +410,70 @@ define([
       return deleteButton.$el;
     }
   });
+  
+  /*
+   * Simple container view which can contain a number of other views or DOM
+   * elements, and render each one in an inline list.
+   */
+  var InlineListView = Backbone.View.extend({
+    tagName: 'ul',
+    className: 'inline',
+    els: [],
+    container: new Backbone.ChildViewContainer(),
+    initialize: function(viewsAndEls) {
+      var isView = function(v) { return v instanceof Backbone.View; };
+      _.chain(viewsAndEls)
+        .filter(isView)
+        .each(_.bind(this.container.add, this.container));
+      this.els = _.map(viewsAndEls, function(viewOrEl) {
+        return isView(viewOrEl) ? viewOrEl.el : viewOrEl;
+      });
+      this.render();
+    },
+    render: function() {
+      this.$el.append(_.map(this.els, function(el) {
+        return $('<li/>').append(el);
+      }));
+      this.container.apply('render');
+    }
+  });
 
   var FolderView = FileOrFolderView.extend({
-    render: function() {
-      var groupPermissionsView = new GroupPermissionsView({
-        model: this.model
-      });
+    serializeData: function() {
+      return _(this.model.toJSON()).extend({ url: this.model.url() });
+    },
+    template: function(serialized_model) {
+      _(serialized_model).extend({
+        hasWrite: serialized_model.accessLevel == 'RW'
+      })
+      return templates.renderSync('folder_view', serialized_model); 
+    },
+    regions: {
+      breadcrumbs: '.region-breadcrumbs',
+      buttons: '.region-buttons',
+      upload: '.region-upload',
+      mkdir: '.region-mkdir',
+      permissions: '.region-permissions'
+    },
+    onRender: function() {
+      this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       if (this.model.get('accessLevel') == 'RW') {
-        var fileUploadView = new FileUploadView({
+        this.upload.show(new FileUploadView({
           type: 'folder',
           model: this.model
-        })
-        var mkdirView = new CreateFolderView({ model: this.model });
-        this.$el
-          .append(this._makeBreadCrumbElement())
-          .append(this._inlineList(
-              this._makeDownloadElement(),
-              this._makeDeleteElement()
-            ).addClass('pull-right'))
-          .append(this._makeHeading())
-          .append($('<div/>')
-          .append('<h3>Upload files</h3>')
-          .append(fileUploadView.$el)
-          .append('<h3>Create new folder</h3>')
-          .append(mkdirView.$el))
-          .append(groupPermissionsView.$el);
+        }));
+        this.mkdir.show(new CreateFolderView({ model: this.model }));
+        this.permissions.show(new GroupPermissionsView({
+          model: this.model
+        }));
+        this.buttons.show(new InlineListView([
+          this._makeDownloadElement(),
+          new DeleteButtonView({ model: this.model })
+        ]));
       } else {
-        this.$el
-          .append(this._makeBreadCrumbElement())
-          .append(this._makeDownloadElement().addClass('pull-right'))
-          .append(this._makeHeading());
+        this.buttons.show(new InlineListView([
+          this._makeDownloadElement()
+        ]));
       }
     },
     _makeDownloadElement: function() {
@@ -430,54 +483,21 @@ define([
       return $link;
     }
   });
-
-  var FileView = FileOrFolderView.extend({
+  
+  var ImageElementView = Backbone.View.extend({
     render: function() {
-      var type = typeFromMimeType(this.model.get('mime'));
-      this.$el.empty();
-      this.$el.append(this._makeBreadCrumbElement());
-      var fileInfoView = new FileInfoView({
-        model: this.model.info()
-      });
-      if (this.model.get('accessLevel') == 'RW') {
-        var fileUploadView = new FileUploadView({
-          type: 'file',
-          model: this.model
-        })
-        this.$el
-          .append(this._inlineList(
-              this._makeDownloadElement(),
-              this._makeDeleteElement()
-            ).addClass('pull-right'))
-          .append(this._makeHeading())
-          .append($('<div/>').append('<h3>Upload new Version</h3>')
-              .append(fileUploadView.$el));
-      } else {
-        this.$el
-          .append(this._makeDownloadElement().addClass('pull-right'))
-          .append(this._makeHeading());
-      }
-      this.$el.append(fileInfoView.$el);
-      switch (type) {
-      case 'spreadsheet':
-        this.$el.append(this._makeChartElements());
-        break;
-      case 'image':
-        this.$el.append(this._makeImageElement());
-        break;
-      }
-    },
-    _makeImageElement: function() {
-      return $('<div><br /></div>').append(_.template(
-        '<img class="img-polaroid" alt="Image for <%= model.get("path") %>"' +
-        ' src="<%= model.url() %>/version/latest" />',
-        { model: this.model }));
-    },
-    _makeChartElements: function() {
-      var $wrapper = $('<div/>');
+      this.$el.append(_.template(
+          '<img class="img-polaroid" alt="Image for <%= model.get("path") %>"' +
+          ' src="<%= model.url() %>/version/latest" />',
+          { model: this.model }));
+    }
+  });
+  
+  var ChartElementView = Backbone.View.extend({
+    render: function() {
       var format = Modernizr.svg ? 'svg' : 'png';
       var onSuccess = _.bind(function(data) {
-        return templates.renderInto($wrapper, 'charts', data);
+        return templates.renderInto(this.$el, 'charts', data);
       }, this);
       $.ajax({
         method: 'GET',
@@ -485,7 +505,54 @@ define([
         dataType: 'json',
         success: onSuccess
       });
-      return $wrapper;
+    }
+  });
+
+  var FileView = FileOrFolderView.extend({
+    serializeData: function(model) {
+      return _(this.model.toJSON()).extend({ url: this.model.url() });
+    },
+    template: function(serialized_model) {
+      _(serialized_model).extend({
+        hasWrite: serialized_model.accessLevel == 'RW'
+      })
+      return templates.renderSync('file_view', serialized_model); 
+    },
+    regions: {
+      breadcrumbs: '.region-breadcrumbs',
+      buttons: '.region-buttons',
+      display: '.region-display',
+      info:   '.region-info',
+      upload: '.region-upload'
+    },
+    onRender: function() {
+      var type = typeFromMimeType(this.model.get('mime'));
+      this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
+      this.info.show(new FileInfoView({
+        model: this.model.info()
+      }));
+      if (this.model.get('accessLevel') == 'RW') {
+        this.upload.show(new FileUploadView({
+          type: 'file',
+          model: this.model
+        }));
+        this.buttons.show(new InlineListView([
+          this._makeDownloadElement(),
+          new DeleteButtonView({ model: this.model })
+        ]));
+      } else {
+        this.buttons.show(new InlineListView([
+          this._makeDownloadElement()
+        ]));
+      }
+      switch (type) {
+      case 'spreadsheet':
+        this.display.show(new ChartElementView({ model: this.model }));
+        break;
+      case 'image':
+        this.display.show(new ImageElementView({ model: this.model }));
+        break;
+      }
     },
     _makeDownloadElement: function() {
       var $link = $('<a class="btn"/>');
@@ -495,16 +562,12 @@ define([
     }
   });
 
-  var FileDiffView = FileOrFolderView.extend({
-    initialize: function(attrs) {
-      var versionName = attrs.versionName;
-      var info = this.model.info();
-      info.fetch().done(_.bind(function() {
-        this.version = info.versionList().findWhere({ name: versionName });
-        this.render();
-      }, this));
+  var DiffView = Backbone.View.extend({
+    initialize: function(version1, version2) {
+      this._version1 = version1;
+      this._version2 = version2;
     },
-    doDiff: function(version1, version2, callback) {
+    _doDiff: function(version1, version2, callback) {
       var scrollToFunc = function(eOrSel) {
         var margin = 100;
         return function() {
@@ -527,15 +590,11 @@ define([
           var $el;
           switch (v[0]) {
           case -1:
-            $el = $('<del/>');
-            $el.addClass('red-text');
-            $el.css('cursor', 'pointer');
+            $el = $('<del class="clickable red-text"/>');
             $el.click(scrollToFunc($summary));
             break;
           case 1:
-            $el = $('<ins/>')
-            $el.addClass('green-text');
-            $el.css('cursor', 'pointer');
+            $el = $('<ins class="clickable green-text"/>')
             $el.click(scrollToFunc($summary));
             break;
           default:
@@ -547,10 +606,9 @@ define([
         });
         var stats = _.reduce(diff,
             function(h, v) {
-              if (v[0] == 1) {
-                h['additions']++;
-              } else if (v[0] == -1) {
-                h['deletions']++;
+              switch (v[0]) {
+                case 1:  h['additions']++; break;
+                case -1: h['deletions']++; break;
               }
               return h;
             },
@@ -558,11 +616,9 @@ define([
         $summary.append($('<p/>').text(_.template(
             "<%=additions%> additions & <%=deletions%> deletions", stats)));
         var makeBoxes = function(v) {
-          var $icon = $('<i/>')
+          var $icon = $('<i class="clickable"/>')
             .click(scrollToFunc('#'+v[2]))
-            .attr('data-content', v[1])
-            .css('margin-right', '1ex')
-            .css('cursor', 'pointer');
+            .attr('data-content', v[1]);
           if (v[0] == 1) {
             $icon.addClass('icon-plus-sign-alt green-text');
             $icon.attr('title', 'Added text');
@@ -571,10 +627,10 @@ define([
             $icon.attr('title', 'Deleted text');
           }
           $icon.popover({ placement: 'bottom', trigger: 'hover'});
-          return $icon;
+          return $('<li/>').append($icon);
         };
         $summary.append(
-          $('<p/>').html(
+          $('<ul class="inline"/>').html(
             _(diff).reject(function(v) {
               return v[0] == 0;
             }).map(makeBoxes))
@@ -589,46 +645,64 @@ define([
       });
     },
     render: function() {
-      this.$el.empty();
-      this.$el.append(this._makeBreadCrumbElement());
-      var $backLink = 
-        $('<a class="btn"><i class="icon-arrow-left"></i> Back to file</a>');
-      $backLink.attr('href', this.model.url().replace(/^\//,'#'));
-      this.$el.append($('<p/>').append($backLink));
-      var $s = $('<div/>');
-      this.$el.append($s);
-      var $txt = $('<div/>');
-      this.$el.append($txt);
-      if (_.isObject(this.version)) {
-        var model = this.model;
-        var version = this.version;
-        var idxOf = _.bind(this.model.info().versionList().indexOf, this.model.info().versionList());
-        var data = {
-          version: this.version.toJSON(),
-          // Only show earlier versions
-          otherVersions: this.model.info().versionList().filter(function(m) {
-              return idxOf(version) < idxOf(m);
-            }).map(function(m) {
-              return m.toJSON();
-            })
-        };
-        var onSelectChange = _.bind(function(e) {
-          var versionList = this.model.info().versionList();
-          var otherVersion = versionList.findWhere({ name: $(e.target).val() });
-          this.doDiff(otherVersion, version, function($e) {
-            $txt.empty();
-            $txt.append($e);
-          });
-        }, this);
-        templates.renderInto($s, 'version_comparison', data, function() {
-          var $select = $s.find('select');
-          $select.change(onSelectChange);
-          $select.trigger('change');
-        });
-      }
+      var $el = this.$el;
+      this._doDiff(this._version1, this._version2, function($e) {
+        $el.empty().append($e);
+      });
     }
   });
   
+  var FileDiffView = FileOrFolderView.extend({
+    initialize: function(attrs) {
+      var versionName = attrs.versionName;
+      var info = this.model.info();
+      info.fetch().done(_.bind(function() {
+        this.version = info.versionList().findWhere({ name: versionName });
+        this.render();
+      }, this));
+    },
+    serializeData: function() {
+      var model = this.model;
+      var version = this.version;
+      var versionList = model.info().versionList();
+      var idxOf = _.bind(versionList.indexOf, versionList);
+      // Only show earlier versions
+      var otherVersions = 
+        versionList.filter(function(m) {
+          return idxOf(version) < idxOf(m);
+        }).map(function(m) {
+          return m.toJSON();
+        });
+      return {
+        backUrl: model.displayUrl(),
+        version: version ? version.toJSON() : null,
+        otherVersions: otherVersions
+      };
+    },
+    template: function(serialized_model) {
+      if (_.isObject(serialized_model.version))
+        return templates.renderSync('filediff_view', serialized_model);
+      else
+        return '';
+    },
+    regions: {
+      breadcrumbs: '.region-breadcrumbs',
+      diff: '.region-diff'
+    },
+    onRender: function() {
+      if (!_.isObject(this.version)) return;
+      this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
+      var onSelectChange = _.bind(function(e) { 
+        var versionList = this.model.info().versionList();
+        var otherVersion = versionList.findWhere({ name: $(e.target).val() });
+        this.diff.show(new DiffView(otherVersion, this.version));
+      }, this);
+      var $select = this.$el.find('select');
+      $select.change(onSelectChange);
+      $select.trigger('change');
+    }
+  });
+
   var DeletedView = Backbone.View.extend({
     initialize: function() { this.render(); },
     render: function() {
@@ -649,7 +723,7 @@ define([
       return templates.renderInto(this.$el, 'start_page', {});
     }
   });
-  
+
   var AppLayout = Backbone.Marionette.Layout.extend({
     template: "#main-layout",
     regions: {

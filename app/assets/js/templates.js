@@ -4,11 +4,13 @@ define([
         'tmpl/charts',
         'tmpl/delete_button',
         'tmpl/deleted_page',
+        'tmpl/file_view',
+        'tmpl/filediff_view',
+        'tmpl/folder_view',
         'tmpl/loading_page',
         'tmpl/permission_row',
         'tmpl/permission_table',
         'tmpl/start_page',
-        'tmpl/version_comparison',
         'tmpl/version_row',
         'tmpl/version_table'
         ], function() {

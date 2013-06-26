@@ -97,6 +97,10 @@ html.hero-page {
   display: none;
 }
 
+.clickable {
+  cursor: pointer;
+}
+
 .green-text {
   color: #468847;
 }

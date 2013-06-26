@@ -1,3 +1,13 @@
+<div class="region-breadcrumbs"></div>
+
+<div>
+  <a class="btn" href="{backUrl}">
+    <i class="icon-arrow-left"></i> Back to file
+  </a>
+</div>
+
+<br/>
+
 <p>
   Compare
   &nbsp;
@@ -19,3 +29,5 @@
   </span>
   {/version}
 </p>
+
+<div class="region-diff"></div>
