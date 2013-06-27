@@ -510,6 +510,9 @@ define([
   
   var FlagButtonView = Backbone.Marionette.ItemView.extend({
     tagName: 'span',
+    initialize: function() {
+      this._flag = false;
+    },
     serializeData: function() {
       return _.extend(this.dataDefaults(), {
         count: 0
@@ -518,27 +521,27 @@ define([
     template: function(serialized_model) {
       return templates.renderSync('flag_button', serialized_model);
     },
+    isSet: function() {
+      return this._flag;
+    },
+    toggleSet: function() {
+      return this._flag = this._flag != true;
+    },
     onRender: function() {
       var $button = this.$el.find('.btn');
-      $button.click(function(e) {
-        // Change icon
-        var $icon = $button.find('i');
-        var otherIcon = $icon.data('icon-other');
-        $icon.data('icon-other', $icon.attr('class'));
-        $icon.removeClass();
-        $icon.addClass(otherIcon);
-        // Raise / Lower
-        $button.toggleClass('active');
-      });
+      $button.toggleClass('active', this.isSet());
+      $button.click(_.bind(function(e) {
+        this.toggleSet();
+        this.render();
+      }, this));
     }
   });
   
   var EditingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
       return {
-        icon: 'flag-alt',
-        iconActive: 'flag',
-        title: 'Editing'
+        icon: this.isSet() ? 'flag' : 'flag-alt',
+        title: 'Edit'
       };
     }
   });
@@ -546,9 +549,8 @@ define([
   var WatchingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
       return {
-        icon: 'eye-close',
-        iconActive: 'eye-open',
-        title: 'Watching'
+        icon: this.isSet() ? 'eye-open' : 'eye-close',
+        title: 'Watch'
       };
     }
   });

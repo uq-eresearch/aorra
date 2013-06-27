@@ -1,6 +1,6 @@
 <span class="counter-button input-prepend">
   <button class="btn">
-    <i class="icon-{icon}" data-icon-other="icon-{iconActive}"></i> {title}
+    <i class="icon-{icon}"></i> {title}
   </button>
   <span class="uneditable-input">
     {count}
