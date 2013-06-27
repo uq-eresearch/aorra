@@ -31,7 +31,8 @@ requirejs.config({
         deps: ['jquery'],
         exports: 'jQuery'
       }
-    }
+    },
+    waitSeconds: 20
 });
 
 require(['jquery.bootstrap'], function() {

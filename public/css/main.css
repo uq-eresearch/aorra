@@ -97,6 +97,20 @@ html.hero-page {
   display: none;
 }
 
+.counter-button {
+	margin-bottom: 0;
+}
+
+.counter-button .active {
+  border-color: #cccccc;
+}
+
+.counter-button .uneditable-input {
+	text-align: right;
+	width: 1.5em;
+	padding-right: 0.75em;
+}
+
 .clickable {
   cursor: pointer;
 }

@@ -431,8 +431,8 @@ define([
       this.render();
     },
     render: function() {
-      this.$el.append(_.map(this.els, function(el) {
-        return $('<li/>').append(el);
+      this.$el.empty().append(_.map(this.els, function(el) {
+        return $('<li style="text-align: right; clear: left"/>').append(el);
       }));
       this.container.apply('render');
     }
@@ -507,9 +507,54 @@ define([
       });
     }
   });
+  
+  var FlagButtonView = Backbone.Marionette.ItemView.extend({
+    tagName: 'span',
+    serializeData: function() {
+      return _.extend(this.dataDefaults(), {
+        count: 0
+      });
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('flag_button', serialized_model);
+    },
+    onRender: function() {
+      var $button = this.$el.find('.btn');
+      $button.click(function(e) {
+        // Change icon
+        var $icon = $button.find('i');
+        var otherIcon = $icon.data('icon-other');
+        $icon.data('icon-other', $icon.attr('class'));
+        $icon.removeClass();
+        $icon.addClass(otherIcon);
+        // Raise / Lower
+        $button.toggleClass('active');
+      });
+    }
+  });
+  
+  var EditingButtonView = FlagButtonView.extend({
+    dataDefaults: function() {
+      return {
+        icon: 'flag-alt',
+        iconActive: 'flag',
+        title: 'Editing'
+      };
+    }
+  });
+  
+  var WatchingButtonView = FlagButtonView.extend({
+    dataDefaults: function() {
+      return {
+        icon: 'eye-close',
+        iconActive: 'eye-open',
+        title: 'Watching'
+      };
+    }
+  });
 
   var FileView = FileOrFolderView.extend({
-    serializeData: function(model) {
+    serializeData: function() {
       return _(this.model.toJSON()).extend({ url: this.model.url() });
     },
     template: function(serialized_model) {
@@ -537,6 +582,8 @@ define([
           model: this.model
         }));
         this.buttons.show(new InlineListView([
+          new WatchingButtonView({ model: this.model.info() }),
+          new EditingButtonView({ model: this.model.info() }),
           this._makeDownloadElement(),
           new DeleteButtonView({ model: this.model })
         ]));

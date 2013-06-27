@@ -6,6 +6,7 @@ define([
         'tmpl/deleted_page',
         'tmpl/file_view',
         'tmpl/filediff_view',
+        'tmpl/flag_button',
         'tmpl/folder_view',
         'tmpl/loading_page',
         'tmpl/permission_row',
