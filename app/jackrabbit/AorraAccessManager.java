@@ -21,6 +21,7 @@ import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 import javax.security.auth.Subject;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.core.id.ItemId;
@@ -50,7 +51,7 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
             throws PathNotFoundException, AccessDeniedException,
             RepositoryException {
         out("getApplicablePolicies");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
@@ -58,7 +59,7 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
             throws PathNotFoundException, AccessDeniedException,
             RepositoryException {
         out("getEffectivePolicies");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
@@ -66,35 +67,35 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
             throws PathNotFoundException, AccessDeniedException,
             RepositoryException {
         out("getPolicies");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
     public Privilege[] getPrivileges(String arg0) throws PathNotFoundException,
             RepositoryException {
         out("getPrivileges");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
     public Privilege[] getSupportedPrivileges(String arg0)
             throws PathNotFoundException, RepositoryException {
         out("getSupportedPrivileges");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
     public boolean hasPrivileges(String arg0, Privilege[] arg1)
             throws PathNotFoundException, RepositoryException {
         out("hasPrivileges");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
     public Privilege privilegeFromName(String arg0)
             throws AccessControlException, RepositoryException {
         out("privilegeFromName");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
@@ -103,7 +104,7 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
             AccessDeniedException, LockException, VersionException,
             RepositoryException {
         out("removePolicy");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
@@ -112,22 +113,23 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
             AccessDeniedException, LockException, VersionException,
             RepositoryException {
         out("setPolicy");
-        throw new RuntimeException("not implemented");
+        throw new NotImplementedException("not implemented");
     }
 
     @Override
-    public boolean canAccess(String arg0) throws RepositoryException {
+    public boolean canAccess(String workspaceName) {
         out("canAccess");
         // grant access to all workspaces
         return true;
     }
 
     @Override
-    public boolean canRead(Path arg0, ItemId id) throws RepositoryException {
-        out(String.format("canRead %s %s denotesNode:%s", arg0, id, id.denotesNode()));
-        Path path = ctx.getHierarchyManager().getPath(id);
+    public boolean canRead(Path itemPath, ItemId itemId) throws RepositoryException {
+        out(String.format("canRead %s %s denotesNode:%s",
+            itemPath, itemId, itemId.denotesNode()));
+        Path path = ctx.getHierarchyManager().getPath(itemId);
         out("ItemId resolved to path: "+path.getString());
-        Permission p = getPermission(id);
+        Permission p = getPermission(itemId);
         out("found permission: "+p.toString());
         return p.isRead();
     }
@@ -154,7 +156,7 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
     }
 
     @Override
-    public void checkRepositoryPermission(int arg0)
+    public void checkRepositoryPermission(int permissions)
             throws AccessDeniedException, RepositoryException {
         out("checkRepositoryPermission");
     }
@@ -165,16 +167,16 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
     }
 
     @Override
-    public void init(AMContext arg0) throws AccessDeniedException, Exception {
-        this.init(arg0, null, null);
+    public void init(AMContext context) throws AccessDeniedException, Exception {
+        this.init(context, null, null);
     }
 
     @Override
-    public void init(AMContext arg0, AccessControlProvider arg1,
-            WorkspaceAccessManager arg2) throws AccessDeniedException,
+    public void init(AMContext context, AccessControlProvider acProvider,
+            WorkspaceAccessManager wspAccessMgr) throws AccessDeniedException,
             Exception {
         out("init");
-        this.ctx = arg0;
+        this.ctx = context;
         Subject subject = ctx.getSubject();
         Set<Principal> p = subject.getPrincipals();
         for(Principal principal : p) {

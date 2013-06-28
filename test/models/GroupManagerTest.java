@@ -3,6 +3,7 @@ package models;
 import static org.junit.Assert.fail;
 import static org.fest.assertions.Assertions.*;
 import static play.test.Helpers.running;
+import static test.AorraTestUtils.sessionFactory;
 
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
@@ -14,10 +15,7 @@ import org.apache.jackrabbit.api.security.user.AuthorizableExistsException;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.junit.Test;
 
-import play.Play;
 import play.libs.F.Function;
-import service.GuiceInjectionPlugin;
-import service.JcrSessionFactory;
 
 public class GroupManagerTest {
   @Test
@@ -25,10 +23,7 @@ public class GroupManagerTest {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
-        final JcrSessionFactory sessionFactory = GuiceInjectionPlugin
-            .getInjector(Play.application())
-            .getInstance(JcrSessionFactory.class);
-        sessionFactory.inSession(new Function<Session,GroupManager>() {
+        sessionFactory().inSession(new Function<Session,GroupManager>() {
           @Override
           public GroupManager apply(Session session) {
             String groupName = "Foo Bar";
