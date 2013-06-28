@@ -149,7 +149,7 @@ public final class FileStoreController extends SessionAwareController {
         FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
         ctx().response().setHeader("Cache-Control", "no-cache");
         if (fof instanceof FileStore.Folder) {
-          return ok(jb.toJsonShallow((FileStore.Folder) fof))
+          return ok(jb.toJsonShallow((FileStore.Folder) fof, false))
               .as("application/json");
         } else if (fof instanceof FileStore.File) {
           return ok(jb.toJsonShallow((FileStore.File) fof))

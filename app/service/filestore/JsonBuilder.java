@@ -44,12 +44,6 @@ public class JsonBuilder {
     return l;
   }
 
-
-  public ObjectNode toJsonShallow(final FileStore.Folder folder)
-      throws RepositoryException {
-    return toJsonShallow(folder, false);
-  }
-
   public ObjectNode toJsonShallow(
         final FileStore.Folder folder,
         boolean hideParent)
@@ -74,9 +68,7 @@ public class JsonBuilder {
     json.put("path", file.getPath());
     json.put("mime", file.getMimeType());
     json.put("type", "file");
-    if (file.getParent() != null) {
-      json.put("parent", file.getParent().getIdentifier());
-    }
+    json.put("parent", file.getParent().getIdentifier());
     json.put("accessLevel", file.getAccessLevel().toString());
     return json;
   }
