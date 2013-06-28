@@ -1,18 +1,26 @@
 package service.filestore;
 
-import java.util.Map;
-
 import javax.jcr.RepositoryException;
+
+import models.User;
 
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 
-import service.filestore.FileStore.Permission;
+import play.libs.Json;
 
 public class JsonBuilder {
 
   public JsonBuilder() {}
+
+  public ObjectNode toJson(final User user) {
+    final ObjectNode json = Json.newObject();
+    json.put("id", user.getId());
+    json.put("name", user.getName());
+    json.put("email", user.getEmail());
+    return json;
+  }
 
   public ArrayNode toJson(final Iterable<FileStore.Folder> folders)
       throws RepositoryException {

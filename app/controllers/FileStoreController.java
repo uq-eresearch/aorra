@@ -21,6 +21,7 @@ import javax.jcr.Session;
 
 import models.GroupManager;
 import models.User;
+import models.UserDAO;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.jackrabbit.api.security.user.Group;
@@ -34,7 +35,6 @@ import org.jcrom.util.PathUtils;
 import play.Logger;
 import play.api.http.MediaRange;
 import play.libs.F;
-import play.libs.F.Function;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
@@ -74,7 +74,8 @@ public final class FileStoreController extends SessionAwareController {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         return ok(views.html.FileStoreController.index.render(
             fileStoreImpl.getEventManager().getLastEventId(),
-            jb.toJson(fm.getFolders()))).as("text/html");
+            jb.toJson(fm.getFolders()),
+            getUsersJson(session))).as("text/html");
       }
     });
   }
@@ -129,13 +130,26 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result filestoreJson() {
+  public Result usersJson() {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        return ok(jb.toJson(fm.getFolders())).as("application/json");
+        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+        for (final User user : getUserDAO(session).list()) {
+          json.add(jb.toJson(user));
+        }
+        return ok(json).as("application/json");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result filestoreJson() {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        return ok(getUsersJson(session)).as("application/json");
       }
     });
   }
@@ -479,6 +493,19 @@ public final class FileStoreController extends SessionAwareController {
         return ok(json).as("text/html");
       }
     });
+  }
+
+  protected ArrayNode getUsersJson(Session session) {
+    final JsonBuilder jb = new JsonBuilder();
+    final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+    for (final User user : getUserDAO(session).list()) {
+      json.add(jb.toJson(user));
+    }
+    return json;
+  }
+
+  protected UserDAO getUserDAO(Session session) {
+    return new UserDAO(session, jcrom);
   }
 
   private interface FofOp<T extends FileStore.FileOrFolder>

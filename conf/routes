@@ -7,6 +7,7 @@ GET     /                           @controllers.Application.index
 POST    /login                      @controllers.Application.postLogin
 GET     /invite                     @controllers.Application.invite
 POST    /invite                     @controllers.Application.postInvite
+GET     /user                       @controllers.FileStoreController.usersJson
 GET     /user-exists/:email         @controllers.Application.userExists(email: String)
 GET     /user-unverified/:email     @controllers.Application.userUnverified(email: String)
 GET     /user/:email/verify/:token  @controllers.Application.verify(email: String, token: String)

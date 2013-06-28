@@ -77,6 +77,7 @@ require(['models', 'views'], function(models, views) {
 
   $(function () {
 
+    var users = new models.Users();
     var fs = new models.FileStore();
     var fileTree = new views.FileTree();
     var notificationFeed = new NotificationFeed({
@@ -214,6 +215,14 @@ require(['models', 'views'], function(models, views) {
       fs.reset(window.filestoreJSON);
       startRouting();
     }
+    
+    // Users collection
+    if (_.isUndefined(window.usersJSON)) {
+      users.fetch();
+    } else {
+      users.reset(window.usersJSON);
+    }
+    window.users = users;
 
     // If our data is out-of-date, refresh and reopen event feed.
     notificationFeed.on("outofdate", function(id) {

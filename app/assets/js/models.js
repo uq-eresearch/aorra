@@ -136,6 +136,17 @@ define(['backbone'], function(Backbone) {
       return this._infoModel;
     }
   });
+  
+  var User = Backbone.Model.extend({});
+  
+  var Users = Backbone.Collection.extend({
+    model: User,
+    url: '/user',
+    current: function() {
+      var currentUserId = $('#current-user').data('id');
+      return this.get(currentUserId);
+    }
+  })
 
   return {
     File: File,
@@ -144,6 +155,7 @@ define(['backbone'], function(Backbone) {
     FileStore: FileStore,
     Folder: Folder,
     VersionInfo: VersionInfo,
-    VersionList: VersionList
+    VersionList: VersionList,
+    Users: Users
   };
 })

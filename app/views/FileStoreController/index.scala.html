@@ -1,6 +1,7 @@
 @(
   lastEventId: String,
-  filestoreJson: org.codehaus.jackson.node.ArrayNode
+  filestoreJson: org.codehaus.jackson.node.ArrayNode,
+  usersJson: org.codehaus.jackson.node.ArrayNode
 )
 
 
@@ -16,6 +17,7 @@
   <script type="text/javascript">
   window.lastEventID = "@lastEventId";
   window.filestoreJSON = @Html(filestoreJson.toString());
+  window.usersJSON = @Html(usersJson.toString());
 
   // Load application
   requirejs(['app']);

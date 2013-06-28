@@ -21,6 +21,7 @@ import models.User;
 import org.apache.commons.lang.NotImplementedException;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.junit.Test;
 
 import com.google.common.io.ByteStreams;
@@ -114,6 +115,28 @@ public class JsonBuilderTest {
     }
   }
 
+  @Test
+  public void testUser() {
+    final JsonBuilder jb = new JsonBuilder();
+    final String randomId = UUID.randomUUID().toString();
+    final User user = new User() {
+      @Override
+      public String getId() {
+        return randomId;
+      }
+    };
+    user.setName("Test User");
+    user.setEmail("test@example.com");
+    user.setVerified(true);
+    // Get JSON
+    final ObjectNode json = jb.toJson(user);
+    assertThat(json.get("id")).isNotNull();
+    assertThat(json.get("id").asText()).isEqualTo(user.getId());
+    assertThat(json.get("name")).isNotNull();
+    assertThat(json.get("name").asText()).isEqualTo(user.getName());
+    assertThat(json.get("email")).isNotNull();
+    assertThat(json.get("email").asText()).isEqualTo(user.getEmail());
+  }
 
   private class TestFolder implements FileStore.Folder {
 
