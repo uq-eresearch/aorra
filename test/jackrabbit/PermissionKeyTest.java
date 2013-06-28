@@ -15,10 +15,6 @@ public class PermissionKeyTest {
     assertThat(pk).isEqualTo(new PermissionKey("default", "test", "1234"));
     assertThat(pk).isEqualTo(pk);
     assertThat(pk).isNotEqualTo(null);
-    assertThat(pk).isNotEqualTo(new PermissionKey("default", "test", "1234") {
-      @SuppressWarnings("unused")
-      public void extraMethod() {}
-    });
     for (PermissionKey otherPk : getOtherPKs(pk)) {
       assertThat(pk).isNotEqualTo(otherPk);
       assertThat(otherPk).isNotEqualTo(pk);
