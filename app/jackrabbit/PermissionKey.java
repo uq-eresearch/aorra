@@ -4,15 +4,15 @@ import jackrabbit.PermissionKey;
 
 public class PermissionKey {
 
-    private String workspace;
-    private String principal;
-    private String id;
+    private final String workspace;
+    private final String principal;
+    private final String id;
 
     public PermissionKey(String workspace, String principal, String id) {
-        super();
-        this.workspace = workspace;
-        this.principal = principal;
-        this.id = id;
+      super();
+      this.workspace = workspace;
+      this.principal = principal;
+      this.id = id;
     }
 
     public String getWorkspace() {

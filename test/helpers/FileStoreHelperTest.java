@@ -9,7 +9,6 @@ import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
