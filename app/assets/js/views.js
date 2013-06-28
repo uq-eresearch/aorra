@@ -510,30 +510,46 @@ define([
   
   var FlagButtonView = Backbone.Marionette.ItemView.extend({
     tagName: 'span',
+    ui: {
+      button: '.btn',
+      popover: '[data-toggle="popover"]'
+    },
     initialize: function() {
       this._flag = false;
     },
     serializeData: function() {
       return _.extend(this.dataDefaults(), {
+        isSet: this.isSet(),
         count: 0
       });
     },
     template: function(serialized_model) {
       return templates.renderSync('flag_button', serialized_model);
     },
+    templateHelpers: {
+      activeClass: function() { 
+        return this.isSet ? 'active' : '';
+      }
+    },
     isSet: function() {
       return this._flag;
     },
-    toggleSet: function() {
+    _toggleSet: function() {
       return this._flag = this._flag != true;
     },
+    onToggleButton: function() {
+      this._toggleSet();
+      this.render();
+    },
     onRender: function() {
-      var $button = this.$el.find('.btn');
-      $button.toggleClass('active', this.isSet());
-      $button.click(_.bind(function(e) {
-        this.toggleSet();
-        this.render();
+      this.ui.button.click(_.bind(function() {
+        return this.triggerMethod('toggle:button', {
+          collection: this.collection,
+          model: this.model,
+          view: this
+        });
       }, this));
+      this.ui.popover.popover();
     }
   });
   
@@ -541,7 +557,8 @@ define([
     dataDefaults: function() {
       return {
         icon: this.isSet() ? 'flag' : 'flag-alt',
-        title: 'Edit'
+        title: 'Edit',
+        tooltip: 'Let other users know you are making edits to this file.'
       };
     }
   });
@@ -550,7 +567,8 @@ define([
     dataDefaults: function() {
       return {
         icon: this.isSet() ? 'eye-open' : 'eye-close',
-        title: 'Watch'
+        title: 'Watch',
+        tooltip: 'Receive email notifications when new versions are uploaded.'
       };
     }
   });
