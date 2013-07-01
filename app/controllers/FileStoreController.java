@@ -134,12 +134,7 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        final JsonBuilder jb = new JsonBuilder();
-        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
-        for (final User user : getUserDAO(session).list()) {
-          json.add(jb.toJson(user));
-        }
-        return ok(json).as("application/json");
+        return ok(getUsersJson(session)).as("application/json");
       }
     });
   }
@@ -149,7 +144,10 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        return ok(getUsersJson(session)).as("application/json");
+        final JsonBuilder jb = new JsonBuilder();
+        final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        return ok(jb.toJson(fm.getFolders()))
+            .as("application/json; charset=utf-8");
       }
     });
   }
