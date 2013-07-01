@@ -75,7 +75,7 @@ public final class FileStoreController extends SessionAwareController {
         return ok(views.html.FileStoreController.index.render(
             fileStoreImpl.getEventManager().getLastEventId(),
             jb.toJson(fm.getFolders()),
-            getUsersJson(session))).as("text/html");
+            getUsersJson(session))).as("text/html; charset=utf-8");
       }
     });
   }
@@ -134,7 +134,7 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
-        return ok(getUsersJson(session)).as("application/json");
+        return ok(getUsersJson(session)).as("application/json; charset=utf-8");
       }
     });
   }
@@ -159,13 +159,9 @@ public final class FileStoreController extends SessionAwareController {
         final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
-        ctx().response().setHeader("Cache-Control", "no-cache");
         if (fof instanceof FileStore.Folder) {
           return ok(jb.toJsonShallow((FileStore.Folder) fof, false))
-              .as("application/json");
-        } else if (fof instanceof FileStore.File) {
-          return ok(jb.toJsonShallow((FileStore.File) fof))
-              .as("application/json");
+              .as("application/json; charset=utf-8");
         } else {
           return notFound();
         }
@@ -182,7 +178,7 @@ public final class FileStoreController extends SessionAwareController {
         FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
         if (fof instanceof FileStore.File) {
           return ok(jb.toJsonShallow((FileStore.File) fof))
-              .as("application/json");
+              .as("application/json; charset=utf-8");
         } else {
           return notFound();
         }
@@ -251,11 +247,14 @@ public final class FileStoreController extends SessionAwareController {
           final FileStore.File file,
           final FileStore.File version)
           throws RepositoryException, IOException {
-        final String filename = file.getName().replaceAll(
-            "(\\.?[^\\.]+$)",
+        final String authorName = version.getAuthor() != null ?
+            version.getAuthor().getName() : "unknown";
+        final String versionStamp =
             String.format("(%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS %2$s)",
                 version.getModificationTime(),
-                version.getAuthor().getName()) + "$1" );
+                authorName);
+        final String filename = file.getName().replaceAll(
+            "(\\.?[^\\.]+$)", versionStamp + "$1" );
         ctx().response().setContentType(version.getMimeType());
         ctx().response().setHeader("Content-Disposition",
             "attachment; filename="+filename);
@@ -274,7 +273,7 @@ public final class FileStoreController extends SessionAwareController {
           final FileStore.File version)
           throws RepositoryException, IOException {
         final ExtractionHelper eh = new ExtractionHelper(version);
-        return ok(eh.getPlainText()).as("text/plain");
+        return ok(eh.getPlainText()).as("text/plain; charset=utf-8");
       }
     });
   }
@@ -290,7 +289,7 @@ public final class FileStoreController extends SessionAwareController {
             folder.getGroupPermissions().entrySet()) {
           perms.add(groupJson(e.getKey(), e.getValue()));
         }
-        return ok(perms).as("application/json");
+        return ok(perms).as("application/json; charset=utf-8");
       }
     });
   }
