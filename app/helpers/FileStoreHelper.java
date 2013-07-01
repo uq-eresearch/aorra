@@ -65,8 +65,7 @@ public class FileStoreHelper {
   protected final PrintWriter out;
 
   public FileStoreHelper(final Session session) {
-    this.session = session;
-    this.out = new PrintWriter(new OutputStreamWriter(System.out));
+    this(session, new PrintWriter(new OutputStreamWriter(System.out)));
   }
 
   public FileStoreHelper(final Session session, PrintWriter out) {
