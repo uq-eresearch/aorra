@@ -26,6 +26,8 @@ import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.junit.Test;
@@ -184,6 +186,40 @@ public class FileStoreControllerTest {
               .toJsonShallow(file)
               .asText();
           assertThat(contentAsString(result)).contains(expectedContent);
+        }
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void updateFile() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FileStore.File file =
+            fm.getRoot().createFile("test.txt", "text/plain",
+                new ByteArrayInputStream("Some content.".getBytes()));
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.updateFile(
+                  file.getIdentifier()),
+              newRequest.withHeader("Accept", "application/json")
+                .withBody(
+                    test.AorraScalaHelper.testMultipartFormBody(
+                        "New content.")));
+          assertThat(contentAsString(result))
+            .isEqualTo("{\"files\":[{\"name\":\"test.txt\",\"size\":12}]}");
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(IOUtils.toString(
+              ((FileStore.File)
+                  fm.getByIdentifier(file.getIdentifier())).getData()))
+              .isEqualTo("New content.");
         }
         return session;
       }
