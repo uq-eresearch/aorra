@@ -134,6 +134,66 @@ public class FileStoreControllerTest {
   }
 
   @Test
+  public void addFlag() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FlagStore.Manager flm =
+            injector().getInstance(FlagStore.class).getManager(session);
+        Map<String, String> data = new HashMap<String, String>();
+        data.put("targetId", fm.getRoot().getIdentifier());
+        data.put("userId", user.getId());
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.addFlag(
+                FlagStore.FlagType.WATCH.toString()),
+            newRequest.withFormUrlEncodedBody(data));
+        assertThat(status(result)).isEqualTo(201);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        final Flag flag =
+            flm.getFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
+        final String expectedContent = (new JsonBuilder())
+            .toJson(flag)
+            .toString();
+        assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void deleteFlag() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FlagStore.Manager flm =
+            injector().getInstance(FlagStore.class).getManager(session);
+        final Flag flag =
+            flm.setFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.deleteFlag(
+                FlagStore.FlagType.WATCH.toString(),
+                flag.getId()),
+            newRequest);
+        assertThat(status(result)).isEqualTo(204);
+        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        assertThat(flm.hasFlag(FlagType.WATCH,
+            fm.getRoot().getIdentifier(), user)).isFalse();
+        return session;
+      }
+    });
+  }
+
+  @Test
   public void getFolderHTML() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override

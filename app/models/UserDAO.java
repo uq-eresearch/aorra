@@ -27,6 +27,10 @@ public class UserDAO extends AbstractJcrDAO<User> {
     this.session = (JackrabbitSession) session;
   }
 
+  public User get(CacheableUser cachedUser) {
+    return loadById(cachedUser.getId());
+  }
+
   @Override
   public User create(User user) {
     return create(getRootPath(), user);

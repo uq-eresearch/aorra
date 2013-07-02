@@ -59,7 +59,7 @@ public class FlagStoreTest {
             flm.setFlag(FlagType.WATCH, file.getIdentifier(), user);
             assertThat(flm.getFlags(FlagType.WATCH)).hasSize(1);
             // Remove the flag
-            flm.unsetFlag(FlagType.WATCH, flag.getId());
+            flm.unsetFlag(flag.getId());
             assertThat(flm.getFlags(FlagType.WATCH)).hasSize(0);
 
             return session;

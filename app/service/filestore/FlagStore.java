@@ -75,7 +75,13 @@ public class FlagStore {
       }
     }
 
-    public void unsetFlag(FlagType t, String flagId) {
+    public void unsetFlag(FlagType t, String targetId, User user) {
+      Flag flag = getFlag(t, targetId, user);
+      if (flag != null)
+        flagDao.removeById(flag.getId());
+    }
+
+    public void unsetFlag(String flagId) {
       flagDao.removeById(flagId);
     }
 

@@ -187,6 +187,44 @@ public final class FileStoreController extends SessionAwareController {
     });
   }
 
+  @SubjectPresent
+  public Result addFlag(final String flagTypeName) {
+    final FlagType t = FlagType.valueOf(flagTypeName);
+    Map<String, String[]> params = request().body().asFormUrlEncoded();
+    if (!params.containsKey("targetId") || !params.containsKey("userId"))
+      return badRequest();
+    final String targetId = params.get("targetId")[0];
+    final String userId = params.get("userId")[0];
+    if (!getUser().getId().equals(userId))
+      return forbidden();
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final User user = (new UserDAO(session, jcrom)).get(getUser());
+        final JsonBuilder jb = new JsonBuilder();
+        final Flag flag = flagStoreImpl.getManager(session)
+            .setFlag(t, targetId, user);
+        return created(jb.toJson(flag)).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result deleteFlag(final String flagTypeName, final String flagId) {
+    final FlagType t = FlagType.valueOf(flagTypeName);
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final FlagStore.Manager flm = flagStoreImpl.getManager(session);
+        final Flag flag = flm.getFlag(t, flagId);
+        if (flag == null)
+          return notFound();
+        flm.unsetFlag(flagId);
+        return status(204);
+      }
+    });
+  }
+
   protected Result folderJson(final String folderId) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
