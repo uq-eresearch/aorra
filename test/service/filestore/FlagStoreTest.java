@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import models.Flag;
 import models.GroupManager;
 import models.User;
 import models.UserDAO;
@@ -26,7 +27,7 @@ import service.filestore.roles.Admin;
 public class FlagStoreTest {
 
   @Test
-  public void canCreateFlags() {
+  public void canAddAndRemoveFlags() {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
@@ -41,9 +42,19 @@ public class FlagStoreTest {
                 "test.txt", "text/plain",
                 new ByteArrayInputStream("Some content".getBytes()));
 
+            // Check initial state
             assertThat(flm.getFlags(FlagType.WATCH)).hasSize(0);
+            // Create flag
+            final Flag flag =
+                flm.setFlag(FlagType.WATCH, file.getIdentifier(), user);
+            assertThat(flm.getFlags(FlagType.WATCH)).hasSize(1);
+            assertThat(flm.getFlags(FlagType.WATCH)).contains(flag);
+            // Try adding it again (should have no effect)
             flm.setFlag(FlagType.WATCH, file.getIdentifier(), user);
             assertThat(flm.getFlags(FlagType.WATCH)).hasSize(1);
+            // Remove the flag
+            flm.unsetFlag(FlagType.WATCH, flag.getId());
+            assertThat(flm.getFlags(FlagType.WATCH)).hasSize(0);
 
             return session;
           }

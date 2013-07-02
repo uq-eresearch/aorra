@@ -12,6 +12,9 @@ import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.NodeType;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrName;
 import org.jcrom.annotations.JcrNode;
@@ -178,6 +181,16 @@ public class User {
     }
     return Hex.encodeHexString(
         md.digest(email.getBytes(Charset.forName("UTF-8"))));
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    return EqualsBuilder.reflectionEquals(this, other);
+  }
+
+  @Override
+  public int hashCode() {
+    return HashCodeBuilder.reflectionHashCode(this);
   }
 
   @Override

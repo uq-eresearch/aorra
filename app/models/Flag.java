@@ -36,7 +36,7 @@ public class Flag extends AbstractJcrEntity {
 
   public Flag(final String id, final String targetId, final User user) {
     this.id = id;
-    this.name = String.format("%s_%s", user.getId(), targetId);
+    this.name = generateName(targetId, user);
     this.targetId = targetId;
     this.user = user;
   }
@@ -62,6 +62,10 @@ public class Flag extends AbstractJcrEntity {
   @Override
   public String toString() {
     return ToStringBuilder.reflectionToString(this);
+  }
+
+  public static String generateName(final String targetId, final User user) {
+    return String.format("%s_%s", user.getId(), targetId);
   }
 
 }

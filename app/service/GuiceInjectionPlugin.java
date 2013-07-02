@@ -89,8 +89,6 @@ public class GuiceInjectionPlugin extends Plugin {
           .to(DeadboltHandlerImpl.class)
           .in(Singleton.class);
       }
-
-
     };
 
     final Module pluginModule = new AbstractModule() {

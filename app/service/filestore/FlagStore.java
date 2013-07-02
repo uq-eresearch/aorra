@@ -50,12 +50,22 @@ public class FlagStore {
       return ImmutableSet.copyOf(flagDao.findAll(t.getRootPath()));
     }
 
+    public boolean hasFlag(FlagType t, String targetId, User user) {
+      return getFlag(t, targetId, user) != null;
+    }
+
+    public Flag getFlag(FlagType t, String targetId, User user) {
+      return flagDao.get(t.getRootPath()+"/"+Flag.generateName(targetId, user));
+    }
+
     public Flag setFlag(FlagType t, String targetId, User user) {
-      // Create new flag
-      final models.Flag entity = flagDao.create(
-          t.getRootPath(),
-          new models.Flag(null, targetId, user));
-      return entity;
+      if (hasFlag(t, targetId, user)) {
+        return getFlag(t, targetId, user);
+      } else {
+        return flagDao.create(
+            t.getRootPath(),
+            new models.Flag(null, targetId, user));
+      }
     }
 
     public void unsetFlag(FlagType t, String flagId) {
