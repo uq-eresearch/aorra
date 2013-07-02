@@ -223,6 +223,7 @@ require(['models', 'views'], function(models, views) {
       users.reset(window.usersJSON);
     }
     window.users = users;
+    window.watchFlags = new models.WatchFlags();
 
     // If our data is out-of-date, refresh and reopen event feed.
     notificationFeed.on("outofdate", function(id) {

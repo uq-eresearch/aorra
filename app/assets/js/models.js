@@ -137,6 +137,18 @@ define(['backbone'], function(Backbone) {
     }
   });
   
+  var Flag = Backbone.Model.extend({});
+  
+  var EditFlags = Backbone.Collection.extend({
+    model: Flag,
+    url: '/flags/edit'
+  });
+  
+  var WatchFlags = Backbone.Collection.extend({
+    model: Flag,
+    url: '/flags/watch'
+  });
+  
   var User = Backbone.Model.extend({});
   
   var Users = Backbone.Collection.extend({
@@ -149,6 +161,7 @@ define(['backbone'], function(Backbone) {
   })
 
   return {
+    EditFlags: WatchFlags,
     File: File,
     FileInfo: FileInfo,
     FileOrFolder: FileOrFolder,
@@ -156,6 +169,7 @@ define(['backbone'], function(Backbone) {
     Folder: Folder,
     VersionInfo: VersionInfo,
     VersionList: VersionList,
+    WatchFlags: WatchFlags,
     Users: Users
   };
 })

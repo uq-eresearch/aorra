@@ -87,7 +87,7 @@ public class FileStoreControllerTest {
             flm.setFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
         final Result result = callAction(
             controllers.routes.ref.FileStoreController.flagsJson(
-                FlagStore.FlagType.WATCH.toString()),
+                "watch"),
             newRequest);
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");

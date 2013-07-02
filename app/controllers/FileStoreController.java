@@ -160,7 +160,7 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result flagsJson(final String flagTypeName) {
-    final FlagType t = FlagType.valueOf(flagTypeName);
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
@@ -176,7 +176,7 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result flagJson(final String flagTypeName, final String flagId) {
-    final FlagType t = FlagType.valueOf(flagTypeName);
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
@@ -189,12 +189,12 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result addFlag(final String flagTypeName) {
-    final FlagType t = FlagType.valueOf(flagTypeName);
-    Map<String, String[]> params = request().body().asFormUrlEncoded();
-    if (!params.containsKey("targetId") || !params.containsKey("userId"))
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
+    final JsonNode params = ctx().request().body().asJson();
+    if (!params.has("targetId") || !params.has("userId"))
       return badRequest();
-    final String targetId = params.get("targetId")[0];
-    final String userId = params.get("userId")[0];
+    final String targetId = params.get("targetId").asText();
+    final String userId = params.get("userId").asText();
     if (!getUser().getId().equals(userId))
       return forbidden();
     return inUserSession(new F.Function<Session, Result>() {
@@ -211,7 +211,7 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result deleteFlag(final String flagTypeName, final String flagId) {
-    final FlagType t = FlagType.valueOf(flagTypeName);
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
