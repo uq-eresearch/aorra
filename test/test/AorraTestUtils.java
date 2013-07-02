@@ -61,7 +61,7 @@ public class AorraTestUtils {
     return injector().getInstance(Jcrom.class);
   }
 
-  protected static Injector injector() {
+  public static Injector injector() {
     return Play.application().plugin(GuiceInjectionPlugin.class)
         .getInjector();
   }
