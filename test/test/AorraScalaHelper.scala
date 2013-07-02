@@ -10,9 +10,9 @@ import java.io.ByteArrayInputStream
 
 object AorraScalaHelper {
 
-  def testMultipartFormBody(str: String) = {
+  def testMultipartFormBody(content: String) = {
     val tf = TemporaryFile(java.io.File.createTempFile("multipart", "test"))
-    IOUtils.copy(new ByteArrayInputStream(str.getBytes),
+    IOUtils.copy(new ByteArrayInputStream(content.getBytes),
         new FileOutputStream(tf.file))
     AnyContentAsMultipartFormData(
       new MultipartFormData(Map(), List(
