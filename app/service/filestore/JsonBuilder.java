@@ -2,6 +2,7 @@ package service.filestore;
 
 import javax.jcr.RepositoryException;
 
+import models.Flag;
 import models.User;
 
 import org.codehaus.jackson.node.ArrayNode;
@@ -50,6 +51,15 @@ public class JsonBuilder {
       l.add(toJsonShallow(childFile));
     }
     return l;
+  }
+
+  public ObjectNode toJson(final Flag flag)
+      throws RepositoryException {
+    final ObjectNode json = Json.newObject();
+    json.put("id", flag.getId());
+    json.put("targetId", flag.getTargetId());
+    json.put("userId", flag.getUser().getId());
+    return json;
   }
 
   public ObjectNode toJsonShallow(

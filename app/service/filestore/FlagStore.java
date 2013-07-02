@@ -54,6 +54,13 @@ public class FlagStore {
       return getFlag(t, targetId, user) != null;
     }
 
+    public Flag getFlag(FlagType t, String flagId) {
+      Flag flag = flagDao.loadById(flagId);
+      if (flag == null || !flag.getPath().startsWith(t.getRootPath()))
+        return null;
+      return flag;
+    }
+
     public Flag getFlag(FlagType t, String targetId, User user) {
       return flagDao.get(t.getRootPath()+"/"+Flag.generateName(targetId, user));
     }

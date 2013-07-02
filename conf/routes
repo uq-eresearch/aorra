@@ -17,6 +17,8 @@ POST    /user/:email/verify/:token  @controllers.Application.postVerify(email: S
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /filestore                  @controllers.FileStoreController.filestoreJson()
+GET     /flags/:type                @controllers.FileStoreController.flagsJson(type)
+GET     /flags/:type/:id            @controllers.FileStoreController.flagJson(type, id)
 
 GET     /folder/:folderId               @controllers.FileStoreController.showFolder(folderId: String)
 GET     /folder/:folderId/permissions   @controllers.FileStoreController.groupPermissionList(folderId: String)

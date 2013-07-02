@@ -47,8 +47,14 @@ public class FlagStoreTest {
             // Create flag
             final Flag flag =
                 flm.setFlag(FlagType.WATCH, file.getIdentifier(), user);
+            // Check the flag exists in the collection
             assertThat(flm.getFlags(FlagType.WATCH)).hasSize(1);
             assertThat(flm.getFlags(FlagType.WATCH)).contains(flag);
+            assertThat(flm.getFlags(FlagType.EDIT)).hasSize(0);
+            // Try getting the single flag
+            assertThat(flm.getFlag(FlagType.WATCH, flag.getId()))
+              .isEqualTo(flag);
+            assertThat(flm.getFlag(FlagType.EDIT, flag.getId())).isNull();
             // Try adding it again (should have no effect)
             flm.setFlag(FlagType.WATCH, file.getIdentifier(), user);
             assertThat(flm.getFlags(FlagType.WATCH)).hasSize(1);

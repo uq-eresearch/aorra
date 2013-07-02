@@ -12,6 +12,7 @@ import static play.test.Helpers.session;
 import static play.test.Helpers.status;
 import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.fileStore;
+import static test.AorraTestUtils.injector;
 import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
 
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 import javax.jcr.Session;
 
+import models.Flag;
 import models.GroupManager;
 import models.User;
 import models.UserDAO;
@@ -39,7 +41,9 @@ import play.mvc.Http;
 import play.mvc.Result;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.FileStore;
+import service.filestore.FlagStore;
 import service.filestore.JsonBuilder;
+import service.filestore.FlagStore.FlagType;
 import service.filestore.roles.Admin;
 
 public class FileStoreControllerTest {
@@ -61,8 +65,69 @@ public class FileStoreControllerTest {
         assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
         final String expectedContent = (new JsonBuilder())
             .toJson(fileStore().getManager(session).getFolders())
-            .asText();
+            .toString();
         assertThat(contentAsString(result)).contains(expectedContent);
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void getFlagsJSON() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FlagStore.Manager flm =
+            injector().getInstance(FlagStore.class).getManager(session);
+        final Flag flag =
+            flm.setFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.flagsJson(
+                FlagStore.FlagType.WATCH.toString()),
+            newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        final String expectedContent = (new JsonBuilder())
+            .toJson(flag)
+            .toString();
+        assertThat(contentAsString(result)).isEqualTo("["+expectedContent+"]");
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void getFlagJSON() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FlagStore.Manager flm =
+            injector().getInstance(FlagStore.class).getManager(session);
+        final Flag flag =
+            flm.setFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.flagJson(
+                FlagStore.FlagType.WATCH.toString(),
+                flag.getId()),
+            newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        final String expectedContent = (new JsonBuilder())
+            .toJson(flag)
+            .toString();
+        assertThat(contentAsString(result)).isEqualTo(expectedContent);
         return session;
       }
     });
@@ -139,7 +204,7 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
           final String expectedContent = (new JsonBuilder())
               .toJsonShallow(fm.getRoot(), false)
-              .asText();
+              .toString();
           assertThat(contentAsString(result)).contains(expectedContent);
         }
         {
@@ -184,7 +249,7 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
           final String expectedContent = (new JsonBuilder())
               .toJsonShallow(file)
-              .asText();
+              .toString();
           assertThat(contentAsString(result)).contains(expectedContent);
         }
         return session;

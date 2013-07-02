@@ -20,6 +20,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.GroupManager;
+import models.Flag;
 import models.User;
 import models.UserDAO;
 
@@ -46,6 +47,8 @@ import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
 import service.filestore.FileStoreImpl;
+import service.filestore.FlagStore;
+import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
@@ -55,14 +58,17 @@ import com.google.inject.Inject;
 public final class FileStoreController extends SessionAwareController {
 
   private final FileStore fileStoreImpl;
+  private final FlagStore flagStoreImpl;
 
   @Inject
   public FileStoreController(final JcrSessionFactory sessionFactory,
       final Jcrom jcrom,
       final CacheableUserProvider sessionHandler,
-      final FileStore fileStoreImpl) {
+      final FileStore fileStoreImpl,
+      final FlagStore flagStoreImpl) {
     super(sessionFactory, jcrom, sessionHandler);
     this.fileStoreImpl = fileStoreImpl;
+    this.flagStoreImpl = flagStoreImpl;
   }
 
   @SubjectPresent
@@ -148,6 +154,35 @@ public final class FileStoreController extends SessionAwareController {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         return ok(jb.toJson(fm.getFolders()))
             .as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result flagsJson(final String flagTypeName) {
+    final FlagType t = FlagType.valueOf(flagTypeName);
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+        for (final Flag flag : flagStoreImpl.getManager(session).getFlags(t)) {
+          json.add(jb.toJson(flag));
+        }
+        return ok(json).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result flagJson(final String flagTypeName, final String flagId) {
+    final FlagType t = FlagType.valueOf(flagTypeName);
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final Flag flag = flagStoreImpl.getManager(session).getFlag(t, flagId);
+        return ok(jb.toJson(flag)).as("application/json; charset=utf-8");
       }
     });
   }

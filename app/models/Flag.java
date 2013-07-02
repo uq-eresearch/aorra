@@ -45,6 +45,10 @@ public class Flag extends AbstractJcrEntity {
     return id;
   }
 
+  public String getTargetId() {
+    return targetId;
+  }
+
   public User getUser() {
     return user;
   }
