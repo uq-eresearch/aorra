@@ -265,7 +265,7 @@ define([
       });
     }
   });
-  
+
   var FileInfoView = Backbone.Marionette.CompositeView.extend({
     initialize: function() {
       this.collection = this.model.versionList();
@@ -309,7 +309,7 @@ define([
       this.model.save();
     }
   });
-  
+
   var GroupPermissionsView = Backbone.Marionette.CompositeView.extend({
     initialize: function() {
       this.collection = this.model.permissions();
@@ -354,7 +354,7 @@ define([
       return false;
     }
   });
-  
+
   var BreadcrumbView = Backbone.View.extend({
     render: function() {
       var collection = this.model.collection;
@@ -364,8 +364,8 @@ define([
         path.unshift(m);
         m = collection.get(m.get('parent'));
       }
-      var breadcrumbs = _.map(path, function(m) { 
-        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });model 
+      var breadcrumbs = _.map(path, function(m) {
+        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });model
       });
       var context = {
         parents: _.initial(breadcrumbs),
@@ -394,8 +394,8 @@ define([
         path.unshift(m);
         m = collection.get(m.get('parent'));
       }
-      var breadcrumbs = _.map(path, function(m) { 
-        return _.extend(m.asNodeStruct(), { url: m.displayUrl() }); 
+      var breadcrumbs = _.map(path, function(m) {
+        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });
       });
       var context = {
         parents: _.initial(breadcrumbs),
@@ -410,7 +410,7 @@ define([
       return deleteButton.$el;
     }
   });
-  
+
   /*
    * Simple container view which can contain a number of other views or DOM
    * elements, and render each one in an inline list.
@@ -446,7 +446,7 @@ define([
       _(serialized_model).extend({
         hasWrite: serialized_model.accessLevel == 'RW'
       })
-      return templates.renderSync('folder_view', serialized_model); 
+      return templates.renderSync('folder_view', serialized_model);
     },
     regions: {
       breadcrumbs: '.region-breadcrumbs',
@@ -483,7 +483,7 @@ define([
       return $link;
     }
   });
-  
+
   var ImageElementView = Backbone.View.extend({
     render: function() {
       this.$el.append(_.template(
@@ -492,7 +492,7 @@ define([
           { model: this.model }));
     }
   });
-  
+
   var ChartElementView = Backbone.View.extend({
     render: function() {
       var format = Modernizr.svg ? 'svg' : 'png';
@@ -507,7 +507,7 @@ define([
       });
     }
   });
-  
+
   var FlagButtonView = Backbone.Marionette.ItemView.extend({
     tagName: 'span',
     ui: {
@@ -548,7 +548,7 @@ define([
       return templates.renderSync('flag_button', serialized_model);
     },
     templateHelpers: {
-      activeClass: function() { 
+      activeClass: function() {
         return this.isSet ? 'active' : '';
       }
     },
@@ -593,7 +593,7 @@ define([
       });
     }
   });
-  
+
   var EditingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
       return {
@@ -604,7 +604,7 @@ define([
       };
     }
   });
-  
+
   var WatchingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
       return {
@@ -627,7 +627,7 @@ define([
       _(serialized_model).extend({
         hasWrite: serialized_model.accessLevel == 'RW'
       })
-      return templates.renderSync('file_view', serialized_model); 
+      return templates.renderSync('file_view', serialized_model);
     },
     regions: {
       breadcrumbs: '.region-breadcrumbs',
@@ -648,11 +648,11 @@ define([
           model: this.model
         }));
         this.buttons.show(new InlineListView([
-          new WatchingButtonView({ 
+          new WatchingButtonView({
             collection: this._users,
             targetId: this.model.id
           }),
-          new EditingButtonView({ 
+          new EditingButtonView({
             collection: this._users,
             targetId: this.model.id
           }),
@@ -748,12 +748,16 @@ define([
           $icon.popover({ placement: 'bottom', trigger: 'hover'});
           return $('<li/>').append($icon);
         };
+        // Make box elements
+        var $boxes = _(diff).chain()
+          .reject(function(v) { return v[0] == 0; })
+          .map(makeBoxes)
+          .value();
+        // Add box elements to summary
         $summary.append(
-          $('<ul class="inline"/>').html(
-            _(diff).reject(function(v) {
-              return v[0] == 0;
-            }).map(makeBoxes))
+          $('<ul class="inline"/>').append($boxes)
         );
+        // Build the DOM hierarchy
         $txt
           .append($summary)
           .append($('<hr/>'))
@@ -770,7 +774,7 @@ define([
       });
     }
   });
-  
+
   var FileDiffView = FileOrFolderView.extend({
     initialize: function(attrs) {
       var versionName = attrs.versionName;
@@ -786,12 +790,10 @@ define([
       var versionList = model.info().versionList();
       var idxOf = _.bind(versionList.indexOf, versionList);
       // Only show earlier versions
-      var otherVersions = 
+      var otherVersions = _.invoke(
         versionList.filter(function(m) {
           return idxOf(version) < idxOf(m);
-        }).map(function(m) {
-          return m.toJSON();
-        });
+        }), 'toJSON');
       return {
         backUrl: model.displayUrl(),
         version: version ? version.toJSON() : null,
@@ -811,7 +813,7 @@ define([
     onRender: function() {
       if (!_.isObject(this.version)) return;
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
-      var onSelectChange = _.bind(function(e) { 
+      var onSelectChange = _.bind(function(e) {
         var versionList = this.model.info().versionList();
         var otherVersion = versionList.findWhere({ name: $(e.target).val() });
         this.diff.show(new DiffView(otherVersion, this.version));
@@ -842,7 +844,7 @@ define([
       return templates.renderInto(this.$el, 'start_page', {});
     }
   });
-  
+
   var AppLayout = Backbone.Marionette.Layout.extend({
     template: "#main-layout",
     regions: {
