@@ -7,8 +7,14 @@ import java.io.FileOutputStream
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.AnyContentAsMultipartFormData
 import java.io.ByteArrayInputStream
+import org.specs2.execute.AsResult
+import play.api.test.WithApplication
 
 object AorraScalaHelper {
+
+  def fakeAorraApp = AorraTestUtils.fakeAorraApp().getWrappedApplication
+
+  class FakeAorraApp extends WithApplication(fakeAorraApp)
 
   def testMultipartFormBody(content: String) = {
     val tf = TemporaryFile(java.io.File.createTempFile("multipart", "test"))
