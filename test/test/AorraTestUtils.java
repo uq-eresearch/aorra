@@ -4,6 +4,10 @@ import static play.test.Helpers.fakeApplication;
 
 import java.util.Map;
 
+import javax.jcr.Session;
+
+import models.UserDAO;
+
 import org.jcrom.Jcrom;
 
 import play.Application;
@@ -57,7 +61,7 @@ public class AorraTestUtils {
     return injector().getInstance(Jcrom.class);
   }
 
-  protected static Injector injector() {
+  public static Injector injector() {
     return Play.application().plugin(GuiceInjectionPlugin.class)
         .getInjector();
   }

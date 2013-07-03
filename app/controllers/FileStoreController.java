@@ -20,7 +20,9 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.GroupManager;
+import models.Flag;
 import models.User;
+import models.UserDAO;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.jackrabbit.api.security.user.Group;
@@ -34,18 +36,20 @@ import org.jcrom.util.PathUtils;
 import play.Logger;
 import play.api.http.MediaRange;
 import play.libs.F;
-import play.libs.F.Function;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
+import service.filestore.EventManager;
 import service.filestore.EventManager.FileStoreEvent;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
 import service.filestore.FileStoreImpl;
+import service.filestore.FlagStore;
+import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
@@ -55,14 +59,17 @@ import com.google.inject.Inject;
 public final class FileStoreController extends SessionAwareController {
 
   private final FileStore fileStoreImpl;
+  private final FlagStore flagStoreImpl;
 
   @Inject
   public FileStoreController(final JcrSessionFactory sessionFactory,
       final Jcrom jcrom,
       final CacheableUserProvider sessionHandler,
-      final FileStore fileStoreImpl) {
+      final FileStore fileStoreImpl,
+      final FlagStore flagStoreImpl) {
     super(sessionFactory, jcrom, sessionHandler);
     this.fileStoreImpl = fileStoreImpl;
+    this.flagStoreImpl = flagStoreImpl;
   }
 
   @SubjectPresent
@@ -74,7 +81,8 @@ public final class FileStoreController extends SessionAwareController {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         return ok(views.html.FileStoreController.index.render(
             fileStoreImpl.getEventManager().getLastEventId(),
-            jb.toJson(fm.getFolders()))).as("text/html");
+            jb.toJson(fm.getFolders()),
+            getUsersJson(session))).as("text/html; charset=utf-8");
       }
     });
   }
@@ -129,13 +137,93 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
+  public Result usersJson() {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        return ok(getUsersJson(session)).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
   public Result filestoreJson() {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        return ok(jb.toJson(fm.getFolders())).as("application/json");
+        return ok(jb.toJson(fm.getFolders()))
+            .as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result flagsJson(final String flagTypeName) {
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+        for (final Flag flag : flagStoreImpl.getManager(session).getFlags(t)) {
+          json.add(jb.toJson(flag));
+        }
+        return ok(json).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result flagJson(final String flagTypeName, final String flagId) {
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final Flag flag = flagStoreImpl.getManager(session).getFlag(t, flagId);
+        return ok(jb.toJson(flag)).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result addFlag(final String flagTypeName) {
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
+    final JsonNode params = ctx().request().body().asJson();
+    if (!params.has("targetId") || !params.has("userId"))
+      return badRequest();
+    final String targetId = params.get("targetId").asText();
+    final String userId = params.get("userId").asText();
+    if (!getUser().getId().equals(userId))
+      return forbidden();
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final User user = (new UserDAO(session, jcrom)).get(getUser());
+        final JsonBuilder jb = new JsonBuilder();
+        final Flag flag = flagStoreImpl.getManager(session)
+            .setFlag(t, targetId, user);
+        notifyFlagChange(session, flag.getTargetId());
+        return created(jb.toJson(flag)).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result deleteFlag(final String flagTypeName, final String flagId) {
+    final FlagType t = FlagType.valueOf(flagTypeName.toUpperCase());
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final FlagStore.Manager flm = flagStoreImpl.getManager(session);
+        final Flag flag = flm.getFlag(t, flagId);
+        if (flag == null)
+          return notFound();
+        notifyFlagChange(session, flag.getTargetId());
+        flm.unsetFlag(t, flagId);
+        return status(204);
       }
     });
   }
@@ -147,13 +235,9 @@ public final class FileStoreController extends SessionAwareController {
         final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
-        ctx().response().setHeader("Cache-Control", "no-cache");
         if (fof instanceof FileStore.Folder) {
           return ok(jb.toJsonShallow((FileStore.Folder) fof, false))
-              .as("application/json");
-        } else if (fof instanceof FileStore.File) {
-          return ok(jb.toJsonShallow((FileStore.File) fof))
-              .as("application/json");
+              .as("application/json; charset=utf-8");
         } else {
           return notFound();
         }
@@ -170,7 +254,7 @@ public final class FileStoreController extends SessionAwareController {
         FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
         if (fof instanceof FileStore.File) {
           return ok(jb.toJsonShallow((FileStore.File) fof))
-              .as("application/json");
+              .as("application/json; charset=utf-8");
         } else {
           return notFound();
         }
@@ -239,11 +323,14 @@ public final class FileStoreController extends SessionAwareController {
           final FileStore.File file,
           final FileStore.File version)
           throws RepositoryException, IOException {
-        final String filename = file.getName().replaceAll(
-            "(\\.?[^\\.]+$)",
+        final String authorName = version.getAuthor() != null ?
+            version.getAuthor().getName() : "unknown";
+        final String versionStamp =
             String.format("(%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS %2$s)",
                 version.getModificationTime(),
-                version.getAuthor().getName()) + "$1" );
+                authorName);
+        final String filename = file.getName().replaceAll(
+            "(\\.?[^\\.]+$)", versionStamp + "$1" );
         ctx().response().setContentType(version.getMimeType());
         ctx().response().setHeader("Content-Disposition",
             "attachment; filename="+filename);
@@ -262,7 +349,7 @@ public final class FileStoreController extends SessionAwareController {
           final FileStore.File version)
           throws RepositoryException, IOException {
         final ExtractionHelper eh = new ExtractionHelper(version);
-        return ok(eh.getPlainText()).as("text/plain");
+        return ok(eh.getPlainText()).as("text/plain; charset=utf-8");
       }
     });
   }
@@ -278,7 +365,7 @@ public final class FileStoreController extends SessionAwareController {
             folder.getGroupPermissions().entrySet()) {
           perms.add(groupJson(e.getKey(), e.getValue()));
         }
-        return ok(perms).as("application/json");
+        return ok(perms).as("application/json; charset=utf-8");
       }
     });
   }
@@ -479,6 +566,32 @@ public final class FileStoreController extends SessionAwareController {
         return ok(json).as("text/html");
       }
     });
+  }
+
+  protected ArrayNode getUsersJson(Session session) {
+    final JsonBuilder jb = new JsonBuilder();
+    final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+    for (final User user : getUserDAO(session).list()) {
+      json.add(jb.toJson(user));
+    }
+    return json;
+  }
+
+  protected void notifyFlagChange(Session session, String targetId)
+      throws RepositoryException {
+    final FileStore.Manager fm = fileStoreImpl.getManager(session);
+    final FileStore.FileOrFolder fof = fm.getByIdentifier(targetId);
+    final EventManager em = fileStoreImpl.getEventManager();
+    if (fof == null)
+      return;
+    else if (fof instanceof FileStore.File)
+      em.tell(FileStoreEvent.update((FileStore.File) fof));
+    else if (fof instanceof FileStore.File)
+      em.tell(FileStoreEvent.updateFolder(targetId));
+  }
+
+  protected UserDAO getUserDAO(Session session) {
+    return new UserDAO(session, jcrom);
   }
 
   private interface FofOp<T extends FileStore.FileOrFolder>

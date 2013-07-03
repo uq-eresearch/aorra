@@ -136,6 +136,42 @@ define(['backbone'], function(Backbone) {
       return this._infoModel;
     }
   });
+  
+  var Flag = Backbone.Model.extend({});
+  
+  var EditFlags = Backbone.Collection.extend({
+    model: Flag,
+    url: '/flags/edit'
+  });
+  
+  var WatchFlags = Backbone.Collection.extend({
+    model: Flag,
+    url: '/flags/watch'
+  });
+  
+  var User = Backbone.Model.extend({});
+  
+  var Users = Backbone.Collection.extend({
+    model: User,
+    url: '/user',
+    initialize: function() {
+      // Build flag collections
+      this._flags = {
+        edit: new EditFlags(),
+        watch: new WatchFlags()
+      };
+      _.each(this._flags, function(c) { return c.fetch(); });
+    },
+    currentId: function() {
+      return $('#current-user').data('id');
+    },
+    current: function() {
+      return this.get(this.currentId());
+    },
+    flags: function() {
+      return this._flags;
+    }
+  })
 
   return {
     File: File,
@@ -144,6 +180,7 @@ define(['backbone'], function(Backbone) {
     FileStore: FileStore,
     Folder: Folder,
     VersionInfo: VersionInfo,
-    VersionList: VersionList
+    VersionList: VersionList,
+    Users: Users
   };
 })

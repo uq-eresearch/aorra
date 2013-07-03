@@ -1,0 +1,22 @@
+<span class="counter-button input-prepend" title="{tooltip}">
+  <button class="btn {activeClass}">
+    <i class="icon-{icon}"></i> {title}
+  </button>
+  <span class="uneditable-input clickable"
+    title="{contentTitle}"
+    data-html="true"
+    data-toggle="popover"
+    data-placement="bottom"
+    data-trigger="click">
+    {count}
+  </span>
+  <div class="counter-button-content hidden">
+    <ul class="unstyled">
+      {#users}
+      <li>
+        <a href="mailto:{email}">{name}</a>
+      </li>
+      {/users}
+    </ul>
+  </div>
+</span>

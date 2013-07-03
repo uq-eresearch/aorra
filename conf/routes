@@ -7,6 +7,7 @@ GET     /                           @controllers.Application.index
 POST    /login                      @controllers.Application.postLogin
 GET     /invite                     @controllers.Application.invite
 POST    /invite                     @controllers.Application.postInvite
+GET     /user                       @controllers.FileStoreController.usersJson
 GET     /user-exists/:email         @controllers.Application.userExists(email: String)
 GET     /user-unverified/:email     @controllers.Application.userUnverified(email: String)
 GET     /user/:email/verify/:token  @controllers.Application.verify(email: String, token: String)
@@ -16,6 +17,11 @@ POST    /user/:email/verify/:token  @controllers.Application.postVerify(email: S
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /filestore                  @controllers.FileStoreController.filestoreJson()
+
+GET     /flags/:type                @controllers.FileStoreController.flagsJson(type)
+POST    /flags/:type                @controllers.FileStoreController.addFlag(type)
+GET     /flags/:type/:id            @controllers.FileStoreController.flagJson(type, id)
+DELETE  /flags/:type/:id            @controllers.FileStoreController.deleteFlag(type, id)
 
 GET     /folder/:folderId               @controllers.FileStoreController.showFolder(folderId: String)
 GET     /folder/:folderId/permissions   @controllers.FileStoreController.groupPermissionList(folderId: String)

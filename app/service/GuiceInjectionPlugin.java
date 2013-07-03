@@ -13,11 +13,13 @@ import org.jcrom.Jcrom;
 
 import play.Application;
 import play.Plugin;
+import play.libs.F;
 import providers.CacheableUserProvider;
 import providers.DeadboltHandlerImpl;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
+import service.filestore.FlagStore;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -56,7 +58,42 @@ public class GuiceInjectionPlugin extends Plugin {
   }
 
   private Injector createInjector() {
-    Module pluginModule = new AbstractModule() {
+    final Jcrom jcrom = buildJcrom();
+    final Credentials adminCredentials = new SimpleCredentials(
+        cfgStr(ConfigConsts.CONF_JCR_USERID),
+        cfgStr(ConfigConsts.CONF_JCR_PASSWORD).toCharArray());
+    final JcrSessionFactory sessionFactory = new JcrSessionFactory() {
+      @Override
+      public Session newAdminSession() throws RepositoryException {
+        return Jcr.getRepository().login(adminCredentials);
+      }
+    };
+    final Module sessionModule = new AbstractModule() {
+      protected final TransientRepository repository =
+          new TransientRepository();
+
+      @Override
+      protected void configure() {
+        bind(Jcrom.class).toInstance(jcrom);
+        bind(JcrSessionFactory.class).toInstance(sessionFactory);
+        bind(FileStore.class)
+          .toInstance(new FileStoreImpl(sessionFactory, jcrom));
+        sessionFactory.inSession(new F.Function<Session, Session>() {
+          @Override
+          public Session apply(Session session) throws Throwable {
+            bind(FlagStore.class)
+              .toInstance(new FlagStore(jcrom, session));
+            return session;
+          }
+        });
+        bind(CacheableUserProvider.class)
+          .to(DeadboltHandlerImpl.class)
+          .in(Singleton.class);
+        bind(NotificationManager.class).in(Singleton.class);
+      }
+    };
+
+    final Module pluginModule = new AbstractModule() {
       @Override
       protected void configure() {}
 
@@ -69,50 +106,21 @@ public class GuiceInjectionPlugin extends Plugin {
       JackrabbitEmailPasswordAuthProvider getEmailPasswordAuthProvider() {
         return application.plugin(JackrabbitEmailPasswordAuthProvider.class);
       }
-
     };
-    Module sessionModule = new AbstractModule() {
-      protected final TransientRepository repository =
-          new TransientRepository();
+    return Guice.createInjector(pluginModule, sessionModule);
+  }
 
-      @Override
-      protected void configure() {
-        final Credentials adminCredentials = new SimpleCredentials(
-            cfgStr(ConfigConsts.CONF_JCR_USERID),
-            cfgStr(ConfigConsts.CONF_JCR_PASSWORD).toCharArray());
+  private Jcrom buildJcrom() {
+    final Jcrom jcrom = new Jcrom(false, true);
+    jcrom.map(User.class);
+    jcrom.map(models.Flag.class);
+    jcrom.map(models.filestore.File.class);
+    jcrom.map(models.filestore.Folder.class);
+    return jcrom;
+  }
 
-        JcrSessionFactory sessionFactory = new JcrSessionFactory() {
-          @Override
-          public Session newAdminSession() throws RepositoryException {
-            return Jcr.getRepository().login(adminCredentials);
-          }
-        };
-        bind(JcrSessionFactory.class).toInstance(sessionFactory);
-        bind(FileStore.class).to(FileStoreImpl.class).in(Singleton.class);
-        bind(CacheableUserProvider.class)
-          .to(DeadboltHandlerImpl.class)
-          .in(Singleton.class);
-        bind(NotificationManager.class).in(Singleton.class);
-      }
-
-      private String cfgStr(String key) {
-        return application.configuration().getString(key);
-      }
-    };
-    Module jcromModule = new AbstractModule() {
-      @Override
-      protected void configure() {}
-
-      @Provides
-      Jcrom getJcrom() {
-        final Jcrom jcrom = new Jcrom(false, true);
-        jcrom.map(User.class);
-        jcrom.map(models.filestore.File.class);
-        jcrom.map(models.filestore.Folder.class);
-        return jcrom;
-      }
-    };
-    return Guice.createInjector(pluginModule, sessionModule, jcromModule);
+  private String cfgStr(String key) {
+    return application.configuration().getString(key);
   }
 
 }

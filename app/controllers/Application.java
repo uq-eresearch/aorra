@@ -9,6 +9,8 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.jackrabbit.api.security.user.Group;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
 import org.jcrom.Jcrom;
 
 import models.GroupManager;
@@ -37,6 +39,7 @@ import providers.CacheableUserProvider;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
+import service.filestore.JsonBuilder;
 
 public final class Application extends SessionAwareController {
 

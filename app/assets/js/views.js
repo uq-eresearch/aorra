@@ -365,7 +365,7 @@ define([
         m = collection.get(m.get('parent'));
       }
       var breadcrumbs = _.map(path, function(m) { 
-        return _.extend(m.asNodeStruct(), { url: m.displayUrl() }); 
+        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });model 
       });
       var context = {
         parents: _.initial(breadcrumbs),
@@ -431,8 +431,8 @@ define([
       this.render();
     },
     render: function() {
-      this.$el.append(_.map(this.els, function(el) {
-        return $('<li/>').append(el);
+      this.$el.empty().append(_.map(this.els, function(el) {
+        return $('<li style="text-align: right; clear: left"/>').append(el);
       }));
       this.container.apply('render');
     }
@@ -507,9 +507,120 @@ define([
       });
     }
   });
+  
+  var FlagButtonView = Backbone.Marionette.ItemView.extend({
+    tagName: 'span',
+    ui: {
+      button: '.btn',
+      popover: '[data-toggle="popover"]',
+      content: '.counter-button-content'
+    },
+    initialize: function(options) {
+      this.targetId = options.targetId;
+      this._uid = this.collection.currentId();
+      this._flags = this.collection.flags()[this.dataDefaults().flagType];
+      // Re-render when flags change (which will happen when we toggle)
+      this.listenTo(this._flags, 'add remove', _.bind(this.render, this));
+    },
+    serializeData: function() {
+      var data = this.dataDefaults();
+      // Filter to target ID
+      var users = _(this._flags.where({ targetId: this.targetId })).chain()
+        // Get associated user ID
+        .invoke('get', 'userId')
+        // Grab matching user object from user collection
+        .map(_.bind(function(v) {
+          var obj = this.collection.get(v);
+          return obj != null ? obj.toJSON() : null;
+        }, this))
+        // Filter out the missing users
+        .compact()
+        // Return the value
+        .value();
+      return _.extend(data, {
+        isSet: this.isSet(),
+        contentTitle: function() { return data.title+"ing"; },
+        users: users,
+        count: users.length
+      });
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('flag_button', serialized_model);
+    },
+    templateHelpers: {
+      activeClass: function() { 
+        return this.isSet ? 'active' : '';
+      }
+    },
+    _getFlagTemplate: function(uid) {
+      return {
+        userId: uid,
+        targetId: this.targetId
+      };
+    },
+    _getFlag: function() {
+      if (_.isUndefined(this._flags))
+        return null;
+      return this._flags.findWhere(this._getFlagTemplate(this._uid));
+    },
+    isSet: function() {
+      return this._getFlag() != null;
+    },
+    _toggleSet: function() {
+      var isSet = this.isSet();
+      if (this.isSet()) {
+        this._getFlag().destroy();
+      } else {
+        this._flags.create(this._getFlagTemplate(this._uid));
+      }
+      return !isSet;
+    },
+    onToggleButton: function() {
+      this._toggleSet();
+    },
+    onRender: function() {
+      var content = this.ui.content.html();
+      this.ui.button.click(_.bind(function() {
+        return this.triggerMethod('toggle:button', {
+          collection: this.collection,
+          model: this.model,
+          view: this
+        });
+      }, this));
+      this.ui.popover.popover({
+        html: true,
+        content: content
+      });
+    }
+  });
+  
+  var EditingButtonView = FlagButtonView.extend({
+    dataDefaults: function() {
+      return {
+        icon: this.isSet() ? 'flag' : 'flag-alt',
+        flagType: 'edit',
+        title: 'Edit',
+        tooltip: 'Let other users know you are making edits to this file.'
+      };
+    }
+  });
+  
+  var WatchingButtonView = FlagButtonView.extend({
+    dataDefaults: function() {
+      return {
+        icon: this.isSet() ? 'eye-open' : 'eye-close',
+        flagType: 'watch',
+        title: 'Watch',
+        tooltip: 'Receive email notifications when new versions are uploaded.'
+      };
+    }
+  });
 
   var FileView = FileOrFolderView.extend({
-    serializeData: function(model) {
+    initialize: function(options) {
+      this._users = options.users;
+    },
+    serializeData: function() {
       return _(this.model.toJSON()).extend({ url: this.model.url() });
     },
     template: function(serialized_model) {
@@ -537,6 +648,14 @@ define([
           model: this.model
         }));
         this.buttons.show(new InlineListView([
+          new WatchingButtonView({ 
+            collection: this._users,
+            targetId: this.model.id
+          }),
+          new EditingButtonView({ 
+            collection: this._users,
+            targetId: this.model.id
+          }),
           this._makeDownloadElement(),
           new DeleteButtonView({ model: this.model })
         ]));
@@ -723,15 +842,17 @@ define([
       return templates.renderInto(this.$el, 'start_page', {});
     }
   });
-
+  
   var AppLayout = Backbone.Marionette.Layout.extend({
     template: "#main-layout",
     regions: {
       main: "#main",
       sidebar: "#sidebar"
     },
-    initialize: function() {
+    initialize: function(options) {
       this.showLoading();
+      // Create Flag
+      this.users = options.users;
     },
     showLoading: function() {
       this.main.show(new LoadingView());
@@ -743,7 +864,7 @@ define([
       this.main.show(new FolderView({ model: folder }));
     },
     showFile: function(file) {
-      this.main.show(new FileView({ model: file }));
+      this.main.show(new FileView({ model: file, users: this.users }));
     },
     showFileDiff: function(file, versionName) {
       this.main.show(new FileDiffView({
