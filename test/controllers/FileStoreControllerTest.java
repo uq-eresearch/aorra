@@ -30,13 +30,16 @@ import models.UserDAO;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
+import org.codehaus.jackson.node.ObjectNode;
 import org.junit.Test;
 
 import play.Play;
 import play.test.FakeRequest;
 import play.libs.F;
+import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
 import providers.JackrabbitEmailPasswordAuthProvider;
@@ -144,13 +147,13 @@ public class FileStoreControllerTest {
         final FileStore.Manager fm = fileStore().getManager(session);
         final FlagStore.Manager flm =
             injector().getInstance(FlagStore.class).getManager(session);
-        Map<String, String> data = new HashMap<String, String>();
+        final ObjectNode data = Json.newObject();
         data.put("targetId", fm.getRoot().getIdentifier());
         data.put("userId", user.getId());
         final Result result = callAction(
             controllers.routes.ref.FileStoreController.addFlag(
                 FlagStore.FlagType.WATCH.toString()),
-            newRequest.withFormUrlEncodedBody(data));
+            newRequest.withJsonBody(data));
         assertThat(status(result)).isEqualTo(201);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
