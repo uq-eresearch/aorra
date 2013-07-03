@@ -6,6 +6,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 
 import models.User;
+import notification.NotificationManager;
 
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jcrom.Jcrom;
@@ -91,6 +92,7 @@ public class GuiceInjectionPlugin extends Plugin {
         bind(CacheableUserProvider.class)
           .to(DeadboltHandlerImpl.class)
           .in(Singleton.class);
+        bind(NotificationManager.class).in(Singleton.class);
       }
 
       private String cfgStr(String key) {

@@ -1,17 +1,18 @@
 import static play.Play.application;
+import jackrabbit.AorraAccessManager;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.security.AccessControlManager;
 
+import notification.NotificationManager;
 import play.Application;
 import play.GlobalSettings;
 import play.libs.F.Function;
 import play.mvc.Call;
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
-import jackrabbit.AorraAccessManager;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.PlayAuthenticate.Resolver;
@@ -38,6 +39,7 @@ public class Global extends GlobalSettings {
 
   @Override
   public void onStart(final Application app) {
+
     PlayAuthenticate.setResolver(new Resolver() {
 
       @Override
@@ -100,6 +102,13 @@ public class Global extends GlobalSettings {
             return null;
         }
       });
+    getInjector().getInstance(NotificationManager.class).start();
   }
 
+
+  @Override
+  public void onStop(Application app) {
+      super.onStop(app);
+      getInjector().getInstance(NotificationManager.class).stop();
+  }
 }
