@@ -103,6 +103,7 @@ require(['models', 'views'], function(models, views) {
     notificationFeed.on("folder:update file:update",
       function(id) {
         fs.get(id).fetch();
+        _.each(users.flags(), function(v) { c.fetch(); });
       });
     notificationFeed.on("folder:delete file:delete",
       function(id) {
