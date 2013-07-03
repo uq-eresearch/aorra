@@ -219,7 +219,7 @@ public final class FileStoreController extends SessionAwareController {
         final Flag flag = flm.getFlag(t, flagId);
         if (flag == null)
           return notFound();
-        flm.unsetFlag(flagId);
+        flm.unsetFlag(t, flagId);
         return status(204);
       }
     });

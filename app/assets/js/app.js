@@ -117,7 +117,7 @@ require(['models', 'views'], function(models, views) {
       Backbone.history.start({ pushState: false });
     };
 
-    var layout = new views.AppLayout();
+    var layout = new views.AppLayout({ users: users });
     window.layout = layout;
     layout.render();
     $('#content').append(layout.$el);
@@ -222,8 +222,6 @@ require(['models', 'views'], function(models, views) {
     } else {
       users.reset(window.usersJSON);
     }
-    window.users = users;
-    window.watchFlags = new models.WatchFlags();
 
     // If our data is out-of-date, refresh and reopen event feed.
     notificationFeed.on("outofdate", function(id) {

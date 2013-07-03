@@ -13,6 +13,7 @@ import javax.jcr.version.VersionException;
 
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.jcrom.Jcrom;
+import org.jcrom.JcrMappingException;
 
 import models.Flag;
 import models.FlagDAO;
@@ -55,10 +56,14 @@ public class FlagStore {
     }
 
     public Flag getFlag(FlagType t, String flagId) {
-      Flag flag = flagDao.loadById(flagId);
-      if (flag == null || !flag.getPath().startsWith(t.getRootPath()))
+      try {
+        Flag flag = flagDao.loadById(flagId);
+        if (!flag.getPath().startsWith(t.getRootPath()))
+          return null;
+        return flag;
+      } catch (JcrMappingException e) {
         return null;
-      return flag;
+      }
     }
 
     public Flag getFlag(FlagType t, String targetId, User user) {
@@ -76,13 +81,16 @@ public class FlagStore {
     }
 
     public void unsetFlag(FlagType t, String targetId, User user) {
-      Flag flag = getFlag(t, targetId, user);
-      if (flag != null)
-        flagDao.removeById(flag.getId());
+      deleteFlag(getFlag(t, targetId, user));
     }
 
-    public void unsetFlag(String flagId) {
-      flagDao.removeById(flagId);
+    public void unsetFlag(FlagType t, String flagId) {
+      deleteFlag(this.getFlag(t, flagId));
+    }
+
+    private void deleteFlag(Flag flag) {
+      if (flag != null)
+        flagDao.removeById(flag.getId());
     }
 
   }

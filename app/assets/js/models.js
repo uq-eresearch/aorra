@@ -154,14 +154,26 @@ define(['backbone'], function(Backbone) {
   var Users = Backbone.Collection.extend({
     model: User,
     url: '/user',
+    initialize: function() {
+      // Build flag collections
+      this._flags = {
+        edit: new EditFlags(),
+        watch: new WatchFlags()
+      };
+      _.each(this._flags, function(c) { return c.fetch(); });
+    },
+    currentId: function() {
+      return $('#current-user').data('id');
+    },
     current: function() {
-      var currentUserId = $('#current-user').data('id');
-      return this.get(currentUserId);
+      return this.get(this.currentId());
+    },
+    flags: function() {
+      return this._flags;
     }
   })
 
   return {
-    EditFlags: WatchFlags,
     File: File,
     FileInfo: FileInfo,
     FileOrFolder: FileOrFolder,
@@ -169,7 +181,6 @@ define(['backbone'], function(Backbone) {
     Folder: Folder,
     VersionInfo: VersionInfo,
     VersionList: VersionList,
-    WatchFlags: WatchFlags,
     Users: Users
   };
 })

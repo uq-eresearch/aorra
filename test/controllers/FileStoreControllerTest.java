@@ -182,15 +182,26 @@ public class FileStoreControllerTest {
             injector().getInstance(FlagStore.class).getManager(session);
         final Flag flag =
             flm.setFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
-        final Result result = callAction(
-            controllers.routes.ref.FileStoreController.deleteFlag(
-                FlagStore.FlagType.WATCH.toString(),
-                flag.getId()),
-            newRequest);
-        assertThat(status(result)).isEqualTo(204);
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
-        assertThat(flm.hasFlag(FlagType.WATCH,
-            fm.getRoot().getIdentifier(), user)).isFalse();
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.deleteFlag(
+                  FlagStore.FlagType.WATCH.toString(),
+                  flag.getId()),
+              newRequest);
+          assertThat(status(result)).isEqualTo(204);
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(flm.hasFlag(FlagType.WATCH,
+              fm.getRoot().getIdentifier(), user)).isFalse();
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.deleteFlag(
+                  FlagStore.FlagType.WATCH.toString(),
+                  flag.getId()),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        }
         return session;
       }
     });
