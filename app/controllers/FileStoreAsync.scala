@@ -85,7 +85,7 @@ class FileStoreAsync @Inject()(
         }
       } toSeq
     )
-    Ok(response).as("application/json")
+    Ok(response).as(JSON)
       .withHeaders("Cache-Control" -> "no-cache")
   }
 
@@ -117,7 +117,7 @@ class FileStoreAsync @Inject()(
         Enumerator(initialEventSourceSetup()) andThen
         pingEnumerator('sse).interleave(
             fsEvents(authUser, lastEventId) &> eventSourceFormatter)
-      ).as("text/event-stream")
+      ).as("text/event-stream; charset=utf-8")
   }
 
   private def fsEvents(authUser: AuthUser, lastEventId: String = null) = {

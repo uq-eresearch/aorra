@@ -7,8 +7,19 @@ import java.io.FileOutputStream
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.AnyContentAsMultipartFormData
 import java.io.ByteArrayInputStream
+import org.specs2.execute.AsResult
+import play.api.test.WithApplication
+import service.GuiceInjectionPlugin
+import service.filestore.FileStore
 
 object AorraScalaHelper {
+
+  def fakeAorraApp = AorraTestUtils.fakeAorraApp().getWrappedApplication
+
+  class FakeAorraApp extends WithApplication(fakeAorraApp)
+
+  def filestore = injector.getInstance(classOf[FileStore])
+  def injector = GuiceInjectionPlugin.getInjector(play.Play.application())
 
   def testMultipartFormBody(content: String) = {
     val tf = TemporaryFile(java.io.File.createTempFile("multipart", "test"))

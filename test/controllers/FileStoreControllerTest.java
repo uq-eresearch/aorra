@@ -29,8 +29,6 @@ import models.User;
 import models.UserDAO;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
@@ -546,7 +544,8 @@ public class FileStoreControllerTest {
     });
   }
 
-  private void asAdminUser(
+  // Also used in FileStoreAsyncSpec
+  public static void asAdminUser(
       final F.Function3<Session, User, FakeRequest, Session> op) {
     running(fakeAorraApp(), new Runnable() {
       @Override
@@ -570,7 +569,7 @@ public class FileStoreControllerTest {
     });
   }
 
-  private User createNewUser(final String email, final String password) {
+  private static User createNewUser(final String email, final String password) {
     final String name = "Test User";
     final User.Invite invite = new User.Invite(email, name);
     final JackrabbitEmailPasswordAuthProvider authProvider =
@@ -595,7 +594,8 @@ public class FileStoreControllerTest {
   /*
    * Must be used while application is running.
    */
-  private FakeRequest loggedInRequest(final User user, final String password) {
+  private static FakeRequest loggedInRequest(
+      final User user, final String password) {
     final Map<String,String> data = new HashMap<String,String>();
     data.put("email", user.getEmail());
     data.put("password", password);
