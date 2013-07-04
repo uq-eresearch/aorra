@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import play.Play;
 import play.test.FakeRequest;
+import play.api.mvc.Call;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http;
@@ -48,6 +49,52 @@ import service.filestore.FlagStore.FlagType;
 import service.filestore.roles.Admin;
 
 public class FileStoreControllerTest {
+
+  @Test
+  public void routes() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        {
+          final Call call =
+              controllers.routes.FileStoreController.filestoreJson();
+          assertThat(call.method()).isEqualTo("GET");
+          assertThat(call.url()).isEqualTo("/filestore");
+        }
+        {
+          final Call call =
+              controllers.routes.FileStoreController.usersJson();
+          assertThat(call.method()).isEqualTo("GET");
+          assertThat(call.url()).isEqualTo("/user");
+        }
+        {
+          final String id = UUID.randomUUID().toString();
+          final Call call =
+              controllers.routes.FileStoreController.showFile(id);
+          assertThat(call.method()).isEqualTo("GET");
+          assertThat(call.url()).isEqualTo("/file/"+id);
+        }
+        {
+          final String id = UUID.randomUUID().toString();
+          final Call call =
+              controllers.routes.FileStoreController.showFolder(id);
+          assertThat(call.method()).isEqualTo("GET");
+          assertThat(call.url()).isEqualTo("/folder/"+id);
+        }
+        {
+          final String id = UUID.randomUUID().toString();
+          final Call call =
+              controllers.routes.FileStoreController.mkdir(id, "foo");
+          assertThat(call.method()).isEqualTo("POST");
+          assertThat(call.url()).isEqualTo("/folder/"+id+"/folders?mkdir=foo");
+        }
+        return session;
+      }
+    });
+  }
 
   @Test
   public void getFilestoreJSON() {
