@@ -1,16 +1,30 @@
 package jackrabbit;
 
+import static org.fest.assertions.Assertions.assertThat;
+import static org.fest.assertions.MapAssert.entry;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static play.test.Helpers.running;
+import static test.AorraTestUtils.running;
 import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.sessionFactory;
 
+import java.security.AccessControlException;
+
+import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.jackrabbit.core.id.ItemId;
+import org.apache.jackrabbit.core.id.NodeId;
+import org.apache.jackrabbit.core.id.PropertyId;
+import org.apache.jackrabbit.core.security.principal.PrincipalImpl;
+import org.apache.jackrabbit.spi.Path;
+import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
+import org.apache.jackrabbit.spi.commons.name.PathBuilder;
+import org.fest.assertions.MapAssert;
 import org.junit.Test;
 
 import play.libs.F;
@@ -19,16 +33,100 @@ public class AorraAccessManagerTest {
 
   @Test
   public void testCanAccessAllWorkspaces() {
-    acmTest(new F.Function2<Session, AorraAccessManager, Session>() {
-      @Override
-      public Session apply(Session session, AorraAccessManager acm)
-          throws RepositoryException {
-        assertTrue(acm.canAccess("default"));
-        final String randomWorkspaceName = RandomStringUtils.random(30);
-        assertTrue(acm.canAccess(randomWorkspaceName));
-        return session;
-      }
-    });
+    running(fakeAorraApp(),
+      acmTest(new F.Function2<Session, AorraAccessManager, Session>() {
+        @Override
+        public Session apply(Session session, AorraAccessManager acm)
+            throws RepositoryException {
+          assertTrue(acm.canAccess("default"));
+          final String randomWorkspaceName = RandomStringUtils.random(30);
+          assertTrue(acm.canAccess(randomWorkspaceName));
+          return session;
+        }
+      })
+    );
+  }
+
+  @Test
+  public void testGetIdAndPath() {
+    running(fakeAorraApp(),
+      acmTest(new F.Function2<Session, AorraAccessManager, Session>() {
+        @Override
+        public Session apply(Session session, AorraAccessManager acm)
+            throws RepositoryException {
+          String rootUid = session.getNode("/").getIdentifier();
+          assertThat(rootUid).isEqualTo(acm.getId("/"));
+          assertThat("/").isEqualTo(acm.getPath(rootUid));
+          try {
+            acm.getPath("");
+            fail("Should throw IllegalArgumentException.");
+          } catch (IllegalArgumentException e) {
+            // Good
+          }
+          return session;
+        }
+    })
+    );
+  }
+
+  @Test
+  public void testPermissionHandling() throws MalformedPathException {
+    final String anon = "anonymous";
+    final Path rootPath;
+    {
+      PathBuilder pb = new PathBuilder();
+      pb.addRoot();
+      rootPath = pb.getPath();
+    }
+    running(fakeAorraApp(),
+      acmTest(new F.Function2<Session, AorraAccessManager, Session>() {
+        @Override
+        public Session apply(final Session session, AorraAccessManager acm)
+            throws RepositoryException {
+          // Check admin permissions
+          final ItemId rootID;
+          try {
+            acm.checkPermission(rootPath, 3);
+            rootID = makeId(session.getNode("/").getIdentifier());
+            acm.checkPermission(rootID, 3);
+          } catch (AccessDeniedException e) {
+            fail("Should be allowed.");
+            return session;
+          }
+          // Run some tests on granting
+          final MapAssert.Entry expectedPermission = entry(
+              new PermissionKey("default", anon, rootID.toString()),
+              Permission.RO);
+          acm.grant(new PrincipalImpl(anon), "/", Permission.RO);
+          assertThat(acm.getPermissions()).includes(expectedPermission);
+          acm.revoke("default", anon, rootID.toString());
+          assertThat(acm.getPermissions()).excludes(expectedPermission);
+          acm.grant(new PrincipalImpl(anon), "/", Permission.RO);
+          acm.grant("default", anon, rootID.toString(), Permission.RO);
+          assertThat(acm.getPermissions()).includes(expectedPermission);
+
+          return session;
+        }
+      }),
+      acmTest(anon, new F.Function2<Session, AorraAccessManager, Session>() {
+        @Override
+        public Session apply(final Session session, AorraAccessManager acm)
+            throws RepositoryException {
+          try {
+            acm.checkPermission(rootPath, 1);
+          } catch (AccessControlException e) {
+            fail("Should be allowed.");
+          }
+          try {
+            acm.checkPermission(rootPath, 3);
+            fail("Should not be allowed.");
+          } catch (AccessDeniedException e) {
+            // All good
+          }
+          return session;
+        }
+      })
+    );
   }
 
   /*
@@ -36,7 +134,8 @@ public class AorraAccessManagerTest {
    */
   @Test
   public void testUnimplementedMethods() {
-    acmTest(new F.Function2<Session, AorraAccessManager, Session>() {
+    running(fakeAorraApp(),
+        acmTest(new F.Function2<Session, AorraAccessManager, Session>() {
 
       @Override
       public Session apply(Session session, AorraAccessManager acm)
@@ -55,7 +154,6 @@ public class AorraAccessManagerTest {
         } catch (NotImplementedException e) {
           // All good
         }
-
 
         try {
           acm.getSupportedPrivileges("anything");
@@ -109,26 +207,45 @@ public class AorraAccessManagerTest {
         return session;
       }
 
-    });
+    }));
   }
 
-  private void acmTest(
+  private Runnable acmTest(
       final F.Function2<Session, AorraAccessManager, Session> f) {
-    running(fakeAorraApp(), new Runnable() {
+    return acmTest(null, f);
+  }
+
+  private Runnable acmTest(final String userId,
+      final F.Function2<Session, AorraAccessManager, Session> f) {
+    return new Runnable() {
       @Override
       public void run() {
-        sessionFactory().inSession(new F.Function<Session, Session>() {
-
-          @Override
-          public Session apply(Session session) throws Throwable {
-            final AorraAccessManager acm = (AorraAccessManager)
-                session.getAccessControlManager();
-            return f.apply(session, acm);
-          }
-        });
+        if (userId == null)
+          sessionFactory().inSession(execute(f));
+        else
+          sessionFactory().inSession(userId, execute(f));
       }
-    });
+    };
   }
 
+  private F.Function<Session, Session> execute(
+      final F.Function2<Session, AorraAccessManager, Session> f) {
+    return new F.Function<Session, Session>() {
+      @Override
+      public Session apply(Session session) throws Throwable {
+        final AorraAccessManager acm = (AorraAccessManager)
+            session.getAccessControlManager();
+        return f.apply(session, acm);
+      }
+    };
+  }
+
+  private ItemId makeId(String id) {
+    try {
+        return new NodeId(id);
+    } catch(IllegalArgumentException e) {
+        return PropertyId.valueOf(id);
+    }
+  }
 
 }
