@@ -12,6 +12,7 @@ import static test.AorraTestUtils.sessionFactory;
 import java.security.AccessControlException;
 
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -65,7 +66,7 @@ public class AorraAccessManagerTest {
           }
           return session;
         }
-    })
+      })
     );
   }
 
@@ -104,6 +105,12 @@ public class AorraAccessManagerTest {
           acm.grant(new PrincipalImpl(anon), "/", Permission.RO);
           acm.grant("default", anon, rootID.toString(), Permission.RO);
           assertThat(acm.getPermissions()).includes(expectedPermission);
+          try {
+            acm.grant(new PrincipalImpl(anon), "/doesnotexist", Permission.RO);
+            fail("Should throw ItemNotFoundException.");
+          } catch (ItemNotFoundException e) {
+            // Good
+          }
 
           return session;
         }
