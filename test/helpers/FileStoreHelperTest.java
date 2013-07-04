@@ -9,15 +9,22 @@ import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.jcr.Session;
 
+import models.GroupManager;
+
+import org.apache.jackrabbit.api.security.user.Group;
 import org.junit.Test;
 
 import play.libs.F;
 import service.filestore.FileStore;
+import service.filestore.roles.Admin;
 
 public class FileStoreHelperTest {
 
@@ -264,22 +271,114 @@ public class FileStoreHelperTest {
     });
   }
 
+  @Test
+  public void tree() {
+    final PrintWriterTester pwt = new PrintWriterTester();
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        final String absPath1 = "/foo/bar";
+        final FileStore.Folder folder = fsh.mkdir(absPath1, true);
+        folder.createFile("test.txt", "text/plain",
+            new ByteArrayInputStream("Hello World!".getBytes()));
+        // Truncate string
+        pwt.dump();
+        // Check tree output from root
+        fsh.tree("", false);
+        assertThat(pwt.dump()).isEqualTo(
+            "/ (root)\n"+
+            "|-+ foo\n"+
+            "|   |-+ bar\n"+
+            "|   |   |-- test.txt\n");
+        fsh.tree("/foo/bar/test.txt", false);
+        assertThat(pwt.dump()).isEqualTo("/foo/bar/test.txt is a file\n");
+        fsh.tree("/doesnotexist", false);
+        assertThat(pwt.dump()).isEqualTo("no such folder /doesnotexist\n");
+        return session;
+      }
+    }, pwt.getPrintWriter());
+  }
+
+  @Test
+  public void listadmin() {
+    final PrintWriterTester pwt = new PrintWriterTester();
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        final GroupManager gm = new GroupManager(session);
+        final Group first = gm.create("foo");
+        final Group second = gm.create("bar");
+        Admin.getInstance(session).getGroup().addMember(first);
+        first.addMember(second);
+        // Get tree
+        // TODO: Find out why we pass a null parameter!
+        fsh.listadmin(null);
+        // TODO: Pretty sure this output is wrong - check with Andre
+        assertThat(pwt.dump()).isEqualTo(
+            "|-+ filestoreAdmin\n"+
+            "|-+ foo\n"+
+            "|   |-+ bar\n");
+        return session;
+      }
+    }, pwt.getPrintWriter());
+  }
+
   private void helperTest(final
       F.Function3<Session, FileStoreHelper, FileStore.Manager, Session> op) {
+    helperTest(op, null);
+  }
+
+  private void helperTest(final
+      F.Function3<Session, FileStoreHelper, FileStore.Manager, Session> op,
+      final PrintWriter writer) {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
         sessionFactory().inSession(new F.Function<Session,Session>() {
           @Override
           public Session apply(final Session session) throws Throwable {
-            op.apply(session,
-                new FileStoreHelper(session),
-                fileStore().getManager(session));
+            final FileStoreHelper fsh = writer == null ?
+                new FileStoreHelper(session) :
+                new FileStoreHelper(session, writer);
+            op.apply(session, fsh, fileStore().getManager(session));
             return session;
           }
         });
       }
     });
   }
+
+  private class PrintWriterTester {
+
+    private final StringWriter sw;
+    private final PrintWriter pw;
+
+    public PrintWriterTester() {
+      sw = new StringWriter();
+      pw = new PrintWriter(sw);
+    }
+
+    public PrintWriter getPrintWriter() { return pw; }
+
+    public String dump() {
+      final String content = toString();
+      sw.getBuffer().setLength(0);
+      return content;
+    }
+
+    @Override
+    public String toString() {
+      pw.flush();
+      return sw.getBuffer().toString();
+    }
+
+  }
+
 
 }
