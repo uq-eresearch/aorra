@@ -66,33 +66,31 @@ class FileStoreAsyncSpec extends Specification {
 
     "returns events in the past" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
-        val lastId = filestore.getEventManager().getLastEventId()
-
-        filestore.getManager(session).getRoot()
+        val file = filestore.getManager(session).getRoot()
           .createFile("test.txt", "text/plain",
             new ByteArrayInputStream("Some content".getBytes))
+
         // Check event is there
-        val events = filestore.getEventManager().getSince(lastId)
+        val events = filestore.getEventManager().getSince(null)
           .toIterable.toSeq
         events must haveSize(1)
         val expectedId = events.head._1
 
         val Some(result) = route(
-            FakeRequest(GET, "/notifications?from="+lastId,
+            FakeRequest(GET, "/notifications",
                 rh, AnyContentAsEmpty))
 
         status(result) must equalTo(OK);
         contentType(result) must beSome("application/json")
         charset(result) must beSome("utf-8")
 
-        pending(expectedId+" should be in response")
-        //contentAsString(result) must contain(expectedId)
+        contentAsString(result) must contain(expectedId)
+        contentAsString(result) must contain("file:create")
+        contentAsString(result) must contain(file.getIdentifier)
       }
     }
 
   }
-
-  private def filestore = AorraTestUtils.fileStore()
 
   // Convert asAdminUser to work well with Scala
   private def asAdminUser(f: (Session, User, FakeHeaders) => Unit) = {
