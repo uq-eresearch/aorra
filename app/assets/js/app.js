@@ -62,9 +62,8 @@ require(['models', 'views'], function(models, views) {
                 es.addEventListener(eventName, function(event) {
                   trigger(eventName, event.data);
                 });
-              });  
+              });
             })
-            
             this.es = es;
           });
         }
@@ -118,7 +117,10 @@ require(['models', 'views'], function(models, views) {
       Backbone.history.start({ pushState: false });
     };
 
-    var layout = new views.AppLayout({ users: users });
+    var layout = new views.AppLayout({
+      el: '#content',
+      users: users
+    });
     window.layout = layout;
     layout.render();
     $('#content').append(layout.$el);
@@ -216,7 +218,7 @@ require(['models', 'views'], function(models, views) {
       fs.reset(window.filestoreJSON);
       startRouting();
     }
-    
+
     // Users collection
     if (_.isUndefined(window.usersJSON)) {
       users.fetch();

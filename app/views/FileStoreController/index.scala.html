@@ -9,6 +9,13 @@
 
 @main("AORRA Files and Folders", true) {
 
+  <div class="span6 offset3" id="loading-progress">
+    <h5>Loading application...</h5>
+    <div class="progress progress-striped active">
+      <div class="bar" style="width: 0%;"></div>
+    </div>
+  </div>
+  
   <script id="main-layout" type="text/html">
   <div class="span4" id="sidebar"></div>
   <div class="span8" id="main"></div>
@@ -21,6 +28,20 @@
 
   // Load application
   requirejs(['app']);
+  
+  // Update progress bar
+  var updateModuleProgress = function(context, map, depMaps) {
+    // console.log('loading: ' + map.name + ' at ' + map.url);
+    var $outerBar = $('#loading-progress .progress');
+    var $innerBar = $outerBar.find('.bar');
+    var maxWidth = $outerBar.width();
+    var parts = 10;
+    $innerBar.width(Math.min(maxWidth, $innerBar.width() + maxWidth / parts));
+  };
+
+  require.onResourceLoad = function(context, map, depMaps) {
+    updateModuleProgress(context, map, depMaps);
+  };
   </script>
 
 }
