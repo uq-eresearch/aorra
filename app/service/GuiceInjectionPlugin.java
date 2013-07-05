@@ -89,7 +89,6 @@ public class GuiceInjectionPlugin extends Plugin {
         bind(CacheableUserProvider.class)
           .to(DeadboltHandlerImpl.class)
           .in(Singleton.class);
-        bind(NotificationManager.class).in(Singleton.class);
       }
     };
 

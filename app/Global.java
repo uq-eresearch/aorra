@@ -6,7 +6,6 @@ import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.security.AccessControlManager;
 
-import notification.NotificationManager;
 import play.Application;
 import play.GlobalSettings;
 import play.libs.F.Function;
@@ -102,13 +101,6 @@ public class Global extends GlobalSettings {
             return null;
         }
       });
-    getInjector().getInstance(NotificationManager.class).start();
   }
 
-
-  @Override
-  public void onStop(Application app) {
-      super.onStop(app);
-      getInjector().getInstance(NotificationManager.class).stop();
-  }
 }
