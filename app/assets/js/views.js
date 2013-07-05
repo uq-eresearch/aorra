@@ -658,6 +658,10 @@ define([
         ]));
       } else {
         this.buttons.show(new InlineListView([
+          new WatchingButtonView({
+            collection: this._users,
+            targetId: this.model.id
+          }),
           this._makeDownloadElement()
         ]));
       }
