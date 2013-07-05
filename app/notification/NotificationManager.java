@@ -35,6 +35,8 @@ import service.filestore.roles.Admin;
 import com.feth.play.module.mail.Mailer;
 import com.feth.play.module.mail.Mailer.Mail.Body;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 public class NotificationManager extends Plugin {
 
@@ -44,15 +46,34 @@ public class NotificationManager extends Plugin {
 
         private String lastEventId;
 
+        private final JcrSessionFactory sessionFactory;
+        private final FileStore fileStore;
+        private final FlagStore flagStore;
+        private final Jcrom jcrom;
+
+        @Inject
+        public NotificationRunner(
+            JcrSessionFactory sessionFactory,
+            FileStore fileStore,
+            FlagStore flagStore,
+            Jcrom jcrom) {
+          this.sessionFactory = sessionFactory;
+          this.fileStore = fileStore;
+          this.flagStore = flagStore;
+          this.jcrom = jcrom;
+        }
+
         @Override
         public void run() {
             Logger.debug("Notification started");
-            lastEventId = fileStore().getEventManager().getLastEventId();
+            lastEventId = fileStore.getEventManager().getLastEventId();
             Logger.debug("last event id: "+lastEventId);
             while(!stopped) {
                 try {
-                     sessionFactory().inSession(new Function<Session, String>() {
-                        public String apply(Session session) throws UnsupportedRepositoryOperationException, RepositoryException {
+                     sessionFactory.inSession(new Function<Session, String>() {
+                        @Override
+                        public String apply(Session session)
+                            throws RepositoryException {
                             checkEvents(session);
                             return null;
                         }
@@ -66,7 +87,7 @@ public class NotificationManager extends Plugin {
         }
 
         private void checkEvents(Session session) throws RepositoryException {
-            Iterable<Tuple2<String, FileStoreEvent>> events = fileStore().getEventManager().getSince(lastEventId);
+            Iterable<Tuple2<String, FileStoreEvent>> events = fileStore.getEventManager().getSince(lastEventId);
             for(Tuple2<String, FileStoreEvent> pair : events) {
                 String eventId = pair._1;
                 EventManager.FileStoreEvent event = pair._2;
@@ -104,8 +125,8 @@ public class NotificationManager extends Plugin {
 
         private Set<String> getWatchEmails(Session session, String nodeId) {
             Set<String> emails = Sets.newHashSet();
-            FlagStore.Manager manager = flagStore().getManager(session);
-            UserDAO userdao = new UserDAO(session, jcrom());
+            FlagStore.Manager manager = flagStore.getManager(session);
+            UserDAO userdao = new UserDAO(session, jcrom);
             for(User user : userdao.list()) {
                 Flag flag = manager.getFlag(FlagStore.FlagType.WATCH, nodeId, user);
                 if((flag != null) && StringUtils.isNotBlank(user.getEmail())) {
@@ -117,7 +138,7 @@ public class NotificationManager extends Plugin {
 
         private void sendMail(Session session,
                 final Set<String> emails, final FileStoreEvent event) throws RepositoryException {
-            FileStore.Manager manager = fileStore().getManager(session);
+            FileStore.Manager manager = fileStore.getManager(session);
             String fileId = event.info.id;
             FileStore.FileOrFolder ff = manager.getByIdentifier(fileId);
             if(ff == null) {
@@ -149,44 +170,27 @@ public class NotificationManager extends Plugin {
     }
 
     private NotificationRunner runner;
-
-    private static JcrSessionFactory sessionFactory() {
-        return GuiceInjectionPlugin.getInjector(Play.application())
-                                   .getInstance(JcrSessionFactory.class);
-    }
-
-    protected static FileStore fileStore() {
-        return GuiceInjectionPlugin.getInjector(Play.application())
-                .getInstance(FileStore.class);
-    }
-
-    private static FlagStore flagStore() {
-        return GuiceInjectionPlugin.getInjector(Play.application())
-                .getInstance(FlagStore.class);
-    }
-
-    private static Jcrom jcrom() {
-        return GuiceInjectionPlugin.getInjector(Play.application())
-                .getInstance(Jcrom.class);
-    }
+    private final Application application;
 
     public NotificationManager(Application application) {
-        
+      this.application = application;
     }
 
     @Override
     public void onStart() {
-        if(runner == null) {
-            runner = new NotificationRunner();
-            Thread t = new Thread(runner, "notifications");
-            t.start();
-      }
+      runner = injector().getInstance(NotificationRunner.class);
+      Thread t = new Thread(runner, "notifications");
+      t.start();
     }
 
     @Override
     public void onStop() {
-        runner.stopped = true;
-        runner = null;
+      runner.stopped = true;
+      runner = null;
+    }
+
+    private Injector injector() {
+      return GuiceInjectionPlugin.getInjector(application);
     }
 
 }
