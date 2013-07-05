@@ -366,12 +366,15 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
         return Permission.RW;
     }
 
-    private ItemId makeId(String id) {
-        try {
-            return new NodeId(id);
-        } catch(IllegalArgumentException e) {
-            return PropertyId.valueOf(id);
-        }
+    private ItemId makeId(String id) throws ItemNotFoundException {
+      try {
+        return new NodeId(id);
+      } catch (IllegalArgumentException e) {}
+      try {
+        return PropertyId.valueOf(id);
+      } catch (IllegalArgumentException e) {}
+      throw new IllegalArgumentException(String.format(
+          "\"%s\" is not a valid node or property ID", id));
     }
 
     public String getId(String path) throws RepositoryException {
@@ -398,7 +401,7 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
         if(id != null) {
             PermissionStore.getInstance().grant(ctx.getSession(), "default", principal.getName(), id.toString(), permission);
         } else {
-            throw new RuntimeException(String.format("could not resolve path %s to id", path));
+            throw new ItemNotFoundException(String.format("could not resolve path %s to id", path));
         }
     }
 

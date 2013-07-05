@@ -323,29 +323,32 @@ define([
     }
   });
 
-  var DeleteButtonView = Backbone.View.extend({
+  var DeleteButtonView = Backbone.Marionette.ItemView.extend({
     events: {
       'click .delete-button': 'showModal',
       'submit form': 'formSubmit'
     },
-    render: function() {
-      return templates.renderInto(
-          this.$el,
-          'delete_button',
-          { action: this.model.url() },
-          _.bind(function($container) {
-            this.getModal().modal({ show: false });
-          },this));
+    ui: {
+      popup: '.modal'
     },
-    getModal: function() {
-      return this.$el.find('.modal');
+    serializeData: function() {
+      return { action: this.model.url() };
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('delete_button', serialized_model);
+    },
+    onRender: function() {
+      this.ui.popup.modal({ show: false });
+      // For some reason delegation needs to be set up again
+      this.undelegateEvents();
+      this.delegateEvents(this.events);
     },
     showModal: function() {
-      this.getModal().modal('show');
+      this.ui.popup.modal('show');
       return false;
     },
     hideModal: function() {
-      this.getModal().modal('hide');
+      this.ui.popup.modal('hide');
       return false;
     },
     formSubmit: function(e) {
@@ -402,12 +405,6 @@ define([
         current: _.last(breadcrumbs)
       };
       return templates.renderInto($('<div/>'), 'breadcrumbs', context);
-    },
-    _makeDeleteElement: function() {
-      var deleteButton = new DeleteButtonView({ model: this.model });
-      _.defer(function() { deleteButton.render() });
-      this.deleteButton = deleteButton;
-      return deleteButton.$el;
     }
   });
 
@@ -426,13 +423,13 @@ define([
         .filter(isView)
         .each(_.bind(this.container.add, this.container));
       this.els = _.map(viewsAndEls, function(viewOrEl) {
-        return isView(viewOrEl) ? viewOrEl.el : viewOrEl;
+        return isView(viewOrEl) ? viewOrEl.$el : viewOrEl;
       });
       this.render();
     },
     render: function() {
       this.$el.empty().append(_.map(this.els, function(el) {
-        return $('<li style="text-align: right; clear: left"/>').append(el);
+        return $('<li/>').append(el);
       }));
       this.container.apply('render');
     }

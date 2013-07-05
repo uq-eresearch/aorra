@@ -27,6 +27,23 @@ public class AorraTestUtils {
   public static final String REPOSITORY_CONFIG_PATH = "test/repository.xml";
   public static final String REPOSITORY_DIRECTORY_PATH = "file:./target/jackrabbittestrepository";
 
+  /**
+   * Allow multiple tasks to be run during the same application run.
+   *
+   * @param app   Application to use for tasks
+   * @param tasks Runnable tasks to perform
+   */
+  public static void running(FakeApplication app, final Runnable ... tasks) {
+    play.test.Helpers.running(app, new Runnable() {
+      @Override
+      public void run() {
+        for (final Runnable task : tasks) {
+          task.run();
+        }
+      }
+    });
+  }
+
   public static FakeApplication fakeAorraApp() {
     return fakeAorraApp(true);
   }
