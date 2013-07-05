@@ -16,19 +16,7 @@
     </div>
   </div>
   
-  <script id="main-layout" type="text/html">
-  <div class="span4" id="sidebar"></div>
-  <div class="span8" id="main"></div>
-  </script>
-
   <script type="text/javascript">
-  window.lastEventID = "@lastEventId";
-  window.filestoreJSON = @Html(filestoreJson.toString());
-  window.usersJSON = @Html(usersJson.toString());
-
-  // Load application
-  requirejs(['app']);
-  
   // Update progress bar
   var updateModuleProgress = function(context, map, depMaps) {
     // console.log('loading: ' + map.name + ' at ' + map.url);
@@ -42,6 +30,20 @@
   require.onResourceLoad = function(context, map, depMaps) {
     updateModuleProgress(context, map, depMaps);
   };
+  </script>
+  
+  <script id="main-layout" type="text/html">
+  <div class="span4" id="sidebar"></div>
+  <div class="span8" id="main"></div>
+  </script>
+
+  <script type="text/javascript">
+  window.lastEventID = "@lastEventId";
+  window.filestoreJSON = @Html(filestoreJson.toString());
+  window.usersJSON = @Html(usersJson.toString());
+
+  // Load application
+  requirejs(['app']);
   </script>
 
 }
