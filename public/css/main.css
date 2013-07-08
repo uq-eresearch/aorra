@@ -10,6 +10,14 @@ span.glyphtree-node-label:focus {
 	font-weight: bold;
 }
 
+/* Encourage glyphtree icon & label to stay on same line */
+.glyphtree-node { white-space: nowrap; }
+.glyphtree-node-icon, .glyphtree-node-label {
+  display: inline-block;
+  vertical-align: top;
+  white-space: normal;
+}
+
 html, body {
   height: 100%;
 }
