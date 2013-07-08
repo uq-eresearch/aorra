@@ -1,6 +1,7 @@
 package controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.fail;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
@@ -29,6 +30,7 @@ import models.User;
 import models.UserDAO;
 
 import org.apache.commons.io.IOUtils;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
@@ -90,6 +92,20 @@ public class FileStoreControllerTest {
               controllers.routes.FileStoreController.mkdir(id, "foo");
           assertThat(call.method()).isEqualTo("POST");
           assertThat(call.url()).isEqualTo("/folder/"+id+"/folders?mkdir=foo");
+        }
+        {
+          final String id = UUID.randomUUID().toString();
+          final Call call =
+              controllers.routes.FileStoreController.fileInfo(id);
+          assertThat(call.method()).isEqualTo("GET");
+          assertThat(call.url()).isEqualTo("/file/"+id+"/info");
+        }
+        {
+          final String id = UUID.randomUUID().toString();
+          final Call call =
+              controllers.routes.FileStoreController.downloadFolder(id);
+          assertThat(call.method()).isEqualTo("GET");
+          assertThat(call.url()).isEqualTo("/folder/"+id+"/archive");
         }
         return session;
       }
@@ -347,12 +363,21 @@ public class FileStoreControllerTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
+        // Non-existent ID should yield 404
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.showFile(
+                  UUID.randomUUID().toString()),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(404);
+        }
+        // Should be a Bad Request if called on a folder
         {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.showFile(
                   fm.getRoot().getIdentifier()),
               newRequest.withHeader("Accept", "application/json"));
-          assertThat(status(result)).isEqualTo(404);
+          assertThat(status(result)).isEqualTo(400);
         }
         {
           final FileStore.File file =
@@ -370,6 +395,48 @@ public class FileStoreControllerTest {
               .toJsonShallow(file)
               .toString();
           assertThat(contentAsString(result)).contains(expectedContent);
+        }
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void getFileInfoJSON() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.fileInfo(
+                  fm.getRoot().getIdentifier()),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(400);
+        }
+        {
+          final FileStore.File file =
+              fm.getRoot().createFile("test.txt", "text/plain",
+                  new ByteArrayInputStream("Some content.".getBytes()));
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.fileInfo(
+                  file.getIdentifier()),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          final JsonNode content = Json.parse(contentAsString(result));
+          assertThat(content.has("versions")).isTrue();
+          for (JsonNode version : (ArrayNode) content.get("versions")) {
+            assertThat(version.has("name")).isTrue();
+            assertThat(version.get("name").asText()).isEqualTo("1.0");
+            assertThat(version.has("author")).isFalse();
+            assertThat(version.has("timestamp")).isTrue();
+          }
         }
         return session;
       }

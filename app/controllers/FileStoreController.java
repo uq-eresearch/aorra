@@ -246,18 +246,12 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   protected Result fileJson(final String fileId) {
-    return inUserSession(new F.Function<Session, Result>() {
+    return fileBasedResult(fileId, new FileOp() {
       @Override
-      public final Result apply(Session session) throws RepositoryException {
+      public final Result apply(Session session, FileStore.File f)
+          throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
-        if (fof instanceof FileStore.File) {
-          return ok(jb.toJsonShallow((FileStore.File) fof))
-              .as("application/json; charset=utf-8");
-        } else {
-          return notFound();
-        }
+        return ok(jb.toJsonShallow(f)).as("application/json; charset=utf-8");
       }
     });
   }
@@ -454,19 +448,21 @@ public final class FileStoreController extends SessionAwareController {
             final FileStore.File version =
                 file.getVersions().get(versionName);
             final User author = version.getAuthor();
-            final ObjectNode authorInfo = Json.newObject();
-            authorInfo.put("name", author.getName());
-            authorInfo.put("email", author.getEmail());
             final ObjectNode versionInfo = Json.newObject();
             versionInfo.put("name", versionName);
-            versionInfo.put("author", authorInfo);
+            if (author != null) {
+              final ObjectNode authorInfo = Json.newObject();
+              authorInfo.put("name", author.getName());
+              authorInfo.put("email", author.getEmail());
+              versionInfo.put("author", authorInfo);
+            }
             versionInfo.put("timestamp",
                 DateFormatUtils.ISO_DATETIME_FORMAT.format(
                     version.getModificationTime()));
             aNode.add(versionInfo);
           }
         }
-        return ok(json).as("application/json");
+        return ok(json).as("application/json; charset=utf-8");
       }
     });
   }
