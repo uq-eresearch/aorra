@@ -1,6 +1,7 @@
 <form method="DELETE" action="{action}">
-  <button class="btn btn-danger delete-button">
-    <i class="icon-remove"></i> Delete
+  <button class="btn btn-danger delete-button" title="Delete">
+    <i class="icon-remove"></i>
+    <span class="hidden-phone">Delete</span>
   </button>
   <div class="modal hide" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-header">

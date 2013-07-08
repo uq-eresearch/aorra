@@ -7,13 +7,15 @@
   {/author}
 </td>
 <td>
-  <a class="btn btn-small" href="{downloadUrl}">
-    <i class="icon-download-alt"></i> Download
+  <a class="btn btn-small" href="{downloadUrl}" title="Download Version">
+    <i class="icon-download-alt"></i>
+    <span class="visible-desktop">Download</span>
   </a>
   &nbsp;
   {#compareUrl}
-  <a class="btn btn-small" href="{.}">
-    <i class="icon-exchange"></i> Compare
+  <a class="btn btn-small" href="{.}" title="Compare Versions">
+    <i class="icon-exchange"></i>
+    <span class="visible-desktop">Compare</span>
   </a>
   {/compareUrl}
 </td>

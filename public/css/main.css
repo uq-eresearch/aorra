@@ -97,12 +97,24 @@ html.hero-page {
   display: none;
 }
 
+/* Ensure that there's a space between icon and text */
+.btn i + span {
+  padding-left: 1ex;
+}
+
+/* Remove default bottom margin, and prevent wrapping inside widget */
 .counter-button {
 	margin-bottom: 0;
+	white-space: nowrap;
 }
 
 .counter-button .active {
   border-color: #cccccc;
+}
+
+/* Allow white-space to control wrapping */
+.counter-button > button, .counter-button > .uneditable-input {
+  display: inline-block;
 }
 
 .counter-button .uneditable-input {

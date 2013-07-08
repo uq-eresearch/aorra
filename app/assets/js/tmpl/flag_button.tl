@@ -1,6 +1,7 @@
 <span class="counter-button input-prepend" title="{tooltip}">
   <button class="btn {activeClass}">
-    <i class="icon-{icon}"></i> {title}
+    <i class="icon-{icon}"></i>
+    <span class="hidden-phone">{title}</span>
   </button>
   <span class="uneditable-input clickable"
     title="{contentTitle}"

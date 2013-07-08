@@ -358,6 +358,19 @@ define([
     }
   });
 
+  var DownloadButtonView = Backbone.View.extend({
+    initialize: function(options) {
+      this._url = options.url;
+    },
+    render: function() {
+      var $link = $('<a class="btn" title="Download"/>');
+      $link.attr('href', this._url);
+      $link.append('<i class="icon-download-alt"></i>');
+      $link.append('<span class="hidden-phone">Download</span>');
+      this.$el.html($link);
+    }
+  });
+
   var BreadcrumbView = Backbone.View.extend({
     render: function() {
       var collection = this.model.collection;
@@ -464,20 +477,14 @@ define([
           model: this.model
         }));
         this.buttons.show(new InlineListView([
-          this._makeDownloadElement(),
+          new DownloadButtonView({ url: this.model.url()+"/archive" }),
           new DeleteButtonView({ model: this.model })
         ]));
       } else {
         this.buttons.show(new InlineListView([
-          this._makeDownloadElement()
+          new DownloadButtonView({ url: this.model.url()+"/archive" })
         ]));
       }
-    },
-    _makeDownloadElement: function() {
-      var $link = $('<a class="btn"/>');
-      $link.attr('href', this.model.url()+"/archive");
-      $link.html('<i class="icon-download-alt"></i> Download');
-      return $link;
     }
   });
 
@@ -653,7 +660,7 @@ define([
             collection: this._users,
             targetId: this.model.id
           }),
-          this._makeDownloadElement(),
+          new DownloadButtonView({ url: this.model.url()+"/version/latest" }),
           new DeleteButtonView({ model: this.model })
         ]));
       } else {
@@ -662,7 +669,7 @@ define([
             collection: this._users,
             targetId: this.model.id
           }),
-          this._makeDownloadElement()
+          new DownloadButtonView({ url: this.model.url()+"/version/latest" })
         ]));
       }
       switch (type) {
@@ -673,12 +680,6 @@ define([
         this.display.show(new ImageElementView({ model: this.model }));
         break;
       }
-    },
-    _makeDownloadElement: function() {
-      var $link = $('<a class="btn"/>');
-      $link.attr('href', this.model.url()+"/version/latest");
-      $link.html('<i class="icon-download-alt"></i> Download');
-      return $link;
     }
   });
 
