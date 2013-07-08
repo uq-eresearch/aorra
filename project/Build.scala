@@ -9,7 +9,7 @@ object ApplicationBuild extends Build {
   val appName         = "aorra"
   val appVersion      = "1.0-SNAPSHOT"
 
-  def crshVersion = "1.2.0"
+  def crshVersion = "1.2.6"
   
   val appDependencies = Seq(
     javaCore,
@@ -22,6 +22,8 @@ object ApplicationBuild extends Build {
     "com.google.inject" % "guice" % "3.0",
     "org.crsh" % "crsh.shell.core" % crshVersion,
     "org.crsh" % "crsh.shell.telnet" % crshVersion,
+    "org.crsh" % "crsh.jcr.jackrabbit" % crshVersion,
+    "tyrex" % "tyrex" % "1.0.1", // JNDI provider for CRSH Jackrabbit access
     "com.feth" %% "play-authenticate" % "0.2.5-SNAPSHOT",
     "eu.medsea.mimeutil" % "mime-util" % "2.1.3",
     "org.apache.tika" % "tika-parsers" % "1.3"

@@ -1,9 +1,12 @@
 package service;
 
 import javax.jcr.Credentials;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 import models.User;
 import notification.NotificationManager;
@@ -13,6 +16,7 @@ import org.jcrom.Jcrom;
 
 import play.Application;
 import play.Plugin;
+import play.api.libs.JNDI;
 import play.libs.F;
 import providers.CacheableUserProvider;
 import providers.DeadboltHandlerImpl;
@@ -62,6 +66,7 @@ public class GuiceInjectionPlugin extends Plugin {
     final Credentials adminCredentials = new SimpleCredentials(
         cfgStr(ConfigConsts.CONF_JCR_USERID),
         cfgStr(ConfigConsts.CONF_JCR_PASSWORD).toCharArray());
+    registerRepoInJNDI(Jcr.getRepository());
     final JcrSessionFactory sessionFactory = new JcrSessionFactory() {
       @Override
       public Session newAdminSession() throws RepositoryException {
@@ -107,6 +112,15 @@ public class GuiceInjectionPlugin extends Plugin {
       }
     };
     return Guice.createInjector(pluginModule, sessionModule);
+  }
+
+  private void registerRepoInJNDI(Repository repo) {
+    try {
+      InitialContext ic = JNDI.initialContext();
+      ic.rebind("/jackrabbit", repo);
+    } catch (NamingException ne) {
+      throw new RuntimeException(ne);
+    }
   }
 
   private Jcrom buildJcrom() {
