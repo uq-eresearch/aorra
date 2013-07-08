@@ -1,12 +1,12 @@
 package notification;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.UnsupportedRepositoryOperationException;
 
 import models.Flag;
 import models.User;
@@ -19,7 +19,6 @@ import org.jcrom.Jcrom;
 
 import play.Application;
 import play.Logger;
-import play.Play;
 import play.Plugin;
 import play.libs.F.Function;
 import scala.Tuple2;
@@ -34,6 +33,7 @@ import service.filestore.roles.Admin;
 
 import com.feth.play.module.mail.Mailer;
 import com.feth.play.module.mail.Mailer.Mail.Body;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -70,14 +70,17 @@ public class NotificationManager extends Plugin {
             Logger.debug("last event id: "+lastEventId);
             while(!stopped) {
                 try {
-                     sessionFactory.inSession(new Function<Session, String>() {
-                        @Override
-                        public String apply(Session session)
-                            throws RepositoryException {
-                            checkEvents(session);
-                            return null;
-                        }
-                      });
+                    final List<FileStoreEvent> events = getNewEvents();
+                    if(!stopped && !events.isEmpty()) {
+                        sessionFactory.inSession(new Function<Session, String>() {
+                            @Override
+                            public String apply(Session session)
+                                throws RepositoryException {
+                                processEvents(session, events);
+                                return null;
+                            }
+                          });
+                    }
                     Thread.sleep(1000);
                 } catch(Throwable t) {
                     t.printStackTrace();
@@ -86,7 +89,8 @@ public class NotificationManager extends Plugin {
             Logger.debug("Notification stopped");
         }
 
-        private void checkEvents(Session session) throws RepositoryException {
+        private List<FileStoreEvent> getNewEvents() {
+            List<FileStoreEvent> result = Lists.newArrayList();
             Iterable<Tuple2<String, FileStoreEvent>> events = fileStore.getEventManager().getSince(lastEventId);
             for(Tuple2<String, FileStoreEvent> pair : events) {
                 String eventId = pair._1;
@@ -94,6 +98,16 @@ public class NotificationManager extends Plugin {
                 Logger.debug(String.format("got event id %s type %s event info type %s with node id %s",
                         eventId, event.type, event.info.type, event.info.id));
                 lastEventId = eventId;
+                result.add(event);
+            }
+            return result;
+        }
+
+        private void processEvents(Session session, List<FileStoreEvent> events) throws RepositoryException {
+            for(FileStoreEvent event : events) {
+                if(stopped) {
+                    break;
+                }
                 Set<String> emails = getFileStoreAdminEmails(session, null, null);
                 emails.addAll(getWatchEmails(session, event.info.id));
                 sendMail(session, emails, event);
