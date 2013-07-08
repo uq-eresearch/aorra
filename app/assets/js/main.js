@@ -42,7 +42,7 @@ require(['jquery.bootstrap'], function() {
     if (window.history.previous) {
       window.history.back();
     } else {
-      window.location.pathname = "@routes.Application.index()";
+      window.location.pathname = "/";
       window.location.hash = "#";
     }
   });
