@@ -1,23 +1,30 @@
 package controllers
 
-import org.specs2.mutable._
-import FileStoreControllerTest.{asAdminUser => jAsAdminUser}
+import java.io.ByteArrayInputStream
+
+import scala.collection.JavaConversions.iterableAsScalaIterable
+
+import org.specs2.mutable.Specification
+
 import javax.jcr.Session
 import models.User
 import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.AsyncResult
 import play.api.test.FakeHeaders
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import play.libs.F
-import play.test.{FakeRequest => JFakeRequest}
-import org.specs2.matcher.MatchFailureException
-import org.specs2.execute.PendingException
-import play.api.mvc.WithHeaders
-import play.api.mvc.AsyncResult
-import test.AorraScalaHelper._
-import test.AorraTestUtils
-import java.io.ByteArrayInputStream
-import scala.collection.JavaConversions._
+import play.api.test.Helpers.GET
+import play.api.test.Helpers.OK
+import play.api.test.Helpers.charset
+import play.api.test.Helpers.contentAsString
+import play.api.test.Helpers.contentType
+import play.api.test.Helpers.header
+import play.api.test.Helpers.route
+import play.api.test.Helpers.status
+import play.api.test.Helpers.writeableOf_AnyContentAsEmpty
+import test.AorraScalaHelper.FakeAorraApp
+import test.AorraScalaHelper.asAdminUser
+import test.AorraScalaHelper.filestore
 
 class FileStoreAsyncSpec extends Specification {
 
@@ -90,29 +97,6 @@ class FileStoreAsyncSpec extends Specification {
       }
     }
 
-  }
-
-  // Convert asAdminUser to work well with Scala
-  private def asAdminUser(f: (Session, User, FakeHeaders) => Unit) = {
-    try {
-      jAsAdminUser(new F.Function3[Session, User, JFakeRequest, Session]() {
-        def apply(session: Session, u: User, jfr: JFakeRequest) = {
-          val headers = jfr.getWrappedRequest().headers match {
-            case fakeHeaders: FakeHeaders => fakeHeaders
-          }
-          f(session, u, headers)
-          session
-        }
-      });
-    } catch {
-      // Catch and rethrow Specs2 exceptions
-      case e: RuntimeException =>
-        e.getCause() match {
-          case pe: PendingException => throw pe
-          case mfe: MatchFailureException[_] => throw mfe
-          case _ => throw e
-        }
-    }
   }
 
 }

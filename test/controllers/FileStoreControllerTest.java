@@ -12,6 +12,7 @@ import static play.test.Helpers.running;
 import static play.test.Helpers.session;
 import static play.test.Helpers.status;
 import static test.AorraTestUtils.fakeAorraApp;
+import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.injector;
 import static test.AorraTestUtils.jcrom;
@@ -656,72 +657,6 @@ public class FileStoreControllerTest {
         return session;
       }
     });
-  }
-
-  // Also used in FileStoreAsyncSpec
-  public static void asAdminUser(
-      final F.Function3<Session, User, FakeRequest, Session> op) {
-    running(fakeAorraApp(), new Runnable() {
-      @Override
-      public void run() {
-        sessionFactory().inSession(new F.Function<Session,Session>() {
-          @Override
-          public Session apply(final Session session) throws Throwable {
-            final String password = "password";
-            final User user = createNewUser("test@example.com", password);
-            final GroupManager gm = new GroupManager(session);
-            // Create admin group
-            Admin.getInstance(session).getGroup().addMember(
-                gm.create("testgroup"));
-            gm.addMember("testgroup", user.getJackrabbitUserId());
-            // Do op
-            op.apply(session, user, loggedInRequest(user, password));
-            return session;
-          }
-        });
-      }
-    });
-  }
-
-  private static User createNewUser(final String email, final String password) {
-    final String name = "Test User";
-    final User.Invite invite = new User.Invite(email, name);
-    final JackrabbitEmailPasswordAuthProvider authProvider =
-        Play.application().plugin(JackrabbitEmailPasswordAuthProvider.class);
-    authProvider.signup(invite);
-    User user = sessionFactory().inSession(new F.Function<Session, User>() {
-
-      @Override
-      public User apply(Session session) throws Throwable {
-        final UserDAO dao = new UserDAO(session, jcrom());
-        final User user = dao.findByEmail(email);
-        user.setVerified(true);
-        dao.update(user);
-        dao.setPassword(user, password);
-        return user;
-      }
-
-    });
-    return user;
-  }
-
-  /*
-   * Must be used while application is running.
-   */
-  private static FakeRequest loggedInRequest(
-      final User user, final String password) {
-    final Map<String,String> data = new HashMap<String,String>();
-    data.put("email", user.getEmail());
-    data.put("password", password);
-    final Result result = callAction(
-        controllers.routes.ref.Application.postLogin(),
-        fakeRequest().withFormUrlEncodedBody(data));
-    FakeRequest newRequest = fakeRequest();
-    final Http.Session session = session(result);
-    for (Map.Entry<String, String> e : session.entrySet()) {
-      newRequest = newRequest.withSession(e.getKey(), e.getValue());
-    }
-    return newRequest;
   }
 
 }

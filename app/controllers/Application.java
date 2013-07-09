@@ -58,7 +58,7 @@ public final class Application extends SessionAwareController {
   @SubjectPresent
   public final Result invite() {
     return ok(views.html.Application.invite.render(form(Invite.class),
-        availableGroups()));
+        availableGroups())).as("text/html; charset=utf-8");
   }
 
   @SubjectPresent
