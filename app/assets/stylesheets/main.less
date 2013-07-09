@@ -111,10 +111,22 @@ html.hero-page {
     }
   }
 
-  @media (min-height: 640px) {
-    .above-login {
-      padding-top: 4em;
-      min-height: 8em;
+  .above-login {
+    @media (min-height: 520px) {
+      padding-top:  1em;
+      min-height:   2em;
+    }
+    @media (min-height: 560px) {
+      padding-top:  2em;
+      min-height:   4em;
+    }
+    @media (min-height: 600px) {
+      padding-top:  3em;
+      min-height:   6em;
+    }
+    @media (min-height: 640px) {
+      padding-top:  4em;
+      min-height:   8em;
     }
   }
 }
