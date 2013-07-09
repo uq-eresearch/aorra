@@ -1,5 +1,7 @@
 package controllers;
 
+import static play.data.Form.form;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Set;
@@ -8,29 +10,18 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import org.apache.jackrabbit.api.security.user.Group;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.jcrom.Jcrom;
-
+import models.CacheableUser;
 import models.GroupManager;
 import models.User;
-import models.UserDAO;
 import models.User.Invite;
 import models.User.Login;
+import models.UserDAO;
 
-import be.objectify.deadbolt.java.actions.SubjectPresent;
+import org.apache.jackrabbit.api.security.user.Group;
+import org.jcrom.Jcrom;
 
-import com.feth.play.module.pa.PlayAuthenticate;
-import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
-import com.feth.play.module.pa.user.AuthUser;
-import com.feth.play.module.pa.user.EmailIdentity;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-
-import static play.data.Form.form;
-import play.Play;
 import play.Logger;
+import play.Play;
 import play.data.Form;
 import play.libs.F;
 import play.mvc.Result;
@@ -39,7 +30,14 @@ import providers.CacheableUserProvider;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
-import service.filestore.JsonBuilder;
+import be.objectify.deadbolt.java.actions.SubjectPresent;
+
+import com.feth.play.module.pa.PlayAuthenticate;
+import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 public final class Application extends SessionAwareController {
 
@@ -59,7 +57,8 @@ public final class Application extends SessionAwareController {
 
   @SubjectPresent
   public final Result invite() {
-    return ok(views.html.Application.invite.render(form(Invite.class)));
+    return ok(views.html.Application.invite.render(form(Invite.class),
+        availableGroups()));
   }
 
   @SubjectPresent
@@ -68,10 +67,20 @@ public final class Application extends SessionAwareController {
     final Form<Invite> filledForm = form(Invite.class).bindFromRequest();
     if (filledForm.hasErrors()) {
       // User did not fill everything properly
-      return badRequest(views.html.Application.invite.render(filledForm));
+      return badRequest(
+          views.html.Application.invite.render(filledForm, availableGroups()));
     } else {
       Result retval = UsernamePasswordAuthProvider.handleSignup(ctx());
-      assiginCurrentUserGroups(filledForm.get().getEmail());
+      final String[] groups =
+          ctx().request().body().asFormUrlEncoded().get("groups[]");
+      if (groups != null) {
+        // Ensure only allowed groups are used from the selected list
+        Set<String> assignableGroups =
+            Sets.intersection(
+                ImmutableSet.<String>copyOf(groups),
+                availableGroups());
+        assignUserGroups(filledForm.get().getEmail(), assignableGroups);
+      }
       return retval;
     }
   }
@@ -165,22 +174,19 @@ public final class Application extends SessionAwareController {
     });
   }
 
-  protected User assiginCurrentUserGroups(final String email) {
-    final AuthUser authUser = PlayAuthenticate.getUser(ctx().session());
-
-
+  protected User assignUserGroups(final String email, final Set<String> groups){
     return sessionFactory.inSession(new F.Function<Session, User>() {
       @Override
       public User apply(final Session session) throws RepositoryException {
         final GroupManager groupManager = new GroupManager(session);
         final UserDAO dao = getUserDAO(session);
-        final User currentUser = dao.findByEmail(
-            ((EmailIdentity) authUser).getEmail());
         final User newUser = dao.findByEmail(email);
-        final Set<Group> gm =
-            groupManager.memberships(currentUser.getJackrabbitUserId());
-        for (Group group : gm) {
-          final String groupName = group.getPrincipal().getName();
+        for (String groupName : groups) {
+          final Group group = groupManager.find(groupName);
+          if (group == null) {
+            Logger.warn("Unable to resolve group ("+groupName+")");
+            continue;
+          }
           try {
             groupManager.addMember(groupName, newUser.getJackrabbitUserId());
             Logger.info(
@@ -200,7 +206,8 @@ public final class Application extends SessionAwareController {
   }
 
   private boolean isAuthenticated() {
-    return PlayAuthenticate.getUser(ctx().session()) != null;
+    return PlayAuthenticate.getUser(ctx().session()) != null &&
+        getUser() != null;
   }
 
   private String urlDecode(String str) {
@@ -214,6 +221,26 @@ public final class Application extends SessionAwareController {
 
   private Injector getInjector() {
     return GuiceInjectionPlugin.getInjector(Play.application());
+  }
+
+  private Set<String> availableGroups() {
+    final CacheableUser user = getUser();
+    return inUserSession(new F.Function<Session, Set<String>>() {
+
+      @Override
+      public Set<String> apply(Session session) throws Throwable {
+        final ImmutableSet.Builder<String> l = ImmutableSet.builder();
+        final GroupManager gm = new GroupManager(session);
+        final Iterable<Group> availableGroups = user.hasRole("admin") ?
+            gm.list() :
+            gm.memberships(user.getJackrabbitUserId());
+        for (final Group g : availableGroups) {
+          l.add(g.getPrincipal().getName());
+        }
+        return l.build();
+      }
+
+    });
   }
 
 }

@@ -103,7 +103,7 @@ public class UserDAO extends AbstractJcrDAO<User> {
     }
   }
 
-  private org.apache.jackrabbit.api.security.user.User jackrabbitUser(User user) {
+  public org.apache.jackrabbit.api.security.user.User jackrabbitUser(User user){
     try {
       return
           (org.apache.jackrabbit.api.security.user.User)

@@ -1,10 +1,14 @@
 package providers;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.CacheableUser;
+import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
@@ -17,6 +21,8 @@ import play.mvc.Http;
 import play.mvc.Http.Context;
 import play.mvc.Result;
 import service.JcrSessionFactory;
+import service.filestore.roles.Admin;
+import be.objectify.deadbolt.core.models.Role;
 import be.objectify.deadbolt.core.models.Subject;
 import be.objectify.deadbolt.java.AbstractDeadboltHandler;
 import be.objectify.deadbolt.java.DynamicResourceHandler;
@@ -76,6 +82,9 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
           return getUserFromJcr(authUser);
         }
       }, 60);
+    } catch (NullPointerException e) {
+      // User may have been deleted
+      return null;
     } catch (Exception e) {
       // Nothing recoverable for now.
       throw new RuntimeException(e);
@@ -83,17 +92,54 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
   }
 
   protected CacheableUser getUserFromJcr(final AuthUser authUser) {
+    final List<Role> roles = new LinkedList<Role>();
     User user = sessionFactory.inSession(new F.Function<Session, User>() {
       @Override
-      public User apply(Session session) {
+      public User apply(Session session) throws RepositoryException {
         String email = authUser instanceof EmailIdentity ?
             ((EmailIdentity)authUser).getEmail() : authUser.getId();
         Logger.debug("Lookup up user with email: " + email);
-        return (new UserDAO(session, jcrom))
+        User user = (new UserDAO(session, jcrom))
             .findByEmail(email);
+        if (isAdmin(session, user))
+          roles.add(new SimpleRole("admin"));
+        return user;
+      }
+
+      private boolean isAdmin(final Session s, final User u)
+          throws RepositoryException {
+        return Admin.getInstance(s).getGroup()
+            .isMember((new UserDAO(s, jcrom)).jackrabbitUser(u));
       }
     });
-    return new CacheableUser(authUser, user);
+    return new CacheableUser(authUser, user, roles);
+  }
+
+  private class SimpleRole implements Role {
+
+    private final String name;
+
+    public SimpleRole(String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == null || !getClass().equals(other.getClass())) {
+        return false;
+      }
+      return getName().equals(((SimpleRole) other).getName());
+    }
+
+    @Override
+    public int hashCode() { return getName().hashCode(); }
+    @Override
+    public String toString() { return getName(); }
+
   }
 
 }

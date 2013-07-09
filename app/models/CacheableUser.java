@@ -11,6 +11,7 @@ import be.objectify.deadbolt.core.models.Subject;
 import com.feth.play.module.pa.user.AuthUser;
 import com.feth.play.module.pa.user.EmailIdentity;
 import com.feth.play.module.pa.user.NameIdentity;
+import com.google.common.collect.ImmutableList;
 
 public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
     Serializable {
@@ -22,13 +23,15 @@ public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
   private final String email;
   private final String name;
   private final String jackrabbitUserId;
+  private final List<Role> roles;
 
-  public CacheableUser(AuthUser authUser, User user) {
+  public CacheableUser(AuthUser authUser, User user, Iterable<Role> roles) {
     this.id = user.getId();
     this.provider = authUser.getProvider();
     this.email = user.getEmail();
     this.name = user.getName();
     this.jackrabbitUserId = user.getJackrabbitUserId();
+    this.roles = ImmutableList.copyOf(roles);
   }
 
   @Override
@@ -53,9 +56,17 @@ public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
     return String.format("%s <%s>", name, email);
   }
 
+  public boolean hasRole(String name) {
+    for (Role role : roles) {
+      if (role.getName().equals(name))
+        return true;
+    }
+    return false;
+  }
+
   @Override
   public List<? extends Role> getRoles() {
-    return Collections.emptyList();
+    return roles;
   }
 
   @Override
