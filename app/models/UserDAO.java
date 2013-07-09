@@ -60,6 +60,27 @@ public class UserDAO extends AbstractJcrDAO<User> {
     remove(user.getNodePath());
   }
 
+  /**
+   * Removes verification without changing the password.
+   *
+   * @param user User to suspend
+   */
+  public void suspend(User user) {
+    user.clearVerificationToken();
+    user.setVerified(false);
+    update(user);
+  }
+
+  /**
+   * Sets account as verified without setting a password.
+   *
+   * @param user
+   */
+  public void unsuspend(User user) {
+    user.setVerified(true);
+    update(user);
+  }
+
   private String getRootPath() {
     try {
       if (!session.nodeExists(USER_PATH)) {
@@ -93,24 +114,18 @@ public class UserDAO extends AbstractJcrDAO<User> {
     }
   }
 
-  public void setPassword(User user, String clearPassword) {
-    try {
-      user.setVerified(true);
-      update(user);
-      jackrabbitUser(user).changePassword(clearPassword);
-    } catch (RepositoryException e) {
-      throw new RuntimeException(e);
-    }
+  public void setPassword(User user, String clearPassword)
+      throws RepositoryException {
+    user.setVerified(true);
+    update(user);
+    jackrabbitUser(user).changePassword(clearPassword);
   }
 
-  public org.apache.jackrabbit.api.security.user.User jackrabbitUser(User user){
-    try {
-      return
-          (org.apache.jackrabbit.api.security.user.User)
-          session.getUserManager().getAuthorizable(jackrabbitAuthUserId(user));
-    } catch (RepositoryException e) {
-      throw new RuntimeException(e);
-    }
+  public org.apache.jackrabbit.api.security.user.User jackrabbitUser(User user)
+      throws RepositoryException {
+    return
+        (org.apache.jackrabbit.api.security.user.User)
+        session.getUserManager().getAuthorizable(jackrabbitAuthUserId(user));
   }
 
   private String jackrabbitAuthUserId(User user) {

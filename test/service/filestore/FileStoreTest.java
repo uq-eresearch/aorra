@@ -86,7 +86,7 @@ public class FileStoreTest {
         final String userId = sessionFactory.inSession(
             new Function<Session,String>() {
           @Override
-          public String apply(Session session) {
+          public String apply(Session session) throws RepositoryException {
             // Create new user
             final String userId;
             UserDAO dao = new UserDAO(session, jcrom());
@@ -203,7 +203,7 @@ public class FileStoreTest {
         final String userId = sessionFactory.inSession(
             new Function<Session,String>() {
           @Override
-          public String apply(Session session) {
+          public String apply(Session session) throws RepositoryException {
             // Create new user
             final String userId;
             UserDAO dao = new UserDAO(session, jcrom());

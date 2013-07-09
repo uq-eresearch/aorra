@@ -32,7 +32,7 @@ class user {
       String name) {
     authProvider().signup(new User.Invite(email, name))
   }
-  
+
   @Usage("list users")
   @Command
   String list() {
@@ -49,8 +49,7 @@ class user {
       }
     })+ "\n";
   }
-  
-  
+
   @Usage("delete user")
   @Command
   String delete(
@@ -101,7 +100,50 @@ class user {
       }
     })+ "\n";
   }
-  
+
+  @Usage("suspend user access")
+  @Command
+  String suspend(
+      @Usage("email")
+      @Argument
+      String email) {
+    sessionFactory().inSession(new Function<Session, String>() {
+      public String apply(Session session) {
+        try {
+          def dao = new UserDAO(session, jcrom())
+          def u = dao.findByEmail(email)
+          dao.suspend(u);
+          return u.toString() + " is no longer verified."
+        } catch (RuntimeException e) {
+          return e.getMessage()
+        }
+      }
+    })+ "\n";
+  }
+
+  @Usage("suspend user access")
+  @Command
+  String unsuspend(
+      @Usage("email")
+      @Argument
+      String email) {
+    sessionFactory().inSession(new Function<Session, String>() {
+      public String apply(Session session) {
+        try {
+          def dao = new UserDAO(session, jcrom())
+          def u = dao.findByEmail(email)
+          if (u.isVerified()) {
+            return u.toString() + " does not appear to be suspended."
+          }
+          dao.unsuspend(u);
+          return u.toString() + " is verified again."
+        } catch (RuntimeException e) {
+          return e.getMessage()
+        }
+      }
+    })+ "\n";
+  }
+
   private Jcrom jcrom() {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(Jcrom.class);
@@ -111,9 +153,9 @@ class user {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(JcrSessionFactory.class);
   }
-  
+
   private JackrabbitEmailPasswordAuthProvider authProvider() {
     return application().plugin(JackrabbitEmailPasswordAuthProvider.class)
   }
-  
+
 }

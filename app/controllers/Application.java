@@ -121,7 +121,7 @@ public final class Application extends SessionAwareController {
   public final Result postVerify(final String email, final String token) {
     return sessionFactory.inSession(new F.Function<Session, Result>() {
       @Override
-      public Result apply(Session session) {
+      public Result apply(Session session) throws RepositoryException {
         final UserDAO dao = getUserDAO(session);
         final User user = dao.findByEmail(email);
         if (user != null && user.checkVerificationToken(token)) {
