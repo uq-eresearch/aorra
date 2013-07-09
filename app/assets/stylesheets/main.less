@@ -1,3 +1,7 @@
+/* Display widths */
+@desktop:   ~"(min-width: 980px)";
+@phone:     ~"(max-width: 767px)";
+
 /* Make short labels easily selectable */
 span.glyphtree-node-label {
 	display: inline-block;
@@ -11,11 +15,13 @@ span.glyphtree-node-label:focus {
 }
 
 /* Encourage glyphtree icon & label to stay on same line */
-.glyphtree-node { white-space: nowrap; }
-.glyphtree-node-icon, .glyphtree-node-label {
-  display: inline-block;
-  vertical-align: top;
-  white-space: normal;
+.glyphtree-node {
+  white-space: nowrap;
+  .glyphtree-node-icon, .glyphtree-node-label {
+    display: inline-block;
+    vertical-align: top;
+    white-space: normal;
+  }
 }
 
 html, body {
@@ -37,68 +43,84 @@ html.hero-page {
 	-ms-behavior: url(/assets/htc/backgroundsize.min.htc);
 }
 
-.hero-page body {
-	background: transparent; /* Override Bootstrap default */
-}
+.hero-page {
+  body {
+    background: transparent; /* Override Bootstrap default */
+  }
 
-.hero-page h1#big-headline {
-	color: #f8f8f8;
-	font-weight: bold;
-	line-height: 120%;
-  font-size: 500%;
-  text-shadow: 0 2px 0 black;
-}
+  h1#big-headline {
+    color: #f8f8f8;
+    font-weight: bold;
+    line-height: 120%;
+    font-size: 500%;
+    text-shadow: 0 2px 0 black;
+  }
 
-.hero-page .well {
-	border: 0;
-	background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGCYCQAAngCauPYSkQAAAABJRU5ErkJggg==") repeat; /* IE8 */
-	background: rgba(0,0,0,0.6);
-}
+  .well {
+    border: 0;
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGCYCQAAngCauPYSkQAAAABJRU5ErkJggg==") repeat; /* IE8 */
+    background: rgba(0,0,0,0.6);
+    a {
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    a:hover {
+      color: inherit;
+    }
+    h1, p {
+      color: white;
+    }
+  }
 
-.hero-page .well h1, .hero-page .well p {
-	color: white;
-}
+  .login-container {
+    text-align: center;
+    p {
+     font-style: italic;
+    }
+  }
 
-.hero-page .well a {
-  font-weight: bold;
-  white-space: nowrap;
-}
+  h1#big-headline {
+    small {
+      font-size: 30%;
+      display: block;
+      color: inherit;
+    }
+    .word {
+      display: inline;
+      white-space: nowrap;
+      .first {
+        font-weight: bold;
+      }
+    }
+  }
 
-.hero-page .well a:hover {
-  color: inherit;
-}
+  .attribution > a {
+    color: white;
+  }
 
-.hero-page .login-container {
-  text-align: center;
-}
+  .attribution {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding-right: 1em;
+  }
 
-.hero-page .login-container p {
-  font-style: italic;
-}
+  @media @desktop {
+    .login-container .control-group {
+      display: inline;
+    }
+  }
 
-.hero-page h1#big-headline small {
-	font-size: 30%;
-	display: block;
-  color: inherit;
-}
-
-.hero-page h1#big-headline .word {
-  display: inline;
-  white-space: nowrap;
-}
-
-.hero-page h1#big-headline .word .first {
-	font-weight: bold;
+  @media (min-height: 640px) {
+    .above-login {
+      padding-top: 4em;
+      min-height: 8em;
+    }
+  }
 }
 
 #nav-back.hidden {
   display: none;
-}
-
-@media (min-width: 980px) {
-	.hero-page .login-container .control-group {
-	  display: inline;
-	}
 }
 
 #nav-back {
@@ -114,21 +136,19 @@ html.hero-page {
 .counter-button {
 	margin-bottom: 0;
 	white-space: nowrap;
-}
-
-.counter-button .active {
-  border-color: #cccccc;
+	.active {
+	  border-color: #cccccc;
+	}
+  .uneditable-input {
+    text-align: right;
+    width: 1.5em;
+    padding-right: 0.75em;
+  }
 }
 
 /* Allow white-space to control wrapping */
 .counter-button > button, .counter-button > .uneditable-input {
   display: inline-block;
-}
-
-.counter-button .uneditable-input {
-	text-align: right;
-	width: 1.5em;
-	padding-right: 0.75em;
 }
 
 .clickable {
@@ -143,21 +163,7 @@ html.hero-page {
 	color: #b94a48;
 }
 
-@media (min-height: 480px) {
-	.hero-page .above-login {
-	  padding-top: 4em;
-	  min-height: 8em;
-	}
-}
-
-.hero-page .attribution {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  padding-right: 1em;
-}
-
-@media (max-width: 767px) {
+@media @phone {
 
 	#nav-back {
     display: block;
@@ -168,7 +174,7 @@ html.hero-page {
     float: right;
     margin: auto;
   }
-	
+
   #sidebar, #main {
     display: none;
   }
@@ -177,8 +183,4 @@ html.hero-page {
     display: block;
   }
 
-}
-
-.hero-page .attribution > a {
-	color: white;
 }
