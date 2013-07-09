@@ -1,7 +1,9 @@
 @(
-  form: play.data.Form[models.User.Invite]
+  form: play.data.Form[models.User.Invite],
+  groups: Iterable[String]
 )
 
+@import scala.collection.JavaConversions.iterableAsScalaIterable;
 @import helper.twitterBootstrap._
 
 @main("Invite New User") {
@@ -10,11 +12,6 @@
   <div class="page-header">
   <h1>Invite New User</h1>
   </div>
-  
-  <p class="alert">
-    <i class="icon-warning-sign"></i>
-    Any new users you invite will have the same privileges as yourself.
-  </p>
   
   @helper.form(action = controllers.routes.Application.postInvite) {
     @helper.inputText(form("email"), args =
@@ -25,6 +22,17 @@
       '_label -> "Name",
       '_help -> ""
     )
+    
+    <div class="clearfix" id="groups[]">
+      <label for="groups[]">Groups</label>
+      <div class="input">
+        <select name="groups[]" multiple>
+          @for(group <- iterableAsScalaIterable(groups)) {
+            <option value="@group">@group</option>
+          }
+        </select>
+      </div>
+    </div>
     
     <button type="submit" class="btn btn-primary">
       <i class="icon-envelope-alt"></i> Invite
