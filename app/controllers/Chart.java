@@ -59,15 +59,6 @@ public class Chart extends SessionAwareController {
 
   private String buildUrl(ereefs.charts.Chart chart, String format,
       String[] path) throws UnsupportedEncodingException {
-    StringBuilder result = new StringBuilder();
-    result.append(chart.getDescription().getType().toString().toLowerCase());
-    result.append(".");
-    if (StringUtils.isNotBlank(format)) {
-      result.append(format);
-    } else {
-      result.append("png");
-    }
-    result.append("?");
     List<NameValuePair> qparams = new ArrayList<NameValuePair>();
     for (Map.Entry<String, String> me : chart.getDescription().getProperties()
         .entrySet()) {
@@ -76,8 +67,9 @@ public class Chart extends SessionAwareController {
     for (String p : path) {
       qparams.add(new BasicNameValuePair("path", p));
     }
-    result.append(URLEncodedUtils.format(qparams, "UTF-8"));
-    return controllers.routes.Chart.chart(result.toString()).url();
+    return controllers.routes.Chart.chart(
+        chart.getDescription().getType().toString().toLowerCase(),
+        format).url() + "?" + URLEncodedUtils.format(qparams, "UTF-8");
   }
 
   private String getParameter(String key) {
@@ -141,19 +133,17 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result chart(final String chart) {
+  public Result chart(final String chart, final String format) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, request()
             .queryString().get("path"));
         ChartFactory f = new ChartFactory(datasources);
-        ChartType type = ChartType.getChartType(FilenameUtils
-            .removeExtension(chart));
+        ChartType type = ChartType.getChartType(chart);
         if (type == null) {
           return notFound("unknown chart type " + chart);
         }
-        String format = FilenameUtils.getExtension(chart);
         List<ereefs.charts.Chart> charts = f.getCharts(type, request()
             .queryString());
         if (charts.isEmpty()) {

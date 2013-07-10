@@ -37,9 +37,9 @@ public class ChartTest {
           assertThat(call.url()).isEqualTo("/charts/");
         }
         {
-          final Call call = controllers.routes.Chart.chart("marine");
+          final Call call = controllers.routes.Chart.chart("marine", "svg");
           assertThat(call.method()).isEqualTo("GET");
-          assertThat(call.url()).isEqualTo("/charts/marine");
+          assertThat(call.url()).isEqualTo("/charts/marine.svg");
         }
         return session;
       }
@@ -76,7 +76,7 @@ public class ChartTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final Result result = callAction(
-            controllers.routes.ref.Chart.chart("marine"),
+            controllers.routes.ref.Chart.chart("marine", "svg"),
             newRequest);
         assertThat(status(result)).isEqualTo(404);
         return session;
