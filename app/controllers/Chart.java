@@ -28,6 +28,7 @@ import org.w3c.dom.Document;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Result;
+import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
@@ -44,6 +45,7 @@ import ereefs.charts.ChartType;
 import ereefs.spreadsheet.DataSource;
 import ereefs.spreadsheet.XlsxDataSource;
 
+@With(UncacheableAction.class)
 public class Chart extends SessionAwareController {
 
     private final FileStore fileStore;
@@ -131,7 +133,7 @@ public class Chart extends SessionAwareController {
                             chartNode.put("url", buildUrl(chart, format, request().queryString().get("path")));
                             aNode.add(chartNode);
                         }
-                        return ok(json).as("application/json");
+                        return ok(json).as("application/json; charset=utf-8");
                     } else {
                         ChartType type = ChartType.getChartType(FilenameUtils.removeExtension(chart));
                         if(type == null) {

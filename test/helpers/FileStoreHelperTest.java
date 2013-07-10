@@ -11,7 +11,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
