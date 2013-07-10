@@ -36,6 +36,7 @@ import service.filestore.FileStoreImpl;
 import au.edu.uq.aorra.charts.ChartRenderer;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -58,31 +59,20 @@ public class Chart extends SessionAwareController {
   }
 
   private String buildUrl(ereefs.charts.Chart chart, String format,
-      String[] path) throws UnsupportedEncodingException {
+      List<String> paths) throws UnsupportedEncodingException {
     List<NameValuePair> qparams = new ArrayList<NameValuePair>();
     for (Map.Entry<String, String> me : chart.getDescription().getProperties()
         .entrySet()) {
       qparams.add(new BasicNameValuePair(me.getKey(), me.getValue()));
     }
-    for (String p : path) {
-      qparams.add(new BasicNameValuePair("path", p));
-    }
     return controllers.routes.Chart.chart(
         chart.getDescription().getType().toString().toLowerCase(),
-        format).url() + "?" + URLEncodedUtils.format(qparams, "UTF-8");
+        format, paths).url() + "&" + URLEncodedUtils.format(qparams, "UTF-8");
   }
 
-  private String getParameter(String key) {
-    String[] values = request().queryString().get(key);
-    return ((values != null) && (values.length > 0)) ? values[0] : null;
-  }
-
-  private List<DataSource> getDatasources(Session session, String[] paths)
+  private List<DataSource> getDatasources(Session session, List<String> paths)
       throws Exception {
     List<DataSource> result = Lists.newArrayList();
-    if (paths == null) {
-      return null;
-    }
     final FileStore.Manager fm = fileStore.getManager(session);
     for (String path : paths) {
       FileStore.FileOrFolder fof = fm.getFileOrFolder(path);
@@ -102,12 +92,11 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result charts(final String format) {
+  public Result charts(final String format, final List<String> paths) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        List<DataSource> datasources = getDatasources(session, request()
-            .queryString().get("path"));
+        List<DataSource> datasources = getDatasources(session, paths);
         ChartFactory f = new ChartFactory(datasources);
         List<ereefs.charts.Chart> charts = f.getCharts(request().queryString());
         final ObjectNode json = Json.newObject();
@@ -120,7 +109,7 @@ public class Chart extends SessionAwareController {
             chartNode.put(me.getKey(), me.getValue());
           }
           chartNode.put("url",
-              buildUrl(chart, format, request().queryString().get("path")));
+              buildUrl(chart, format, paths));
           aNode.add(chartNode);
         }
         return ok(json).as("application/json; charset=utf-8");
@@ -129,15 +118,16 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result chart(final String chart, final String format) {
+  public Result chart(final String chart, final String format, final List<String> paths) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        List<DataSource> datasources = getDatasources(session, request()
-            .queryString().get("path"));
+        List<DataSource> datasources = getDatasources(session, paths);
         ChartFactory f = new ChartFactory(datasources);
-        ChartType type = ChartType.getChartType(chart);
-        if (type == null) {
+        final ChartType type;
+        try {
+          type = ChartType.getChartType(chart);
+        } catch (IllegalArgumentException e) {
           return notFound("unknown chart type " + chart);
         }
         List<ereefs.charts.Chart> charts = f.getCharts(type, request()
