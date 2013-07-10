@@ -5,6 +5,7 @@ import static org.fest.assertions.Fail.fail;
 import static play.test.Helpers.running;
 import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.fileStore;
+import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
@@ -17,6 +18,8 @@ import java.util.zip.ZipInputStream;
 import javax.jcr.Session;
 
 import models.GroupManager;
+import models.User;
+import models.UserDAO;
 
 import org.apache.jackrabbit.api.security.user.Group;
 import org.junit.Test;
@@ -314,7 +317,13 @@ public class FileStoreHelperTest {
         final Group first = gm.create("foo");
         final Group second = gm.create("bar");
         Admin.getInstance(session).getGroup().addMember(first);
+        final UserDAO userDao = new UserDAO(session, jcrom());
+        final User user = new User();
+        user.setEmail("test@example.com");
+        user.setName("Test Example User");
+        userDao.create(user);
         first.addMember(second);
+        first.addMember(userDao.jackrabbitUser(user));
         // Get tree
         // TODO: Find out why we pass a null parameter!
         fsh.listadmin(null);
@@ -322,7 +331,8 @@ public class FileStoreHelperTest {
         assertThat(pwt.dump()).isEqualTo(
             "|-+ filestoreAdmin\n"+
             "|-+ foo\n"+
-            "|   |-+ bar\n");
+            "|   |-+ bar\n"+
+            "|   |-- test@example.com\n");
         return session;
       }
     }, pwt.getPrintWriter());
