@@ -177,24 +177,11 @@ public class FileStoreHelper {
           sb.append(f.getName());
           if(showPerms && f instanceof FileStore.Folder) {
               sb.append(" ");
-              sb.append(mapToString(((FileStore.Folder)f).getGroupPermissions()));
+              sb.append(((FileStore.Folder)f).getGroupPermissions().toString());
           }
       }
 
       return sb.toString();
-  }
-
-  @SuppressWarnings("rawtypes")
-  private String mapToString(Map map) {
-      StringBuilder sb = new StringBuilder();
-      for(Object me : map.entrySet()) {
-          Object key = ((Map.Entry)me).getKey();
-          Object val = ((Map.Entry)me).getValue();
-          sb.append(ObjectUtils.toString(key, "(null)"));
-          sb.append(" -> ");
-          sb.append(ObjectUtils.toString(val, "(null)"));
-      }
-      return "";
   }
 
   private void tree(final FileStore.Folder folder, boolean showPerms) throws RepositoryException {

@@ -7,6 +7,7 @@ import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
+import jackrabbit.AorraAccessManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -282,19 +283,41 @@ public class FileStoreHelperTest {
       public Session apply(final Session session,
           final FileStoreHelper fsh,
           final FileStore.Manager fm) throws Throwable {
+        final GroupManager gm = new GroupManager(session);
+        final Group group = gm.create("foo");
         final String absPath1 = "/foo/bar";
         final FileStore.Folder folder = fsh.mkdir(absPath1, true);
         folder.createFile("test.txt", "text/plain",
             new ByteArrayInputStream("Hello World!".getBytes()));
+        // Assign permissions
+        final AorraAccessManager acm = (AorraAccessManager)
+            session.getAccessControlManager();
+        acm.grant(group.getPrincipal(),
+            session.getNodeByIdentifier(fm.getRoot().getIdentifier()).getPath(),
+            FileStore.Permission.NONE.toJackrabbitPermission());
+        acm.grant(group.getPrincipal(),
+            session.getNodeByIdentifier(folder.getIdentifier()).getPath(),
+            FileStore.Permission.RO.toJackrabbitPermission());
         // Truncate string
         pwt.dump();
-        // Check tree output from root
-        fsh.tree("", false);
+        // Check output without permissions (null & false both work)
+        for (final Boolean flag : new Boolean[] { null, false }) {
+          // Check tree output from root
+          fsh.tree("", flag);
+          assertThat(pwt.dump()).isEqualTo(
+              "/ (root)\n"+
+              "|-+ foo\n"+
+              "|   |-+ bar\n"+
+              "|   |   |-- test.txt\n");
+        }
+        // Check tree output with permissons
+        fsh.tree("", true);
         assertThat(pwt.dump()).isEqualTo(
             "/ (root)\n"+
-            "|-+ foo\n"+
-            "|   |-+ bar\n"+
+            "|-+ foo {foo=NONE}\n"+
+            "|   |-+ bar {foo=RO}\n"+
             "|   |   |-- test.txt\n");
+        // Check some things we can't do
         fsh.tree("/foo/bar/test.txt", false);
         assertThat(pwt.dump()).isEqualTo("/foo/bar/test.txt is a file\n");
         fsh.tree("/doesnotexist", false);
