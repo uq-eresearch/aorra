@@ -215,7 +215,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("chart.xlsx",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        Chart.XLSX_MIME_TYPE,
         new FileInputStream("test/chart_01.xlsx"));
   }
 

@@ -49,6 +49,9 @@ import ereefs.spreadsheet.XlsxDataSource;
 @With(UncacheableAction.class)
 public class Chart extends SessionAwareController {
 
+  public static final String XLSX_MIME_TYPE =
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
   private final FileStore fileStore;
 
   @Inject
@@ -79,11 +82,7 @@ public class Chart extends SessionAwareController {
       if (fof instanceof FileStoreImpl.File) {
         FileStoreImpl.File file = (FileStoreImpl.File) fof;
         // Check this is an OpenXML document (no chance otherwise)
-        if (!file
-            .getMimeType()
-            .equals(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-        } else {
+        if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
           result.add(new XlsxDataSource(file.getData()));
         }
       }
