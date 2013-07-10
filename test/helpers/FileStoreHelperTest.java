@@ -23,6 +23,7 @@ import models.User;
 import models.UserDAO;
 
 import org.apache.jackrabbit.api.security.user.Group;
+import org.eclipse.jetty.util.IO;
 import org.junit.Test;
 
 import play.libs.F;
@@ -356,6 +357,49 @@ public class FileStoreHelperTest {
             "|-+ foo\n"+
             "|   |-+ bar\n"+
             "|   |-- test@example.com\n");
+        return session;
+      }
+    }, pwt.getPrintWriter());
+  }
+
+  @Test
+  public void importArchive() {
+    final PrintWriterTester pwt = new PrintWriterTester();
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        final String absPath1 = "/foo/bar";
+        final FileStore.Folder folder = fsh.mkdir(absPath1, true);
+        folder.createFile("test.txt", "text/plain",
+            new ByteArrayInputStream("Hello World!".getBytes()));
+        assertThat(fm.getFileOrFolder("/foo/bar/test.txt")).isNotNull();
+        final java.io.File zipFile = fsh.createZipFile(fm.getRoot());
+        // Delete all files
+        assertThat(fm.getFileOrFolder("/foo")).isNotNull();
+        fm.getFileOrFolder("/foo").delete();
+        assertThat(fm.getFileOrFolder("/foo/bar/test.txt")).isNull();
+        // Load again from zip
+        fsh.importArchive(zipFile.getAbsolutePath(), "");
+        // Get file & check contents
+        assertThat(fm.getFileOrFolder("/foo/bar/test.txt")).isNotNull();
+        assertThat(IO.toString(((FileStore.File)
+            fm.getFileOrFolder("/foo/bar/test.txt")).getData()))
+            .isEqualTo("Hello World!");
+        // Second load should not cause errors
+        fsh.importArchive(zipFile.getAbsolutePath(), "/");
+        assertThat(IO.toString(((FileStore.File)
+            fm.getFileOrFolder("/foo/bar/test.txt")).getData()))
+            .isEqualTo("Hello World!");
+        // Load to non-root location
+        fsh.importArchive(zipFile.getAbsolutePath(), "/subfolder");
+        assertThat(
+            fm.getFileOrFolder("/subfolder/foo/bar/test.txt")).isNotNull();
+        assertThat(IO.toString(((FileStore.File)
+            fm.getFileOrFolder("/subfolder/foo/bar/test.txt")).getData()))
+            .isEqualTo("Hello World!");
         return session;
       }
     }, pwt.getPrintWriter());
