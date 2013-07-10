@@ -32,9 +32,9 @@ public class ChartTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         {
-          final Call call = controllers.routes.Chart.charts();
+          final Call call = controllers.routes.Chart.charts("svg");
           assertThat(call.method()).isEqualTo("GET");
-          assertThat(call.url()).isEqualTo("/charts/");
+          assertThat(call.url()).isEqualTo("/charts/?format=svg");
         }
         {
           final Call call = controllers.routes.Chart.chart("marine", "svg");
@@ -55,7 +55,7 @@ public class ChartTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final Result result = callAction(
-            controllers.routes.ref.Chart.charts(),
+            controllers.routes.ref.Chart.charts("svg"),
             newRequest);
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");

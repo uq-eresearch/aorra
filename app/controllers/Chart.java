@@ -102,17 +102,13 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result charts() {
+  public Result charts(final String format) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, request()
             .queryString().get("path"));
         ChartFactory f = new ChartFactory(datasources);
-        String format = getParameter("format");
-        if (StringUtils.isBlank(format)) {
-          format = "png";
-        }
         List<ereefs.charts.Chart> charts = f.getCharts(request().queryString());
         final ObjectNode json = Json.newObject();
         final ArrayNode aNode = json.putArray("charts");

@@ -46,5 +46,5 @@ GET     /logout                     com.feth.play.module.pa.controllers.Authenti
 GET     /authenticate/:provider     com.feth.play.module.pa.controllers.Authenticate.authenticate(provider: String)
 GET     /authenticate/:provider/denied     @controllers.Application.oAuthDenied(provider: String)
 
-GET    /charts/                     @controllers.Chart.charts()
+GET    /charts/                     @controllers.Chart.charts(format: String ?= "png")
 GET    /charts/:chart.:format       @controllers.Chart.chart(chart, format)
