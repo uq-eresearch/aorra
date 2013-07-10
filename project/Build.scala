@@ -71,5 +71,5 @@ object ApplicationBuild extends Build {
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play2-crash-plugin.git#ec950e4c5e7347a681e23b9dde3e4ce1783d9383"))
   ).dependsOn(RootProject(uri(
-      "git://github.com/uq-eresearch/aorra-graph-demo.git#64a0193687dc891dddde417baeb0e4931c0ce6f0")))
+      "git://github.com/uq-eresearch/aorra-graph-demo.git#f5bba67980ed1a3b3030a3ab4343b0ff92e69c4f")))
 }
