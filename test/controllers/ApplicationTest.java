@@ -16,6 +16,7 @@ import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.jcrom;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -272,6 +273,44 @@ public class ApplicationTest {
           final Result result = callAction(
             controllers.routes.ref.Application.userUnverified(inviteUserEmail),
             newRequest.withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/html");
+          assertThat(charset(result)).isEqualTo("utf-8");
+        }
+        return session;
+      }
+    });
+  }
+
+
+  @Test
+  public void userCannotInviteThemselves() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) {
+        {
+          final Map<String,String> data = new HashMap<String,String>();
+          data.put("email", user.getEmail());
+          data.put("name", user.getName());
+          final Result result = callAction(
+            controllers.routes.ref.Application.postInvite(),
+            newRequest.withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(303);
+          try {
+            assertThat(header("Location", result))
+              .isEqualTo("/user-exists/" +
+                  URLEncoder.encode(user.getEmail(),"UTF-8"));
+          } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+          }
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.Application.userExists(user.getEmail()),
+              newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("text/html");
           assertThat(charset(result)).isEqualTo("utf-8");
