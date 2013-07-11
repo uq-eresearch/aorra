@@ -18,17 +18,12 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.jcr.AccessDeniedException;
-import javax.jcr.Node;
+import javax.jcr.ItemExistsException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.security.AccessControlEntry;
-import javax.jcr.security.AccessControlList;
-import javax.jcr.security.AccessControlManager;
-import javax.jcr.security.AccessControlPolicy;
-import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 
 import models.GroupManager;
@@ -40,22 +35,17 @@ import models.filestore.FolderDAO;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.api.security.user.Group;
-import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 import org.jcrom.JcrMappingException;
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
-import play.libs.Akka;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
 import service.filestore.EventManager.FileStoreEvent;
-import service.filestore.FileStore.Permission;
 import service.filestore.roles.Admin;
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Props;
 import akka.actor.TypedActor;
 import akka.actor.TypedProps;
 
@@ -261,10 +251,8 @@ public class FileStoreImpl implements FileStore {
 
     @Override
     public Folder createFolder(final String name) throws RepositoryException {
-      if (getFileOrFolder(name) != null) {
-        throw new RuntimeException(String.format(
-            "file or folder already exists '%s'", name));
-      } else {
+      final FileOrFolder fof = getFileOrFolder(name);
+      if (fof == null) {
         final models.filestore.Folder newFolderEntity =
             filestoreManager.getFolderDAO().create(
                 new models.filestore.Folder(entity, name));
@@ -275,35 +263,32 @@ public class FileStoreImpl implements FileStore {
             eventManagerImpl);
         eventManagerImpl.tell(FileStoreEvent.create(folder));
         return folder;
+      } else {
+        throw new ItemExistsException(String.format(
+            "Can't create folder '%s'. %s with same name already exists.",
+            name, fof.getClass().getSimpleName()));
       }
     }
 
     @Override
     public File createFile(final String name, final String mime,
         final InputStream data) throws RepositoryException {
-      return createOrOverwriteFile(name, mime, data);
-    }
-
-    private File createOrOverwriteFile(final String name, final String mime,
-        final InputStream data) throws RepositoryException {
       final FileOrFolder fof = getFileOrFolder(name);
-      final File file;
       if (fof == null) {
         final models.filestore.File newFileEntity =
           filestoreManager.getFileDAO().create(
               new models.filestore.File(entity, name, mime, data));
-        file = new File(newFileEntity, filestoreManager, eventManagerImpl);
+        final File file =
+            new File(newFileEntity, filestoreManager, eventManagerImpl);
         reload();
         Logger.debug("New file, version "+newFileEntity.getVersion());
         eventManagerImpl.tell(FileStoreEvent.create(file));
-      } else if (fof instanceof Folder) {
-        throw new RuntimeException(String.format("Can't create file '%s'."
-            + " Folder with same name already exists", name));
+        return file;
       } else {
-        file = ((File) fof);
-        file.update(mime, data);
+        throw new ItemExistsException(String.format(
+            "Can't create file '%s'. %s with same name already exists.",
+            name, fof.getClass().getSimpleName()));
       }
-      return file;
     }
 
     @Override

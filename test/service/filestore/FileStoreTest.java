@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.SortedMap;
 
 import javax.jcr.AccessDeniedException;
+import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -87,6 +88,60 @@ public class FileStoreTest {
             // Versions are different to files
             assertThat(file).isNotEqualTo(file.getLatestVersion());
             return folder.getIdentifier();
+          }
+        });
+      }
+    });
+  }
+
+  @Test
+  public void noImplicitOverwriting() {
+    running(fakeAorraApp(), new Runnable() {
+      @Override
+      public void run() {
+        sessionFactory().inSession(new Function<Session,Session>() {
+          @Override
+          public Session apply(Session session) throws RepositoryException {
+            FileStore.Manager fm = fileStore().getManager(session);
+            // Test overwritting folder
+            {
+              final FileStore.Folder folder = fm.getRoot().createFolder("test");
+              try {
+                fm.getRoot().createFolder("test");
+                fail("Should have thrown ItemExistsException.");
+              } catch (ItemExistsException e) {
+                // All good
+              }
+              try {
+                fm.getRoot().createFile("test", "text/plain",
+                  new ByteArrayInputStream("Hello World!".getBytes()));
+                fail("Should have thrown ItemExistsException.");
+              } catch (ItemExistsException e) {
+                // All good
+              }
+              folder.delete();
+            }
+            // Test overwritting file
+            {
+              final FileStore.File file =
+                  fm.getRoot().createFile("test", "text/plain",
+                      new ByteArrayInputStream("Hello World!".getBytes()));
+              try {
+                fm.getRoot().createFolder("test");
+                fail("Should have thrown ItemExistsException.");
+              } catch (ItemExistsException e) {
+                // All good
+              }
+              try {
+                fm.getRoot().createFile("test", "text/plain",
+                  new ByteArrayInputStream("Hello World!".getBytes()));
+                fail("Should have thrown ItemExistsException.");
+              } catch (ItemExistsException e) {
+                // All good
+              }
+              file.delete();
+            }
+            return session;
           }
         });
       }
