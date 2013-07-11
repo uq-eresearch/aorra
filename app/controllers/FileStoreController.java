@@ -183,6 +183,9 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
         final Flag flag = flagStoreImpl.getManager(session).getFlag(t, flagId);
+        if (flag == null) {
+          return notFound();
+        }
         return ok(jb.toJson(flag)).as("application/json; charset=utf-8");
       }
     });

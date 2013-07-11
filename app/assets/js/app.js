@@ -102,7 +102,10 @@ require(['models', 'views'], function(models, views) {
     // Rather brute-force, but the flag will turn up
     notificationFeed.on("flag:create",
       function(id) {
-        _.each(users.flags(), function(c) { c.fetch(); });
+        _.each(users.flags(), function(c) {
+          c.add({ id: id });
+          c.get(id).fetch();
+        });
       });
     // We can delete from all without error
     notificationFeed.on("flag:delete",
