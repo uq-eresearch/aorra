@@ -25,7 +25,7 @@ import play.api.mvc.Controller
 import play.api.mvc.EssentialAction
 import play.api.mvc.Request
 import service.filestore.EventManager.ChannelMessage
-import service.filestore.EventManager.FileStoreEvent
+import service.filestore.EventManager.{Event => EmEvent}
 import play.api.libs.json.JsArray
 
 /**
@@ -64,7 +64,7 @@ class FileStoreAsync @Inject()(
       .withHeaders("Cache-Control" -> "no-cache")
   }
 
-  private def eventType(event: FileStoreEvent) = {
+  private def eventType(event: EmEvent) = {
     Seq(event.info.`type`.toString(), event.`type`.toString()).mkString(":")
   }
 
@@ -79,7 +79,7 @@ class FileStoreAsync @Inject()(
     val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
       lastIdInQuery(request)
     }
-    val eventSourceFormatter = Enumeratee.map[(String, FileStoreEvent)] {
+    val eventSourceFormatter = Enumeratee.map[(String, EmEvent)] {
       case (id, event) => sseMessage(id, event)
     }
     Ok.feed(
@@ -91,9 +91,9 @@ class FileStoreAsync @Inject()(
 
   private def fsEvents(authUser: AuthUser, lastEventId: String = null) = {
     val em = filestore.getEventManager
-    var c: Channel[(String, FileStoreEvent)] = null;
-    Concurrent.unicast[(String, FileStoreEvent)](
-      onStart = { channel: Channel[(String, FileStoreEvent)] =>
+    var c: Channel[(String, EmEvent)] = null;
+    Concurrent.unicast[(String, EmEvent)](
+      onStart = { channel: Channel[(String, EmEvent)] =>
         c = channel
         em tell ChannelMessage.add(c, lastEventId)
       },
@@ -104,7 +104,7 @@ class FileStoreAsync @Inject()(
         // not when the socket closes.
         em tell ChannelMessage.remove(c)
       },
-      onError = { (s: String, i: Input[(String, FileStoreEvent)]) =>
+      onError = { (s: String, i: Input[(String, EmEvent)]) =>
         em tell ChannelMessage.remove(c)
       }
     )

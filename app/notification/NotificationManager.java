@@ -25,8 +25,8 @@ import scala.Tuple2;
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.EventManager;
-import service.filestore.EventManager.FileStoreEvent;
-import service.filestore.EventManager.FileStoreEvent.EventType;
+import service.filestore.EventManager.Event;
+import service.filestore.EventManager.Event.EventType;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import service.filestore.roles.Admin;
@@ -70,7 +70,7 @@ public class NotificationManager extends Plugin {
             Logger.debug("last event id: "+lastEventId);
             while(!stopped) {
                 try {
-                    final List<FileStoreEvent> events = getNewEvents();
+                    final List<Event> events = getNewEvents();
                     if(!stopped && !events.isEmpty()) {
                         sessionFactory.inSession(new Function<Session, String>() {
                             @Override
@@ -89,12 +89,12 @@ public class NotificationManager extends Plugin {
             Logger.debug("Notification stopped");
         }
 
-        private List<FileStoreEvent> getNewEvents() {
-            List<FileStoreEvent> result = Lists.newArrayList();
-            Iterable<Tuple2<String, FileStoreEvent>> events = fileStore.getEventManager().getSince(lastEventId);
-            for(Tuple2<String, FileStoreEvent> pair : events) {
+        private List<Event> getNewEvents() {
+            List<Event> result = Lists.newArrayList();
+            Iterable<Tuple2<String, Event>> events = fileStore.getEventManager().getSince(lastEventId);
+            for(Tuple2<String, Event> pair : events) {
                 String eventId = pair._1;
-                EventManager.FileStoreEvent event = pair._2;
+                EventManager.Event event = pair._2;
                 Logger.debug(String.format("got event id %s type %s event info type %s with node id %s",
                         eventId, event.type, event.info.type, event.info.id));
                 lastEventId = eventId;
@@ -103,8 +103,8 @@ public class NotificationManager extends Plugin {
             return result;
         }
 
-        private void processEvents(Session session, List<FileStoreEvent> events) throws RepositoryException {
-            for(FileStoreEvent event : events) {
+        private void processEvents(Session session, List<Event> events) throws RepositoryException {
+            for(Event event : events) {
                 if(stopped) {
                     break;
                 }
@@ -151,7 +151,7 @@ public class NotificationManager extends Plugin {
         }
 
         private void sendMail(Session session,
-                final Set<String> emails, final FileStoreEvent event) throws RepositoryException {
+                final Set<String> emails, final Event event) throws RepositoryException {
             FileStore.Manager manager = fileStore.getManager(session);
             String fileId = event.info.id;
             FileStore.FileOrFolder ff = manager.getByIdentifier(fileId);

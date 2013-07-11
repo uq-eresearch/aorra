@@ -2,6 +2,7 @@ package service.filestore;
 
 import javax.jcr.RepositoryException;
 
+import models.Flag;
 import play.api.libs.iteratee.Concurrent.Channel;
 import scala.Tuple2;
 
@@ -9,12 +10,12 @@ public interface EventManager {
 
   public abstract String getLastEventId();
 
-  public abstract Iterable<Tuple2<String, FileStoreEvent>> getSince(String eventId);
+  public abstract Iterable<Tuple2<String, Event>> getSince(String eventId);
 
   public abstract void tell(
-      ChannelMessage<Tuple2<String, FileStoreEvent>> message);
+      ChannelMessage<Tuple2<String, Event>> message);
 
-  public abstract void tell(FileStoreEvent event);
+  public abstract void tell(Event event);
 
   public static class ChannelMessage<T> {
 
@@ -41,7 +42,7 @@ public interface EventManager {
 
   }
 
-  public static class FileStoreEvent {
+  public static class Event {
 
     public static enum EventType {
       CREATE, UPDATE, DELETE, OUTOFDATE;
@@ -50,7 +51,7 @@ public interface EventManager {
     }
 
     public static enum NodeType {
-      FILE, FOLDER;
+      FILE, FOLDER, FLAG;
       @Override
       public String toString() { return super.toString().toLowerCase(); }
     }
@@ -75,6 +76,11 @@ public interface EventManager {
         this.id = file.getIdentifier();
       }
 
+      NodeInfo(Flag flag) {
+        this.type = NodeType.FLAG;
+        this.id = flag.getId();
+      }
+
       @Override
       public String toString() {
         return String.format("%s (%s)", id, type);
@@ -85,50 +91,60 @@ public interface EventManager {
     public final EventType type;
     public final NodeInfo info;
 
-    protected FileStoreEvent(EventType type) {
+    protected Event(EventType type) {
       this.type = type;
       this.info = null;
     }
 
-    protected FileStoreEvent(EventType type, NodeInfo info)
+    protected Event(EventType type, NodeInfo info)
         throws RepositoryException {
       this.type = type;
       this.info = info;
     }
 
-    public static FileStoreEvent outOfDate() {
-      return new FileStoreEvent(EventType.OUTOFDATE);
+    public static Event outOfDate() {
+      return new Event(EventType.OUTOFDATE);
     }
 
-    public static FileStoreEvent create(FileStore.File file)
+    public static Event create(FileStore.File file)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.CREATE, new NodeInfo(file));
+      return new Event(EventType.CREATE, new NodeInfo(file));
     }
 
-    public static FileStoreEvent create(FileStore.Folder folder)
+    public static Event create(FileStore.Folder folder)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.CREATE, new NodeInfo(folder));
+      return new Event(EventType.CREATE, new NodeInfo(folder));
     }
 
-    public static FileStoreEvent updateFolder(String folderId)
+    public static Event create(Flag flag)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.UPDATE,
+      return new Event(EventType.CREATE, new NodeInfo(flag));
+    }
+
+    public static Event updateFolder(String folderId)
+        throws RepositoryException {
+      return new Event(EventType.UPDATE,
           new NodeInfo(NodeType.FOLDER, folderId));
     }
 
-    public static FileStoreEvent update(FileStore.File file)
+    public static Event update(FileStore.File file)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.UPDATE, new NodeInfo(file));
+      return new Event(EventType.UPDATE, new NodeInfo(file));
     }
 
-    public static FileStoreEvent delete(FileStore.File file)
+    public static Event delete(FileStore.File file)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.DELETE, new NodeInfo(file));
+      return new Event(EventType.DELETE, new NodeInfo(file));
     }
 
-    public static FileStoreEvent delete(FileStore.Folder folder)
+    public static Event delete(FileStore.Folder folder)
         throws RepositoryException {
-      return new FileStoreEvent(EventType.DELETE, new NodeInfo(folder));
+      return new Event(EventType.DELETE, new NodeInfo(folder));
+    }
+
+    public static Event delete(Flag flag)
+        throws RepositoryException {
+      return new Event(EventType.DELETE, new NodeInfo(flag));
     }
 
     @Override

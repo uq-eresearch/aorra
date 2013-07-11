@@ -56,7 +56,7 @@ require(['models', 'views'], function(models, views) {
             es.addEventListener('ping', function(event) {
               trigger('ping', event.data);
             });
-            _.each(['folder', 'file'], function(t) {
+            _.each(['folder', 'file', 'flag'], function(t) {
               _.each(['create', 'update', 'delete'], function(n) {
                 var eventName = t+":"+n;
                 es.addEventListener(eventName, function(event) {
@@ -99,10 +99,15 @@ require(['models', 'views'], function(models, views) {
           fs.add([file.toJSON()]);
         });
       });
-    notificationFeed.on("folder:update file:update",
+    // Rather brute-force, but the flag will turn up
+    notificationFeed.on("flag:create",
       function(id) {
-        fs.get(id).fetch();
         _.each(users.flags(), function(c) { c.fetch(); });
+      });
+    // We can delete from all without error
+    notificationFeed.on("flag:delete",
+      function(id) {
+        _.each(users.flags(), function(c) { c.remove(id); });
       });
     notificationFeed.on("folder:delete file:delete",
       function(id) {
