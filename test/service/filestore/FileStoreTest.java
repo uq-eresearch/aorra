@@ -61,6 +61,39 @@ public class FileStoreTest {
   }
 
   @Test
+  public void equality() {
+    running(fakeAorraApp(), new Runnable() {
+      @Override
+      public void run() {
+        sessionFactory().inSession(new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException {
+            FileStore.Manager fm = fileStore().getManager(session);
+            final FileStore.Folder folder = fm.getRoot().createFolder("test");
+            final FileStore.File file = folder.createFile("test",
+                "text/plain",
+                new ByteArrayInputStream("Hello World!".getBytes()));
+            // Check folder equality
+            assertThat(folder).isEqualTo(folder);
+            assertThat(folder).isNotEqualTo(null);
+            assertThat(folder).isNotEqualTo(file);
+            assertThat(fm.getRoot()).isNotEqualTo(folder);
+            assertThat(fm.getRoot()).isEqualTo(fm.getRoot());
+            // Check file equality
+            assertThat(file).isEqualTo(file);
+            assertThat(file).isNotEqualTo(null);
+            assertThat(file).isNotEqualTo(folder);
+            assertThat(file).isEqualTo(folder.getFileOrFolder("test"));
+            // Versions are different to files
+            assertThat(file).isNotEqualTo(file.getLatestVersion());
+            return folder.getIdentifier();
+          }
+        });
+      }
+    });
+  }
+
+  @Test
   public void permissionOrder() {
     assertThat(FileStore.Permission.RW.isAtLeast(FileStore.Permission.RW))
       .isTrue();
@@ -228,6 +261,7 @@ public class FileStoreTest {
             return null;
           }
         });
+        // Grant access to testGroup
         sessionFactory.inSession(new Function<Session,String>() {
           @Override
           public String apply(Session session) throws RepositoryException {
@@ -245,6 +279,7 @@ public class FileStoreTest {
             return userId;
           }
         });
+        // Check granted access
         sessionFactory.inSession(userId, new Function<Session,FileStore.Folder>() {
           @Override
           public FileStore.Folder apply(Session session)
@@ -255,6 +290,27 @@ public class FileStoreTest {
             final FileStore.Folder folder = folders.iterator().next();
             assertThat(folder.getPath()).isEqualTo("/test");
             return folder;
+          }
+        });
+        // Revoke access to test group
+        sessionFactory.inSession(new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException {
+            final FileStore.Folder testFolder = (FileStore.Folder)
+                fileStoreImpl.getManager(session).getFileOrFolder("/test");
+            testFolder.revokeAccess("testGroup");
+            return userId;
+          }
+        });
+        // Check revoked access
+        sessionFactory.inSession(userId, new Function<Session,String>() {
+          @Override
+          public String apply(Session session) throws RepositoryException {
+            // Unprivileged users should see no folders
+            Set<FileStore.Folder> folders =
+                fileStoreImpl.getManager(session).getFolders();
+            assertThat(folders).hasSize(0);
+            return null;
           }
         });
       }

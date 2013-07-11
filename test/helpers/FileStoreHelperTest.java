@@ -291,14 +291,10 @@ public class FileStoreHelperTest {
         folder.createFile("test.txt", "text/plain",
             new ByteArrayInputStream("Hello World!".getBytes()));
         // Assign permissions
-        final AorraAccessManager acm = (AorraAccessManager)
-            session.getAccessControlManager();
-        acm.grant(group.getPrincipal(),
-            session.getNodeByIdentifier(fm.getRoot().getIdentifier()).getPath(),
-            FileStore.Permission.NONE.toJackrabbitPermission());
-        acm.grant(group.getPrincipal(),
-            session.getNodeByIdentifier(folder.getIdentifier()).getPath(),
-            FileStore.Permission.RO.toJackrabbitPermission());
+        fm.getRoot().grantAccess(group.getPrincipal().getName(),
+            FileStore.Permission.NONE);
+        folder.grantAccess(group.getPrincipal().getName(),
+            FileStore.Permission.RO);
         // Truncate string
         pwt.dump();
         // Check output without permissions (null & false both work)
