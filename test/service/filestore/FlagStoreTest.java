@@ -52,6 +52,7 @@ public class FlagStoreTest {
             assertThat(flm.getFlags(FlagType.WATCH)).contains(flag);
             assertThat(flm.getFlags(FlagType.EDIT)).hasSize(0);
             // Try getting the single flag
+            assertThat(flm.getFlag(flag.getId())).isEqualTo(flag);
             assertThat(flm.getFlag(FlagType.WATCH, flag.getId()))
               .isEqualTo(flag);
             assertThat(flm.getFlag(FlagType.EDIT, flag.getId())).isNull();

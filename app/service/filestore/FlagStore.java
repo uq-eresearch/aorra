@@ -55,6 +55,10 @@ public class FlagStore {
       return getFlag(t, targetId, user) != null;
     }
 
+    public Flag getFlag(String flagId) {
+      return flagDao.loadById(flagId);
+    }
+
     public Flag getFlag(FlagType t, String flagId) {
       try {
         Flag flag = flagDao.loadById(flagId);
@@ -78,10 +82,6 @@ public class FlagStore {
             t.getRootPath(),
             new models.Flag(null, targetId, user));
       }
-    }
-
-    public void unsetFlag(FlagType t, String targetId, User user) {
-      deleteFlag(getFlag(t, targetId, user));
     }
 
     public void unsetFlag(FlagType t, String flagId) {
