@@ -867,15 +867,15 @@ define([
       var minlength = 6;
       var $submit = this.$el.find('form button[type="submit"]');
       var $passwords = this.$el.find('#newPassword, #repeatPassword');
-      var valid = function() {
+      var valid = (function() {
         var values = $.map($passwords, function(v) { return $(v).val() });
         return _.any(values, function(v) { return v.length >= minlength }) &&
           _.uniq(values).length == 1;
-      }
+      })();
       $passwords.parents('.control-group')
         .removeClass('success error')
-        .addClass( valid() ? 'success' : 'error' );
-      $submit.prop('disabled', !valid());
+        .addClass( valid ? 'success' : 'error' );
+      $submit.prop('disabled', !valid);
     },
     submitForm: function() {
       var $form = this.$el.find('form');
