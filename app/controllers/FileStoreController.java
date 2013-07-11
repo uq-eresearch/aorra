@@ -43,7 +43,7 @@ import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.EventManager;
-import service.filestore.EventManager.FileStoreEvent;
+import service.filestore.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
@@ -183,6 +183,9 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
         final Flag flag = flagStoreImpl.getManager(session).getFlag(t, flagId);
+        if (flag == null) {
+          return notFound();
+        }
         return ok(jb.toJson(flag)).as("application/json; charset=utf-8");
       }
     });
@@ -205,7 +208,8 @@ public final class FileStoreController extends SessionAwareController {
         final JsonBuilder jb = new JsonBuilder();
         final Flag flag = flagStoreImpl.getManager(session)
             .setFlag(t, targetId, user);
-        notifyFlagChange(session, flag.getTargetId());
+        fileStoreImpl.getEventManager()
+          .tell(EventManager.Event.create(flag));
         return created(jb.toJson(flag)).as("application/json; charset=utf-8");
       }
     });
@@ -221,8 +225,9 @@ public final class FileStoreController extends SessionAwareController {
         final Flag flag = flm.getFlag(t, flagId);
         if (flag == null)
           return notFound();
-        notifyFlagChange(session, flag.getTargetId());
         flm.unsetFlag(t, flagId);
+        fileStoreImpl.getEventManager()
+          .tell(EventManager.Event.delete(flag));
         return status(204);
       }
     });
@@ -429,7 +434,7 @@ public final class FileStoreController extends SessionAwareController {
         acm.grant(group.getPrincipal(),
             session.getNodeByIdentifier(id).getPath(),
             accessLevel.toJackrabbitPermission());
-        fileStoreImpl.getEventManager().tell(FileStoreEvent.updateFolder(id));
+        fileStoreImpl.getEventManager().tell(Event.updateFolder(id));
         return ok();
       }
     });
@@ -571,19 +576,6 @@ public final class FileStoreController extends SessionAwareController {
       json.add(jb.toJson(user));
     }
     return json;
-  }
-
-  protected void notifyFlagChange(Session session, String targetId)
-      throws RepositoryException {
-    final FileStore.Manager fm = fileStoreImpl.getManager(session);
-    final FileStore.FileOrFolder fof = fm.getByIdentifier(targetId);
-    final EventManager em = fileStoreImpl.getEventManager();
-    if (fof == null)
-      return;
-    else if (fof instanceof FileStore.File)
-      em.tell(FileStoreEvent.update((FileStore.File) fof));
-    else if (fof instanceof FileStore.File)
-      em.tell(FileStoreEvent.updateFolder(targetId));
   }
 
   protected UserDAO getUserDAO(Session session) {

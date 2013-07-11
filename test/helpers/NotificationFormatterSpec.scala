@@ -20,18 +20,18 @@ class NotificationFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val info = EventManager.FileStoreEvent.updateFolder(randomUUID)
-        val msg = jsonMessage(eventId, info)
+        val event = EventManager.Event.updateFolder(randomUUID)
+        val msg = jsonMessage(eventId, event)
 
         (msg \ "id") must beJson(eventId)
         (msg \ "type") must beJson("folder:update")
-        (msg \ "data") must beJson(info.info.id)
+        (msg \ "data") must beJson(event.info.id)
       }
 
       "without node info" in {
         val eventId = randomUUID
-        val info = EventManager.FileStoreEvent.outOfDate
-        val msg: JsObject = jsonMessage(eventId, info)
+        val event = EventManager.Event.outOfDate
+        val msg: JsObject = jsonMessage(eventId, event)
 
         (msg \ "id") must beJson(eventId)
         (msg \ "type") must beJson("outofdate")
@@ -46,20 +46,20 @@ class NotificationFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val info = EventManager.FileStoreEvent.updateFolder(randomUUID)
-        val msg: String = sseMessage(eventId, info)
+        val event = EventManager.Event.updateFolder(randomUUID)
+        val msg: String = sseMessage(eventId, event)
         val lines: Seq[String] = msg.split('\n')
 
         lines must contain(s"id: $eventId")
         lines must contain(s"event: folder:update")
-        lines must contain(s"data: ${info.info.id}")
+        lines must contain(s"data: ${event.info.id}")
         msg must endWith("\n\n") // Finish with empty line
       }
 
       "without node info" in {
         val eventId = randomUUID
-        val info = EventManager.FileStoreEvent.outOfDate
-        val msg: String = sseMessage(eventId, info)
+        val event = EventManager.Event.outOfDate
+        val msg: String = sseMessage(eventId, event)
         val lines: Seq[String] = msg.split('\n')
 
         lines must contain(s"id: $eventId")

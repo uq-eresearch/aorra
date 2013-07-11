@@ -43,7 +43,7 @@ import org.jcrom.util.PathUtils;
 import play.Logger;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
-import service.filestore.EventManager.FileStoreEvent;
+import service.filestore.EventManager.Event;
 import service.filestore.roles.Admin;
 import akka.actor.ActorSystem;
 import akka.actor.TypedActor;
@@ -260,7 +260,7 @@ public class FileStoreImpl implements FileStore {
           newFolderEntity,
           filestoreManager,
           eventManagerImpl);
-      eventManagerImpl.tell(FileStoreEvent.create(folder));
+      eventManagerImpl.tell(Event.create(folder));
       return folder;
     }
 
@@ -275,7 +275,7 @@ public class FileStoreImpl implements FileStore {
           new File(newFileEntity, filestoreManager, eventManagerImpl);
       reload();
       Logger.debug("New file, version "+newFileEntity.getVersion());
-      eventManagerImpl.tell(FileStoreEvent.create(file));
+      eventManagerImpl.tell(Event.create(file));
       return file;
     }
 
@@ -351,7 +351,7 @@ public class FileStoreImpl implements FileStore {
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final FileStoreEvent event = FileStoreEvent.delete(this);
+      final Event event = Event.delete(this);
       filestoreManager.getFolderDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }
@@ -425,7 +425,7 @@ public class FileStoreImpl implements FileStore {
       entity.setMimeType(mime);
       entity.setData(data);
       filestoreManager.getFileDAO().update(entity);
-      eventManagerImpl.tell(FileStoreEvent.update(this));
+      eventManagerImpl.tell(Event.update(this));
       return this;
     }
 
@@ -458,7 +458,7 @@ public class FileStoreImpl implements FileStore {
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final FileStoreEvent event = FileStoreEvent.delete(this);
+      final Event event = Event.delete(this);
       filestoreManager.getFileDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }

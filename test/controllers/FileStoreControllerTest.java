@@ -180,19 +180,29 @@ public class FileStoreControllerTest {
             injector().getInstance(FlagStore.class).getManager(session);
         final Flag flag =
             flm.setFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
-        final Result result = callAction(
-            controllers.routes.ref.FileStoreController.flagJson(
-                FlagStore.FlagType.WATCH.toString(),
-                flag.getId()),
-            newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
-        final String expectedContent = (new JsonBuilder())
-            .toJson(flag)
-            .toString();
-        assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.flagJson(
+                  FlagStore.FlagType.WATCH.toString(),
+                  flag.getId()),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          final String expectedContent = (new JsonBuilder())
+              .toJson(flag)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.flagJson(
+                  FlagStore.FlagType.EDIT.toString(),
+                  flag.getId()),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+        }
         return session;
       }
     });
