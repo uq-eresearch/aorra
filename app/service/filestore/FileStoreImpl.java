@@ -251,44 +251,41 @@ public class FileStoreImpl implements FileStore {
 
     @Override
     public Folder createFolder(final String name) throws RepositoryException {
-      final FileOrFolder fof = getFileOrFolder(name);
-      if (fof == null) {
-        final models.filestore.Folder newFolderEntity =
-            filestoreManager.getFolderDAO().create(
-                new models.filestore.Folder(entity, name));
-        reload();
-        final Folder folder = new Folder(
-            newFolderEntity,
-            filestoreManager,
-            eventManagerImpl);
-        eventManagerImpl.tell(FileStoreEvent.create(folder));
-        return folder;
-      } else {
-        throw new ItemExistsException(String.format(
-            "Can't create folder '%s'. %s with same name already exists.",
-            name, fof.getClass().getSimpleName()));
-      }
+      ensureDoesNotExist(name);
+      final models.filestore.Folder newFolderEntity =
+          filestoreManager.getFolderDAO().create(
+              new models.filestore.Folder(entity, name));
+      reload();
+      final Folder folder = new Folder(
+          newFolderEntity,
+          filestoreManager,
+          eventManagerImpl);
+      eventManagerImpl.tell(FileStoreEvent.create(folder));
+      return folder;
     }
 
     @Override
     public File createFile(final String name, final String mime,
         final InputStream data) throws RepositoryException {
+      ensureDoesNotExist(name);
+      final models.filestore.File newFileEntity =
+        filestoreManager.getFileDAO().create(
+            new models.filestore.File(entity, name, mime, data));
+      final File file =
+          new File(newFileEntity, filestoreManager, eventManagerImpl);
+      reload();
+      Logger.debug("New file, version "+newFileEntity.getVersion());
+      eventManagerImpl.tell(FileStoreEvent.create(file));
+      return file;
+    }
+
+    protected void ensureDoesNotExist(final String name)
+        throws RepositoryException {
       final FileOrFolder fof = getFileOrFolder(name);
-      if (fof == null) {
-        final models.filestore.File newFileEntity =
-          filestoreManager.getFileDAO().create(
-              new models.filestore.File(entity, name, mime, data));
-        final File file =
-            new File(newFileEntity, filestoreManager, eventManagerImpl);
-        reload();
-        Logger.debug("New file, version "+newFileEntity.getVersion());
-        eventManagerImpl.tell(FileStoreEvent.create(file));
-        return file;
-      } else {
+      if (fof != null)
         throw new ItemExistsException(String.format(
             "Can't create file '%s'. %s with same name already exists.",
             name, fof.getClass().getSimpleName()));
-      }
     }
 
     @Override
