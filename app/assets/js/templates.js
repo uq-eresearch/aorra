@@ -2,6 +2,7 @@ define([
         'tmpl/alert_box',
         'tmpl/breadcrumbs',
         'tmpl/charts',
+        'tmpl/change_password',
         'tmpl/delete_button',
         'tmpl/deleted_page',
         'tmpl/file_view',
@@ -12,6 +13,7 @@ define([
         'tmpl/permission_row',
         'tmpl/permission_table',
         'tmpl/start_page',
+        'tmpl/user_menu',
         'tmpl/version_row',
         'tmpl/version_table'
         ], function() {

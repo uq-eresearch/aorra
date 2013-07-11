@@ -78,7 +78,6 @@ require(['models', 'views'], function(models, views) {
 
     var users = new models.Users();
     var fs = new models.FileStore();
-    var fileTree = new views.FileTree();
     var notificationFeed = new NotificationFeed({
       lastEventId: window.lastEventID
     });
@@ -129,13 +128,10 @@ require(['models', 'views'], function(models, views) {
       el: '#content',
       users: users
     });
-    window.layout = layout;
     layout.render();
     $('#content').append(layout.$el);
 
-    fileTree.render();
-    layout.sidebar.show(fileTree);
-
+    var fileTree = layout.getFileTree();
     fs.on('sync', function() {
       try {
         // Start router (as now we can load existing nodes)
@@ -163,14 +159,19 @@ require(['models', 'views'], function(models, views) {
 
     var Router = Backbone.Router.extend({
       routes: {
-        "": "showStart",
+        "": "start",
+        "change-password": "changePassword",
         "file/:id": "showFile",
         "folder/:id": "showFolder",
         "file/:id/version/:version/diff": "showFileDiff"
       },
-      showStart: function() {
+      start: function() {
         layout.showStart();
         this._setSidebarActive();
+      },
+      changePassword: function() {
+        layout.changePassword();
+        this._setMainActive();
       },
       showFolder: function(id) {
         var node = fileTree.tree().find(id);

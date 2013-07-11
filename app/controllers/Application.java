@@ -155,7 +155,8 @@ public final class Application extends SessionAwareController {
         final User user = dao.get(getUser());
         if (!params.containsKey("newPassword") ||
             !params.containsKey("currentPassword")) {
-          return badRequest("Current and new password required.");
+          return badRequest("Current and new password required.")
+              .as("text/plain");
         }
         final String currentPassword = params.get("currentPassword")[0];
         final String newPassword = params.get("newPassword")[0];
@@ -163,7 +164,7 @@ public final class Application extends SessionAwareController {
           dao.setPassword(user, newPassword);
           return ok();
         } else {
-          return badRequest();
+          return badRequest("Incorrect current password.").as("text/plain");
         }
       }
     });
