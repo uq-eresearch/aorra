@@ -32,7 +32,11 @@ define([
   var FileTree = Backbone.View.extend({
     tagName: "div",
     render: function() {
-      var tree = glyphtree(this.$el, this.options);
+      this.tree().element.detach();
+      this.$el.append(this.tree().element);
+    },
+    _buildTree: function() {
+      var tree = glyphtree($('<div/>'), this.options);
       var selectHandler = _.bind(function(event, node) {
         var m = _.defaults({}, node.attributes);
         // Emit select event
@@ -63,11 +67,11 @@ define([
       tree.events.icon.click.push(setTooltipText);
       tree.events.icon.mouseenter = [createTooltip, hoverHandler];
       tree.events.icon.mouseleave = [hoverHandler];
-      this._tree = tree;
+      return tree;
     },
     tree: function() {
       if (!this._tree) {
-        this.render();
+        this._tree = this._buildTree();
       }
       return this._tree;
     },
@@ -910,7 +914,6 @@ define([
       sidebar: "#sidebar"
     },
     initialize: function(options) {
-      this.showLoading();
       // Create Flag
       this.users = options.users;
     },
@@ -925,31 +928,31 @@ define([
       this.main.show(new ChangePasswordView())
     },
     showLoading: function() {
-      this.sidebar.show(this.getFileTree());
+      this.main.show(this.getFileTree());
       this.main.show(new LoadingView());
     },
     showStart: function() {
-      this.sidebar.show(this._fileTree);
+      this.sidebar.show(this.getFileTree());
       this.main.show(new StartView());
     },
     showFolder: function(folder) {
-      this.sidebar.show(this._fileTree);
+      this.sidebar.show(this.getFileTree());
       this.main.show(new FolderView({ model: folder }));
     },
     showFile: function(file) {
-      this.sidebar.show(this._fileTree);
+      this.sidebar.show(this.getFileTree());
       this.main.show(new FileView({ model: file, users: this.users }));
     },
     showFileDiff: function(file, versionName) {
-      this.sidebar.show(this._fileTree);
+      this.sidebar.show(this.getFileTree());
       this.main.show(new FileDiffView({
         model: file,
         versionName: versionName
       }));
     },
     showDeleted: function(fof) {
-      this.sidebar.show(this._fileTree);
-      this.main.show(new DeletedView({ model: fof}));
+      this.sidebar.show(this.getFileTree());
+      this.main.show(new DeletedView({ model: fof }));
     }
   });
 

@@ -75,6 +75,7 @@
         this._styleElement = this.setupStyle();
         this.events = this._options.events;
         this.startExpanded = this._options.startExpanded;
+        this._setRootContainer(new NodeContainer([], this));
       }
 
       GlyphTree.prototype.setupStyle = function() {
@@ -181,9 +182,6 @@
           }
           parent.addChild(new Node(structure, this));
         } else {
-          if (!(this.rootNodes != null)) {
-            this._setRootContainer(new NodeContainer([], this));
-          }
           this.rootNodes.add(new Node(structure, this));
         }
         return this;
