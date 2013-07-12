@@ -35,6 +35,9 @@ define([
       this.tree().element.detach();
       this.$el.append(this.tree().element);
     },
+    close: function() {
+      this.tree().element.detach();
+    },
     _buildTree: function() {
       var tree = glyphtree($('<div/>'), this.options);
       var selectHandler = _.bind(function(event, node) {
