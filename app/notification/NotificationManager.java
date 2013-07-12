@@ -1,21 +1,15 @@
 package notification;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.Flag;
-import models.User;
-import models.UserDAO;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.jackrabbit.api.security.user.Authorizable;
-import org.apache.jackrabbit.api.security.user.Group;
-import org.jcrom.Jcrom;
+import org.apache.jackrabbit.core.SessionImpl;
+import org.apache.jackrabbit.core.id.NodeId;
 
 import play.Application;
 import play.Logger;
@@ -29,7 +23,6 @@ import service.filestore.EventManager.Event;
 import service.filestore.EventManager.Event.EventType;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
-import service.filestore.roles.Admin;
 
 import com.feth.play.module.mail.Mailer;
 import com.feth.play.module.mail.Mailer.Mail.Body;
@@ -49,18 +42,15 @@ public class NotificationManager extends Plugin {
         private final JcrSessionFactory sessionFactory;
         private final FileStore fileStore;
         private final FlagStore flagStore;
-        private final Jcrom jcrom;
 
         @Inject
         public NotificationRunner(
             JcrSessionFactory sessionFactory,
             FileStore fileStore,
-            FlagStore flagStore,
-            Jcrom jcrom) {
+            FlagStore flagStore) {
           this.sessionFactory = sessionFactory;
           this.fileStore = fileStore;
           this.flagStore = flagStore;
-          this.jcrom = jcrom;
         }
 
         @Override
@@ -81,10 +71,12 @@ public class NotificationManager extends Plugin {
                             }
                           });
                     }
-                    Thread.sleep(1000);
                 } catch(Throwable t) {
                     t.printStackTrace();
                 }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {}
             }
             Logger.debug("Notification stopped");
         }
@@ -108,43 +100,25 @@ public class NotificationManager extends Plugin {
                 if(stopped) {
                     break;
                 }
-                Set<String> emails = getFileStoreAdminEmails(session, null, null);
-                emails.addAll(getWatchEmails(session, event.info.id));
+                Set<String> emails = getWatchEmails(session, event.info.id);
                 sendMail(session, emails, event);
             }
-        }
-
-        private Set<String> getFileStoreAdminEmails(Session session,
-                Group group, Set<String> emails) throws RepositoryException {
-            if(group == null) {
-                emails = Sets.newHashSet();
-                group = Admin.getInstance(session).getGroup();
-            }
-            Iterator<Authorizable> aIter = group.getDeclaredMembers();
-            while(aIter.hasNext()) {
-                Authorizable authorizable = aIter.next();
-                if(authorizable instanceof Group) {
-                    getFileStoreAdminEmails(session, (Group)authorizable, emails);
-                } else {
-                    String id = authorizable.getID();
-                    try {
-                        // Get user email if user
-                        Node node = session.getNodeByIdentifier(id);
-                        emails.add(node.getProperty("email").getValue().getString());
-                      } catch (Exception e) {}
-                }
-            }
-            return emails;
         }
 
         private Set<String> getWatchEmails(Session session, String nodeId) {
             Set<String> emails = Sets.newHashSet();
             FlagStore.Manager manager = flagStore.getManager(session);
-            UserDAO userdao = new UserDAO(session, jcrom);
-            for(User user : userdao.list()) {
-                Flag flag = manager.getFlag(FlagStore.FlagType.WATCH, nodeId, user);
-                if((flag != null) && StringUtils.isNotBlank(user.getEmail())) {
-                    emails.add(user.getEmail());
+            Set<Flag> flags = manager.getFlags(FlagStore.FlagType.WATCH);
+            for(Flag flag : flags) {
+                if(flag.getTargetId().equals(nodeId)) {
+                    emails.add(flag.getUser().getEmail());
+                } else {
+                    try {
+                        if(((SessionImpl)session).getHierarchyManager().isAncestor(
+                                new NodeId(flag.getTargetId()), new NodeId(nodeId))) {
+                            emails.add(flag.getUser().getEmail());
+                        }
+                    } catch(Exception e) {}
                 }
             }
             return emails;

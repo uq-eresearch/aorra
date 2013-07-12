@@ -1,2 +1,5 @@
 @(path: String, filetype: String, action: String)
-@filetype @path was @action
+Following changes were made in the AORRA system.
+
+@filetype '@path' was @action
+
