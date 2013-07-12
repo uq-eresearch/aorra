@@ -37,7 +37,7 @@ class FileStoreAsyncSpec extends Specification {
         val Some(result) = route(FakeRequest(GET, "/notifications"))
 
         status(result) must equalTo(303)
-        header("Location", result) must beSome("/")
+        header("Location", result) must beSome("/login")
       }
     }
 

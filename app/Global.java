@@ -44,19 +44,19 @@ public class Global extends GlobalSettings {
       @Override
       public Call login() {
         // Your login page
-        return controllers.routes.Application.index();
+        return controllers.routes.Application.login();
       }
 
       @Override
       public Call afterAuth() {
         // The user will be redirected to this page after authentication
         // if no original URL was saved
-        return controllers.routes.Application.index();
+        return controllers.routes.FileStoreController.index();
       }
 
       @Override
       public Call afterLogout() {
-        return controllers.routes.Application.index();
+        return controllers.routes.FileStoreController.index();
       }
 
       @Override

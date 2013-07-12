@@ -20,6 +20,7 @@ import play.libs.F;
 import play.mvc.Http;
 import play.mvc.Http.Context;
 import play.mvc.Result;
+import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.roles.Admin;
 import be.objectify.deadbolt.core.models.Role;
@@ -59,8 +60,8 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
 
   @Override
   public Result onAuthFailure(Context context, String content) {
-    // TODO: Implement more user-friendly view
-    return forbidden(content);
+    PlayAuthenticate.storeOriginalUrl(context);
+    return redirect(controllers.routes.Application.login());
   }
 
   @Override

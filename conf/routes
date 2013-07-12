@@ -3,7 +3,8 @@
 # ~~~~
 
 # Home page
-GET     /                           @controllers.Application.index
+GET     /                           @controllers.FileStoreController.index
+GET     /login                      @controllers.Application.login
 POST    /login                      @controllers.Application.postLogin
 GET     /invite                     @controllers.Application.invite
 POST    /invite                     @controllers.Application.postInvite

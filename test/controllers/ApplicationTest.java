@@ -46,16 +46,25 @@ import service.JcrSessionFactory;
 public class ApplicationTest {
 
   @Test
-	public void indexShowsLoginPage() {
+	public void indexRedirectsToLoginPage() {
 		running(fakeAorraApp(false), new Runnable() {
 			@Override
 			public void run() {
-				Result result = callAction(controllers.routes.ref.Application.index());
-				assertThat(status(result)).isEqualTo(OK);
-				assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
-				String pageContent = contentAsString(result);
-				assertThat(pageContent).contains("name=\"email\"");
-        assertThat(pageContent).contains("name=\"password\"");
+			  {
+			    Result result = callAction(
+			        controllers.routes.ref.FileStoreController.index());
+	        assertThat(status(result)).isEqualTo(303);
+			    assertThat(header("Location", result)).isEqualTo("/login");
+			  }
+			  {
+          Result result = callAction(
+              controllers.routes.ref.Application.login());
+          assertThat(status(result)).isEqualTo(OK);
+  				assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+  				String pageContent = contentAsString(result);
+  				assertThat(pageContent).contains("name=\"email\"");
+          assertThat(pageContent).contains("name=\"password\"");
+			  }
 			}
 		});
 	}
@@ -101,7 +110,7 @@ public class ApplicationTest {
             request);
         }
         assertThat(status(result)).isEqualTo(303);
-        assertThat(header("Location", result)).isEqualTo("/");
+        assertThat(header("Location", result)).isEqualTo("/login");
         assertThat(flash(result).get("error")).contains("email address or password");
       }
     });
@@ -126,7 +135,7 @@ public class ApplicationTest {
             request);
         }
         assertThat(status(result)).isEqualTo(303);
-        assertThat(header("Location", result)).isEqualTo("/");
+        assertThat(header("Location", result)).isEqualTo("/login");
         assertThat(flash(result).get("error")).contains("email address or password");
       }
     });
@@ -202,7 +211,7 @@ public class ApplicationTest {
             request.withSession(e.getKey(), e.getValue());
           }
           result = callAction(
-              controllers.routes.ref.Application.index(),
+              controllers.routes.ref.FileStoreController.index(),
               request);
         }
         assertThat(status(result)).isEqualTo(200);

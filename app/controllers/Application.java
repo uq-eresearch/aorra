@@ -50,12 +50,6 @@ public final class Application extends SessionAwareController {
     super(sessionFactory, jcrom, sessionHandler);
   }
 
-  @With(UncacheableAction.class)
-  public final Result index() {
-    if (!isAuthenticated()) return login();
-    return getInjector().getInstance(FileStoreController.class).index();
-  }
-
   @SubjectPresent
   public final Result invite() {
     return ok(views.html.Application.invite.render(form(Invite.class),
@@ -86,6 +80,7 @@ public final class Application extends SessionAwareController {
     }
   }
 
+  @With(UncacheableAction.class)
   public final Result login() {
     return ok(views.html.Application.login.render(form(Login.class)));
   }
@@ -94,6 +89,7 @@ public final class Application extends SessionAwareController {
     com.feth.play.module.pa.controllers.Authenticate.noCache(response());
     final Form<Login> filledForm = form(Login.class).bindFromRequest();
     if (filledForm.hasErrors()) {
+      Logger.debug(filledForm.errorsAsJson()+"");
       // User did not fill everything properly
       return badRequest(views.html.Application.login.render(filledForm));
     } else {

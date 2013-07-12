@@ -288,16 +288,13 @@ public class FileStoreControllerTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
-        {
-          final Result result = callAction(
-              controllers.routes.ref.FileStoreController.showFolder(
-                  fm.getRoot().getIdentifier()),
-              newRequest.withHeader("Accept", "text/html"));
-          assertThat(status(result)).isEqualTo(200);
-          assertThat(contentType(result)).isEqualTo("text/html");
-          assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
-        }
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.showFolder(
+                fm.getRoot().getIdentifier()),
+            newRequest.withHeader("Accept", "text/html"));
+        assertThat(status(result)).isEqualTo(303);
+        assertThat(header("Location", result)).isEqualTo(
+            "/#folder/" + fm.getRoot().getIdentifier());
         return session;
       }
     });
@@ -315,16 +312,13 @@ public class FileStoreControllerTest {
         final FileStore.File file =
             fm.getRoot().createFile("test.txt", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
-        {
-          final Result result = callAction(
-              controllers.routes.ref.FileStoreController.showFile(
-                  file.getIdentifier()),
-              newRequest.withHeader("Accept", "text/html"));
-          assertThat(status(result)).isEqualTo(200);
-          assertThat(contentType(result)).isEqualTo("text/html");
-          assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
-        }
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.showFile(
+                file.getIdentifier()),
+            newRequest.withHeader("Accept", "text/html"));
+        assertThat(status(result)).isEqualTo(303);
+        assertThat(header("Location", result)).isEqualTo(
+            "/#file/" + file.getIdentifier());
         return session;
       }
     });

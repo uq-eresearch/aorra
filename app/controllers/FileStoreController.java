@@ -5,7 +5,6 @@ import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileExistsException;
 import helpers.FileStoreHelper.FolderExistsException;
 import helpers.FileStoreHelper.FolderNotFoundException;
-
 import jackrabbit.AorraAccessManager;
 
 import java.io.File;
@@ -53,6 +52,7 @@ import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
+import com.feth.play.module.pa.PlayAuthenticate;
 import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
@@ -118,7 +118,9 @@ public final class FileStoreController extends SessionAwareController {
       if (m.accepts("application/json") || m.accepts("text/javascript")) {
         return folderJson(folderId);
       } else if (m.accepts("text/html")) {
-        return index();
+        return seeOther(routes.FileStoreController.showFolder(folderId)
+            .url()
+            .replaceFirst("/", "/#"));
       }
     }
     return status(UNSUPPORTED_MEDIA_TYPE);
@@ -130,7 +132,9 @@ public final class FileStoreController extends SessionAwareController {
       if (m.accepts("application/json") || m.accepts("text/javascript")) {
         return fileJson(fileId);
       } else if (m.accepts("text/html")) {
-        return index();
+        return seeOther(routes.FileStoreController.showFile(fileId)
+            .url()
+            .replaceFirst("/", "/#"));
       }
     }
     return status(UNSUPPORTED_MEDIA_TYPE);
