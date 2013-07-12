@@ -78,7 +78,6 @@ require(['models', 'views'], function(models, views) {
 
     var users = new models.Users();
     var fs = new models.FileStore();
-    var fileTree = new views.FileTree();
     var notificationFeed = new NotificationFeed({
       lastEventId: window.lastEventID
     });
@@ -129,21 +128,12 @@ require(['models', 'views'], function(models, views) {
       el: '#content',
       users: users
     });
-    window.layout = layout;
     layout.render();
     $('#content').append(layout.$el);
+    layout.showLoading();
 
-    fileTree.render();
-    layout.sidebar.show(fileTree);
-
-    fs.on('sync', function() {
-      try {
-        // Start router (as now we can load existing nodes)
-        startRouting();
-      } catch (e) {}
-    });
+    var fileTree = layout.getFileTree();
     fs.on('reset', function() {
-      fileTree.tree().load([]);
       fs.each(function(m) {
         fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
       });
@@ -163,14 +153,19 @@ require(['models', 'views'], function(models, views) {
 
     var Router = Backbone.Router.extend({
       routes: {
-        "": "showStart",
+        "": "start",
+        "change-password": "changePassword",
         "file/:id": "showFile",
         "folder/:id": "showFolder",
         "file/:id/version/:version/diff": "showFileDiff"
       },
-      showStart: function() {
+      start: function() {
         layout.showStart();
         this._setSidebarActive();
+      },
+      changePassword: function() {
+        layout.changePassword();
+        this._setMainActive();
       },
       showFolder: function(id) {
         var node = fileTree.tree().find(id);
@@ -220,19 +215,29 @@ require(['models', 'views'], function(models, views) {
       router.navigate("file/"+fileId, {trigger: true});
     });
 
-    if (_.isUndefined(window.filestoreJSON)) {
-      fs.fetch();
-    } else {
-      fs.reset(window.filestoreJSON);
-      startRouting();
+    var initFilestore = function() {
+      if (_.isUndefined(window.filestoreJSON)) {
+        return fs.fetch();
+      } else {
+        fs.reset(window.filestoreJSON);
+        return $.Deferred().resolve();
+      }
     }
 
     // Users collection
-    if (_.isUndefined(window.usersJSON)) {
-      users.fetch();
-    } else {
-      users.reset(window.usersJSON);
-    }
+    var initUsers = function() {
+      if (_.isUndefined(window.usersJSON)) {
+        return users.fetch();
+      } else {
+        users.reset(window.usersJSON);
+        return $.Deferred().resolve();
+      }
+    };
+
+    // Wait to start routing
+    $.when.apply($, [initFilestore(), initUsers()]).done(function() {
+      startRouting();
+    });
 
     // If our data is out-of-date, refresh and reopen event feed.
     notificationFeed.on("outofdate", function(id) {

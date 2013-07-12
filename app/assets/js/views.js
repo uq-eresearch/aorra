@@ -32,7 +32,14 @@ define([
   var FileTree = Backbone.View.extend({
     tagName: "div",
     render: function() {
-      var tree = glyphtree(this.$el, this.options);
+      this.tree().element.detach();
+      this.$el.append(this.tree().element);
+    },
+    close: function() {
+      this.tree().element.detach();
+    },
+    _buildTree: function() {
+      var tree = glyphtree($('<div/>'), this.options);
       var selectHandler = _.bind(function(event, node) {
         var m = _.defaults({}, node.attributes);
         // Emit select event
@@ -63,11 +70,11 @@ define([
       tree.events.icon.click.push(setTooltipText);
       tree.events.icon.mouseenter = [createTooltip, hoverHandler];
       tree.events.icon.mouseleave = [hoverHandler];
-      this._tree = tree;
+      return tree;
     },
     tree: function() {
       if (!this._tree) {
-        this.render();
+        this._tree = this._buildTree();
       }
       return this._tree;
     },
@@ -846,6 +853,62 @@ define([
       return templates.renderInto(this.$el, 'start_page', {});
     }
   });
+  
+  var UserMenu = Backbone.View.extend({
+    initialize: function() { this.render(); },
+    render: function() {
+      return templates.renderInto(this.$el, 'user_menu', {});
+    }
+  });
+  
+  var ChangePasswordView = Backbone.View.extend({
+    initialize: function() { this.render(); },
+    events: {
+      'keyup #newPassword,#repeatPassword': 'typePassword',
+      'click button[type="submit"]': 'submitForm'
+    },
+    render: function() {
+      return templates.renderInto(this.$el, 'change_password', {});
+    },
+    typePassword: function() {
+      var minlength = 6;
+      var $submit = this.$el.find('form button[type="submit"]');
+      var $passwords = this.$el.find('#newPassword, #repeatPassword');
+      var valid = (function() {
+        var values = $.map($passwords, function(v) { return $(v).val() });
+        return _.any(values, function(v) { return v.length >= minlength }) &&
+          _.uniq(values).length == 1;
+      })();
+      $passwords.parents('.control-group')
+        .removeClass('success error')
+        .addClass( valid ? 'success' : 'error' );
+      $submit.prop('disabled', !valid);
+    },
+    submitForm: function() {
+      var $form = this.$el.find('form');
+      var $out = $form.find('.outcome');
+      $.ajax({
+        url: $form.attr('action'),
+        type: $form.attr('method'),
+        data: $form.serialize(),
+        success: function() {
+          return templates.renderInto($out, 'alert_box', {
+            type: 'success',
+            icon: 'smile',
+            message: 'Password changed successfully.'
+          });
+        },
+        error: function(jqXHR, textStatus) {
+          return templates.renderInto($out, 'alert_box', {
+            type: 'danger',
+            icon: 'frown',
+            message: 'Unable to change password: '+jqXHR.responseText
+          });
+        }
+      });
+      return false;
+    }
+  });
 
   var AppLayout = Backbone.Marionette.Layout.extend({
     template: "#main-layout",
@@ -854,30 +917,45 @@ define([
       sidebar: "#sidebar"
     },
     initialize: function(options) {
-      this.showLoading();
       // Create Flag
       this.users = options.users;
     },
+    getFileTree: function() {
+      if (_.isUndefined(this._fileTree)) {
+        this._fileTree = new FileTree();
+      }
+      return this._fileTree;
+    },
+    changePassword: function() {
+      this.sidebar.show(new UserMenu());
+      this.main.show(new ChangePasswordView())
+    },
     showLoading: function() {
+      this.main.show(this.getFileTree());
       this.main.show(new LoadingView());
     },
     showStart: function() {
+      this.sidebar.show(this.getFileTree());
       this.main.show(new StartView());
     },
     showFolder: function(folder) {
+      this.sidebar.show(this.getFileTree());
       this.main.show(new FolderView({ model: folder }));
     },
     showFile: function(file) {
+      this.sidebar.show(this.getFileTree());
       this.main.show(new FileView({ model: file, users: this.users }));
     },
     showFileDiff: function(file, versionName) {
+      this.sidebar.show(this.getFileTree());
       this.main.show(new FileDiffView({
         model: file,
         versionName: versionName
       }));
     },
     showDeleted: function(fof) {
-      this.main.show(new DeletedView({ model: fof}));
+      this.sidebar.show(this.getFileTree());
+      this.main.show(new DeletedView({ model: fof }));
     }
   });
 

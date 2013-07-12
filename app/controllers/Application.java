@@ -4,6 +4,7 @@ import static play.data.Form.form;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Map;
 import java.util.Set;
 
 import javax.jcr.PathNotFoundException;
@@ -112,7 +113,6 @@ public final class Application extends SessionAwareController {
               form(User.ChangePassword.class)));
         } else {
           return forbidden();
-
         }
       }
     });
@@ -139,6 +139,32 @@ public final class Application extends SessionAwareController {
                   clearPassword, email));
         } else {
           return forbidden();
+        }
+      }
+    });
+  }
+
+  @SubjectPresent
+  public final Result changePassword() {
+    return sessionFactory.inSession(new F.Function<Session, Result>() {
+      @Override
+      public Result apply(Session session) throws RepositoryException {
+        final Map<String, String[]> params =
+            ctx().request().body().asFormUrlEncoded();
+        final UserDAO dao = getUserDAO(session);
+        final User user = dao.get(getUser());
+        if (!params.containsKey("newPassword") ||
+            !params.containsKey("currentPassword")) {
+          return badRequest("Current and new password required.")
+              .as("text/plain");
+        }
+        final String currentPassword = params.get("currentPassword")[0];
+        final String newPassword = params.get("newPassword")[0];
+        if (dao.checkPassword(user, currentPassword)) {
+          dao.setPassword(user, newPassword);
+          return ok();
+        } else {
+          return badRequest("Incorrect current password.").as("text/plain");
         }
       }
     });

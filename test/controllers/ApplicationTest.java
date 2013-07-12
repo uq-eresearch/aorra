@@ -33,6 +33,8 @@ import org.apache.jackrabbit.api.security.user.Group;
 import org.jcrom.Jcrom;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
+
 import play.Play;
 import play.libs.F;
 import play.mvc.Result;
@@ -209,6 +211,52 @@ public class ApplicationTest {
         assertThat(pageContent).contains(user.getEmail());
         assertThat(pageContent).doesNotContain("name=\"password\"");
 
+      }
+    });
+  }
+
+  @Test
+  public void changePassword() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) {
+        final UserDAO dao = new UserDAO(session, jcrom());
+        {
+          final Map<String,String> data = ImmutableMap.<String, String>builder()
+            .put("newPassword", "passphrase")
+            .build();
+          final Result result = callAction(
+            controllers.routes.ref.Application.changePassword(),
+            newRequest.withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(400);
+          assertThat(dao.checkPassword(user, "passphrase")).isFalse();
+        }
+        {
+          final Map<String,String> data = ImmutableMap.<String, String>builder()
+            .put("currentPassword", "notthepassword")
+            .put("newPassword", "passphrase")
+            .build();
+          final Result result = callAction(
+            controllers.routes.ref.Application.changePassword(),
+            newRequest.withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(400);
+          assertThat(dao.checkPassword(user, "passphrase")).isFalse();
+        }
+        {
+          final Map<String,String> data = ImmutableMap.<String, String>builder()
+            .put("currentPassword", "password")
+            .put("newPassword", "passphrase")
+            .build();
+          final Result result = callAction(
+            controllers.routes.ref.Application.changePassword(),
+            newRequest.withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(dao.checkPassword(user, "passphrase")).isTrue();
+        }
+        return session;
       }
     });
   }
