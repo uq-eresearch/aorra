@@ -255,8 +255,7 @@
 
       GlyphTree.prototype._setRootContainer = function(container) {
         this.rootNodes = container;
-        $(this.element).empty();
-        $(this.element).append(container.element());
+        $(this.element).html(container.element());
         return this;
       };
 
