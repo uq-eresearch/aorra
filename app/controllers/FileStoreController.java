@@ -284,35 +284,23 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result downloadFolder(final String folderId) {
-    return inUserSession(new F.Function<Session, Result>() {
+    return folderBasedResult(folderId, new FolderOp() {
       @Override
-      public final Result apply(Session session) throws RepositoryException,
-          IOException {
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        final FileStore.FileOrFolder fof;
-        if (folderId == null) {
-          fof = fm.getRoot();
-        } else {
-          fof = fm.getByIdentifier(folderId);
-        }
-        if (fof instanceof FileStoreImpl.Folder) {
-          final FileStore.Folder folder = (FileStore.Folder) fof;
-          final FileStoreHelper fh = new FileStoreHelper(session);
-          final java.io.File zipFile = fh.createZipFile(folder);
-          ctx().response().setContentType("application/zip");
-          ctx().response().setHeader("Content-Disposition",
-              "attachment; filename="+fof.getName()+".zip");
-          ctx().response().setHeader("Content-Length", zipFile.length()+"");
-          return ok(new FileInputStream(zipFile) {
-            @Override
-            public void close() throws IOException {
-              super.close();
-              zipFile.delete();
-            }
-          });
-        } else {
-          return notFound();
-        }
+      public Result apply(Session session, Folder folder)
+          throws RepositoryException, IOException {
+        final FileStoreHelper fh = new FileStoreHelper(session);
+        final java.io.File zipFile = fh.createZipFile(folder);
+        ctx().response().setContentType("application/zip");
+        ctx().response().setHeader("Content-Disposition",
+            "attachment; filename="+folder.getName()+".zip");
+        ctx().response().setHeader("Content-Length", zipFile.length()+"");
+        return ok(new FileInputStream(zipFile) {
+          @Override
+          public void close() throws IOException {
+            super.close();
+            zipFile.delete();
+          }
+        });
       }
     });
   }
