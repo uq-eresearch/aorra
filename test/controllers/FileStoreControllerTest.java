@@ -17,6 +17,7 @@ import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.injector;
 import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
+import helpers.FileStoreHelper;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import play.api.mvc.Call;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http;
+import play.mvc.Http.Status;
 import play.mvc.Result;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.FileStore;
@@ -219,23 +221,46 @@ public class FileStoreControllerTest {
         final FileStore.Manager fm = fileStore().getManager(session);
         final FlagStore.Manager flm =
             injector().getInstance(FlagStore.class).getManager(session);
-        final ObjectNode data = Json.newObject();
-        data.put("targetId", fm.getRoot().getIdentifier());
-        data.put("userId", user.getId());
-        final Result result = callAction(
-            controllers.routes.ref.FileStoreController.addFlag(
-                FlagStore.FlagType.WATCH.toString()),
-            newRequest.withJsonBody(data));
-        assertThat(status(result)).isEqualTo(201);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
-        final Flag flag =
-            flm.getFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
-        final String expectedContent = (new JsonBuilder())
-            .toJson(flag)
-            .toString();
-        assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        {
+          final ObjectNode data = Json.newObject();
+          data.put("targetId", fm.getRoot().getIdentifier());
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.addFlag(
+                  FlagStore.FlagType.WATCH.toString()),
+              newRequest.withJsonBody(data));
+          assertThat(status(result)).isEqualTo(Status.BAD_REQUEST);
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        }
+        {
+          final ObjectNode data = Json.newObject();
+          data.put("targetId", fm.getRoot().getIdentifier());
+          data.put("userId", "somebodyelse");
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.addFlag(
+                  FlagStore.FlagType.WATCH.toString()),
+              newRequest.withJsonBody(data));
+          assertThat(status(result)).isEqualTo(Status.FORBIDDEN);
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        }
+        {
+          final ObjectNode data = Json.newObject();
+          data.put("targetId", fm.getRoot().getIdentifier());
+          data.put("userId", user.getId());
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.addFlag(
+                  FlagStore.FlagType.WATCH.toString()),
+              newRequest.withJsonBody(data));
+          assertThat(status(result)).isEqualTo(Status.CREATED);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          final Flag flag =
+              flm.getFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
+          final String expectedContent = (new JsonBuilder())
+              .toJson(flag)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        }
         return session;
       }
     });
@@ -260,7 +285,7 @@ public class FileStoreControllerTest {
                   FlagStore.FlagType.WATCH.toString(),
                   flag.getId()),
               newRequest);
-          assertThat(status(result)).isEqualTo(204);
+          assertThat(status(result)).isEqualTo(Status.NO_CONTENT);
           assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
           assertThat(flm.hasFlag(FlagType.WATCH,
               fm.getRoot().getIdentifier(), user)).isFalse();
@@ -333,11 +358,11 @@ public class FileStoreControllerTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
-        {
+        for (String mime : new String[]{"application/json", "text/javascript"}){
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.showFolder(
                   fm.getRoot().getIdentifier()),
-              newRequest.withHeader("Accept", "application/json"));
+              newRequest.withHeader("Accept", mime));
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
@@ -384,14 +409,14 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "application/json"));
           assertThat(status(result)).isEqualTo(400);
         }
-        {
-          final FileStore.File file =
-              fm.getRoot().createFile("test.txt", "text/plain",
-                  new ByteArrayInputStream("Some content.".getBytes()));
+        final FileStore.File file =
+            fm.getRoot().createFile("test.txt", "text/plain",
+                new ByteArrayInputStream("Some content.".getBytes()));
+        for (String mime : new String[]{"application/json", "text/javascript"}){
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.showFile(
                   file.getIdentifier()),
-              newRequest.withHeader("Accept", "application/json"));
+              newRequest.withHeader("Accept", mime));
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
@@ -401,6 +426,44 @@ public class FileStoreControllerTest {
               .toString();
           assertThat(contentAsString(result)).contains(expectedContent);
         }
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void getFolderUnsupported() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.showFolder(
+                fm.getRoot().getIdentifier()),
+            newRequest.withHeader("Accept", "text/plain"));
+        assertThat(status(result)).isEqualTo(Status.UNSUPPORTED_MEDIA_TYPE);
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void getFileUnsupported() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.showFile(
+                fm.getRoot().getIdentifier()),
+            newRequest.withHeader("Accept", "text/plain"));
+        assertThat(status(result)).isEqualTo(Status.UNSUPPORTED_MEDIA_TYPE);
         return session;
       }
     });
@@ -558,6 +621,30 @@ public class FileStoreControllerTest {
   }
 
   @Test
+  public void mkdir() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        assertThat(fm.getFileOrFolder("/foo")).isNull();
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.mkdir(
+                  fm.getRoot().getIdentifier(), "foo"),
+              newRequest);
+          assertThat(status(result)).isEqualTo(201);
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        }
+        assertThat(fm.getFileOrFolder("/foo")).isNotNull();
+        return session;
+      }
+    });
+  }
+
+  @Test
   public void downloadFile() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override
@@ -587,6 +674,36 @@ public class FileStoreControllerTest {
       }
     });
   }
+
+  @Test
+  public void downloadFolder() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        fm.getRoot().createFile("test.txt", "text/plain",
+            new ByteArrayInputStream("Some content.".getBytes()));
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.downloadFolder(
+                  fm.getRoot().getIdentifier()),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Content-Disposition", result))
+            .startsWith("attachment; filename=");
+          // File result is async
+          assertThat(result.getWrappedResult()).isInstanceOf(
+              play.api.mvc.AsyncResult.class);
+        }
+        return session;
+      }
+    });
+  }
+
 
   @Test
   public void fileTextSummary() {
