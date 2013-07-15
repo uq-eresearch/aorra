@@ -38,6 +38,7 @@ import scala.collection.Seq;
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 
+import com.feth.play.module.mail.Mailer.Mail;
 import com.feth.play.module.mail.Mailer.Mail.Body;
 import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
 import com.feth.play.module.pa.providers.password.UsernamePasswordAuthUser;
@@ -108,6 +109,24 @@ public class JackrabbitEmailPasswordAuthProvider
         .build();
     handleSignup(fakeContext(data));
   }
+
+  public void sendResetEmail(final Context ctx, final String email) {
+    final SignupUser user = getSessionFactory().inSession(
+        new F.Function<Session, SignupUser>() {
+      @Override
+      public SignupUser apply(final Session session) {
+        final UserDAO dao = new UserDAO(session, getJcrom());
+        final User u = dao.findByEmail(email);
+        return new SignupUser(u.getEmail(), u.getName());
+      }
+    });
+    final String record = generateVerificationRecord(user);
+    final Body body = getVerifyEmailMailingBody(record, user, ctx);
+    final Mail verifyMail = new Mail("Password reset for AORRA", body,
+        new String[] { getEmailName(user) });
+    mailer.sendMail(verifyMail);
+  }
+
 
   private Http.Context fakeContext(Map<String,String> data) {
     final play.api.mvc.Request<Http.RequestBody> req =

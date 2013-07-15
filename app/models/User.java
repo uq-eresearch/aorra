@@ -14,7 +14,6 @@ import javax.jcr.nodetype.NodeType;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrName;
 import org.jcrom.annotations.JcrNode;
@@ -106,6 +105,19 @@ public class User {
     @Override
     public String getPassword() {
       return null;
+    }
+  }
+
+  public static class ResetPassword {
+    @Required
+    @Email
+    public String email;
+
+    public ResetPassword() {}
+    public ResetPassword(String e) { this.email = e; }
+
+    public String getEmail() {
+      return email;
     }
   }
 

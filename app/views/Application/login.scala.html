@@ -28,6 +28,11 @@
         @flash().get("error")
       </div>
     }
+    @if(flash.contains("info")) {
+      <div class="alert alert-info">
+        @flash().get("info")
+      </div>
+    }
   </div>
   <div class="well login-container">
   <h1 id="big-headline">
@@ -49,6 +54,10 @@
       <i class="icon-signin"></i> Login
     </button>
   }
+  
+  <p class="text-align: center">
+    <a href="@routes.Application.forgottenPassword()">Forgotten Password?</a>
+  </p>
   
   <p>
     For more information, contact the 
