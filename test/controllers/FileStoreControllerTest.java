@@ -48,6 +48,7 @@ import play.mvc.Http.Status;
 import play.mvc.Result;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.FileStore;
+import service.filestore.FileStore.Permission;
 import service.filestore.FlagStore;
 import service.filestore.JsonBuilder;
 import service.filestore.FlagStore.FlagType;
@@ -734,7 +735,7 @@ public class FileStoreControllerTest {
   }
 
   @Test
-  public void getGroupJson() {
+  public void groupPermissionsJSON() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override
       public Session apply(
@@ -751,6 +752,65 @@ public class FileStoreControllerTest {
         assertThat(charset(result)).isEqualTo("utf-8");
         assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
         assertThat(contentAsString(result)).contains("testgroup");
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void groupPermissionJSON() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.groupPermission(
+                fm.getRoot().getIdentifier(),
+                "testgroup"),
+            newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        final JsonNode json = Json.parse(contentAsString(result));
+        assertThat(json.get("name").asText()).isEqualTo("testgroup");
+        assertThat(json.get("access").asText()).isEqualTo("RW");
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void permissionUpdateJSON() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        {
+          final ObjectNode data = Json.newObject();
+          data.put("name", "testgroup");
+          data.put("access", "RO");
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.permissionUpdate(
+                  fm.getRoot().getIdentifier()),
+              newRequest.withJsonBody(data));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          final JsonNode json = Json.parse(contentAsString(result));
+          assertThat(json.get("name").asText()).isEqualTo("testgroup");
+          assertThat(json.get("access").asText()).isEqualTo("RO");
+          // Check change was actually made
+          Map<String, Permission> perms = fm.getRoot().getGroupPermissions();
+          assertThat(perms.get("testgroup")).isEqualTo(Permission.RO);
+        }
         return session;
       }
     });

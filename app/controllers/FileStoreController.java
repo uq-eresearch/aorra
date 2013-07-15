@@ -373,7 +373,8 @@ public final class FileStoreController extends SessionAwareController {
           return notFound();
         }
         final Permission access = permissions.get(groupName);
-        return ok(groupJson(groupName, access)).as("application/json");
+        return ok(groupJson(groupName, access))
+            .as("application/json; charset=utf-8");
       }
     });
   }
@@ -414,7 +415,9 @@ public final class FileStoreController extends SessionAwareController {
     if (id == null) {
       return notFound();
     }
-    return sessionFactory.inSession(new F.Function<Session, Result>() {
+    // Try granting the permission
+    final Result result =
+        sessionFactory.inSession(new F.Function<Session, Result>() {
       @Override
       public Result apply(final Session session) throws Throwable {
         final GroupManager gm = new GroupManager(session);
@@ -427,9 +430,12 @@ public final class FileStoreController extends SessionAwareController {
             session.getNodeByIdentifier(id).getPath(),
             accessLevel.toJackrabbitPermission());
         fileStoreImpl.getEventManager().tell(Event.updateFolder(id));
-        return ok();
+        return null;
       }
     });
+    if (result != null)
+      return result;
+    return groupPermission(folderId, groupName);
   }
 
   @SubjectPresent
