@@ -261,9 +261,9 @@ public class JackrabbitEmailPasswordAuthProvider
   @Override
   protected Body getVerifyEmailMailingBody(String verificationToken,
       SignupUser user, Context ctx) {
-    // TODO: Make this intelligible
-    return new Body(controllers.routes.Application.verify(
-        user.getEmail(), verificationToken).absoluteURL(ctx.request()));
+    return new Body(views.txt.email.verification.render(
+        verificationToken,
+        ctx.request(), user).toString());
   }
 
   @Override

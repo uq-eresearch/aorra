@@ -1,0 +1,11 @@
+@(
+  token: String,
+  request: play.mvc.Http.Request,
+  user: providers.JackrabbitEmailPasswordAuthProvider.SignupUser
+)
+
+Follow the link below to verify your email address and set your password
+for AORRA:
+
+@(controllers.routes.Application.verify(user.getEmail(), token)
+  .absoluteURL(request))
