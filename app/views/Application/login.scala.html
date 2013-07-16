@@ -2,13 +2,14 @@
 
 @import helper.twitterBootstrap._
 
-@inlineInput(field: play.data.Form.Field, inputType: String, icon: String, placeholder: String = "") = {
+@inlineInput(field: play.data.Form.Field, inputType: String, icon: String, 
+  placeholder: String = "", size: String = "medium") = {
 <div class="control-group @(if (field.errors.length > 0) {"error"})">
   <div class="input-prepend">
     <span class="add-on" title="@(field.name)">
       <i class="icon-@(icon)"></i>
     </span>
-    <input class="input-medium" type="@inputType" id="@(field.id)"
+    <input class="input-@(size)" type="@inputType" id="@(field.id)"
       name="@(field.name)" value="@(field.value)" placeholder="@placeholder"/>
   </div>
 </div>
@@ -55,15 +56,21 @@
     </button>
   }
   
-  <p class="text-align: center">
-    <a href="@routes.Application.forgottenPassword()">Forgotten Password?</a>
-  </p>
+  <ul class="inline">
+    <li>
+      <a class="muted" href="mailto:support@@aorra.freshdesk.com"
+         title="The University of Queensland ITEE e-Research Group">
+        Questions?
+      </a>
+    </li>
+    <li> &#x25aa; </li>
+    <li>
+      <a class="muted" href="@routes.Application.forgottenPassword()">
+      Forgotten Password?
+      </a>
+    </li>
+  </ul>
   
-  <p>
-    For more information, contact the 
-    <a href="mailto:support@@aorra.freshdesk.com"
-      title="The University of Queensland ITEE e-Research Group"
-    >AORRA Developers</a>.
   </div>
   </div>
   
