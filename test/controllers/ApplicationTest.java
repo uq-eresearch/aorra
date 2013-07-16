@@ -17,6 +17,7 @@ import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.jcrom;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,10 +33,13 @@ import models.UserDAO;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.jcrom.Jcrom;
 import org.junit.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import com.google.common.collect.ImmutableMap;
 
 import play.Play;
+import play.api.mvc.Call;
 import play.libs.F;
 import play.mvc.Result;
 import play.test.FakeRequest;
@@ -339,6 +343,138 @@ public class ApplicationTest {
     });
   }
 
+
+  @Test
+  public void passwordReset() {
+    running(fakeAorraApp(), new Runnable() {
+      @Override
+      public void run() {
+        final User user = createNewUser("user@domain.com", "unknownpassword");
+        // Clear verification token
+        getSessionFactory().inSession(new F.Function<Session, Session>() {
+          @Override
+          public Session apply(Session session) throws Throwable {
+            final UserDAO dao = getUserDAO(session);
+            final User u = dao.findByEmail(user.getEmail());
+            u.clearVerificationToken();
+            dao.update(u);
+            return session;
+          }
+        });
+        assertThat(getToken(user.getEmail())).isNull();
+        {
+          final Result result = callAction(
+            controllers.routes.ref.Application.login(),
+            fakeRequest());
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/html");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          final Document doc = Jsoup.parse(contentAsString(result));
+          final Call resetRoute =
+              controllers.routes.Application.forgottenPassword();
+          assertThat(doc.select("a[href="+resetRoute.url()+"]"))
+            .as("forgotten password link").hasSize(1);
+        }
+        {
+          final Result result = callAction(
+            controllers.routes.ref.Application.forgottenPassword(),
+            fakeRequest());
+          assertThat(status(result)).isEqualTo(200);
+          final Document doc = Jsoup.parse(contentAsString(result));
+          assertThat(doc.select("input[name=email]"))
+            .as("has email field").hasSize(1);
+          assertThat(doc.select("input[name=email]").first().attr("type"))
+            .isEqualTo("email");
+          assertThat(doc.select("button[type=submit]"))
+            .as("has submit button").hasSize(1);
+          final Call submitRoute =
+              controllers.routes.Application.postForgottenPassword();
+          assertThat(doc.select("form").first().attr("action"))
+            .isEqualTo(submitRoute.url());
+          assertThat(doc.select("form").first().attr("method"))
+            .isEqualTo(submitRoute.method());
+        }
+        {
+          assertThat(getToken(user.getEmail())).isNull();
+          final Map<String,String> data = new HashMap<String,String>();
+          data.put("email", user.getEmail());
+          final Result result = callAction(
+            controllers.routes.ref.Application.postForgottenPassword(),
+            fakeRequest().withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(303);
+          assertThat(header("Location", result))
+            .isEqualTo(controllers.routes.Application.login().url());
+          assertThat(flash(result).containsKey("info")).isTrue();
+          assertThat(getToken(user.getEmail())).isNotNull();
+        }
+        {
+          final Result result = callAction(
+            controllers.routes.ref.Application.verify(user.getEmail(),
+                getToken(user.getEmail())),
+            fakeRequest());
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/html");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          final Document doc = Jsoup.parse(contentAsString(result));
+          assertThat(doc.select("input[name=password]"))
+            .as("has password field").hasSize(1);
+          assertThat(doc.select("input[name=repeatPassword]"))
+          .as("has repeat password field").hasSize(1);
+        }
+        {
+          assertThat(checkPwd(user.getEmail(), "newpass")).isFalse();
+          final Map<String,String> data = new HashMap<String,String>();
+          data.put("password", "newpassword");
+          data.put("repeatPassword", "newpassword");
+          final Result result = callAction(
+            controllers.routes.ref.Application.postVerify(user.getEmail(),
+                getToken(user.getEmail())),
+            fakeRequest().withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(303);
+          assertThat(checkPwd(user.getEmail(), "newpassword"))
+            .as("password has been reset").isTrue();
+          assertThat(getToken(user.getEmail()))
+            .as("verification token has been cleared").isNull();
+        }
+      }
+
+      protected boolean checkPwd(final String email, final String password) {
+        return getSessionFactory().inSession(new F.Function<Session, Boolean>(){
+          @Override
+          public Boolean apply(Session session) throws Throwable {
+            final UserDAO dao = getUserDAO(session);
+            final User u = dao.findByEmail(email);
+            dao.update(u);
+            return dao.checkPassword(u, password);
+          }
+        });
+      }
+
+      protected String getToken(final String email) {
+        return getSessionFactory().inSession(new F.Function<Session, String>() {
+          @Override
+          public String apply(Session session) throws Throwable {
+            final UserDAO dao = getUserDAO(session);
+            final User u = dao.findByEmail(email);
+            dao.update(u);
+            return extractToken(u);
+          }
+
+          public String extractToken(User user) {
+            try {
+              Field vtField = user.getClass()
+                  .getDeclaredField("verificationToken");
+              vtField.setAccessible(true);
+              return (String) vtField.get(user);
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          }
+        });
+      }
+
+    });
+  }
 
   @Test
   public void userCannotInviteThemselves() {

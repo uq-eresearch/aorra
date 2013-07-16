@@ -26,7 +26,8 @@ object ApplicationBuild extends Build {
     "tyrex" % "tyrex" % "1.0.1", // JNDI provider for CRSH Jackrabbit access
     "com.feth" %% "play-authenticate" % "0.2.5-SNAPSHOT",
     "eu.medsea.mimeutil" % "mime-util" % "2.1.3",
-    "org.apache.tika" % "tika-parsers" % "1.3"
+    "org.apache.tika" % "tika-parsers" % "1.3",
+    "org.jsoup" % "jsoup" % "1.7.2" % "test"
   )
   
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")

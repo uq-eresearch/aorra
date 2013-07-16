@@ -29,7 +29,6 @@ import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
 import providers.JackrabbitEmailPasswordAuthProvider;
-import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
@@ -38,7 +37,6 @@ import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 
 public final class Application extends SessionAwareController {
 
@@ -130,6 +128,8 @@ public final class Application extends SessionAwareController {
           }
           String clearPassword = filledForm.field("password").value();
           dao.setPassword(user, clearPassword);
+          user.clearVerificationToken();
+          dao.update(user);
           return PlayAuthenticate.loginAndRedirect(ctx(),
               new JackrabbitEmailPasswordAuthProvider.LoginUser(
                   clearPassword, email));
@@ -138,6 +138,31 @@ public final class Application extends SessionAwareController {
         }
       }
     });
+  }
+
+  public final Result forgottenPassword() {
+    return ok(views.html.Application.forgottenPassword.render(
+        routes.Application.postForgottenPassword(),
+        form(User.ResetPassword.class)
+      )).as("text/html; charset=utf-8");
+  }
+
+  public final Result postForgottenPassword() {
+    com.feth.play.module.pa.controllers.Authenticate.noCache(response());
+    final Form<User.ResetPassword> filledForm =
+        form(User.ResetPassword.class).bindFromRequest();
+    if (filledForm.hasErrors()) {
+      // User did not fill everything properly
+      return badRequest(
+          views.html.Application.forgottenPassword.render(
+              routes.Application.postForgottenPassword(),
+              filledForm));
+    } else {
+      Play.application().plugin(JackrabbitEmailPasswordAuthProvider.class)
+        .sendResetEmail(ctx(), filledForm.field("email").value());
+      ctx().flash().put("info", "Reset email sent (if the account existed).");
+      return redirect(routes.Application.login());
+    }
   }
 
   @SubjectPresent
@@ -227,11 +252,6 @@ public final class Application extends SessionAwareController {
     return new UserDAO(session, jcrom);
   }
 
-  private boolean isAuthenticated() {
-    return PlayAuthenticate.getUser(ctx().session()) != null &&
-        getUser() != null;
-  }
-
   private String urlDecode(String str) {
     try {
       return URLDecoder.decode(str, "UTF-8");
@@ -239,10 +259,6 @@ public final class Application extends SessionAwareController {
       // Should never happen
       throw new RuntimeException(e);
     }
-  }
-
-  private Injector getInjector() {
-    return GuiceInjectionPlugin.getInjector(Play.application());
   }
 
   private Set<String> availableGroups() {
