@@ -343,6 +343,25 @@ public class ApplicationTest {
     });
   }
 
+  @Test
+  public void invitesMustProvideName() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final Map<String,String> data = new HashMap<String,String>();
+        data.put("email", "inviteduser@example.test");
+        data.put("name", "");
+        final Result result = callAction(
+          controllers.routes.ref.Application.postInvite(),
+          newRequest.withFormUrlEncodedBody(data));
+        assertThat(status(result)).isEqualTo(400);
+        return session;
+      }
+    });
+  }
 
   @Test
   public void passwordReset() {
@@ -421,20 +440,42 @@ public class ApplicationTest {
           assertThat(doc.select("input[name=repeatPassword]"))
           .as("has repeat password field").hasSize(1);
         }
+        final String token;
         {
           assertThat(checkPwd(user.getEmail(), "newpass")).isFalse();
           final Map<String,String> data = new HashMap<String,String>();
           data.put("password", "newpassword");
           data.put("repeatPassword", "newpassword");
+          token = getToken(user.getEmail());
           final Result result = callAction(
             controllers.routes.ref.Application.postVerify(user.getEmail(),
-                getToken(user.getEmail())),
+                token),
             fakeRequest().withFormUrlEncodedBody(data));
           assertThat(status(result)).isEqualTo(303);
           assertThat(checkPwd(user.getEmail(), "newpassword"))
             .as("password has been reset").isTrue();
           assertThat(getToken(user.getEmail()))
             .as("verification token has been cleared").isNull();
+        }
+        // Check we cannot reuse the link
+        {
+          final Result result = callAction(
+            controllers.routes.ref.Application.verify(user.getEmail(),
+                token),
+            fakeRequest());
+          assertThat(status(result)).isEqualTo(403);
+        }
+        {
+          final Map<String,String> data = new HashMap<String,String>();
+          data.put("password", "otherpass");
+          data.put("repeatPassword", "otherpass");
+          final Result result = callAction(
+            controllers.routes.ref.Application.postVerify(user.getEmail(),
+                token),
+            fakeRequest().withFormUrlEncodedBody(data));
+          assertThat(status(result)).isEqualTo(403);
+          assertThat(checkPwd(user.getEmail(), "otherpass"))
+            .as("password was not reset").isFalse();
         }
       }
 
