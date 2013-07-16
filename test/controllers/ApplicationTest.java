@@ -1,7 +1,6 @@
 package controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.fail;
 import static play.mvc.Http.Status.OK;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
@@ -23,7 +22,6 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -385,6 +383,8 @@ public class ApplicationTest {
           final Document doc = Jsoup.parse(contentAsString(result));
           assertThat(doc.select("input[name=email]"))
             .as("has email field").hasSize(1);
+          assertThat(doc.select("input[name=email]").first().attr("type"))
+            .isEqualTo("email");
           assertThat(doc.select("button[type=submit]"))
             .as("has submit button").hasSize(1);
           final Call submitRoute =
