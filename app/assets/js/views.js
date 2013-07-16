@@ -871,7 +871,7 @@ define([
       return templates.renderInto(this.$el, 'change_password', {});
     },
     typePassword: function() {
-      var minlength = 6;
+      var minlength = 8;
       var $submit = this.$el.find('form button[type="submit"]');
       var $passwords = this.$el.find('#newPassword, #repeatPassword');
       var valid = (function() {
