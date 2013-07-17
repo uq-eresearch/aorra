@@ -1,5 +1,5 @@
-@(path: String, filetype: String, action: String)
+@(contents : List[String]))
 Following changes were made in the AORRA system.
 
-@filetype '@path' was @action
-
+@for(content <- contents) {
+@content}
