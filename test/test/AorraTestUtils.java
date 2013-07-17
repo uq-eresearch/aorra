@@ -5,6 +5,7 @@ import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.session;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,10 +29,12 @@ import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
+import service.filestore.FlagStore;
 import service.filestore.roles.Admin;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
+import com.icegreen.greenmail.util.GreenMail;
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 
 public class AorraTestUtils {
@@ -61,7 +64,9 @@ public class AorraTestUtils {
   }
 
   public static FakeApplication fakeAorraApp(boolean muteErrors) {
-    return fakeApplication(additionalConfig(muteErrors));
+    return fakeApplication(
+        additionalConfig(muteErrors),
+        Arrays.asList("test.GreenMailPlugin"));
   }
 
   private static Map<String, Object> additionalConfig(boolean muteErrors) {
@@ -75,7 +80,13 @@ public class AorraTestUtils {
     m.put(ConfigConsts.CONF_JCR_REPOSITORY_CONFIG, REPOSITORY_CONFIG_PATH);
     m.put(ConfigConsts.CONF_JCR_HAS_RECREATION_REQUIRE, true);
     m.put("crash.enabled", false);
+    m.put("smtp.mock", false);
+    m.put("smtp.port", 3025);
     return m.build();
+  }
+
+  public static GreenMail mailServer() {
+    return Play.application().plugin(GreenMailPlugin.class).get();
   }
 
   public static JcrSessionFactory sessionFactory() {
@@ -83,7 +94,11 @@ public class AorraTestUtils {
   }
 
   public static FileStore fileStore() {
-    return injector().getInstance(FileStoreImpl.class);
+    return injector().getInstance(FileStore.class);
+  }
+
+  public static FlagStore flagStore() {
+    return injector().getInstance(FlagStore.class);
   }
 
   public static Jcrom jcrom() {
