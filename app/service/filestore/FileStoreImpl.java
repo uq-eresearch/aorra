@@ -628,12 +628,12 @@ public class FileStoreImpl implements FileStore {
 
     public Permission getAccessLevel() throws RepositoryException {
       try {
-        session().checkPermission(FILE_STORE_PATH, "read");
+        session().checkPermission(rawPath(), "read");
       } catch (AccessControlException e) {
         return Permission.NONE;
       }
       try {
-        session().checkPermission(FILE_STORE_PATH, "set_property");
+        session().checkPermission(rawPath(), "set_property");
       } catch (AccessControlException e) {
         return Permission.RO;
       }

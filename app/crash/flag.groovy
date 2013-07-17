@@ -85,7 +85,8 @@ class flag {
             String targetId = toId(session, path);
             def dao = new UserDAO(session, jcrom())
             User user = dao.findByEmail(email);
-            mgr.unsetFlag(FlagStore.FlagType.WATCH, targetId, user);
+            Flag flag = mgr.getFlag(FlagStore.FlagType.WATCH, targetId, user);
+            mgr.unsetFlag(FlagStore.FlagType.WATCH, flag.getId());
           }
         })
     }
