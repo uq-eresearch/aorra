@@ -34,7 +34,6 @@ import service.filestore.FlagStore;
 
 import com.feth.play.module.mail.Mailer;
 import com.feth.play.module.mail.Mailer.Mail.Body;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -57,7 +56,6 @@ public class NotificationManager extends Plugin {
 
         private final List<Pair<Long, Event>> events = Lists.newArrayList();
 
-        private final Application application;
         private final JcrSessionFactory sessionFactory;
         private final FileStore fileStore;
         private final FlagStore flagStore;
@@ -68,7 +66,6 @@ public class NotificationManager extends Plugin {
             JcrSessionFactory sessionFactory,
             FileStore fileStore,
             FlagStore flagStore) {
-          this.application = application;
           this.sessionFactory = sessionFactory;
           this.fileStore = fileStore;
           this.flagStore = flagStore;
@@ -149,19 +146,19 @@ public class NotificationManager extends Plugin {
         }
 
         private void processEvents(Session session, List<Event> events) throws RepositoryException {
-            List<Event> filestoreEvents = Lists.newArrayList();
-            for(Event event : events) {
-                if(stopped) {
-                    break;
-                }
-                if(event.info.type == EventManager.Event.NodeType.FLAG && isEditFlag(session, event)) {
-                    Set<String> emails = getWatchEmails(session, getTargetId(session, event));
-                    sendEditNotification(session, emails, event);
-                } else {
-                    filestoreEvents.add(event);
-                }
+          List<Event> filestoreEvents = Lists.newArrayList();
+          for(Event event : events) {
+            if (stopped) {
+              break;
             }
-            sendNotification(session, filestoreEvents);
+            if(event.info.type == EventManager.Event.NodeType.FLAG && isEditFlag(session, event)) {
+              Set<String> emails = getWatchEmails(session, getTargetId(session, event));
+              sendEditNotification(session, emails, event);
+            } else {
+              filestoreEvents.add(event);
+            }
+          }
+          sendNotification(session, filestoreEvents);
         }
 
         private Set<String> getWatchEmails(Session session, String nodeId) {
@@ -226,12 +223,12 @@ public class NotificationManager extends Plugin {
         }
 
         private String getTargetId(Session session, Event event) {
-            try {
-                Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-                return flag.getTargetId();
-            } catch(Exception e) {
-                return null;
-            }
+          try {
+            Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+            return flag.getTargetId();
+          } catch(Exception e) {
+            return null;
+          }
         }
 
         private boolean isEditFlag(Session session, Event event) {
@@ -250,49 +247,28 @@ public class NotificationManager extends Plugin {
         }
 
         private void sendEditNotification(Session session,
-                final Set<String> emails, final Event event) throws RepositoryException {
-            try {
-                Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-                String fileId = flag.getTargetId();
-                User user = flag.getUser();
-                FileStore.Manager manager = fileStore.getManager(session);
-                FileStore.FileOrFolder ff = manager.getByIdentifier(fileId);
-                if(ff == null) {
-                    return;
-                }
-                String path = ff.getPath();
-                String filetype;
-                if(ff instanceof FileStore.Folder) {
-                    filetype = "folder";
-                } else {
-                    filetype = "file";
-                }
-                String action;
-                if(EventType.CREATE == event.type) {
-                    action = "created";
-                } else if(EventType.DELETE == event.type) {
-                    return;
-                } else if(EventType.UPDATE == event.type) {
-                    return;
-                } else {
-                    return;
-                }
-                final Body body = new Body(views.txt.email.edit_notification.render(
-                        path, filetype, action, user.getName()).toString());
-                for(String email : emails) {
-                    Mailer.getDefaultMailer().sendMail("AORRA notification", body, email);
-                }
-            } catch(Exception e) {
-                return;
-            }
-        }
-
-        private String absoluteUrl(final Call call) {
+              final Set<String> emails, final Event event)
+                  throws RepositoryException {
           try {
-            URL baseUrl = new URL(application.configuration()
-                .getString("application.baseUrl"));
-            return (new URL(baseUrl, call.url())).toString();
-          } catch (MalformedURLException e) {
+            Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+            String fofId = flag.getTargetId();
+            User user = flag.getUser();
+            FileStore.Manager manager = fileStore.getManager(session);
+            FileStore.FileOrFolder ff = manager.getByIdentifier(fofId);
+            Event.NodeType type;
+            if (ff instanceof FileStore.File) {
+              type = Event.NodeType.FILE;
+            } else {
+              type = Event.NodeType.FOLDER;
+            }
+            String path = ff.getPath();
+            final Body body = new Body(views.txt.email.edit_notification.render(
+                    path, type, user.getName(), fofId).toString());
+            for(String email : emails) {
+              Mailer.getDefaultMailer().sendMail("AORRA notification",
+                  body, email);
+            }
+          } catch (Exception e) {
             throw new RuntimeException(e);
           }
         }
@@ -329,20 +305,24 @@ public class NotificationManager extends Plugin {
     }
 
   public static String absUrl(EventManager.Event event) {
+    return absUrl(event.info.type, event.info.id);
+  }
+
+  public static String absUrl(EventManager.Event.NodeType type, String id) {
     try {
       URL baseUrl = new URL(
           Play.application().configuration().getString("application.baseUrl"));
       final Call call;
-      switch (event.info.type) {
+      switch (type) {
       case FILE:
-        call = controllers.routes.FileStoreController.showFile(event.info.id);
+        call = controllers.routes.FileStoreController.showFile(id);
         break;
       case FOLDER:
-        call = controllers.routes.FileStoreController.showFolder(event.info.id);
+        call = controllers.routes.FileStoreController.showFolder(id);
         break;
       default:
         throw new RuntimeException(
-            "Invalid event type for URL:" + event.info.type);
+            "Invalid event type for URL: " + type);
       }
       return (new URL(baseUrl, call.url())).toString();
     } catch (MalformedURLException e) {

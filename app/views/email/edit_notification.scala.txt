@@ -1,4 +1,10 @@
-@(path: String, filetype: String, action: String, name: String)
+@(path: String,
+  fileType: service.filestore.EventManager.Event.NodeType,
+  name: String,
+  targetId: String)
+@import _root_.notification.NotificationManager.absUrl
+
 Following changes were made in the AORRA system.
 
-@name is now editing the @filetype '@path'
+@name is now editing the @fileType '@path'
+@absUrl(fileType, targetId)
