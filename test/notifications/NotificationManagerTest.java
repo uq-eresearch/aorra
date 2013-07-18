@@ -55,10 +55,9 @@ public class NotificationManagerTest {
           .isEqualTo("Flag User <flaguser@flagtest.test>");
         String messageContent = IOUtils.toString(message.getInputStream());
         assertThat(messageContent).contains("/test.txt");
-        System.out.println(messageContent);
-        /*assertThat(messageContent).contains(
+        assertThat(messageContent).contains(
             absoluteUrl(controllers.routes.FileStoreController.showFile(
-                f.getIdentifier())));*/
+                f.getIdentifier())));
         return session;
       }
     });

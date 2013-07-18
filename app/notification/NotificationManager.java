@@ -328,4 +328,26 @@ public class NotificationManager extends Plugin {
           });
     }
 
+  public static String absUrl(EventManager.Event event) {
+    try {
+      URL baseUrl = new URL(
+          Play.application().configuration().getString("application.baseUrl"));
+      final Call call;
+      switch (event.info.type) {
+      case FILE:
+        call = controllers.routes.FileStoreController.showFile(event.info.id);
+        break;
+      case FOLDER:
+        call = controllers.routes.FileStoreController.showFolder(event.info.id);
+        break;
+      default:
+        throw new RuntimeException(
+            "Invalid event type for URL:" + event.info.type);
+      }
+      return (new URL(baseUrl, call.url())).toString();
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 }
