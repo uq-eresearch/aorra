@@ -60,7 +60,11 @@ require(['models', 'views'], function(models, views) {
               _.each(['create', 'update', 'delete'], function(n) {
                 var eventName = t+":"+n;
                 es.addEventListener(eventName, function(event) {
-                  trigger(eventName, event.data);
+                  // Ensure that notifications always follow the UI events
+                  // that trigger them.
+                  _.delay(function() {
+                    trigger(eventName, event.data);
+                  }, 100);
                 });
               });
             })
@@ -102,8 +106,11 @@ require(['models', 'views'], function(models, views) {
     notificationFeed.on("flag:create",
       function(id) {
         _.each(users.flags(), function(c) {
+          if (c.get(id)) return; // Already exists
           c.add({ id: id });
-          c.get(id).fetch();
+          c.get(id).fetch().error(function() {
+            c.remove(id);
+          });
         });
       });
     // We can delete from all without error
