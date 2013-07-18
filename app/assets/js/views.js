@@ -531,7 +531,8 @@ define([
       this._uid = this.collection.currentId();
       this._flags = this.collection.flags()[this.dataDefaults().flagType];
       // Re-render when flags change (which will happen when we toggle)
-      this.listenTo(this._flags, 'add remove', _.bind(this.render, this));
+      this.listenTo(this._flags, 'add sync remove', 
+        _.bind(this.render, this));
     },
     serializeData: function() {
       var data = this.dataDefaults();
