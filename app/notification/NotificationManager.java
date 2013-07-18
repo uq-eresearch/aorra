@@ -57,7 +57,7 @@ public class NotificationManager extends Plugin {
 
         private String lastEventId;
 
-        private List<Pair<Long, Event>> events = Lists.newArrayList();
+        private final List<Pair<Long, Event>> events = Lists.newArrayList();
 
         private final JcrSessionFactory sessionFactory;
         private final FileStore fileStore;
@@ -167,17 +167,21 @@ public class NotificationManager extends Plugin {
             Set<Flag> flags = manager.getFlags(FlagStore.FlagType.WATCH);
             for(Flag flag : flags) {
                 if(flag.getTargetId().equals(nodeId)) {
-                    emails.add(flag.getUser().getEmail());
+                  emails.add(getEmailAddress(flag.getUser()));
                 } else {
                     try {
                         if(((SessionImpl)session).getHierarchyManager().isAncestor(
                                 new NodeId(flag.getTargetId()), new NodeId(nodeId))) {
-                            emails.add(flag.getUser().getEmail());
+                          emails.add(getEmailAddress(flag.getUser()));
                         }
                     } catch(Exception e) {}
                 }
             }
             return emails;
+        }
+
+        private String getEmailAddress(User u) {
+          return String.format("%s <%s>", u.getName(), u.getEmail());
         }
 
         private void sendNotification(Session session,
@@ -200,6 +204,7 @@ public class NotificationManager extends Plugin {
                 List<String> content = getMailContent(manager, me.getValue());
                 final Body body = new Body(views.txt.email.notification.render(
                         content).toString());
+                Logger.debug("Sending notification email to "+email);
                 Mailer.getDefaultMailer().sendMail("AORRA notification", body, email);
             }
         }

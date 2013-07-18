@@ -51,9 +51,7 @@ public class NotificationManagerTest {
         final MimeMessage message = awaitEmail("flagtest.test");
         assertThat(message).isNotNull();
         assertThat(message.getRecipients(RecipientType.TO)[0].toString())
-          .contains("flaguser@flagtest.test");
-        //assertThat(message.getRecipients(RecipientType.TO)[0].toString())
-        //  .isEqualTo("Flag User <flaguser@flagtest.test>");
+          .isEqualTo("Flag User <flaguser@flagtest.test>");
         String messageContent = IOUtils.toString(message.getInputStream());
         assertThat(messageContent).contains("/test.txt");
         return session;
