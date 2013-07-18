@@ -5,6 +5,8 @@ import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.session;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +21,7 @@ import org.jcrom.Jcrom;
 
 import play.Application;
 import play.Play;
+import play.api.mvc.Call;
 import play.libs.F;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -109,6 +112,16 @@ public class AorraTestUtils {
   public static Injector injector() {
     return Play.application().plugin(GuiceInjectionPlugin.class)
         .getInjector();
+  }
+
+  public static String absoluteUrl(final Call call) {
+    try {
+      URL baseUrl = new URL(Play.application().configuration()
+          .getString("application.baseUrl"));
+      return (new URL(baseUrl, call.url())).toString();
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   // Also used in FileStoreAsyncSpec

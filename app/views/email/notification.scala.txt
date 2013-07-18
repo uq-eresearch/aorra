@@ -1,5 +1,7 @@
-@(contents : List[String]))
+@(
+  events: List[service.filestore.EventManager.Event], 
+  items: Map[String, service.filestore.FileStore.FileOrFolder]
+)
 Following changes were made in the AORRA system.
-
-@for(content <- contents) {
-@content}
+@for(event <- events) {
+@(event.info.`type`) "@(items.get(event.info.id).getPath())" @(event.`type`)d}

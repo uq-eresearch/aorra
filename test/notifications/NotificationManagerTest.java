@@ -1,6 +1,7 @@
 package notifications;
 
 import static org.fest.assertions.Assertions.*;
+import static test.AorraTestUtils.absoluteUrl;
 import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.fileStore;
@@ -54,6 +55,10 @@ public class NotificationManagerTest {
           .isEqualTo("Flag User <flaguser@flagtest.test>");
         String messageContent = IOUtils.toString(message.getInputStream());
         assertThat(messageContent).contains("/test.txt");
+        System.out.println(messageContent);
+        /*assertThat(messageContent).contains(
+            absoluteUrl(controllers.routes.FileStoreController.showFile(
+                f.getIdentifier())));*/
         return session;
       }
     });

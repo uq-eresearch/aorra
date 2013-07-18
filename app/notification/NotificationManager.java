@@ -1,5 +1,7 @@
 package notification;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,9 @@ import org.apache.jackrabbit.core.id.NodeId;
 
 import play.Application;
 import play.Logger;
+import play.Play;
 import play.Plugin;
+import play.api.mvc.Call;
 import play.libs.F.Function;
 import scala.Tuple2;
 import service.GuiceInjectionPlugin;
@@ -30,31 +34,22 @@ import service.filestore.FlagStore;
 
 import com.feth.play.module.mail.Mailer;
 import com.feth.play.module.mail.Mailer.Mail.Body;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 
 public class NotificationManager extends Plugin {
 
   public static final String WAIT_MILLIS_KEY = "notifications.waitMillis";
 
-    private static class EmailContent {
-        public String path;
-        public String action;
-        public String filetype;
-
-        @Override
-        public String toString() {
-            return String.format("%s '%s' %s", filetype, path, action);
-        }
-    }
-
     private static class NotificationRunner implements Runnable {
 
-        // Should be set before use
-        private long maxHoldMs = 0;
+        private final long maxHoldMs;
 
         private volatile boolean stopped = false;
 
@@ -62,22 +57,23 @@ public class NotificationManager extends Plugin {
 
         private final List<Pair<Long, Event>> events = Lists.newArrayList();
 
+        private final Application application;
         private final JcrSessionFactory sessionFactory;
         private final FileStore fileStore;
         private final FlagStore flagStore;
 
         @Inject
         public NotificationRunner(
+            Application application,
             JcrSessionFactory sessionFactory,
             FileStore fileStore,
             FlagStore flagStore) {
+          this.application = application;
           this.sessionFactory = sessionFactory;
           this.fileStore = fileStore;
           this.flagStore = flagStore;
-        }
-
-        public void setMaxHold(long ms) {
-          this.maxHoldMs = ms;
+          this.maxHoldMs =
+              application.configuration().getLong(WAIT_MILLIS_KEY, 15000L);
         }
 
         @Override
@@ -206,48 +202,27 @@ public class NotificationManager extends Plugin {
                     eList.add(event);
                 }
             }
-            for(Map.Entry<String, List<Event>> me : notifications.entrySet()) {
-                String email = me.getKey();
-                List<String> content = getMailContent(manager, me.getValue());
+            for(final String email : notifications.keySet()) {
+                final List<Event> e = notifications.get(email);
+                Map<String, FileStore.FileOrFolder> items =
+                    getItems(manager, e);
                 final Body body = new Body(views.txt.email.notification.render(
-                        content).toString());
+                    e, items).toString());
                 Logger.debug("Sending notification email to "+email);
                 Mailer.getDefaultMailer().sendMail("AORRA notification", body, email);
             }
         }
 
-        private List<String> getMailContent(FileStore.Manager manager, List<Event> events) throws RepositoryException {
-            List<String> result = Lists.newArrayList();
-            for(Event event : events) {
-                String fileId = event.info.id;
-                FileStore.FileOrFolder ff = manager.getByIdentifier(fileId);
-                if(ff == null) {
-                    continue;
-                }
-                String path = ff.getPath();
-                String filetype;
-                if(ff instanceof FileStore.Folder) {
-                    filetype = "folder";
-                } else {
-                    filetype = "file";
-                }
-                String action;
-                if(EventType.CREATE == event.type) {
-                    action = "created";
-                } else if(EventType.DELETE == event.type) {
-                    action = "deleted";
-                } else if(EventType.UPDATE == event.type) {
-                    action = "updated";
-                } else {
-                    continue;
-                }
-                EmailContent content = new EmailContent();
-                content.path = path;
-                content.filetype = filetype;
-                content.action = action;
-                result.add(content.toString());
-            }
-            return result;
+        private Map<String, FileStore.FileOrFolder> getItems(
+            FileStore.Manager manager, List<Event> events)
+                throws RepositoryException {
+          final Map<String, FileStore.FileOrFolder> m = Maps.newHashMap();
+          for (final Event event : events) {
+            final String fofId = event.info.id;
+            if (!m.containsKey(fofId))
+              m.put(fofId, manager.getByIdentifier(fofId));
+          }
+          return m;
         }
 
         private String getTargetId(Session session, Event event) {
@@ -311,6 +286,16 @@ public class NotificationManager extends Plugin {
                 return;
             }
         }
+
+        private String absoluteUrl(final Call call) {
+          try {
+            URL baseUrl = new URL(application.configuration()
+                .getString("application.baseUrl"));
+            return (new URL(baseUrl, call.url())).toString();
+          } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+          }
+        }
     }
 
     private NotificationRunner runner;
@@ -323,8 +308,6 @@ public class NotificationManager extends Plugin {
     @Override
     public void onStart() {
       runner = injector().getInstance(NotificationRunner.class);
-      runner.setMaxHold(
-          application.configuration().getLong(WAIT_MILLIS_KEY, 15000L));
       Thread t = new Thread(runner, "notifications");
       t.start();
     }
@@ -336,7 +319,13 @@ public class NotificationManager extends Plugin {
     }
 
     private Injector injector() {
-      return GuiceInjectionPlugin.getInjector(application);
+      return GuiceInjectionPlugin.getInjector(application)
+          .createChildInjector(new Module() {
+            @Override
+            public void configure(Binder binder) {
+              binder.bind(Application.class).toInstance(application);
+            }
+          });
     }
 
 }
