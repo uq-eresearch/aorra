@@ -82,6 +82,7 @@ public class AorraTestUtils {
     m.put("crash.enabled", false);
     m.put("smtp.mock", false);
     m.put("smtp.port", 3025);
+    m.put("notifications.waitMillis", 100L);
     return m.build();
   }
 

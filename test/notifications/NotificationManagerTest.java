@@ -68,14 +68,14 @@ public class NotificationManagerTest {
 
   private MimeMessage awaitEmail(String domain) {
     MimeMessage[] messages = null;
-    int retries = 30;
+    int retries = 50;
     try {
       while (true) {
         mailServer().waitForIncomingEmail(1);
         messages = mailServer().getReceviedMessagesForDomain(domain);
         if (messages.length > 0 || retries-- <= 0)
           break;
-        Thread.sleep(1000);
+        Thread.sleep(100);
       }
     } catch (InterruptedException e) {
       throw new RuntimeException(e);

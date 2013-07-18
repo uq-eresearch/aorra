@@ -38,6 +38,8 @@ import com.google.inject.Injector;
 
 public class NotificationManager extends Plugin {
 
+  public static final String WAIT_MILLIS_KEY = "notifications.waitMillis";
+
     private static class EmailContent {
         public String path;
         public String action;
@@ -51,7 +53,8 @@ public class NotificationManager extends Plugin {
 
     private static class NotificationRunner implements Runnable {
 
-        private static final long MAX_HOLD_MS = 15000;
+        // Should be set before use
+        private long maxHoldMs = 0;
 
         private volatile boolean stopped = false;
 
@@ -71,6 +74,10 @@ public class NotificationManager extends Plugin {
           this.sessionFactory = sessionFactory;
           this.fileStore = fileStore;
           this.flagStore = flagStore;
+        }
+
+        public void setMaxHold(long ms) {
+          this.maxHoldMs = ms;
         }
 
         @Override
@@ -124,7 +131,7 @@ public class NotificationManager extends Plugin {
                     oldest = Math.min(oldest, time);
                 }
             }
-            if(!fileStoreEvents.isEmpty() && ((oldest + MAX_HOLD_MS) < now)) {
+            if(!fileStoreEvents.isEmpty() && ((oldest + maxHoldMs) < now)) {
                 events.clear();
                 result.addAll(fileStoreEvents);
             }
@@ -316,6 +323,8 @@ public class NotificationManager extends Plugin {
     @Override
     public void onStart() {
       runner = injector().getInstance(NotificationRunner.class);
+      runner.setMaxHold(
+          application.configuration().getLong(WAIT_MILLIS_KEY, 15000L));
       Thread t = new Thread(runner, "notifications");
       t.start();
     }
