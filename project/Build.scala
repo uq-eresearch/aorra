@@ -27,7 +27,8 @@ object ApplicationBuild extends Build {
     "com.feth" %% "play-authenticate" % "0.2.5-SNAPSHOT",
     "eu.medsea.mimeutil" % "mime-util" % "2.1.3",
     "org.apache.tika" % "tika-parsers" % "1.3",
-    "org.jsoup" % "jsoup" % "1.7.2" % "test"
+    "org.jsoup" % "jsoup" % "1.7.2" % "test",
+    "com.icegreen" % "greenmail" % "1.3.1b"
   )
   
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")

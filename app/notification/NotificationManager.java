@@ -1,5 +1,7 @@
 package notification;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,9 @@ import org.apache.jackrabbit.core.id.NodeId;
 
 import play.Application;
 import play.Logger;
+import play.Play;
 import play.Plugin;
+import play.api.mvc.Call;
 import play.libs.F.Function;
 import scala.Tuple2;
 import service.GuiceInjectionPlugin;
@@ -33,31 +37,24 @@ import com.feth.play.module.mail.Mailer.Mail.Body;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 
 public class NotificationManager extends Plugin {
 
-    private static class EmailContent {
-        public String path;
-        public String action;
-        public String filetype;
-
-        @Override
-        public String toString() {
-            return String.format("%s '%s' %s", filetype, path, action);
-        }
-    }
+  public static final String WAIT_MILLIS_KEY = "notifications.waitMillis";
 
     private static class NotificationRunner implements Runnable {
 
-        private static final long MAX_HOLD_MS = 15000;
+        private final long maxHoldMs;
 
         private volatile boolean stopped = false;
 
         private String lastEventId;
 
-        private List<Pair<Long, Event>> events = Lists.newArrayList();
+        private final List<Pair<Long, Event>> events = Lists.newArrayList();
 
         private final JcrSessionFactory sessionFactory;
         private final FileStore fileStore;
@@ -65,12 +62,15 @@ public class NotificationManager extends Plugin {
 
         @Inject
         public NotificationRunner(
+            Application application,
             JcrSessionFactory sessionFactory,
             FileStore fileStore,
             FlagStore flagStore) {
           this.sessionFactory = sessionFactory;
           this.fileStore = fileStore;
           this.flagStore = flagStore;
+          this.maxHoldMs =
+              application.configuration().getLong(WAIT_MILLIS_KEY, 15000L);
         }
 
         @Override
@@ -124,7 +124,7 @@ public class NotificationManager extends Plugin {
                     oldest = Math.min(oldest, time);
                 }
             }
-            if(!fileStoreEvents.isEmpty() && ((oldest + MAX_HOLD_MS) < now)) {
+            if(!fileStoreEvents.isEmpty() && ((oldest + maxHoldMs) < now)) {
                 events.clear();
                 result.addAll(fileStoreEvents);
             }
@@ -146,19 +146,19 @@ public class NotificationManager extends Plugin {
         }
 
         private void processEvents(Session session, List<Event> events) throws RepositoryException {
-            List<Event> filestoreEvents = Lists.newArrayList();
-            for(Event event : events) {
-                if(stopped) {
-                    break;
-                }
-                if(event.info.type == EventManager.Event.NodeType.FLAG && isEditFlag(session, event)) {
-                    Set<String> emails = getWatchEmails(session, getTargetId(session, event));
-                    sendEditNotification(session, emails, event);
-                } else {
-                    filestoreEvents.add(event);
-                }
+          List<Event> filestoreEvents = Lists.newArrayList();
+          for(Event event : events) {
+            if (stopped) {
+              break;
             }
-            sendNotification(session, filestoreEvents);
+            if(event.info.type == EventManager.Event.NodeType.FLAG && isEditFlag(session, event)) {
+              Set<String> emails = getWatchEmails(session, getTargetId(session, event));
+              sendEditNotification(session, emails, event);
+            } else {
+              filestoreEvents.add(event);
+            }
+          }
+          sendNotification(session, filestoreEvents);
         }
 
         private Set<String> getWatchEmails(Session session, String nodeId) {
@@ -167,17 +167,21 @@ public class NotificationManager extends Plugin {
             Set<Flag> flags = manager.getFlags(FlagStore.FlagType.WATCH);
             for(Flag flag : flags) {
                 if(flag.getTargetId().equals(nodeId)) {
-                    emails.add(flag.getUser().getEmail());
+                  emails.add(getEmailAddress(flag.getUser()));
                 } else {
                     try {
                         if(((SessionImpl)session).getHierarchyManager().isAncestor(
                                 new NodeId(flag.getTargetId()), new NodeId(nodeId))) {
-                            emails.add(flag.getUser().getEmail());
+                          emails.add(getEmailAddress(flag.getUser()));
                         }
                     } catch(Exception e) {}
                 }
             }
             return emails;
+        }
+
+        private String getEmailAddress(User u) {
+          return String.format("%s <%s>", u.getName(), u.getEmail());
         }
 
         private void sendNotification(Session session,
@@ -195,56 +199,36 @@ public class NotificationManager extends Plugin {
                     eList.add(event);
                 }
             }
-            for(Map.Entry<String, List<Event>> me : notifications.entrySet()) {
-                String email = me.getKey();
-                List<String> content = getMailContent(manager, me.getValue());
+            for(final String email : notifications.keySet()) {
+                final List<Event> e = notifications.get(email);
+                Map<String, FileStore.FileOrFolder> items =
+                    getItems(manager, e);
                 final Body body = new Body(views.txt.email.notification.render(
-                        content).toString());
+                    e, items).toString());
+                Logger.debug("Sending notification email to "+email);
                 Mailer.getDefaultMailer().sendMail("AORRA notification", body, email);
             }
         }
 
-        private List<String> getMailContent(FileStore.Manager manager, List<Event> events) throws RepositoryException {
-            List<String> result = Lists.newArrayList();
-            for(Event event : events) {
-                String fileId = event.info.id;
-                FileStore.FileOrFolder ff = manager.getByIdentifier(fileId);
-                if(ff == null) {
-                    continue;
-                }
-                String path = ff.getPath();
-                String filetype;
-                if(ff instanceof FileStore.Folder) {
-                    filetype = "folder";
-                } else {
-                    filetype = "file";
-                }
-                String action;
-                if(EventType.CREATE == event.type) {
-                    action = "created";
-                } else if(EventType.DELETE == event.type) {
-                    action = "deleted";
-                } else if(EventType.UPDATE == event.type) {
-                    action = "updated";
-                } else {
-                    continue;
-                }
-                EmailContent content = new EmailContent();
-                content.path = path;
-                content.filetype = filetype;
-                content.action = action;
-                result.add(content.toString());
-            }
-            return result;
+        private Map<String, FileStore.FileOrFolder> getItems(
+            FileStore.Manager manager, List<Event> events)
+                throws RepositoryException {
+          final Map<String, FileStore.FileOrFolder> m = Maps.newHashMap();
+          for (final Event event : events) {
+            final String fofId = event.info.id;
+            if (!m.containsKey(fofId))
+              m.put(fofId, manager.getByIdentifier(fofId));
+          }
+          return m;
         }
 
         private String getTargetId(Session session, Event event) {
-            try {
-                Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-                return flag.getTargetId();
-            } catch(Exception e) {
-                return null;
-            }
+          try {
+            Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+            return flag.getTargetId();
+          } catch(Exception e) {
+            return null;
+          }
         }
 
         private boolean isEditFlag(Session session, Event event) {
@@ -263,41 +247,30 @@ public class NotificationManager extends Plugin {
         }
 
         private void sendEditNotification(Session session,
-                final Set<String> emails, final Event event) throws RepositoryException {
-            try {
-                Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-                String fileId = flag.getTargetId();
-                User user = flag.getUser();
-                FileStore.Manager manager = fileStore.getManager(session);
-                FileStore.FileOrFolder ff = manager.getByIdentifier(fileId);
-                if(ff == null) {
-                    return;
-                }
-                String path = ff.getPath();
-                String filetype;
-                if(ff instanceof FileStore.Folder) {
-                    filetype = "folder";
-                } else {
-                    filetype = "file";
-                }
-                String action;
-                if(EventType.CREATE == event.type) {
-                    action = "created";
-                } else if(EventType.DELETE == event.type) {
-                    return;
-                } else if(EventType.UPDATE == event.type) {
-                    return;
-                } else {
-                    return;
-                }
-                final Body body = new Body(views.txt.email.edit_notification.render(
-                        path, filetype, action, user.getName()).toString());
-                for(String email : emails) {
-                    Mailer.getDefaultMailer().sendMail("AORRA notification", body, email);
-                }
-            } catch(Exception e) {
-                return;
+              final Set<String> emails, final Event event)
+                  throws RepositoryException {
+          try {
+            Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+            String fofId = flag.getTargetId();
+            User user = flag.getUser();
+            FileStore.Manager manager = fileStore.getManager(session);
+            FileStore.FileOrFolder ff = manager.getByIdentifier(fofId);
+            Event.NodeType type;
+            if (ff instanceof FileStore.File) {
+              type = Event.NodeType.FILE;
+            } else {
+              type = Event.NodeType.FOLDER;
             }
+            String path = ff.getPath();
+            final Body body = new Body(views.txt.email.edit_notification.render(
+                    path, type, user.getName(), fofId).toString());
+            for(String email : emails) {
+              Mailer.getDefaultMailer().sendMail("AORRA notification",
+                  body, email);
+            }
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
         }
     }
 
@@ -322,7 +295,39 @@ public class NotificationManager extends Plugin {
     }
 
     private Injector injector() {
-      return GuiceInjectionPlugin.getInjector(application);
+      return GuiceInjectionPlugin.getInjector(application)
+          .createChildInjector(new Module() {
+            @Override
+            public void configure(Binder binder) {
+              binder.bind(Application.class).toInstance(application);
+            }
+          });
     }
+
+  public static String absUrl(EventManager.Event event) {
+    return absUrl(event.info.type, event.info.id);
+  }
+
+  public static String absUrl(EventManager.Event.NodeType type, String id) {
+    try {
+      URL baseUrl = new URL(
+          Play.application().configuration().getString("application.baseUrl"));
+      final Call call;
+      switch (type) {
+      case FILE:
+        call = controllers.routes.FileStoreController.showFile(id);
+        break;
+      case FOLDER:
+        call = controllers.routes.FileStoreController.showFolder(id);
+        break;
+      default:
+        throw new RuntimeException(
+            "Invalid event type for URL: " + type);
+      }
+      return (new URL(baseUrl, call.url())).toString();
+    } catch (MalformedURLException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
 }

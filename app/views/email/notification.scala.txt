@@ -1,5 +1,12 @@
-@(contents : List[String]))
-Following changes were made in the AORRA system.
+@(
+  events: List[service.filestore.EventManager.Event], 
+  items: Map[String, service.filestore.FileStore.FileOrFolder]
+)
+@import java.net.URL
+@import _root_.notification.NotificationManager.absUrl
 
-@for(content <- contents) {
-@content}
+The following changes were recently made in the AORRA system:
+@for(event <- events) {
+@(event.info.`type`) "@(items.get(event.info.id).getPath())" @(event.`type`)d
+@absUrl(event)
+}
