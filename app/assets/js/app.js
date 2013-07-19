@@ -141,6 +141,7 @@ require(['models', 'views'], function(models, views) {
 
     var fileTree = layout.getFileTree();
     fs.on('reset', function() {
+      fileTree.tree().load([]);
       fs.each(function(m) {
         fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
       });
