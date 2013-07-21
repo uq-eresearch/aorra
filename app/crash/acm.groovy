@@ -211,11 +211,20 @@ class acm {
             });
             for(PermissionKey key : keys) {
                 Permission p = permissions.get(key);
-                out.println(String.format("%s - %s - %s granted %s", key.getWorkspace(), key.getPrincipal(), acm.getPath(key.getId()), p.toString()));
+                out.println(String.format("%s - %s - %s granted %s", key.getWorkspace(),
+                    key.getPrincipal(), toPath(acm, key.getId()), p.toString()));
             }
           }
         })
      }
+
+    private String toPath(AccessControlManager acm, String id) {
+        try {
+            return acm.getPath(id);
+        } catch(Exception e) {
+            return id;
+        }
+    }
 
     @Usage("grant permission to a path")
     @Command
@@ -246,11 +255,24 @@ class acm {
         sessionFactory().inSession(new Function<Session, String>() {
           public String apply(Session session) {
             final AccessControlManager acm = session.getAccessControlManager();
-            String id = acm.getId(path);
+            String id = toId(acm, path);
             acm.revoke(workspace, principal, id);
           }
         })
      }
+
+    String toId(AccessControlManager acm, String path) {
+        try {
+            String id = acm.getId(path);
+            if(StringUtils.isBlank(id)) {
+                return path;
+            } else {
+                return id;
+            }
+        } catch(Exception e) {
+            return path;
+        }
+    }
 
     @Usage("show permissions for path")
     @Command

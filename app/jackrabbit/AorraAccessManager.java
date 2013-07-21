@@ -320,10 +320,21 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
                 if(!(Permission.RO.equals(permission) || Permission.RW.equals(permission))) {
                     continue;
                 }
-                result.add(new NodeId(key.getId()));
+                NodeId id = new NodeId(key.getId());
+                if(nodeExists(id)) {
+                    result.add(id);
+                }
             }
         }
         return result;
+    }
+
+    private boolean nodeExists(NodeId id) {
+        try {
+            return ctx.getHierarchyManager().getPath(id) != null;
+        } catch(Exception e) {
+            return false;
+        }
     }
 
     private Permission getPermission(ItemId id, Principal principal) throws RepositoryException {
