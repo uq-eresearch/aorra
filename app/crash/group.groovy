@@ -44,11 +44,12 @@ class group {
           def group = (new GroupManager(session)).find(name);
           String.format("%s : %s\n", group.getID(),
             group.getMembers().collect {
-              def node = session.getNodeByIdentifier(it.getID())
-              if (node == null)
-                it.getID()
-              else
+              try {
+                def node = session.getNodeByIdentifier(it.getID())
                 node.getProperty("email").getValue().getString()
+              } catch (javax.jcr.ItemNotFoundException e) {
+                it.getID()
+              }
             }.join(", "))
         }
       })
@@ -113,9 +114,12 @@ class group {
           }
           def removeMessages = removeIds.collect {
             try {
-              def userId = dao.findByEmail(it).getJackrabbitUserId()
+              def userId = it.contains('@') ?
+                dao.findByEmail(it).getJackrabbitUserId() :
+                it
               gm.removeMember(groupName, userId)
             } catch (RuntimeException e) {
+              e.printStackTrace();
               return e.getMessage()
             }
             it+" successfully removed from "+groupName
