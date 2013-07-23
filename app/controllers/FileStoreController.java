@@ -271,6 +271,9 @@ public final class FileStoreController extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
+        final UserDAO dao = getUserDAO(session);
+        if (!isAdmin(session, dao, dao.get(getUser())))
+          return forbidden();
         FileStore.FileOrFolder fof = fm.getByIdentifier(fileOrFolderId);
         if (fof == null) {
           return notFound();
