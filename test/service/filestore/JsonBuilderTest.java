@@ -129,13 +129,15 @@ public class JsonBuilderTest {
     user.setEmail("test@example.com");
     user.setVerified(true);
     // Get JSON
-    final ObjectNode json = jb.toJson(user);
+    final ObjectNode json = jb.toJson(user, false);
     assertThat(json.get("id")).isNotNull();
     assertThat(json.get("id").asText()).isEqualTo(user.getId());
     assertThat(json.get("name")).isNotNull();
     assertThat(json.get("name").asText()).isEqualTo(user.getName());
     assertThat(json.get("email")).isNotNull();
     assertThat(json.get("email").asText()).isEqualTo(user.getEmail());
+    assertThat(json.get("isAdmin")).isNotNull();
+    assertThat(json.get("isAdmin").asBoolean()).isEqualTo(false);
   }
 
   private class TestFolder implements FileStore.Folder {

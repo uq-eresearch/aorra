@@ -15,11 +15,12 @@ public class JsonBuilder {
 
   public JsonBuilder() {}
 
-  public ObjectNode toJson(final User user) {
+  public ObjectNode toJson(final User user, final boolean isAdmin) {
     final ObjectNode json = Json.newObject();
     json.put("id", user.getId());
     json.put("name", user.getName());
     json.put("email", user.getEmail());
+    json.put("isAdmin", isAdmin);
     return json;
   }
 

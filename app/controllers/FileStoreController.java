@@ -50,9 +50,9 @@ import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
+import service.filestore.roles.Admin;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
-import com.feth.play.module.pa.PlayAuthenticate;
 import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
@@ -570,10 +570,20 @@ public final class FileStoreController extends SessionAwareController {
   protected ArrayNode getUsersJson(Session session) {
     final JsonBuilder jb = new JsonBuilder();
     final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+    final UserDAO dao = getUserDAO(session);
     for (final User user : getUserDAO(session).list()) {
-      json.add(jb.toJson(user));
+      json.add(jb.toJson(user, isAdmin(session, dao, user)));
     }
     return json;
+  }
+
+  protected boolean isAdmin(Session session, UserDAO dao, User user) {
+    try {
+      return Admin.getInstance(session).getGroup()
+          .isMember(dao.jackrabbitUser(user));
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   protected UserDAO getUserDAO(Session session) {

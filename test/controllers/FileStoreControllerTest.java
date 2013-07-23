@@ -834,9 +834,10 @@ public class FileStoreControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
         final ArrayNode json = JsonNodeFactory.instance.arrayNode();
-        json.add((new JsonBuilder()).toJson(user));
+        json.add((new JsonBuilder()).toJson(user, true));
         final String expectedContent = json.asText();
         assertThat(contentAsString(result)).contains(expectedContent);
         return session;
