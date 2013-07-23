@@ -130,7 +130,7 @@ public class FileStoreControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         final String expectedContent = (new JsonBuilder())
             .toJson(fileStore().getManager(session).getFolders())
             .toString();
@@ -160,7 +160,7 @@ public class FileStoreControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         final String expectedContent = (new JsonBuilder())
             .toJson(flag)
             .toString();
@@ -192,7 +192,7 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final String expectedContent = (new JsonBuilder())
               .toJson(flag)
               .toString();
@@ -230,7 +230,7 @@ public class FileStoreControllerTest {
                   FlagStore.FlagType.WATCH.toString()),
               newRequest.withJsonBody(data));
           assertThat(status(result)).isEqualTo(Status.BAD_REQUEST);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         }
         {
           final ObjectNode data = Json.newObject();
@@ -241,7 +241,7 @@ public class FileStoreControllerTest {
                   FlagStore.FlagType.WATCH.toString()),
               newRequest.withJsonBody(data));
           assertThat(status(result)).isEqualTo(Status.FORBIDDEN);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         }
         {
           final ObjectNode data = Json.newObject();
@@ -254,7 +254,7 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(Status.CREATED);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final Flag flag =
               flm.getFlag(FlagType.WATCH, fm.getRoot().getIdentifier(), user);
           final String expectedContent = (new JsonBuilder())
@@ -287,7 +287,7 @@ public class FileStoreControllerTest {
                   flag.getId()),
               newRequest);
           assertThat(status(result)).isEqualTo(Status.NO_CONTENT);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           assertThat(flm.hasFlag(FlagType.WATCH,
               fm.getRoot().getIdentifier(), user)).isFalse();
         }
@@ -298,7 +298,7 @@ public class FileStoreControllerTest {
                   flag.getId()),
               newRequest);
           assertThat(status(result)).isEqualTo(404);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         }
         return session;
       }
@@ -367,7 +367,7 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final String expectedContent = (new JsonBuilder())
               .toJsonShallow(fm.getRoot(), false)
               .toString();
@@ -421,7 +421,7 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final String expectedContent = (new JsonBuilder())
               .toJsonShallow(file)
               .toString();
@@ -497,7 +497,7 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final JsonNode content = Json.parse(contentAsString(result));
           assertThat(content.has("versions")).isTrue();
           for (JsonNode version : (ArrayNode) content.get("versions")) {
@@ -533,7 +533,7 @@ public class FileStoreControllerTest {
           assertThat(contentAsString(result))
             .isEqualTo("{\"files\":[{\"name\":\"test.txt\",\"size\":13}]}");
           assertThat(status(result)).isEqualTo(200);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           assertThat(IOUtils.toString(
               ((FileStore.File)
                   fm.getRoot().getFileOrFolder("test.txt")).getData()))
@@ -577,7 +577,7 @@ public class FileStoreControllerTest {
           assertThat(contentAsString(result))
             .isEqualTo("{\"files\":[{\"name\":\"test.txt\",\"size\":12}]}");
           assertThat(status(result)).isEqualTo(200);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           assertThat(IOUtils.toString(
               ((FileStore.File)
                   fm.getByIdentifier(file.getIdentifier())).getData()))
@@ -606,7 +606,7 @@ public class FileStoreControllerTest {
                   file.getIdentifier()),
               newRequest.withHeader("Accept", "application/json"));
           assertThat(status(result)).isEqualTo(204);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         }
         {
           final Result result = callAction(
@@ -614,7 +614,7 @@ public class FileStoreControllerTest {
                   file.getIdentifier()),
               newRequest.withHeader("Accept", "application/json"));
           assertThat(status(result)).isEqualTo(404);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         }
         return session;
       }
@@ -637,7 +637,7 @@ public class FileStoreControllerTest {
                   fm.getRoot().getIdentifier(), "foo"),
               newRequest);
           assertThat(status(result)).isEqualTo(201);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         }
         assertThat(fm.getFileOrFolder("/foo")).isNotNull();
         return session;
@@ -664,7 +664,7 @@ public class FileStoreControllerTest {
                   "1.0"),
               newRequest.withHeader("Accept", "text/plain"));
           assertThat(status(result)).isEqualTo(200);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           assertThat(header("Content-Disposition", result))
             .startsWith("attachment; filename=");
           // File result is async
@@ -693,7 +693,7 @@ public class FileStoreControllerTest {
                   fm.getRoot().getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           assertThat(header("Content-Disposition", result))
             .startsWith("attachment; filename=");
           // File result is async
@@ -726,7 +726,7 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "text/plain"));
           assertThat(status(result)).isEqualTo(200);
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           assertThat(contentAsString(result)).contains("Some content.");
         }
         return session;
@@ -750,7 +750,7 @@ public class FileStoreControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         assertThat(contentAsString(result)).contains("testgroup");
         return session;
       }
@@ -774,7 +774,7 @@ public class FileStoreControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         final JsonNode json = Json.parse(contentAsString(result));
         assertThat(json.get("name").asText()).isEqualTo("testgroup");
         assertThat(json.get("access").asText()).isEqualTo("RW");
@@ -803,7 +803,7 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final JsonNode json = Json.parse(contentAsString(result));
           assertThat(json.get("name").asText()).isEqualTo("testgroup");
           assertThat(json.get("access").asText()).isEqualTo("RO");
@@ -830,7 +830,7 @@ public class FileStoreControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         final ArrayNode json = JsonNodeFactory.instance.arrayNode();
         json.add((new JsonBuilder()).toJson(user));
         final String expectedContent = json.asText();

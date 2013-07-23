@@ -61,7 +61,7 @@ class FileStoreAsync @Inject()(
       } toSeq
     )
     Ok(response).as(JSON)
-      .withHeaders("Cache-Control" -> "no-cache")
+      .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
   }
 
   private def eventType(event: EmEvent) = {
@@ -87,6 +87,7 @@ class FileStoreAsync @Inject()(
         pingEnumerator.interleave(
             fsEvents(authUser, lastEventId) &> eventSourceFormatter)
       ).as("text/event-stream; charset=utf-8")
+       .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
   }
 
   private def fsEvents(authUser: AuthUser, lastEventId: String = null) = {

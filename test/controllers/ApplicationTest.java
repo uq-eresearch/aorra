@@ -50,28 +50,28 @@ import service.JcrSessionFactory;
 public class ApplicationTest {
 
   @Test
-	public void indexRedirectsToLoginPage() {
-		running(fakeAorraApp(false), new Runnable() {
-			@Override
-			public void run() {
-			  {
-			    Result result = callAction(
-			        controllers.routes.ref.FileStoreController.index());
-	        assertThat(status(result)).isEqualTo(303);
-			    assertThat(header("Location", result)).isEqualTo("/login");
-			  }
-			  {
+  public void indexRedirectsToLoginPage() {
+    running(fakeAorraApp(false), new Runnable() {
+      @Override
+      public void run() {
+        {
+          Result result = callAction(
+              controllers.routes.ref.FileStoreController.index());
+          assertThat(status(result)).isEqualTo(303);
+          assertThat(header("Location", result)).isEqualTo("/login");
+        }
+        {
           Result result = callAction(
               controllers.routes.ref.Application.login());
           assertThat(status(result)).isEqualTo(OK);
-  				assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
-  				String pageContent = contentAsString(result);
-  				assertThat(pageContent).contains("name=\"email\"");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
+          String pageContent = contentAsString(result);
+          assertThat(pageContent).contains("name=\"email\"");
           assertThat(pageContent).contains("name=\"password\"");
-			  }
-			}
-		});
-	}
+        }
+      }
+    });
+  }
 
   @Test
   public void loginDetectsInvalidEmailAddress() {

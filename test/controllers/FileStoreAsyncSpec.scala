@@ -49,6 +49,8 @@ class FileStoreAsyncSpec extends Specification {
         status(result) must equalTo(OK);
         contentType(result) must beSome("application/json")
         charset(result) must beSome("utf-8")
+        header("Cache-Control", result) must
+          beSome("max-age=0, must-revalidate");
         contentAsString(result) must equalTo("[]")
       }
     }
@@ -62,6 +64,8 @@ class FileStoreAsyncSpec extends Specification {
         status(result) must equalTo(OK);
         contentType(result) must beSome("text/event-stream")
         charset(result) must beSome("utf-8")
+        header("Cache-Control", result) must
+          beSome("max-age=0, must-revalidate");
 
         result match {
           case AsyncResult(_) => // all good
@@ -90,6 +94,8 @@ class FileStoreAsyncSpec extends Specification {
         status(result) must equalTo(OK);
         contentType(result) must beSome("application/json")
         charset(result) must beSome("utf-8")
+        header("Cache-Control", result) must
+          beSome("max-age=0, must-revalidate");
 
         contentAsString(result) must contain(expectedId)
         contentAsString(result) must contain("file:create")

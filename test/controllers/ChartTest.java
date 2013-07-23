@@ -76,7 +76,7 @@ public class ChartTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         final JsonNode json = Json.parse(contentAsString(result));
         assertThat(json.has("charts")).isTrue();
         assertThat(json.get("charts").isArray()).isTrue();
@@ -115,7 +115,7 @@ public class ChartTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final JsonNode json = Json.parse(contentAsString(result));
           assertThat(json.has("charts")).isTrue();
           assertThat(json.get("charts").isArray()).isTrue();
@@ -130,7 +130,7 @@ public class ChartTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("no-cache");
+          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final JsonNode json = Json.parse(contentAsString(result));
           assertThat(json.has("charts")).isTrue();
           assertThat(json.get("charts").isArray()).isTrue();
