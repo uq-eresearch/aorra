@@ -20,6 +20,7 @@ import org.apache.jackrabbit.api.security.user.Group
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlList
 import org.apache.jackrabbit.commons.jackrabbit.authorization.AccessControlUtils
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlEntry;
+import org.apache.jackrabbit.core.id.NodeId;
 
 import jackrabbit.PermissionKey;
 import jackrabbit.Permission;
@@ -263,14 +264,10 @@ class acm {
 
     String toId(AccessControlManager acm, String path) {
         try {
-            String id = acm.getId(path);
-            if(StringUtils.isBlank(id)) {
-                return path;
-            } else {
-                return id;
-            }
-        } catch(Exception e) {
+            NodeId nodeId = new NodeId(path);
             return path;
+        } catch(Exception e) {
+            return acm.getId(path);
         }
     }
 
