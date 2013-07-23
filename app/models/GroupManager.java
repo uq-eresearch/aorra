@@ -63,6 +63,13 @@ public class GroupManager {
     return set.build();
   }
 
+  /**
+   * Get groups to which this authorizable ID belongs. Most often used to find
+   * groups for a particular user.
+   *
+   * @param memberId
+   * @return Set of Groups
+   */
   public Set<Group> memberships(String memberId) {
     ImmutableSet.Builder<Group> set = ImmutableSet.<Group>builder();
     try {

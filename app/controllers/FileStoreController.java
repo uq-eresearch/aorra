@@ -570,7 +570,7 @@ public final class FileStoreController extends SessionAwareController {
     });
   }
 
-  protected ArrayNode getUsersJson(Session session) {
+  protected ArrayNode getUsersJson(Session session) throws RepositoryException {
     final JsonBuilder jb = new JsonBuilder();
     final ArrayNode json = JsonNodeFactory.instance.arrayNode();
     final UserDAO dao = getUserDAO(session);
@@ -580,13 +580,10 @@ public final class FileStoreController extends SessionAwareController {
     return json;
   }
 
-  protected boolean isAdmin(Session session, UserDAO dao, User user) {
-    try {
-      return Admin.getInstance(session).getGroup()
-          .isMember(dao.jackrabbitUser(user));
-    } catch (RepositoryException e) {
-      throw new RuntimeException(e);
-    }
+  protected boolean isAdmin(Session session, UserDAO dao, User user)
+      throws RepositoryException {
+    return Admin.getInstance(session).getGroup()
+        .isMember(dao.jackrabbitUser(user));
   }
 
   protected UserDAO getUserDAO(Session session) {

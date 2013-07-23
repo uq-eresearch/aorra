@@ -22,6 +22,7 @@ import helpers.FileStoreHelper;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.jcr.Session;
@@ -32,6 +33,7 @@ import models.User;
 import models.UserDAO;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.api.security.user.Group;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -610,7 +612,8 @@ public class FileStoreControllerTest {
                   file.getIdentifier()),
               newRequest.withHeader("Accept", "application/json"));
           assertThat(status(result)).isEqualTo(204);
-          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
         }
         {
           final Result result = callAction(
@@ -618,7 +621,23 @@ public class FileStoreControllerTest {
                   file.getIdentifier()),
               newRequest.withHeader("Accept", "application/json"));
           assertThat(status(result)).isEqualTo(404);
-          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+        }
+        // Check that this operation is outright forbidden without admin
+        final Set<Group> userGroups =
+            (new GroupManager(session)).memberships(user.getJackrabbitUserId());
+        for (final Group g : userGroups) {
+          Admin.getInstance(session).getGroup().removeMember(g);
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.delete(
+                  file.getIdentifier()),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(403);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
         }
         return session;
       }
