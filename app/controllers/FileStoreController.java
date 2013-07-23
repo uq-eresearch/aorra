@@ -115,12 +115,12 @@ public final class FileStoreController extends SessionAwareController {
   @SubjectPresent
   public Result showFolder(final String folderId) {
     for (final MediaRange m : ctx().request().acceptedTypes()) {
-      if (m.accepts("application/json") || m.accepts("text/javascript")) {
-        return folderJson(folderId);
-      } else if (m.accepts("text/html")) {
+      if (m.accepts("text/html")) {
         return seeOther(routes.FileStoreController.showFolder(folderId)
             .url()
             .replaceFirst("/", "/#"));
+      } else if (m.accepts("application/json") || m.accepts("text/javascript")){
+        return folderJson(folderId);
       }
     }
     return status(UNSUPPORTED_MEDIA_TYPE);
@@ -129,12 +129,12 @@ public final class FileStoreController extends SessionAwareController {
   @SubjectPresent
   public Result showFile(final String fileId) {
     for (final MediaRange m : ctx().request().acceptedTypes()) {
-      if (m.accepts("application/json") || m.accepts("text/javascript")) {
-        return fileJson(fileId);
-      } else if (m.accepts("text/html")) {
+      if (m.accepts("text/html")) {
         return seeOther(routes.FileStoreController.showFile(fileId)
             .url()
             .replaceFirst("/", "/#"));
+      } else if (m.accepts("application/json") || m.accepts("text/javascript")){
+        return fileJson(fileId);
       }
     }
     return status(UNSUPPORTED_MEDIA_TYPE);
