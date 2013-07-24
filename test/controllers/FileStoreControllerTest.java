@@ -1,26 +1,17 @@
 package controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.fail;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
-import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.header;
-import static play.test.Helpers.running;
-import static play.test.Helpers.session;
 import static play.test.Helpers.status;
-import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.injector;
-import static test.AorraTestUtils.jcrom;
-import static test.AorraTestUtils.sessionFactory;
-import helpers.FileStoreHelper;
 
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -30,7 +21,6 @@ import javax.jcr.Session;
 import models.Flag;
 import models.GroupManager;
 import models.User;
-import models.UserDAO;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.api.security.user.Group;
@@ -40,20 +30,17 @@ import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.junit.Test;
 
-import play.Play;
-import play.test.FakeRequest;
 import play.api.mvc.Call;
 import play.libs.F;
 import play.libs.Json;
-import play.mvc.Http;
 import play.mvc.Http.Status;
 import play.mvc.Result;
-import providers.JackrabbitEmailPasswordAuthProvider;
+import play.test.FakeRequest;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Permission;
 import service.filestore.FlagStore;
-import service.filestore.JsonBuilder;
 import service.filestore.FlagStore.FlagType;
+import service.filestore.JsonBuilder;
 import service.filestore.roles.Admin;
 
 public class FileStoreControllerTest {
@@ -663,6 +650,14 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
         }
         assertThat(fm.getFileOrFolder("/foo")).isNotNull();
+        // Attempt to create folder when one already exists
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.mkdir(
+                  fm.getRoot().getIdentifier(), "foo"),
+              newRequest);
+          assertThat(status(result)).isEqualTo(400);
+        }
         return session;
       }
     });
@@ -789,18 +784,29 @@ public class FileStoreControllerTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
-        final Result result = callAction(
-            controllers.routes.ref.FileStoreController.groupPermission(
-                fm.getRoot().getIdentifier(),
-                "testgroup"),
-            newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
-        final JsonNode json = Json.parse(contentAsString(result));
-        assertThat(json.get("name").asText()).isEqualTo("testgroup");
-        assertThat(json.get("access").asText()).isEqualTo("RW");
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.groupPermission(
+                  fm.getRoot().getIdentifier(),
+                  "testgroup"),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          final JsonNode json = Json.parse(contentAsString(result));
+          assertThat(json.get("name").asText()).isEqualTo("testgroup");
+          assertThat(json.get("access").asText()).isEqualTo("RW");
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.groupPermission(
+                  fm.getRoot().getIdentifier(),
+                  "doesnotexist"),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+        }
         return session;
       }
     });

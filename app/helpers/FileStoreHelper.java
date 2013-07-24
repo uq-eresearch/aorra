@@ -36,21 +36,26 @@ import eu.medsea.mimeutil.MimeUtil2;
 
 public class FileStoreHelper {
 
-  public static class FileExistsException extends Exception {
+  public abstract static class FileOrFolderException extends Exception {
+    private static final long serialVersionUID = 1L;
+    public FileOrFolderException(String msg) { super(msg); }
+  }
+
+  public static class FileExistsException extends FileOrFolderException {
     private static final long serialVersionUID = 1L;
     public FileExistsException(FileStore.File f) {
       super("File already exists: "+f.getPath());
     }
   }
 
-  public static class FolderExistsException extends Exception {
+  public static class FolderExistsException extends FileOrFolderException {
     private static final long serialVersionUID = 1L;
     public FolderExistsException(FileStore.Folder f) {
       super("Folder already exists: "+f.getPath());
     }
   }
 
-  public static class FolderNotFoundException extends Exception {
+  public static class FolderNotFoundException extends FileOrFolderException {
     private static final long serialVersionUID = 1L;
     public FolderNotFoundException(final String name) {
       super("Required folder does not exist: " + name);

@@ -2,9 +2,7 @@ package controllers;
 
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
-import helpers.FileStoreHelper.FileExistsException;
-import helpers.FileStoreHelper.FolderExistsException;
-import helpers.FileStoreHelper.FolderNotFoundException;
+import helpers.FileStoreHelper.FileOrFolderException;
 import jackrabbit.AorraAccessManager;
 
 import java.io.File;
@@ -100,11 +98,7 @@ public final class FileStoreController extends SessionAwareController {
           final String absPath =
               baseFolder.getPath() + "/" + PathUtils.relativePath(path);
           fh.mkdir(absPath, true);
-        } catch (FileExistsException e) {
-          return badRequest(e.getMessage());
-        } catch (FolderExistsException e) {
-          return badRequest(e.getMessage());
-        } catch (FolderNotFoundException e) {
+        } catch (FileOrFolderException e) {
           return badRequest(e.getMessage());
         }
         return created();
