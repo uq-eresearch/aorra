@@ -442,9 +442,9 @@ define([
       _.chain(viewsAndEls)
         .filter(isView)
         .each(_.bind(this.container.add, this.container));
-      this.els = _.map(viewsAndEls, function(viewOrEl) {
+      this.els = _.compact(_.map(viewsAndEls, function(viewOrEl) {
         return isView(viewOrEl) ? viewOrEl.$el : viewOrEl;
-      });
+      }));
       this.render();
     },
     render: function() {
@@ -456,6 +456,9 @@ define([
   });
 
   var FolderView = FileOrFolderView.extend({
+    initialize: function(options) {
+      this._users = options.users;
+    },
     serializeData: function() {
       return _(this.model.toJSON()).extend({ url: this.model.url() });
     },
@@ -475,17 +478,20 @@ define([
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       if (this.model.get('accessLevel') == 'RW') {
+        var isAdmin = this._users.current().get('isAdmin');
         this.upload.show(new FileUploadView({
           type: 'folder',
           model: this.model
         }));
         this.mkdir.show(new CreateFolderView({ model: this.model }));
-        this.permissions.show(new GroupPermissionsView({
-          model: this.model
-        }));
+        if (isAdmin) {
+          this.permissions.show(new GroupPermissionsView({
+            model: this.model
+          }));
+        }
         this.buttons.show(new InlineListView([
           new DownloadButtonView({ url: this.model.url()+"/archive" }),
-          new DeleteButtonView({ model: this.model })
+          isAdmin ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
         this.buttons.show(new InlineListView([
@@ -669,7 +675,8 @@ define([
             targetId: this.model.id
           }),
           new DownloadButtonView({ url: this.model.url()+"/version/latest" }),
-          new DeleteButtonView({ model: this.model })
+          this._users.current().get('isAdmin') ?
+              new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
         this.buttons.show(new InlineListView([
@@ -941,7 +948,7 @@ define([
     },
     showFolder: function(folder) {
       this.sidebar.show(this.getFileTree());
-      this.main.show(new FolderView({ model: folder }));
+      this.main.show(new FolderView({ model: folder, users: this.users }));
     },
     showFile: function(file) {
       this.sidebar.show(this.getFileTree());
