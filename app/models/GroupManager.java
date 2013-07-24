@@ -32,12 +32,8 @@ public class GroupManager {
     try {
       group = session.getUserManager().createGroup(groupName);
       group.setProperty(FLAG_NAME, session.getValueFactory().createValue(""));
-    } catch (AccessDeniedException e) {
-      throw new RuntimeException(e);
     } catch (AuthorizableExistsException e) {
       throw e;
-    } catch (UnsupportedRepositoryOperationException e) {
-      throw new RuntimeException(e);
     } catch (RepositoryException e) {
       throw new RuntimeException(e);
     }
@@ -53,10 +49,6 @@ public class GroupManager {
           set.add((Group) authorizable);
         }
       }
-    } catch (AccessDeniedException e) {
-      throw new RuntimeException(e);
-    } catch (UnsupportedRepositoryOperationException e) {
-      throw new RuntimeException(e);
     } catch (RepositoryException e) {
       throw new RuntimeException(e);
     }
@@ -94,13 +86,11 @@ public class GroupManager {
         throw new PathNotFoundException(groupName+" is not a group!");
       }
       if (a.getProperty(FLAG_NAME) == null) {
-        throw new PathNotFoundException(groupName+" is not a manged group.");
+        throw new PathNotFoundException(groupName+" is not a managed group.");
       }
       group = (Group) a;
-    } catch (AccessDeniedException e) {
-      throw new RuntimeException(e);
-    } catch (UnsupportedRepositoryOperationException e) {
-      throw new RuntimeException(e);
+    } catch (PathNotFoundException e) {
+      throw e;
     } catch (RepositoryException e) {
       throw new RuntimeException(e);
     }
@@ -124,10 +114,8 @@ public class GroupManager {
       if (a == null)
         throw new PathNotFoundException("User/Group does not exist.");
       group.addMember(a);
-    } catch (AccessDeniedException e) {
-      throw new RuntimeException(e);
-    } catch (UnsupportedRepositoryOperationException e) {
-      throw new RuntimeException(e);
+    } catch (PathNotFoundException e) {
+      throw e;
     } catch (RepositoryException e) {
       throw new RuntimeException(e);
     }
@@ -141,10 +129,8 @@ public class GroupManager {
       if (a == null)
         throw new PathNotFoundException("User/Group does not exist.");
       group.removeMember(a);
-    } catch (AccessDeniedException e) {
-      throw new RuntimeException(e);
-    } catch (UnsupportedRepositoryOperationException e) {
-      throw new RuntimeException(e);
+    } catch (PathNotFoundException e) {
+      throw e;
     } catch (RepositoryException e) {
       throw new RuntimeException(e);
     }
