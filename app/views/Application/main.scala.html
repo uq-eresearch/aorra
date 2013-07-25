@@ -48,7 +48,7 @@
     </script>
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.min.css")"/>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")"/>
-    <!--[if lte IE 8]>
+    <!--[if lt IE 8]>
     <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.0/css/font-awesome-ie7.min.css" rel="stylesheet">
     <![endif]-->
     @defining(play.Play.application.configuration.getString("ga.key")) { analyticsKey =>
