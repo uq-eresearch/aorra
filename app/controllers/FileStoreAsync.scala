@@ -17,6 +17,7 @@ import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.iteratee.Enumeratee
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.iteratee.Input
+import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.mvc.Accepting
@@ -44,6 +45,19 @@ class FileStoreAsync @Inject()(
 
   import helpers.NotificationFormatter.{jsonMessage, sseMessage, ssePingMessage}
 
+  val ssePingBroadcast: Enumerator[String] = {
+    import play.api.Play.current
+    import play.api.libs.concurrent.Execution.Implicits._
+    import scala.concurrent.duration._
+    val (enumerator, channel) = Concurrent.broadcast[String]
+    // Ping every 15 seconds, after the first 1 second delay
+    Akka.system.scheduler.schedule(1 seconds, 15 seconds) {
+      channel.push(ssePingMessage)
+    }
+    // Shed
+    enumerator
+  }
+
   def notifications: EssentialAction = isAuthenticated { authUser => implicit request =>
     val AcceptsEventStream = Accepting(MimeTypes.EVENT_STREAM)
     render {
@@ -64,10 +78,6 @@ class FileStoreAsync @Inject()(
       .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
   }
 
-  private def eventType(event: EmEvent) = {
-    Seq(event.info.`type`.toString(), event.`type`.toString()).mkString(":")
-  }
-
   private def lastIdInQuery(request: Request[AnyContent]) = {
     request.queryString.get("from") match {
       case Some(Seq(a, _*)) => a.toString
@@ -84,13 +94,13 @@ class FileStoreAsync @Inject()(
     }
     Ok.feed(
         Enumerator(initialEventSourceSetup()) andThen
-        pingEnumerator.interleave(
-            fsEvents(authUser, lastEventId) &> eventSourceFormatter)
+        (fsEvents(authUser, lastEventId) &> eventSourceFormatter).interleave(
+            pingEnumerator)
       ).as("text/event-stream; charset=utf-8")
        .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
   }
 
-  private def fsEvents(authUser: AuthUser, lastEventId: String = null) = {
+  private def fsEvents(authUser: AuthUser, lastEventId: String) = {
     val em = filestore.getEventManager
     var c: Channel[(String, EmEvent)] = null;
     Concurrent.unicast[(String, EmEvent)](
@@ -111,14 +121,7 @@ class FileStoreAsync @Inject()(
     )
   }
 
-  private def pingEnumerator(): Enumerator[String] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    val dtFormat = DateFormat.getDateTimeInstance()
-    Enumerator.repeatM(future {
-      Thread.sleep(15000) // 15 second interval for pings
-      ssePingMessage
-    })
-  }
+  private def pingEnumerator(): Enumerator[String] = ssePingBroadcast
 
   private def initialEventSourceSetup(): String = {
     "retry: 2000\n\n"

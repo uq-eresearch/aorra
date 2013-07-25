@@ -41,11 +41,11 @@ import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
+import play.libs.Akka;
 import play.libs.F.Function;
 import service.JcrSessionFactory;
 import service.filestore.EventManager.Event;
 import service.filestore.roles.Admin;
-import akka.actor.ActorSystem;
 import akka.actor.TypedActor;
 import akka.actor.TypedProps;
 
@@ -71,9 +71,8 @@ public class FileStoreImpl implements FileStore {
       final Jcrom jcrom) {
     this.jcrom = jcrom;
     Logger.debug(this+" - Creating file store.");
-    final ActorSystem system = ActorSystem.create();
     eventManagerImpl =
-        TypedActor.get(system).typedActorOf(
+        TypedActor.get(Akka.system()).typedActorOf(
             new TypedProps<EventManagerImpl>(
                 EventManager.class, EventManagerImpl.class));
     sessionFactory.inSession(new Function<Session, Session>() {
