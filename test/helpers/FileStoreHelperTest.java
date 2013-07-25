@@ -176,23 +176,38 @@ public class FileStoreHelperTest {
       public Session apply(final Session session,
           final FileStoreHelper fh,
           final FileStore.Manager fm) throws Throwable {
-        fh.mkdir("/a/1", true);
-        fh.mkdir("/a/2", true);
-        fh.mkdir("/b/1", true);
-        ((FileStore.Folder) fm.getFileOrFolder("/a/2"))
+        fh.mkdir("/a (a-f)/1", true);
+        fh.mkdir("/a (a-f)/2", true);
+        fh.mkdir("/b (a-f)/1", true);
+        ((FileStore.Folder) fm.getFileOrFolder("/a (a-f)/2"))
           .createFile("test.txt", "text/plain",
               new ByteArrayInputStream(
                   "Some test content.".getBytes()));
-        // Get zip file
-        final java.io.File tf = fh.createZipFile(fm.getRoot());
-        assertThat(tf).isNotNull();
-        final ZipInputStream zis = new ZipInputStream(
-            new FileInputStream(tf));
-        final ZipEntry ze = zis.getNextEntry();
-        assertThat(ze).isNotNull();
-        assertThat(ze.getName()).isEqualTo("a/2/test.txt");
-        assertThat(zis.getNextEntry()).isNull();
-        zis.close();
+        // Test root folder
+        {
+          final java.io.File tf = fh.createZipFile(fm.getRoot());
+          assertThat(tf).isNotNull();
+          final ZipInputStream zis = new ZipInputStream(
+              new FileInputStream(tf));
+          final ZipEntry ze = zis.getNextEntry();
+          assertThat(ze).isNotNull();
+          assertThat(ze.getName()).isEqualTo("a (a-f)/2/test.txt");
+          assertThat(zis.getNextEntry()).isNull();
+          zis.close();
+        }
+        // Test subfolder
+        {
+          final java.io.File tf = fh.createZipFile((FileStore.Folder)
+              fm.getFileOrFolder("/a (a-f)/2"));
+          assertThat(tf).isNotNull();
+          final ZipInputStream zis = new ZipInputStream(
+              new FileInputStream(tf));
+          final ZipEntry ze = zis.getNextEntry();
+          assertThat(ze).isNotNull();
+          assertThat(ze.getName()).isEqualTo("2/test.txt");
+          assertThat(zis.getNextEntry()).isNull();
+          zis.close();
+        }
         return session;
       }
     });

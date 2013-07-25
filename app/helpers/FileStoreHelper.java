@@ -12,6 +12,7 @@ import java.io.PrintWriter;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -113,19 +114,43 @@ public class FileStoreHelper {
         new ZipOutputStream(new FileOutputStream(tempFile));
     zos.setMethod(ZipOutputStream.DEFLATED);
     zos.setLevel(5);
-    addFolderToZip(zos, fileStore().getManager(session).getRoot());
+    addFolderToZip(zos, folder, folder);
     zos.close();
     return tempFile;
   }
 
+  /**
+   * Get string to strip from the beginning of all zip paths, using the
+   * speficied base folder.
+   *
+   * The specified folder's name should be preserved in the zip file, except
+   * in the case of the root folder.
+   *
+   * @param folder Base folder to use
+   * @return Prefix to strip from filestore paths
+   */
+  protected String getZipPath(
+      final FileStore.FileOrFolder fof,
+      final FileStore.Folder baseFolder) {
+    if (baseFolder.getPath().equals("/")) {
+      // Paths must not have a leading slash
+      return fof.getPath().substring(1);
+    } else {
+      // To be user friendly, use single base directory
+      return baseFolder.getName() + fof.getPath().replaceFirst(
+        "^"+Pattern.quote(baseFolder.getPath()), "");
+    }
+  }
+
   protected void addFolderToZip(final ZipOutputStream zos,
-      final FileStore.Folder folder) throws IOException, RepositoryException {
+      final FileStore.Folder folder,
+      final FileStore.Folder baseFolder)
+          throws IOException, RepositoryException {
     for (final FileStore.Folder subFolder : folder.getFolders()) {
-      addFolderToZip(zos, subFolder);
+      addFolderToZip(zos, subFolder, baseFolder);
     }
     for (final FileStore.File file : folder.getFiles()) {
-      // Paths must not have a leading slash
-      zos.putNextEntry(new ZipEntry(file.getPath().substring(1)));
+      zos.putNextEntry(new ZipEntry(getZipPath(file, baseFolder)));
       InputStream data = file.getData();
       IOUtils.copy(data, zos);
       zos.closeEntry();
