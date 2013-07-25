@@ -61,6 +61,7 @@ public class FileStoreImpl implements FileStore {
   public static final String FILE_STORE_PATH = "/filestore";
   public static final String FILE_STORE_NODE_NAME =
       StringUtils.stripStart(FILE_STORE_PATH, "/");
+  public static final String FILE_STORE_NAME = "AORRA";
 
   private final EventManager eventManagerImpl;
   private final Jcrom jcrom;
@@ -361,11 +362,6 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
-    public String getName() {
-      return entity.getName();
-    }
-
-    @Override
     protected String rawPath() {
       return entity.getPath();
     }
@@ -543,6 +539,8 @@ public class FileStoreImpl implements FileStore {
     }
 
     public String getName() {
+      if (rawPath().equals(FILE_STORE_PATH))
+        return FILE_STORE_NAME;
       return entity.getName();
     }
 
