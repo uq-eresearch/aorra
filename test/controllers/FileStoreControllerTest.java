@@ -75,8 +75,22 @@ public class FileStoreControllerTest {
         {
           final String id = UUID.randomUUID().toString();
           final Call call =
+              controllers.routes.FileStoreController.modifyFile(id);
+          assertThat(call.method()).isEqualTo("PUT");
+          assertThat(call.url()).isEqualTo("/file/"+id);
+        }
+        {
+          final String id = UUID.randomUUID().toString();
+          final Call call =
               controllers.routes.FileStoreController.showFolder(id);
           assertThat(call.method()).isEqualTo("GET");
+          assertThat(call.url()).isEqualTo("/folder/"+id);
+        }
+        {
+          final String id = UUID.randomUUID().toString();
+          final Call call =
+              controllers.routes.FileStoreController.modifyFolder(id);
+          assertThat(call.method()).isEqualTo("PUT");
           assertThat(call.url()).isEqualTo("/folder/"+id);
         }
         {
@@ -418,12 +432,83 @@ public class FileStoreControllerTest {
           final String expectedContent = (new JsonBuilder())
               .toJsonShallow(file)
               .toString();
-          assertThat(contentAsString(result)).contains(expectedContent);
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
         }
         return session;
       }
     });
   }
+
+  @Test
+  public void modifyFolder() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FileStore.Folder folder = fm.getRoot().createFolder("first name");
+        ObjectNode json = Json.newObject();
+        json.put("id", folder.getIdentifier());
+        json.put("name", "second name");
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.modifyFolder(
+                folder.getIdentifier()),
+            newRequest.withJsonBody(json));
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
+        final FileStore.Folder expectedFolder = (FileStore.Folder)
+            fm.getFileOrFolder("/second name");
+        assertThat(expectedFolder).isNotNull();
+        final String expectedContent = (new JsonBuilder())
+            .toJsonShallow(expectedFolder, false)
+            .toString();
+        assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void modifyFile() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FileStore.File file =
+            fm.getRoot().createFile("test.txt", "text/plain",
+                new ByteArrayInputStream("Some content.".getBytes()));
+        ObjectNode json = Json.newObject();
+        json.put("id", file.getIdentifier());
+        json.put("name", "renamed file.txt");
+        final Result result = callAction(
+            controllers.routes.ref.FileStoreController.modifyFile(
+                file.getIdentifier()),
+            newRequest.withJsonBody(json));
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
+        final FileStore.File expectedFile = (FileStore.File)
+            fm.getFileOrFolder("/renamed file.txt");
+        assertThat(expectedFile).isNotNull();
+        final String expectedContent = (new JsonBuilder())
+            .toJsonShallow(expectedFile)
+            .toString();
+        assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        return session;
+      }
+    });
+  }
+
 
   @Test
   public void getFolderUnsupported() {

@@ -232,18 +232,12 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   protected Result folderJson(final String folderId) {
-    return inUserSession(new F.Function<Session, Result>() {
+    return folderBasedResult(folderId, new FolderOp() {
       @Override
-      public final Result apply(Session session) throws RepositoryException {
+      public final Result apply(Session session, FileStore.Folder f)
+          throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
-        final FileStore.Manager fm = fileStoreImpl.getManager(session);
-        FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
-        if (fof instanceof FileStore.Folder) {
-          return ok(jb.toJsonShallow((FileStore.Folder) fof, false))
-              .as("application/json; charset=utf-8");
-        } else {
-          return notFound();
-        }
+        return ok(jb.toJsonShallow(f, false));
       }
     });
   }
@@ -258,6 +252,43 @@ public final class FileStoreController extends SessionAwareController {
       }
     });
   }
+
+  @SubjectPresent
+  public Result modifyFolder(final String folderId) {
+    return folderBasedResult(folderId, new FolderOp() {
+      @Override
+      public final Result apply(Session session, FileStore.Folder f)
+          throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final JsonNode params = ctx().request().body().asJson();
+        try {
+          f.rename(params.get("name").asText());
+          return ok(jb.toJsonShallow(f, false));
+        } catch (ItemExistsException e) {
+          return badRequest(e.getMessage());
+        }
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result modifyFile(final String fileId) {
+    return fileBasedResult(fileId, new FileOp() {
+      @Override
+      public final Result apply(Session session, FileStore.File f)
+          throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final JsonNode params = ctx().request().body().asJson();
+        try {
+          f.rename(params.get("name").asText());
+          return ok(jb.toJsonShallow(f));
+        } catch (ItemExistsException e) {
+          return badRequest(e.getMessage());
+        }
+      }
+    });
+  }
+
 
   @SubjectPresent
   public Result delete(final String fileOrFolderId) {

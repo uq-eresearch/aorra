@@ -461,6 +461,9 @@ define([
   });
 
   var FolderView = FileOrFolderView.extend({
+    modelEvents: {
+      "sync": "render"
+    },
     initialize: function(options) {
       this._users = options.users;
     },
@@ -640,6 +643,9 @@ define([
   });
 
   var FileView = FileOrFolderView.extend({
+    modelEvents: {
+      "sync": "render"
+    },
     initialize: function(options) {
       this._users = options.users;
     },
