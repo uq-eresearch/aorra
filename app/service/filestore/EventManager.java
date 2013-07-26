@@ -51,7 +51,7 @@ public interface EventManager {
     }
 
     public static enum NodeType {
-      FILE, FOLDER, FLAG;
+      FILE, FOLDER, FLAG, NOTIFICATION;
       @Override
       public String toString() { return super.toString().toLowerCase(); }
     }
@@ -119,6 +119,11 @@ public interface EventManager {
     public static Event create(Flag flag)
         throws RepositoryException {
       return new Event(EventType.CREATE, new NodeInfo(flag));
+    }
+
+    public static Event create() 
+        throws RepositoryException {
+        return new Event(EventType.CREATE, new NodeInfo(NodeType.NOTIFICATION, null));
     }
 
     public static Event updateFolder(String folderId)

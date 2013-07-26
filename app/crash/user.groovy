@@ -8,6 +8,7 @@ import org.crsh.cli.Argument
 import org.crsh.cli.Option
 import org.crsh.cli.Required
 import org.jcrom.Jcrom
+import models.Notification
 import models.User
 import models.UserDAO
 import play.Play
@@ -142,6 +143,32 @@ class user {
         }
       }
     })+ "\n";
+  }
+
+  @Usage("show  notifications")
+  @Command
+  String notifications(@Usage("email") @Argument String email) {
+    sessionFactory().inSession(new Function<Session, String>() {
+      public String apply(Session session) {
+        try {
+          def dao = new UserDAO(session, jcrom())
+          User user = dao.findByEmail(email);
+          if(user.getNotifications() == null || user.getNotifications().isEmpty()) {
+            out.println("no notifications");
+          } else {
+            for(Notification notification : user.getNotifications()) {
+                out.println("notification id: "+notification.getId());
+                out.println("notification date: "+notification.getCreated());
+                out.println("notification message: "+notification.getMessage());
+                out.println("notification read: "+notification.isRead());
+                out.println("----------------------");
+            }
+          }
+        } catch (RuntimeException e) {
+          return e.getMessage()
+        }
+      }
+    });
   }
 
   private Jcrom jcrom() {

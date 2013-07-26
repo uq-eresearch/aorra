@@ -7,15 +7,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.Flag;
+import models.Notification;
+import models.NotificationDAO;
 import models.User;
+import models.UserDAO;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jackrabbit.core.SessionImpl;
 import org.apache.jackrabbit.core.id.NodeId;
+import org.jcrom.Jcrom;
 
 import play.Application;
 import play.Logger;
@@ -28,12 +34,9 @@ import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.EventManager;
 import service.filestore.EventManager.Event;
-import service.filestore.EventManager.Event.EventType;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 
-import com.feth.play.module.mail.Mailer;
-import com.feth.play.module.mail.Mailer.Mail.Body;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -44,7 +47,7 @@ import com.google.inject.Module;
 
 public class NotificationManager extends Plugin {
 
-  public static final String WAIT_MILLIS_KEY = "notifications.waitMillis";
+    public static final String WAIT_MILLIS_KEY = "notifications.waitMillis";
 
     private static class NotificationRunner implements Runnable {
 
@@ -59,16 +62,19 @@ public class NotificationManager extends Plugin {
         private final JcrSessionFactory sessionFactory;
         private final FileStore fileStore;
         private final FlagStore flagStore;
+        private final Jcrom jcrom;
 
         @Inject
         public NotificationRunner(
             Application application,
             JcrSessionFactory sessionFactory,
             FileStore fileStore,
-            FlagStore flagStore) {
+            FlagStore flagStore,
+            Jcrom jcrom) {
           this.sessionFactory = sessionFactory;
           this.fileStore = fileStore;
           this.flagStore = flagStore;
+          this.jcrom = jcrom;
           this.maxHoldMs =
               application.configuration().getLong(WAIT_MILLIS_KEY, 15000L);
         }
@@ -116,7 +122,7 @@ public class NotificationManager extends Plugin {
                 Pair<Long,Event> p = iter.next();
                 long time = p.getLeft();
                 Event event = p.getRight();
-                if(event.info.type == EventManager.Event.NodeType.FLAG) {
+                if((event.info != null) && (event.info.type == EventManager.Event.NodeType.FLAG)) {
                     result.add(event);
                     iter.remove();
                 } else {
@@ -138,27 +144,49 @@ public class NotificationManager extends Plugin {
                 String eventId = pair._1;
                 lastEventId = eventId;
                 EventManager.Event event = pair._2;
+                if(event.info!=null && event.info.type == EventManager.Event.NodeType.NOTIFICATION) {
+                    continue;
+                }
                 result.add(event);
-                Logger.debug(String.format("got event id %s type %s event info type %s with node id %s",
-                        eventId, event.type, event.info.type, event.info.id));
+                try {
+                    Logger.debug(String.format("got event id %s type %s event info type %s with node id %s",
+                            eventId, event.type, event.info.type, event.info.id));
+                } catch(Exception e) {}
             }
             return result;
         }
 
         private void processEvents(Session session, List<Event> events) throws RepositoryException {
+          EventManager.Event notificationEvent = null;
           List<Event> filestoreEvents = Lists.newArrayList();
           for(Event event : events) {
             if (stopped) {
               break;
             }
-            if(event.info.type == EventManager.Event.NodeType.FLAG && isEditFlag(session, event)) {
+            if((event.info != null) &&
+                    (event.info.type == EventManager.Event.NodeType.FLAG) &&
+                    isEditFlag(session, event)) {
               Set<String> emails = getWatchEmails(session, getTargetId(session, event));
               sendEditNotification(session, emails, event);
+              if(notificationEvent == null) {
+                  notificationEvent = createNotificationEvent();
+              }
             } else {
               filestoreEvents.add(event);
             }
           }
-          sendNotification(session, filestoreEvents);
+          if(sendNotification(session, filestoreEvents)) {
+              if(notificationEvent == null) {
+                  notificationEvent = createNotificationEvent();
+              }
+          }
+          if(notificationEvent != null) {
+              fileStore.getEventManager().tell(notificationEvent);
+          }
+        }
+
+        private Event createNotificationEvent() throws RepositoryException {
+            return EventManager.Event.create();
         }
 
         private Set<String> getWatchEmails(Session session, String nodeId) {
@@ -184,7 +212,7 @@ public class NotificationManager extends Plugin {
           return String.format("%s <%s>", u.getName(), u.getEmail());
         }
 
-        private void sendNotification(Session session,
+        private boolean sendNotification(Session session,
                 final List<Event> events) throws RepositoryException {
             FileStore.Manager manager = fileStore.getManager(session);
             Map<String, List<Event>> notifications = Maps.newHashMap();
@@ -199,15 +227,17 @@ public class NotificationManager extends Plugin {
                     eList.add(event);
                 }
             }
+            boolean send = false;
             for(final String email : notifications.keySet()) {
                 final List<Event> e = notifications.get(email);
                 Map<String, FileStore.FileOrFolder> items =
                     getItems(manager, e);
-                final Body body = new Body(views.txt.email.notification.render(
-                    e, items).toString());
-                Logger.debug("Sending notification email to "+email);
-                Mailer.getDefaultMailer().sendMail("AORRA notification", body, email);
+                final String message = views.txt.email.notification.render(
+                        e, items).toString();
+                sendNotification(session, email, message);
+                send = true;
             }
+            return send;
         }
 
         private Map<String, FileStore.FileOrFolder> getItems(
@@ -262,16 +292,37 @@ public class NotificationManager extends Plugin {
               type = Event.NodeType.FOLDER;
             }
             String path = ff.getPath();
-            final Body body = new Body(views.txt.email.edit_notification.render(
-                    path, type, user.getName(), fofId).toString());
+            String msg = views.txt.email.edit_notification.render(
+                    path, type, user.getName(), fofId).toString();
             for(String email : emails) {
-              Mailer.getDefaultMailer().sendMail("AORRA notification",
-                  body, email);
+                sendNotification(session, email, msg);
             }
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
         }
+
+        private void sendNotification(Session session,
+                String email, String msg) throws ItemNotFoundException, RepositoryException {
+            UserDAO userDao = new UserDAO(session, jcrom);
+            User to = userDao.findByEmail(extractEmail(email));
+            NotificationDAO notificationDao = new NotificationDAO(session, jcrom);
+            Notification notification = new Notification(to, msg);
+            if(to != null) {
+                notificationDao.create(notification);
+                session.save();
+            }
+        }
+
+        private String extractEmail(String email) {
+            String e = StringUtils.substringBetween(email, "<", ">");
+            if(StringUtils.isNotBlank(e)) {
+                return e;
+            } else {
+                return email;
+            }
+        }
+
     }
 
     private NotificationRunner runner;

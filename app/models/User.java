@@ -14,6 +14,7 @@ import javax.jcr.nodetype.NodeType;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.jcrom.annotations.JcrChildNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrName;
 import org.jcrom.annotations.JcrNode;
@@ -46,6 +47,7 @@ public class User {
   @JcrProperty private String name;
   @JcrProperty private String verificationToken;
   @JcrProperty private boolean verified;
+  @JcrChildNode private List<Notification> notifications;
 
   public static class ChangePassword {
     @Required
@@ -195,7 +197,15 @@ public class User {
         md.digest(email.getBytes(Charset.forName("UTF-8"))));
   }
 
-  @Override
+  public List<Notification> getNotifications() {
+    return notifications;
+  }
+
+  public void setNotifications(List<Notification> notifications) {
+    this.notifications = notifications;
+  }
+
+@Override
   public boolean equals(Object other) {
     return EqualsBuilder.reflectionEquals(this, other);
   }
