@@ -10,4 +10,9 @@
     <span>{name}</span>
   </li>
   {/current}
+  <div class="pull-right">
+    <a class="share-link" title='' data-placement="left">
+      <i class="icon-link" title="Link to this page"></i>
+    </a>
+  </div>
 </ul>

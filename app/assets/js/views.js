@@ -378,8 +378,13 @@ define([
     }
   });
 
-  var BreadcrumbView = Backbone.View.extend({
-    render: function() {
+  var BreadcrumbView = Backbone.Marionette.ItemView.extend({
+    ui: {
+      share: '.share-link',
+      shareContent: '.share-link-content',
+      popover: '.popover-content'
+    },
+    serializeData: function() {
       var collection = this.model.collection;
       var path = [];
       var m = this.model;
@@ -388,13 +393,30 @@ define([
         m = collection.get(m.get('parent'));
       }
       var breadcrumbs = _.map(path, function(m) {
-        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });model
+        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });
       });
-      var context = {
+      return {
         parents: _.initial(breadcrumbs),
         current: _.last(breadcrumbs)
       };
-      return templates.renderInto(this.$el, 'breadcrumbs', context);
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('breadcrumbs', serialized_model);
+    },
+    onRender: function() {
+      var content = templates.renderSync('link_popup', {
+        url: window.location.protocol+"//"+window.location.host+this.model.url()
+      });
+      this.ui.share.popover({
+        html: true,
+        content: content
+      });
+      this.ui.share.on('click', _.bind(function() {
+        var $share = this.ui.share;
+        var $input = this.$el.find('input');
+        $input.select();
+        $input.on('blur', function() { $share.popover('hide'); });
+      }, this));
     }
   });
 
@@ -408,23 +430,6 @@ define([
     },
     _makeHeading: function() {
       return $('<h2/>').text(this.model.get('name'));
-    },
-    _makeBreadCrumbElement: function() {
-      var collection = this.model.collection;
-      var path = [];
-      var m = this.model;
-      while (m != null) {
-        path.unshift(m);
-        m = collection.get(m.get('parent'));
-      }
-      var breadcrumbs = _.map(path, function(m) {
-        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });
-      });
-      var context = {
-        parents: _.initial(breadcrumbs),
-        current: _.last(breadcrumbs)
-      };
-      return templates.renderInto($('<div/>'), 'breadcrumbs', context);
     }
   });
 

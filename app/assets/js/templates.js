@@ -9,6 +9,7 @@ define([
         'tmpl/filediff_view',
         'tmpl/flag_button',
         'tmpl/folder_view',
+        'tmpl/link_popup',
         'tmpl/loading_page',
         'tmpl/permission_row',
         'tmpl/permission_table',
