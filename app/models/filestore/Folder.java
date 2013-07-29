@@ -19,8 +19,7 @@ import com.google.common.collect.ImmutableSortedMap;
     mixinTypes = {
       NodeType.MIX_CREATED,
       NodeType.MIX_REFERENCEABLE,
-      NodeType.MIX_LAST_MODIFIED,
-      NodeType.MIX_VERSIONABLE
+      NodeType.MIX_LAST_MODIFIED
     },
     classNameProperty = "className")
 public class Folder extends AbstractJcrEntity implements Child<Folder> {
