@@ -469,7 +469,7 @@ define([
     },
     serializeData: function() {
       return _(this.model.toJSON()).extend({
-        isAdmin: this.isAdmin(),
+        canRename: this.isAdmin(),
         url: this.model.url()
       });
     },
@@ -686,7 +686,7 @@ define([
     },
     serializeData: function() {
       return _(this.model.toJSON()).extend({
-        isAdmin: this.isAdmin(),
+        canRename: this.isAdmin(),
         url: this.model.url()
       });
     },

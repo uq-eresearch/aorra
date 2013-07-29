@@ -2,7 +2,7 @@
 <div class="region-buttons pull-right"></div>
 <h2>
   <span class="name"
-    {#isAdmin}style="cursor: pointer" title="Click to rename"{/isAdmin}>
+    {#canRename}style="cursor: pointer" title="Click to rename"{/canRename}>
     {name}
   </span>
   <input style="display: none" class="name" value="{name}"/>
