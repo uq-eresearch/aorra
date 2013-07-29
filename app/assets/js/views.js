@@ -498,10 +498,10 @@ define([
       if (this.isAdmin()) {
         this.ui.nameSpan.hide();
         this.ui.nameField.show();
-        this.ui.nameField.keyup(function(e) {
+        this.ui.nameField.keyup(function(event) {
           // on Enter key
           if (event.which == 13)
-            $(e.target).blur();
+            $(event.target).blur();
         })
         this.ui.nameField.focus();
       }
@@ -714,10 +714,10 @@ define([
       if (this.isAdmin()) {
         this.ui.nameSpan.hide();
         this.ui.nameField.show();
-        this.ui.nameField.keyup(function(e) {
+        this.ui.nameField.keyup(function(event) {
           // on Enter key
           if (event.which == 13)
-            $(e.target).blur();
+            $(event.target).blur();
         })
         this.ui.nameField.focus();
       }
