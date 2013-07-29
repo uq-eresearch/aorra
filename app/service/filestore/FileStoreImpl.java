@@ -350,6 +350,13 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
+    public void rename(final String newName)
+        throws ItemExistsException, RepositoryException {
+      super.rename(newName);
+      eventManagerImpl.tell(Event.updateFolder(getIdentifier()));
+    }
+
+    @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
       final Event event = Event.delete(this);
@@ -449,6 +456,13 @@ public class FileStoreImpl implements FileStore {
         return ((File) other).getIdentifier().equals(getIdentifier());
       }
       return false;
+    }
+
+    @Override
+    public void rename(final String newName)
+        throws ItemExistsException, RepositoryException {
+      super.rename(newName);
+      eventManagerImpl.tell(Event.update(this));
     }
 
     @Override
@@ -646,7 +660,7 @@ public class FileStoreImpl implements FileStore {
               getName(), newName, fof.getClass().getSimpleName()));
       }
       entity.setName(newName);
-      getDAO().update(entity);
+      getDAO().update(entity, "none", 0);
       // We cache the path, so it has to be updated
       updatePath();
     }
