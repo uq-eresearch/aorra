@@ -681,7 +681,6 @@ define([
       "sync": "render"
     },
     initialize: function(options) {
-      this.on('all', _.bind(console.debug, console));
       this._users = options.users;
     },
     serializeData: function() {
