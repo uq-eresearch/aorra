@@ -149,6 +149,9 @@ require(['models', 'views'], function(models, views) {
     fs.on('add', function(m) {
       fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
     });
+    fs.on('change', function(m) {
+      fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
+    });
     fs.on('remove', function(m) {
       fileTree.tree().remove(m.get('id'));
       // Handle being on the deleted page already
@@ -255,6 +258,9 @@ require(['models', 'views'], function(models, views) {
         notificationFeed.trigger('recheck');
       });
     });
+    
+
+    window.fs = fs;
 
     // Open feed
     notificationFeed.open();

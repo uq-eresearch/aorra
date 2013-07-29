@@ -38,6 +38,7 @@ import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 import org.jcrom.JcrMappingException;
 import org.jcrom.Jcrom;
+import org.jcrom.dao.JcrDAO;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
@@ -253,7 +254,7 @@ public class FileStoreImpl implements FileStore {
     public Folder createFolder(final String name) throws RepositoryException {
       ensureDoesNotExist(name);
       final models.filestore.Folder newFolderEntity =
-          filestoreManager.getFolderDAO().create(
+          getDAO().create(
               new models.filestore.Folder(entity, name));
       reload();
       final Folder folder = new Folder(
@@ -352,7 +353,7 @@ public class FileStoreImpl implements FileStore {
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
       final Event event = Event.delete(this);
-      filestoreManager.getFolderDAO().remove(rawPath());
+      getDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }
 
@@ -364,10 +365,6 @@ public class FileStoreImpl implements FileStore {
     @Override
     protected String rawPath() {
       return entity.getPath();
-    }
-
-    protected void reload() {
-      entity = filestoreManager.getFolderDAO().get(rawPath());
     }
 
     @Override
@@ -402,6 +399,11 @@ public class FileStoreImpl implements FileStore {
       return onEntity;
     }
 
+    @Override
+    public JcrDAO<models.filestore.Folder> getDAO() {
+      return filestoreManager.getFolderDAO();
+    }
+
   }
 
   public static class File extends NodeWrapper<models.filestore.File> implements FileStore.File {
@@ -419,7 +421,7 @@ public class FileStoreImpl implements FileStore {
         throws RepositoryException {
       entity.setMimeType(mime);
       entity.setData(data);
-      filestoreManager.getFileDAO().update(entity);
+      getDAO().update(entity);
       eventManagerImpl.tell(Event.update(this));
       return this;
     }
@@ -429,8 +431,7 @@ public class FileStoreImpl implements FileStore {
       // Unsafe to use the same underlying entity twice when getting an
       // input stream, so load again if necessary.
       final models.filestore.File f = this.hasRetrievedData ?
-          filestoreManager.getFileDAO().get(rawPath()) :
-          entity;
+          getDAO().get(rawPath()) : entity;
       this.hasRetrievedData = true;
       return f.getDataProvider().getInputStream();
     }
@@ -454,7 +455,7 @@ public class FileStoreImpl implements FileStore {
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
       final Event event = Event.delete(this);
-      filestoreManager.getFileDAO().remove(rawPath());
+      getDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }
 
@@ -467,8 +468,7 @@ public class FileStoreImpl implements FileStore {
     public FileStore.File getLatestVersion()
         throws RepositoryException {
       return new File(
-          filestoreManager.getFileDAO().getVersion(rawPath(),
-              entity.getLatestVersion()),
+          getDAO().getVersion(rawPath(), entity.getLatestVersion()),
           filestoreManager, eventManagerImpl);
     }
 
@@ -477,8 +477,7 @@ public class FileStoreImpl implements FileStore {
         throws RepositoryException {
       final ImmutableSortedMap.Builder<String,FileStore.File> b =
           ImmutableSortedMap.<String,FileStore.File>naturalOrder();
-      for (models.filestore.File version :
-          filestoreManager.getFileDAO().getVersionList(rawPath())) {
+      for (models.filestore.File version : getDAO().getVersionList(rawPath())) {
         b.put(version.getVersion(),
             new File(version, filestoreManager, eventManagerImpl));
       }
@@ -496,13 +495,18 @@ public class FileStoreImpl implements FileStore {
       return entity.getLastModified();
     }
 
+    @Override
+    public JcrDAO<models.filestore.File> getDAO() {
+      return filestoreManager.getFileDAO();
+    }
+
   }
 
   protected abstract static class NodeWrapper<T extends Child<models.filestore.Folder>> {
 
     protected final FileStoreImpl.Manager filestoreManager;
     protected final EventManager eventManagerImpl;
-    protected final Iterable<String> pathParts;
+    protected Iterable<String> pathParts;
     protected T entity;
 
     protected NodeWrapper(
@@ -514,7 +518,7 @@ public class FileStoreImpl implements FileStore {
       if (entity == null)
         throw new NullPointerException("Underlying entity cannot be null.");
       this.entity = entity;
-      this.pathParts = calculatePathParts();
+      updatePath();
     }
 
     public int getDepth() {
@@ -528,6 +532,14 @@ public class FileStoreImpl implements FileStore {
 
     public Iterable<String> getPathParts() {
       return pathParts;
+    }
+
+    /**
+     * Used after moving or renaming.
+     * @throws RepositoryException
+     */
+    protected void updatePath() throws RepositoryException {
+      this.pathParts = calculatePathParts();
     }
 
     private Iterable<String> calculatePathParts() throws RepositoryException {
@@ -546,6 +558,10 @@ public class FileStoreImpl implements FileStore {
 
     protected String rawPath() {
       return entity.getPath();
+    }
+
+    protected void reload() {
+      entity = getDAO().get(rawPath());
     }
 
     protected Session session() throws RepositoryException {
@@ -617,6 +633,25 @@ public class FileStoreImpl implements FileStore {
       }
       return null;
     }
+
+    public void rename(final String newName)
+        throws ItemExistsException, RepositoryException {
+      if (getParent() == null)
+        throw new ItemExistsException("Can't rename root folder.");
+      {
+        final FileStore.FileOrFolder fof = getParent().getFileOrFolder(newName);
+        if (fof != null)
+          throw new ItemExistsException(String.format(
+              "Can't rename '%s' to '%s'. %s with same name already exists.",
+              getName(), newName, fof.getClass().getSimpleName()));
+      }
+      entity.setName(newName);
+      getDAO().update(entity);
+      // We cache the path, so it has to be updated
+      updatePath();
+    }
+
+    public abstract JcrDAO<T> getDAO();
 
     @Override
     public int hashCode() {

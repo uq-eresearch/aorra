@@ -253,6 +253,11 @@ public class JsonBuilderTest {
       return Permission.RO;
     }
 
+    @Override
+    public void rename(String newName) throws RepositoryException {
+      throw new NotImplementedException();
+    }
+
   }
 
   private class TestFile implements FileStore.File {
@@ -362,6 +367,11 @@ public class JsonBuilderTest {
 
     @Override
     public File getLatestVersion() throws RepositoryException {
+      throw new NotImplementedException();
+    }
+
+    @Override
+    public void rename(String newName) throws RepositoryException {
       throw new NotImplementedException();
     }
 

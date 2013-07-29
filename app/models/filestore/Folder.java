@@ -3,7 +3,6 @@ package models.filestore;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import javax.jcr.nodetype.NodeType;
 
@@ -18,8 +17,10 @@ import com.google.common.collect.ImmutableSortedMap;
 @JcrNode(
     nodeType = NodeType.NT_UNSTRUCTURED,
     mixinTypes = {
+      NodeType.MIX_CREATED,
       NodeType.MIX_REFERENCEABLE,
-      NodeType.MIX_LAST_MODIFIED
+      NodeType.MIX_LAST_MODIFIED,
+      NodeType.MIX_VERSIONABLE
     },
     classNameProperty = "className")
 public class Folder extends AbstractJcrEntity implements Child<Folder> {

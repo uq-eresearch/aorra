@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
+import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -69,6 +70,16 @@ public interface FileStore {
     Folder getParent() throws RepositoryException;
 
     void delete() throws RepositoryException;
+
+    /**
+     * Rename this file/folder.
+     *
+     * @param newName Name following rename
+     * @throws ItemExistsException if another file/folder exists
+     * @throws RepositoryException
+     */
+    void rename(String newName)
+        throws ItemExistsException, RepositoryException;
 
     /**
      * Determine access level to this item. Note that this may vary from the

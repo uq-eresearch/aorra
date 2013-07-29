@@ -461,11 +461,17 @@ define([
   });
 
   var FolderView = FileOrFolderView.extend({
+    modelEvents: {
+      "sync": "render"
+    },
     initialize: function(options) {
       this._users = options.users;
     },
     serializeData: function() {
-      return _(this.model.toJSON()).extend({ url: this.model.url() });
+      return _(this.model.toJSON()).extend({
+        canRename: this.isAdmin(),
+        url: this.model.url()
+      });
     },
     template: function(serialized_model) {
       _(serialized_model).extend({
@@ -480,30 +486,61 @@ define([
       mkdir: '.region-mkdir',
       permissions: '.region-permissions'
     },
+    triggers: {
+      'click span.name': 'focus:name',
+      'blur input.name': 'blur:name'
+    },
+    ui: {
+      nameSpan: 'span.name',
+      nameField: 'input.name'
+    },
+    onFocusName: function() {
+      if (this.isAdmin()) {
+        this.ui.nameSpan.hide();
+        this.ui.nameField.show();
+        this.ui.nameField.keyup(function(e) {
+          // on Enter key
+          if (event.which == 13)
+            $(e.target).blur();
+        })
+        this.ui.nameField.focus();
+      }
+    },
+    onBlurName: function() {
+      if (this.isAdmin()) {
+        this.model.set("name", this.ui.nameField.val());
+        this.ui.nameSpan.show();
+        this.ui.nameField.hide();
+        this.model.save().error(_.bind(this.model.fetch, this.model));
+      }
+    },
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       if (this.model.get('accessLevel') == 'RW') {
-        var isAdmin = this._users.current().get('isAdmin');
         this.upload.show(new FileUploadView({
           type: 'folder',
           model: this.model
         }));
         this.mkdir.show(new CreateFolderView({ model: this.model }));
-        if (isAdmin) {
+        if (this.isAdmin()) {
           this.permissions.show(new GroupPermissionsView({
             model: this.model
           }));
         }
         this.buttons.show(new InlineListView([
           new DownloadButtonView({ url: this.model.url()+"/archive" }),
-          isAdmin ? new DeleteButtonView({ model: this.model }) : null
+          this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
         this.buttons.show(new InlineListView([
           new DownloadButtonView({ url: this.model.url()+"/archive" })
         ]));
       }
-    }
+      this.delegateEvents();
+    },
+    isAdmin: _.memoize(function() {
+      return this._users.current().get('isAdmin');
+    })
   });
 
   var ImageElementView = Backbone.View.extend({
@@ -640,16 +677,23 @@ define([
   });
 
   var FileView = FileOrFolderView.extend({
+    modelEvents: {
+      "sync": "render"
+    },
     initialize: function(options) {
+      this.on('all', _.bind(console.debug, console));
       this._users = options.users;
     },
     serializeData: function() {
-      return _(this.model.toJSON()).extend({ url: this.model.url() });
+      return _(this.model.toJSON()).extend({
+        canRename: this.isAdmin(),
+        url: this.model.url()
+      });
     },
     template: function(serialized_model) {
       _(serialized_model).extend({
         hasWrite: serialized_model.accessLevel == 'RW'
-      })
+      });
       return templates.renderSync('file_view', serialized_model);
     },
     regions: {
@@ -658,6 +702,34 @@ define([
       display: '.region-display',
       info:   '.region-info',
       upload: '.region-upload'
+    },
+    triggers: {
+      'click span.name': 'focus:name',
+      'blur input.name': 'blur:name'
+    },
+    ui: {
+      nameSpan: 'span.name',
+      nameField: 'input.name'
+    },
+    onFocusName: function() {
+      if (this.isAdmin()) {
+        this.ui.nameSpan.hide();
+        this.ui.nameField.show();
+        this.ui.nameField.keyup(function(e) {
+          // on Enter key
+          if (event.which == 13)
+            $(e.target).blur();
+        })
+        this.ui.nameField.focus();
+      }
+    },
+    onBlurName: function() {
+      if (this.isAdmin()) {
+        this.model.set("name", this.ui.nameField.val());
+        this.ui.nameSpan.show();
+        this.ui.nameField.hide();
+        this.model.save().error(_.bind(this.model.fetch, this.model));
+      }
     },
     onRender: function() {
       var type = typeFromMimeType(this.model.get('mime'));
@@ -680,8 +752,7 @@ define([
             targetId: this.model.id
           }),
           new DownloadButtonView({ url: this.model.url()+"/version/latest" }),
-          this._users.current().get('isAdmin') ?
-              new DeleteButtonView({ model: this.model }) : null
+          this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
         this.buttons.show(new InlineListView([
@@ -700,7 +771,11 @@ define([
         this.display.show(new ImageElementView({ model: this.model }));
         break;
       }
-    }
+      this.delegateEvents();
+    },
+    isAdmin: _.memoize(function() {
+      return this._users.current().get('isAdmin');
+    })
   });
 
   var DiffView = Backbone.View.extend({
