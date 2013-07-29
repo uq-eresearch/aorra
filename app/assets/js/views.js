@@ -468,7 +468,10 @@ define([
       this._users = options.users;
     },
     serializeData: function() {
-      return _(this.model.toJSON()).extend({ url: this.model.url() });
+      return _(this.model.toJSON()).extend({
+        isAdmin: this.isAdmin(),
+        url: this.model.url()
+      });
     },
     template: function(serialized_model) {
       _(serialized_model).extend({
@@ -682,7 +685,10 @@ define([
       this._users = options.users;
     },
     serializeData: function() {
-      return _(this.model.toJSON()).extend({ url: this.model.url() });
+      return _(this.model.toJSON()).extend({
+        isAdmin: this.isAdmin(),
+        url: this.model.url()
+      });
     },
     template: function(serialized_model) {
       _(serialized_model).extend({

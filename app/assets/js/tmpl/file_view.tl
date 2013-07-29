@@ -1,7 +1,10 @@
 <div class="region-breadcrumbs"></div>
 <div class="region-buttons pull-right"></div>
 <h2>
-  <span class="name">{name}</span>
+  <span class="name"
+    {#isAdmin}style="cursor: pointer" title="Click to rename"{/isAdmin}>
+    {name}
+  </span>
   <input style="display: none" class="name" value="{name}"/>
 </h2>
 
