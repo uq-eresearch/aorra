@@ -10,6 +10,7 @@ object ApplicationBuild extends Build {
   val appVersion      = "1.0-SNAPSHOT"
 
   def crshVersion = "1.2.6"
+  val BatikVersion = "1.7"
   
   val appDependencies = Seq(
     javaCore,
@@ -28,7 +29,15 @@ object ApplicationBuild extends Build {
     "eu.medsea.mimeutil" % "mime-util" % "2.1.3",
     "org.apache.tika" % "tika-parsers" % "1.3",
     "org.jsoup" % "jsoup" % "1.7.2" % "test",
-    "com.icegreen" % "greenmail" % "1.3.1b" % "test"
+    "com.icegreen" % "greenmail" % "1.3.1b" % "test",
+    "org.jfree" % "jfreechart" % "1.0.14",
+    "org.apache.xmlgraphics" % "batik-codec" % BatikVersion,
+    "org.apache.xmlgraphics" % "batik-rasterizer" % BatikVersion,
+    "org.apache.xmlgraphics" % "batik-svggen" % BatikVersion,
+    "org.apache.xmlgraphics" % "fop" % "1.0",
+    "org.apache.poi" % "poi" % "3.8",
+    "org.apache.poi" % "poi-ooxml" % "3.8",
+    "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "test"
   )
   
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
@@ -71,7 +80,5 @@ object ApplicationBuild extends Build {
   ).dependsOn(RootProject(uri(
       "git://github.com/sgougi/play21-jackrabbit-plugin.git#d63c594e6ff921e859810cd52237cd3a12ce730f"))
   ).dependsOn(RootProject(uri(
-      "git://github.com/tjdett/play2-crash-plugin.git#ec950e4c5e7347a681e23b9dde3e4ce1783d9383"))
-  ).dependsOn(RootProject(uri(
-      "git://github.com/uq-eresearch/aorra-graph-demo.git#f5bba67980ed1a3b3030a3ab4343b0ff92e69c4f")))
+      "git://github.com/tjdett/play2-crash-plugin.git#ec950e4c5e7347a681e23b9dde3e4ce1783d9383")))
 }

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
@@ -15,8 +14,6 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
@@ -33,18 +30,16 @@ import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
-import au.edu.uq.aorra.charts.ChartRenderer;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
+import charts.ChartDescription;
+import charts.ChartFactory;
+import charts.ChartRenderer;
+import charts.ChartType;
+import charts.DataSource;
+import charts.XlsxDataSource;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-
-import ereefs.charts.ChartDescription;
-import ereefs.charts.ChartFactory;
-import ereefs.charts.ChartType;
-import ereefs.spreadsheet.DataSource;
-import ereefs.spreadsheet.XlsxDataSource;
 
 @With(UncacheableAction.class)
 public class Chart extends SessionAwareController {
@@ -61,7 +56,7 @@ public class Chart extends SessionAwareController {
     this.fileStore = fileStore;
   }
 
-  private String buildUrl(ereefs.charts.Chart chart, String format,
+  private String buildUrl(charts.Chart chart, String format,
       List<String> paths) throws UnsupportedEncodingException {
     List<NameValuePair> qparams = new ArrayList<NameValuePair>();
     for (Map.Entry<String, String> me : chart.getDescription().getProperties()
@@ -97,10 +92,10 @@ public class Chart extends SessionAwareController {
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, paths);
         ChartFactory f = new ChartFactory(datasources);
-        List<ereefs.charts.Chart> charts = f.getCharts(request().queryString());
+        List<charts.Chart> charts = f.getCharts(request().queryString());
         final ObjectNode json = Json.newObject();
         final ArrayNode aNode = json.putArray("charts");
-        for (ereefs.charts.Chart chart : charts) {
+        for (charts.Chart chart : charts) {
           ChartDescription desc = chart.getDescription();
           final ObjectNode chartNode = Json.newObject();
           chartNode.put("type", desc.getType().toString());
@@ -129,7 +124,7 @@ public class Chart extends SessionAwareController {
         } catch (IllegalArgumentException e) {
           return notFound("unknown chart type " + chart);
         }
-        List<ereefs.charts.Chart> charts = f.getCharts(type, request()
+        List<charts.Chart> charts = f.getCharts(type, request()
             .queryString());
         if (charts.isEmpty()) {
           return notFound();
