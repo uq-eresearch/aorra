@@ -11,21 +11,9 @@ define(['jquery', 'hogan'], function($, hogan) {
     })
   });
 
-  var doRender = function(templateName, context) {
-    return templates[templateName].render(context);
-  };
-
   return {
-    renderInto: function(container, templateName, context, callback) {
-      container.html(doRender(templateName, context));
-      if (_.isFunction(callback)) {
-        callback(container);
-      }
-      return container;
-    },
-    // Only safe if nothing asynchronous is likely to happen.
     renderSync: function(templateName, context) {
-      return doRender(templateName, context);
+      return templates[templateName].render(context);
     }
   };
 });
