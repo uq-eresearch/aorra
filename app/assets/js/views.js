@@ -232,12 +232,11 @@ define([
         method: $form.attr('method'),
         url: $form.attr('action')+"?"+$form.serialize(),
         success: function() {
-          var $alert = $(
-            '<div class="alert alert-info">' +
-            '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
-            '<strong>' + path + '</strong> was successfully created.' +
-            '</div>');
-          $form.after($alert);
+          var $alert = $(templates.renderSync('alert_box', {
+            type: 'info',
+            message: '<strong>' + path + '</strong> was successfully created.'
+          }));
+          $form.find('.messages').append($alert);
           $alert.alert();
         }
       });
