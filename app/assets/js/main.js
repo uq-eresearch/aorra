@@ -3,6 +3,7 @@ requirejs.config({
       'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min',
       'diff_match_patch': 'lib/diff_match_patch',
       'glyphtree': 'lib/glyphtree',
+      'hogan': '//cdnjs.cloudflare.com/ajax/libs/hogan.js/2.0.0/hogan',
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
       'jquery.iframe-transport': 'lib/jquery.iframe-transport',
       'jquery.fileupload': 'lib/jquery.fileupload',
@@ -30,6 +31,9 @@ requirejs.config({
       'jquery.bootstrap': {
         deps: ['jquery'],
         exports: 'jQuery'
+      },
+      'hogan': {
+        exports: 'Hogan'
       }
     },
     waitSeconds: 20

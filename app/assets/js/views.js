@@ -552,18 +552,30 @@ define([
     }
   });
 
-  var ChartElementView = Backbone.View.extend({
-    render: function() {
-      var format = Modernizr.svg ? 'svg' : 'png';
-      var onSuccess = _.bind(function(data) {
-        return templates.renderInto(this.$el, 'charts', data);
-      }, this);
-      $.ajax({
-        method: 'GET',
-        url: '/charts/?path=' + this.model.get('path')+"&format="+format,
-        dataType: 'json',
-        success: onSuccess
+  var ChartElementView = Backbone.Marionette.ItemView.extend({
+    initialize: function() {
+      var url = _.template('/charts/?path=<%=path%>&format=<%=format%>', {
+        format: Modernizr.svg ? 'svg' : 'png',
+        path: this.model.get('path')
       });
+      var onSuccess = function(data) {
+        this._charts = data.charts;
+        this.render();
+      };
+      $.get(url, _.bind(onSuccess, this));
+    },
+    serializeData: function() {
+      return {
+        charts: _.map(this._charts, function(c, i) {
+          return _(c).extend({
+            first: i == 0,
+            slug: _.str.slugify(c.region)
+          });
+        })
+      };
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('charts', serialized_model);
     }
   });
 

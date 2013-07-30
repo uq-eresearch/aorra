@@ -1,23 +1,23 @@
-<span class="counter-button input-prepend" title="{tooltip}">
-  <button class="btn {activeClass}">
-    <i class="icon-{icon}"></i>
-    <span class="hidden-phone">{title}</span>
+<span class="counter-button input-prepend" title="{{tooltip}}">
+  <button class="btn {{activeClass}}">
+    <i class="icon-{{icon}}"></i>
+    <span class="hidden-phone">{{title}}</span>
   </button>
   <span class="uneditable-input clickable"
-    title="{contentTitle}"
+    title="{{contentTitle}}"
     data-html="true"
     data-toggle="popover"
     data-placement="bottom"
     data-trigger="click">
-    {count}
+    {{count}}
   </span>
   <div class="counter-button-content hidden">
     <ul class="unstyled">
-      {#users}
+      {{#users}}
       <li>
-        <a href="mailto:{email}">{name}</a>
+        <a href="mailto:{{email}}">{{name}}</a>
       </li>
-      {/users}
+      {{/users}}
     </ul>
   </div>
 </span>
