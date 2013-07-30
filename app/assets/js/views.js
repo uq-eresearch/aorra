@@ -251,7 +251,10 @@ define([
     modelEvents: {
       "change": "render"
     },
-    render: function() {
+    ui: {
+      timestamp: '.timestamp'
+    },
+    serializeData: function() {
       // Get data to render
       var data = _(this.model.toJSON()).extend({
         downloadUrl: this.model.url()
@@ -261,15 +264,16 @@ define([
           compareUrl: this.model.url().replace(/^\//, '#') + '/diff'
         });
       }
-      // Render asynchronously into row
-      return templates.renderInto(this.$el, 'version_row', data, function($e) {
-        $.each($e.find('.timestamp'), function(i, n) {
-          var $n = $(n);
-          var dt = moment($n.text());
-          $n.attr('title', $n.text());
-          $n.text(dt.format('dddd, D MMMM YYYY @ h:mm:ss a'));
-        });
-      });
+      return data;
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('version_row', serialized_model);
+    },
+    onRender: function($e) {
+      var $n = this.ui.timestamp;
+      var dt = moment($n.text());
+      $n.attr('title', $n.text());
+      $n.text(dt.format('dddd, D MMMM YYYY @ h:mm:ss a'));
     }
   });
 
@@ -552,18 +556,30 @@ define([
     }
   });
 
-  var ChartElementView = Backbone.View.extend({
-    render: function() {
-      var format = Modernizr.svg ? 'svg' : 'png';
-      var onSuccess = _.bind(function(data) {
-        return templates.renderInto(this.$el, 'charts', data);
-      }, this);
-      $.ajax({
-        method: 'GET',
-        url: '/charts/?path=' + this.model.get('path')+"&format="+format,
-        dataType: 'json',
-        success: onSuccess
+  var ChartElementView = Backbone.Marionette.ItemView.extend({
+    initialize: function() {
+      var url = _.template('/charts/?path=<%=path%>&format=<%=format%>', {
+        format: Modernizr.svg ? 'svg' : 'png',
+        path: this.model.get('path')
       });
+      var onSuccess = function(data) {
+        this._charts = data.charts;
+        this.render();
+      };
+      $.get(url, _.bind(onSuccess, this));
+    },
+    serializeData: function() {
+      return {
+        charts: _.map(this._charts, function(c, i) {
+          return _(c).extend({
+            first: i == 0,
+            slug: _.str.slugify(c.region)
+          });
+        })
+      };
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('charts', serialized_model);
     }
   });
 
@@ -920,42 +936,38 @@ define([
     }
   });
 
-  var DeletedView = Backbone.View.extend({
-    initialize: function() { this.render(); },
-    render: function() {
-      return templates.renderInto(this.$el, 'deleted_page', {});
+  var DeletedView = Backbone.Marionette.ItemView.extend({
+    template: function() {
+      return templates.renderSync('deleted_page', {});
     }
   });
 
-  var LoadingView = Backbone.View.extend({
-    initialize: function() { this.render(); },
-    render: function() {
-      return templates.renderInto(this.$el, 'loading_page', {});
+  var LoadingView = Backbone.Marionette.ItemView.extend({
+    template: function() {
+      return templates.renderSync('loading_page', {});
     }
   });
 
-  var StartView = Backbone.View.extend({
-    initialize: function() { this.render(); },
-    render: function() {
-      return templates.renderInto(this.$el, 'start_page', {});
+  var StartView = Backbone.Marionette.ItemView.extend({
+    template: function() {
+      return templates.renderSync('start_page', {});
     }
   });
   
-  var UserMenu = Backbone.View.extend({
-    initialize: function() { this.render(); },
-    render: function() {
-      return templates.renderInto(this.$el, 'user_menu', {});
+  var UserMenu = Backbone.Marionette.ItemView.extend({
+    template: function() {
+      return templates.renderSync('user_menu', {});
     }
   });
   
-  var ChangePasswordView = Backbone.View.extend({
+  var ChangePasswordView = Backbone.Marionette.ItemView.extend({
     initialize: function() { this.render(); },
     events: {
       'keyup #newPassword,#repeatPassword': 'typePassword',
       'click button[type="submit"]': 'submitForm'
     },
-    render: function() {
-      return templates.renderInto(this.$el, 'change_password', {});
+    template: function() {
+      return templates.renderSync('change_password', {});
     },
     typePassword: function() {
       var minlength = 8;
@@ -973,20 +985,22 @@ define([
     },
     submitForm: function() {
       var $form = this.$el.find('form');
-      var $out = $form.find('.outcome');
+      var showAlert = function(data) {
+        $form.find('.outcome').html(templates.renderSync('alert_box', data));
+      }
       $.ajax({
         url: $form.attr('action'),
         type: $form.attr('method'),
         data: $form.serialize(),
         success: function() {
-          return templates.renderInto($out, 'alert_box', {
+          return showAlert({
             type: 'success',
             icon: 'smile',
             message: 'Password changed successfully.'
           });
         },
         error: function(jqXHR, textStatus) {
-          return templates.renderInto($out, 'alert_box', {
+          return showAlert({
             type: 'danger',
             icon: 'frown',
             message: 'Unable to change password: '+jqXHR.responseText

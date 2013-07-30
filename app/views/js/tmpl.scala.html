@@ -1,0 +1,8 @@
+@(name: String, contentType: String = "text/html")
+
+@import org.apache.commons.io.IOUtils
+
+<script id="tmpl-@name" type="@contentType">
+@Html(IOUtils.toString(getClass.getResourceAsStream("/templates/"+name+".html"),
+  "utf-8"))
+</script>

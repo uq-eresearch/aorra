@@ -1,15 +1,15 @@
 <ul class="breadcrumb">
-  {#parents}
+  {{#parents}}
   <li>
-    <a href="{url}">{name}</a>
+    <a href="{{url}}">{{name}}</a>
     <span class="divider"> / </span>
   </li>
-  {/parents}
-  {#current}
+  {{/parents}}
+  {{#current}}
   <li class="active">
-    <span>{name}</span>
+    <span>{{name}}</span>
   </li>
-  {/current}
+  {{/current}}
   <div class="pull-right">
     <a class="share-link" title='' data-placement="left">
       <i class="icon-link" title="Link to this page"></i>

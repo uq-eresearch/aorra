@@ -45,7 +45,8 @@ object ApplicationBuild extends Build {
   lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*)
 
   val main = play.Project(appName, appVersion, appDependencies, settings = s).settings(
-    requireJs ++= Seq("templates.js") ,
+    unmanagedResourceDirectories in Compile += file("resources"),
+    requireJs ++= Seq("app.js") ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
     // Play Framework can't do parallel testing

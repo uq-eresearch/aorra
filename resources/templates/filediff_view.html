@@ -1,7 +1,7 @@
 <div class="region-breadcrumbs"></div>
 
 <div>
-  <a class="btn" href="{backUrl}">
+  <a class="btn" href="{{backUrl}}">
     <i class="icon-arrow-left"></i> Back to file
   </a>
 </div>
@@ -12,22 +12,22 @@
   Compare
   &nbsp;
   <select class="input-xlarge" style="vertical-align: baseline">
-  {#otherVersions}
-    <option value="{name}">{timestamp} - {#author}{name}{/author}</option>
-  {/otherVersions}
+  {{#otherVersions}}
+    <option value="{{name}}">{{timestamp}} - {{#author}}{{name}}{{/author}}</option>
+  {{/otherVersions}}
   </select>
   &nbsp;to&nbsp;
-  {#version}
+  {{#version}}
   <span>
     <span>
-    {timestamp}
+    {{timestamp}}
     </span>
     &nbsp;-&nbsp;
-    {#author}
-    <a href="{email}">{name}</a>
-    {/author}
+    {{#author}}
+    <a href="{{email}}">{{name}}</a>
+    {{/author}}
   </span>
-  {/version}
+  {{/version}}
 </p>
 
 <div class="region-diff"></div>
