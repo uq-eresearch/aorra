@@ -1,28 +1,19 @@
-define([
-        'tmpl/alert_box',
-        'tmpl/breadcrumbs',
-        'tmpl/charts',
-        'tmpl/change_password',
-        'tmpl/delete_button',
-        'tmpl/deleted_page',
-        'tmpl/file_view',
-        'tmpl/filediff_view',
-        'tmpl/flag_button',
-        'tmpl/folder_view',
-        'tmpl/link_popup',
-        'tmpl/loading_page',
-        'tmpl/permission_row',
-        'tmpl/permission_table',
-        'tmpl/start_page',
-        'tmpl/user_menu',
-        'tmpl/version_row',
-        'tmpl/version_table'
-        ], function() {
+define(['jquery'], function($) {
   'use strict';
   var baseContext = dust.makeBase({});
+
+  // Load templates
+  $(function() {
+    $('script[id^="tmpl-"]').each(function(i, e) {
+      var templateName = $(e).attr('id').replace(/^tmpl-/,"");
+      var tmpl = e.innerHTML;
+      dust.loadSource(dust.compile(tmpl, templateName));
+    })
+  });
+
   var doRender = function(templateName, context, callback) {
     dust.render(
-        'js/tmpl/'+templateName,
+        templateName,
         baseContext.push(context),
         function(error, output) {
           if (error) {

@@ -36,6 +36,7 @@ object ApplicationBuild extends Build {
   lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*)
 
   val main = play.Project(appName, appVersion, appDependencies, settings = s).settings(
+    unmanagedResourceDirectories in Compile += file("resources"),
     requireJs ++= Seq("templates.js") ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
