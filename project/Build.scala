@@ -37,7 +37,7 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies, settings = s).settings(
     unmanagedResourceDirectories in Compile += file("resources"),
-    requireJs ++= Seq("templates.js") ,
+    requireJs ++= Seq("app.js") ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
     // Play Framework can't do parallel testing
