@@ -102,6 +102,10 @@ require(['models', 'views'], function(models, views) {
           fs.add([file.toJSON()]);
         });
       });
+    notificationFeed.on("folder:update file:update", function(id) {
+      var fof = fs.get(id)
+      if (fof) fof.fetch();
+    });
     // Rather brute-force, but the flag will turn up
     notificationFeed.on("flag:create",
       function(id) {
