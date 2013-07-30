@@ -1,4 +1,4 @@
-@(title: String, fluid: Boolean = false)(content: Html)
+@(title: String)(content: Html)
 
 @import be.objectify.deadbolt.java.views.html._
 @import be.objectify.deadbolt.core.utils.TemplateUtils._
@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Bootstrap stylesheets -->
-    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.no-icons.min.css" rel="stylesheet"/>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc1/css/bootstrap.min.css" rel="stylesheet">
     <!-- Icon set -->
     <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" rel="stylesheet">
     <!-- Local CSS -->
@@ -49,9 +49,6 @@
     }]);
     </script>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")"/>
-    <!--[if lt IE 8]>
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome-ie7.min.css" rel="stylesheet">
-    <![endif]-->
     @defining(play.Play.application.configuration.getString("ga.key")) { analyticsKey =>
       @analyticsKey match {
         case null => { <!-- No analytics key --> }
@@ -73,73 +70,69 @@
   </head>
   <body>
 
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          @subjectPresent() {
-            <ul id="nav-back" class="nav">
-              <li>
-                <a href="#" rel="back">
-                  <i class="icon-double-angle-left icon-large"></i>
-                </a>
-              </li>
-              <li class="divider-vertical"></li>
-            </ul>
-          }
-          <a class="brand" href="/"
-             title="Automated Online Reef Report card Application">
-            AORRA
-          </a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              @subjectPresent() {
-                <li><a href="/invite">Invite New User</a></li>
+    <div class="navbar navbar-inverse navbar-static-top">
+      <div class="container">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        @subjectPresent() {
+          <ul id="nav-back" class="nav">
+            <li>
+              <a href="#" rel="back">
+                <i class="icon-double-angle-left icon-large"></i>
+              </a>
+            </li>
+            <li class="divider-vertical"></li>
+          </ul>
+        }
+        <a class="navbar-brand" href="/"
+           title="Automated Online Reef Report card Application">
+          AORRA
+        </a>
+        <div class="nav-collapse collapse navbar-responsive-collapse">
+          <ul class="nav navbar-nav">
+            @subjectPresent() {
+              <li><a href="/invite">Invite New User</a></li>
+            }
+          </ul>
+          <ul class="nav navbar-nav pull-right">
+            @subjectPresent() {
+              @defining(SessionHelper.currentUser) { currentUser =>
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle"
+                    role="button"
+                    data-toggle="dropdown"
+                    title="Currently logged-in user">
+                    <i class="icon-user"></i>
+                    <span id="current-user" data-id="@currentUser.getId()">
+                    @currentUser.getName()
+                    </span>
+                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li>
+                      <a href="/#change-password" rel="tooltip"
+                        role="menu"
+                        data-placement="top"
+                        title="All emails will be sent to this address.">
+                        <em>@currentUser.getEmail()</em>
+                      </a>
+                    </li>
+                    <li class="divider"></li>
+                    <li><a href="/logout">Logout</a></li>
+                  </ul>
+                </li>
               }
-            </ul>
-            <ul class="nav pull-right">
-              @subjectPresent() {
-                @defining(SessionHelper.currentUser) { currentUser =>
-                  <li class="dropdown">
-                    <a href="#" class="dropdown-toggle"
-                      role="button"
-                      data-toggle="dropdown"
-                      title="Currently logged-in user">
-                      <i class="icon-user"></i>
-                      <span id="current-user" data-id="@currentUser.getId()">
-                      @currentUser.getName()
-                      </span>
-                      <b class="caret"></b>
-                    </a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a href="/#change-password" rel="tooltip"
-                          role="menu"
-                          data-placement="top"
-                          title="All emails will be sent to this address.">
-                          <em>@currentUser.getEmail()</em>
-                        </a>
-                      </li>
-                      <li class="divider"></li>
-                      <li><a href="/logout">Logout</a></li>
-                    </ul>
-                  </li>
-                }
-              }
-            </ul>
-          </div>
+            }
+          </ul>
         </div>
       </div>
     </div>
 
-    <div class="visible-desktop" style="height: 60px;"></div>
-
-    <div class="@(if (fluid) "container-fluid" else "container")">
-    <div class="row-fluid" id="content">
+    <div class="container">
+    <div class="row" id="content">
     @content
     </div>
     </div>
