@@ -7,12 +7,12 @@
 
 @import views.html.Application.main
 
-@main("AORRA Files and Folders", true) {
+@main("AORRA Files and Folders") {
 
   @templates()
 
-  <div class="span6 offset3" id="loading-progress">
-    <h5>Loading application...</h5>
+  <div class="col-lg-6 col-offset-3" id="loading-progress">
+    <h4>Loading application...</h4>
     <div class="progress progress-striped active">
       <div class="bar" style="width: 0%;"></div>
     </div>
@@ -35,8 +35,8 @@
   </script>
   
   <script id="main-layout" type="text/html">
-  <div class="span4" id="sidebar"></div>
-  <div class="span8" id="main"></div>
+  <div class="col-lg-4" id="sidebar"></div>
+  <div class="col-lg-8" id="main"></div>
   </script>
 
   <script type="text/javascript">

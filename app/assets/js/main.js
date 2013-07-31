@@ -8,7 +8,7 @@ requirejs.config({
       'jquery.iframe-transport': 'lib/jquery.iframe-transport',
       'jquery.fileupload': 'lib/jquery.fileupload',
       'jquery.ui.widget': 'lib/jquery.ui.widget',
-      'jquery.bootstrap': '//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min',
+      'jquery.bootstrap': '//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc1/js/bootstrap.min',
       'marionette': '//cdnjs.cloudflare.com/ajax/libs/backbone.marionette/1.0.3-bundled/backbone.marionette.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min'
     },

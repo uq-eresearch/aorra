@@ -1,5 +1,11 @@
+/* Using Bootstrap & Font Awesome */
+@import 'lib/bootstrap.less';
+@import 'lib/font-awesome.less';
+
 /* Display widths */
-@desktop:   ~"(min-width: 980px)";
+@desktop:   ~"(min-width: 992px)";
+@not-desktop: ~"(max-width: 991px)";
+@not-phone: ~"(min-width: 768px)";
 @phone:     ~"(max-width: 767px)";
 
 /* Make short labels easily selectable */
@@ -22,6 +28,11 @@ span.glyphtree-node-label:focus {
     vertical-align: top;
     white-space: normal;
   }
+}
+
+
+.glyphtree-tree {
+  padding-left: 15px;
 }
 
 html, body {
@@ -70,6 +81,20 @@ html.hero-page {
       color: white;
     }
   }
+  
+  @media @phone {
+    .login-field {
+      margin-bottom: 1em;
+    }
+  }
+  
+  @media @not-phone {
+    .login-field {
+      display: inline-block;
+      width: 15em;
+      vertical-align: bottom;
+    }
+  }
 
   .login-container {
     text-align: center;
@@ -103,13 +128,7 @@ html.hero-page {
     right: 0;
     padding-right: 1em;
   }
-
-  @media @desktop {
-    .login-container .control-group {
-      display: inline;
-    }
-  }
-
+  
   .above-login {
     @media (min-height: 520px) {
       padding-top:  1em;
@@ -150,16 +169,17 @@ html.hero-page {
 	.active {
 	  border-color: #cccccc;
 	}
-  .uneditable-input {
-    text-align: right;
-    width: 1.5em;
-    padding-right: 0.75em;
-  }
 }
 
 /* Allow white-space to control wrapping */
-.counter-button > button, .counter-button > .uneditable-input {
+.counter-button {
+  width: 5em;
+}
+
+/* Fix alignment of buttons */
+.region-buttons li .view {
   display: inline-block;
+  vertical-align: middle;
 }
 
 .clickable {
@@ -174,10 +194,11 @@ html.hero-page {
 	color: #b94a48;
 }
 
-@media @phone {
+@media @not-desktop {
 
-	#nav-back {
+  #nav-back {
     display: block;
+    margin: 0;
   }
 
   .hero-page .attribution {

@@ -3,13 +3,13 @@
 @import helper.twitterBootstrap._
 
 @inlineInput(field: play.data.Form.Field, inputType: String, icon: String, 
-  placeholder: String = "", size: String = "medium") = {
-<div class="control-group @(if (field.errors.length > 0) {"error"})">
-  <div class="input-prepend">
-    <span class="add-on" title="@(field.name)">
+  placeholder: String = "") = {
+<div class="login-field @(if (field.errors.length > 0) {"has-error"})">
+  <div class="input-group">
+    <span class="input-group-addon" title="@(field.name)">
       <i class="icon-@(icon)"></i>
     </span>
-    <input class="input-@(size)" type="@inputType" id="@(field.id)"
+    <input class="form-control" type="@inputType" id="@(field.id)"
       name="@(field.name)" value="@(field.value)" placeholder="@placeholder"/>
   </div>
 </div>
@@ -22,10 +22,10 @@
   });
   </script>
   
-  <div class="span8 offset2">
+  <div class="col-lg-8 col-offset-2">
   <div class="above-login">
     @if(flash.contains("error")) {
-      <div class="alert alert-error">
+      <div class="alert">
         @flash().get("error")
       </div>
     }
@@ -47,7 +47,7 @@
     </small>
   </h1>
   
-  <br class="hidden-phone" />
+  <br />
   @helper.form(action = routes.Application.postLogin(), 'class -> "form-inline") {
     @inlineInput(form("email"), "email", "envelope", "your email address")
     @inlineInput(form("password"), "password", "asterisk", "your password")
@@ -56,7 +56,8 @@
     </button>
   }
   
-  <ul class="inline">
+  <br />
+  <ul class="list-inline">
     <li>
       <a class="muted" href="mailto:support@@aorra.freshdesk.com"
          title="The University of Queensland ITEE e-Research Group">
@@ -79,13 +80,15 @@
       <i class="icon-info-sign"></i> Background
     </a>
   </p>
-  <div id="attribution-modal" class="modal hide fade">
+  <div id="attribution-modal" class="modal fade">
+    <div class="modal-dialog">
+    <div class="modal-content">
     <div class="modal-header">
-      <h3>
+      <a class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+      <h4 class="modal-title">
         <i class="icon-info-sign"></i>
         Background Attribution
-        <a class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-      </h3>
+      </h4>
     </div>
     <div class="modal-body">
       The background for this page was derived from an
@@ -100,6 +103,8 @@
         Some Rights Reserved
       </a>
       licence.
+    </div>
+    </div>
     </div>
   </div>
 }

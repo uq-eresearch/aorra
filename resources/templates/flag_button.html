@@ -1,10 +1,11 @@
-<span class="counter-button input-prepend" title="{{tooltip}}">
-  <button class="btn {{activeClass}}">
-    <i class="icon-{{icon}}"></i>
-    <span class="hidden-phone">{{title}}</span>
-  </button>
-  <span class="uneditable-input clickable"
-    title="{{contentTitle}}"
+<span class="counter-button input-group" title="{{tooltip}}">
+  <span class="input-group-btn">
+    <button class="btn btn-default {{activeClass}}">
+      <i class="icon-{{icon}}"></i>
+      <span class="hidden-phone">{{title}}</span>
+    </button>
+  </span>
+  <span class="form-control clickable"
     data-html="true"
     data-toggle="popover"
     data-placement="bottom"
@@ -12,7 +13,7 @@
     {{count}}
   </span>
   <div class="counter-button-content hidden">
-    <ul class="unstyled">
+    <ul class="list-unstyled">
       {{#users}}
       <li>
         <a href="mailto:{{email}}">{{name}}</a>

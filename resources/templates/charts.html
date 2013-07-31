@@ -1,8 +1,10 @@
-<div class="tabbable tabs-left">
+<div class="tabbable">
   <ul class="nav nav-tabs">
     {{#charts}}
-    <li{{#first}} class="active"{{/first}}>
-      <a href="#chart-image-{{slug}}" data-toggle="tab">{{region}}</a>
+    <li{{#first}} class="active"{{/first}} style="width: 8em; font-size: 75%">
+      <a href="#chart-image-{{slug}}" data-toggle="tab">
+        {{region}}
+      </a>
     </li>
     {{/charts}}
   </ul>

@@ -213,36 +213,34 @@ define([
     }
   });
 
-  var CreateFolderView = Backbone.View.extend({
-    tagName: 'form',
-    render: function() {
-      var parentFolder = this.model.get('path');
-      var $input = $('<input type="text" name="mkdir"/>')
-      $input.addClass('span3');
-      $input.attr('placeholder', 'folder name');
-      this.$el.addClass('form-inline');
-      this.$el.attr('method', 'POST');
-      this.$el.attr('action', this.model.url()+"/folders");
-      this.$el.append($input);
-      this.$el.append(' <button class="btn" type="submit">Create</mkdir>');
-      this.$el.submit(function(e) {
-        var form = e.target;
-        var path = $(form).find('input').val();
-        $.ajax({
-          method: $(form).attr('method'),
-          url: $(form).attr('action')+"?"+$(form).serialize(),
-          success: function() {
-            var $alert = $(
-              '<div class="alert alert-info">' +
-              '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
-              '<strong>' + path + '</strong> was successfully created.' +
-              '</div>');
-            $input.before($alert);
-            $alert.alert();
-          }
-        });
-        return false;
+  var CreateFolderView = Backbone.Marionette.ItemView.extend({
+    triggers: {
+      'submit form': 'form:submit'
+    },
+    serializeData: function() {
+      return {
+        action: this.model.url() + "/folders"
+      };
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('create_folder', serialized_model);
+    },
+    onFormSubmit: function() {
+      var $form = this.$el.find('form');
+      var path = $form.find('input').val();
+      $.ajax({
+        method: $form.attr('method'),
+        url: $form.attr('action')+"?"+$form.serialize(),
+        success: function() {
+          var $alert = $(templates.renderSync('alert_box', {
+            type: 'info',
+            message: '<strong>' + path + '</strong> was successfully created.'
+          }));
+          $form.find('.messages').append($alert);
+          $alert.alert();
+        }
       });
+      return false;
     }
   });
 
@@ -335,6 +333,7 @@ define([
   });
 
   var DeleteButtonView = Backbone.Marionette.ItemView.extend({
+    tagName: 'span',
     events: {
       'click .delete-button': 'showModal',
       'submit form': 'formSubmit'
@@ -370,11 +369,12 @@ define([
   });
 
   var DownloadButtonView = Backbone.View.extend({
+    tagName: 'span',
     initialize: function(options) {
       this._url = options.url;
     },
     render: function() {
-      var $link = $('<a class="btn" title="Download"/>');
+      var $link = $('<a class="btn btn-default" title="Download"/>');
       $link.attr('href', this._url);
       $link.append('<i class="icon-download-alt"></i>');
       $link.append('<span class="hidden-phone">Download</span>');
@@ -426,7 +426,7 @@ define([
 
   var FileOrFolderView = Backbone.Marionette.Layout.extend({
     _inlineList: function() {
-      var $list = $('<ul class="inline"/>');
+      var $list = $('<ul class="list-inline"/>');
       _.each(arguments, function(arg) {
         $list.append($('<li/>').append(arg));
       });
@@ -443,7 +443,7 @@ define([
    */
   var InlineListView = Backbone.View.extend({
     tagName: 'ul',
-    className: 'inline',
+    className: 'list-inline',
     els: [],
     container: new Backbone.ChildViewContainer(),
     initialize: function(viewsAndEls) {
@@ -550,7 +550,7 @@ define([
   var ImageElementView = Backbone.View.extend({
     render: function() {
       this.$el.append(_.template(
-          '<img class="img-polaroid" alt="Image for <%= model.get("path") %>"' +
+          '<img class="img-thumbnail" alt="Image for <%= model.get("path") %>"' +
           ' src="<%= model.url() %>/version/latest" />',
           { model: this.model }));
     }
@@ -585,6 +585,7 @@ define([
 
   var FlagButtonView = Backbone.Marionette.ItemView.extend({
     tagName: 'span',
+    className: 'view',
     ui: {
       button: '.btn',
       popover: '[data-toggle="popover"]',
@@ -625,7 +626,7 @@ define([
     },
     templateHelpers: {
       activeClass: function() {
-        return this.isSet ? 'active' : '';
+        return this.isSet ? 'btn-info' : 'btn-default';
       }
     },
     _getFlagTemplate: function(uid) {
@@ -867,7 +868,7 @@ define([
           .value();
         // Add box elements to summary
         $summary.append(
-          $('<ul class="inline"/>').append($boxes)
+          $('<ul class="list-inline"/>').append($boxes)
         );
         // Build the DOM hierarchy
         $txt
@@ -916,7 +917,7 @@ define([
       if (_.isObject(serialized_model.version))
         return templates.renderSync('filediff_view', serialized_model);
       else
-        return '';
+        return templates.renderSync('loading_page', {});
     },
     regions: {
       breadcrumbs: '.region-breadcrumbs',
@@ -978,9 +979,9 @@ define([
         return _.any(values, function(v) { return v.length >= minlength }) &&
           _.uniq(values).length == 1;
       })();
-      $passwords.parents('.control-group')
-        .removeClass('success error')
-        .addClass( valid ? 'success' : 'error' );
+      $passwords.parents('.form-group')
+        .removeClass('has-success has-error')
+        .addClass( valid ? 'has-success' : 'has-error' );
       $submit.prop('disabled', !valid);
     },
     submitForm: function() {
