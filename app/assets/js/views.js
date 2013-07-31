@@ -979,9 +979,9 @@ define([
         return _.any(values, function(v) { return v.length >= minlength }) &&
           _.uniq(values).length == 1;
       })();
-      $passwords.parents('.control-group')
-        .removeClass('success error')
-        .addClass( valid ? 'success' : 'error' );
+      $passwords.parents('.form-group')
+        .removeClass('has-success has-error')
+        .addClass( valid ? 'has-success' : 'has-error' );
       $submit.prop('disabled', !valid);
     },
     submitForm: function() {
