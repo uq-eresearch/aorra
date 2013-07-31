@@ -917,7 +917,7 @@ define([
       if (_.isObject(serialized_model.version))
         return templates.renderSync('filediff_view', serialized_model);
       else
-        return '';
+        return templates.renderSync('loading_page', {});
     },
     regions: {
       breadcrumbs: '.region-breadcrumbs',
