@@ -1,5 +1,10 @@
+/* Using Bootstrap & Font Awesome */
+@import 'lib/bootstrap.less';
+@import 'lib/font-awesome.less';
+
 /* Display widths */
-@desktop:   ~"(min-width: 980px)";
+@desktop:   ~"(min-width: 992px)";
+@not-desktop: ~"(max-width: 991px)";
 @not-phone: ~"(min-width: 768px)";
 @phone:     ~"(max-width: 767px)";
 
@@ -164,11 +169,6 @@ html.hero-page {
 	.active {
 	  border-color: #cccccc;
 	}
-  .uneditable-input {
-    text-align: right;
-    width: 1.5em;
-    padding-right: 0.75em;
-  }
 }
 
 /* Allow white-space to control wrapping */
@@ -194,10 +194,11 @@ html.hero-page {
 	color: #b94a48;
 }
 
-@media @phone {
+@media @not-desktop {
 
-	#nav-back {
+  #nav-back {
     display: block;
+    margin: 0;
   }
 
   .hero-page .attribution {

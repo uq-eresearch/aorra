@@ -13,11 +13,7 @@
     <!-- For phones and tablets -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Bootstrap stylesheets -->
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc1/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Icon set -->
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" rel="stylesheet">
-    <!-- Local CSS -->
+    <!-- CSS - compiled to include Bootstrap & Font Awesome -->
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.min.css")"/>
 
     <!-- Modernizr detects browser features -->
@@ -46,6 +42,10 @@
           }
         });
       }
+    },
+    {
+      test: Modernizr.mq('only all'),
+      nope: '@routes.Assets.at("js/lib/respond.js")'
     }]);
     </script>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")"/>
@@ -78,13 +78,12 @@
           <span class="icon-bar"></span>
         </button>
         @subjectPresent() {
-          <ul id="nav-back" class="nav">
+          <ul id="nav-back" class="nav navbar-nav pull-left">
             <li>
               <a href="#" rel="back">
                 <i class="icon-double-angle-left icon-large"></i>
               </a>
             </li>
-            <li class="divider-vertical"></li>
           </ul>
         }
         <a class="navbar-brand" href="/"
