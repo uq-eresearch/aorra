@@ -36,6 +36,7 @@ import charts.ChartFactory;
 import charts.ChartRenderer;
 import charts.ChartType;
 import charts.DataSource;
+import charts.XlsDataSource;
 import charts.XlsxDataSource;
 
 import com.google.common.collect.Lists;
@@ -46,6 +47,9 @@ public class Chart extends SessionAwareController {
 
   public static final String XLSX_MIME_TYPE =
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+  public static final String XLS_MIME_TYPE =
+      "application/vnd.ms-excel";
 
   private final FileStore fileStore;
 
@@ -76,8 +80,10 @@ public class Chart extends SessionAwareController {
       FileStore.FileOrFolder fof = fm.getFileOrFolder(path);
       if (fof instanceof FileStoreImpl.File) {
         FileStoreImpl.File file = (FileStoreImpl.File) fof;
-        // Check this is an OpenXML document (no chance otherwise)
-        if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
+        if(file.getMimeType().equals(XLS_MIME_TYPE)) {
+          result.add(new XlsDataSource(file.getData()));
+        } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) { 
+          // Check this is an OpenXML document (no chance otherwise)
           result.add(new XlsxDataSource(file.getData()));
         }
       }
