@@ -35,9 +35,9 @@ import charts.ChartDescription;
 import charts.ChartFactory;
 import charts.ChartRenderer;
 import charts.ChartType;
-import charts.DataSource;
-import charts.XlsDataSource;
-import charts.XlsxDataSource;
+import charts.spreadsheet.DataSource;
+import charts.spreadsheet.XlsDataSource;
+import charts.spreadsheet.XlsxDataSource;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

@@ -1,4 +1,4 @@
-package charts;
+package charts.spreadsheet;
 
 public interface Value {
 

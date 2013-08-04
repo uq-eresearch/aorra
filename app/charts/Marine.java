@@ -3,6 +3,8 @@ package charts;
 import java.util.List;
 import java.util.Map;
 
+import charts.spreadsheet.DataSource;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
