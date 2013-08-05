@@ -109,7 +109,7 @@ public class NotificationManagerTest {
     return (new UserDAO(session, jcrom())).create(u);
   }
 
-  private void awaitNotification() {
+  public static void awaitNotification() {
     int retries = 50;
     try {
       while (true) {

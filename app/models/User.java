@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,7 +48,9 @@ public class User {
   @JcrProperty private String name;
   @JcrProperty private String verificationToken;
   @JcrProperty private boolean verified;
-  @JcrChildNode private List<Notification> notifications;
+
+  @JcrChildNode
+  private List<Notification> notifications = Collections.emptyList();
 
   public static class ChangePassword {
     @Required

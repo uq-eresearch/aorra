@@ -60,12 +60,6 @@ public class FileStoreControllerTest {
           assertThat(call.url()).isEqualTo("/filestore");
         }
         {
-          final Call call =
-              controllers.routes.FileStoreController.usersJson();
-          assertThat(call.method()).isEqualTo("GET");
-          assertThat(call.url()).isEqualTo("/user");
-        }
-        {
           final String id = UUID.randomUUID().toString();
           final Call call =
               controllers.routes.FileStoreController.showFile(id);
@@ -944,31 +938,6 @@ public class FileStoreControllerTest {
           Map<String, Permission> perms = fm.getRoot().getGroupPermissions();
           assertThat(perms.get("testgroup")).isEqualTo(Permission.RO);
         }
-        return session;
-      }
-    });
-  }
-
-  @Test
-  public void getUsersJson() {
-    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
-      @Override
-      public Session apply(
-          final Session session,
-          final User user,
-          final FakeRequest newRequest) throws Throwable {
-        final Result result = callAction(
-            controllers.routes.ref.FileStoreController.usersJson(),
-            newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result))
-          .isEqualTo("max-age=0, must-revalidate");
-        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
-        json.add((new JsonBuilder()).toJson(user, true));
-        final String expectedContent = json.asText();
-        assertThat(contentAsString(result)).contains(expectedContent);
         return session;
       }
     });

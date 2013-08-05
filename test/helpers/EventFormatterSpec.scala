@@ -4,19 +4,19 @@ import java.util.UUID
 
 import org.specs2.mutable.Specification
 
-import NotificationFormatter.jsonMessage
+import EventFormatter.jsonMessage
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.libs.json.JsValue
 import service.filestore.EventManager
 
-class NotificationFormatterSpec extends Specification {
+class EventFormatterSpec extends Specification {
 
-  "Notification Formatter" can {
+  "Event Formatter" can {
 
     "produce JSON" >> {
 
-      import NotificationFormatter.jsonMessage
+      import EventFormatter.jsonMessage
 
       "incorporating node info" in {
         val eventId = randomUUID
@@ -42,7 +42,7 @@ class NotificationFormatterSpec extends Specification {
 
     "produce Server Sent Events (SSE)" >> {
 
-      import NotificationFormatter.{sseMessage, ssePingMessage}
+      import EventFormatter.{sseMessage, ssePingMessage}
 
       "incorporating node info" in {
         val eventId = randomUUID

@@ -8,9 +8,9 @@ import org.jcrom.Jcrom
 import com.feth.play.module.pa.user.AuthUser
 import com.google.inject.Inject
 import ScalaSecured.isAuthenticated
-import helpers.NotificationFormatter.jsonMessage
-import helpers.NotificationFormatter.sseMessage
-import helpers.NotificationFormatter.ssePingMessage
+import helpers.EventFormatter.jsonMessage
+import helpers.EventFormatter.sseMessage
+import helpers.EventFormatter.ssePingMessage
 import play.api.http.MimeTypes
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.iteratee.Concurrent.Channel
@@ -43,7 +43,7 @@ class FileStoreAsync @Inject()(
       val sessionFactory: service.JcrSessionFactory)
     extends Controller {
 
-  import helpers.NotificationFormatter.{jsonMessage, sseMessage, ssePingMessage}
+  import helpers.EventFormatter.{jsonMessage, sseMessage, ssePingMessage}
 
   val ssePingBroadcast: Enumerator[String] = {
     import play.api.Play.current
@@ -58,12 +58,11 @@ class FileStoreAsync @Inject()(
     enumerator
   }
 
-  def notifications: EssentialAction = isAuthenticated { authUser => implicit request =>
+  def events: EssentialAction = isAuthenticated { authUser => implicit request =>
     val AcceptsEventStream = Accepting(MimeTypes.EVENT_STREAM)
     render {
       case Accepts.Json() => pollingJsonResponse(authUser, request)
-      case AcceptsEventStream() =>
-        serverSentEventNotifications(authUser, request)
+      case AcceptsEventStream() => serverSentEvents(authUser, request)
     }
   }
 
@@ -85,7 +84,7 @@ class FileStoreAsync @Inject()(
     }
   }
 
-  def serverSentEventNotifications(authUser: AuthUser, request: Request[AnyContent]) = {
+  def serverSentEvents(authUser: AuthUser, request: Request[AnyContent]) = {
     val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
       lastIdInQuery(request)
     }

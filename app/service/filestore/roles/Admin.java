@@ -3,6 +3,9 @@ package service.filestore.roles;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import models.User;
+import models.UserDAO;
+
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.user.AuthorizableExistsException;
 import org.apache.jackrabbit.api.security.user.Group;
@@ -37,6 +40,11 @@ public class Admin {
   public static Admin getInstance(final Session session)
       throws RepositoryException {
     return new Admin(getUnderlyingGroup((JackrabbitSession) session));
+  }
+
+  public static boolean isAdmin(Session session, UserDAO dao, User user)
+      throws RepositoryException {
+    return getInstance(session).getGroup().isMember(dao.jackrabbitUser(user));
   }
 
   protected static Group getUnderlyingGroup(final JackrabbitSession session)

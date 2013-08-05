@@ -38,7 +38,7 @@ class FileStoreAsyncSpec extends Specification {
 
     "requires login" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
-        val Some(result) = route(FakeRequest(GET, "/notifications"))
+        val Some(result) = route(FakeRequest(GET, "/events"))
 
         status(result) must equalTo(303)
         header("Location", result) must beSome("/login")
@@ -48,7 +48,7 @@ class FileStoreAsyncSpec extends Specification {
     "returns JSON by default" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         val Some(result) = route(
-            FakeRequest(GET, "/notifications", rh, AnyContentAsEmpty))
+            FakeRequest(GET, "/events", rh, AnyContentAsEmpty))
 
         status(result) must equalTo(OK);
         contentType(result) must beSome("application/json")
@@ -63,7 +63,7 @@ class FileStoreAsyncSpec extends Specification {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         def testOutOfDate(): String = {
           val Some(result) = route(
-              FakeRequest(GET, "/notifications", rh, AnyContentAsEmpty)
+              FakeRequest(GET, "/events", rh, AnyContentAsEmpty)
                 .withHeaders( "Accept" -> "text/event-stream" ))
 
           status(result) must equalTo(OK);
@@ -97,7 +97,7 @@ class FileStoreAsyncSpec extends Specification {
         }
         def testFolderCreate(id: String) {
           val Some(result) = route(
-              FakeRequest(GET, "/notifications", rh, AnyContentAsEmpty)
+              FakeRequest(GET, "/events", rh, AnyContentAsEmpty)
                 .withHeaders(
                     "Accept" -> "text/event-stream",
                     "Last-Event-ID" -> id
@@ -159,7 +159,7 @@ class FileStoreAsyncSpec extends Specification {
         val expectedId = events.head._1
 
         val Some(result) = route(
-            FakeRequest(GET, "/notifications",
+            FakeRequest(GET, "/events",
                 rh, AnyContentAsEmpty))
 
         status(result) must equalTo(OK);

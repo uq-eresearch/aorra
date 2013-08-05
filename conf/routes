@@ -11,7 +11,8 @@ POST    /invite                     @controllers.Application.postInvite
 POST    /change-password            @controllers.Application.changePassword
 GET     /reset-password             @controllers.Application.forgottenPassword
 POST    /reset-password             @controllers.Application.postForgottenPassword
-GET     /user                       @controllers.FileStoreController.usersJson
+GET     /user                       @controllers.UserController.usersJson
+GET     /user/notifications         @controllers.UserController.notificationsJson
 GET     /user-exists/:email         @controllers.Application.userExists(email: String)
 GET     /user-unverified/:email     @controllers.Application.userUnverified(email: String)
 GET     /user/:email/verify/:token  @controllers.Application.verify(email: String, token: String)
@@ -45,7 +46,7 @@ GET     /file/:fileId/version/:vn       @controllers.FileStoreController.downloa
 GET     /file/:fileId/version/:vn/text-summary    @controllers.FileStoreController.fileTextSummary(fileId, vn)
 DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)
 
-GET     /notifications              @controllers.FileStoreAsync.notifications()
+GET     /events                     @controllers.FileStoreAsync.events()
 
 # play-authenticate
 GET     /logout                     com.feth.play.module.pa.controllers.Authenticate.logout

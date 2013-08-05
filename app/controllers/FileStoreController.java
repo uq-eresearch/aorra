@@ -1,5 +1,7 @@
 package controllers;
 
+import static service.filestore.roles.Admin.isAdmin;
+
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileOrFolderException;
@@ -48,7 +50,6 @@ import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
-import service.filestore.roles.Admin;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.google.inject.Inject;
@@ -132,16 +133,6 @@ public final class FileStoreController extends SessionAwareController {
       }
     }
     return status(UNSUPPORTED_MEDIA_TYPE);
-  }
-
-  @SubjectPresent
-  public Result usersJson() {
-    return inUserSession(new F.Function<Session, Result>() {
-      @Override
-      public final Result apply(Session session) throws RepositoryException {
-        return ok(getUsersJson(session)).as("application/json; charset=utf-8");
-      }
-    });
   }
 
   @SubjectPresent
@@ -598,17 +589,11 @@ public final class FileStoreController extends SessionAwareController {
   protected ArrayNode getUsersJson(Session session) throws RepositoryException {
     final JsonBuilder jb = new JsonBuilder();
     final ArrayNode json = JsonNodeFactory.instance.arrayNode();
-    final UserDAO dao = getUserDAO(session);
-    for (final User user : getUserDAO(session).list()) {
+    final UserDAO dao = new UserDAO(session, jcrom);
+    for (final User user : dao.list()) {
       json.add(jb.toJson(user, isAdmin(session, dao, user)));
     }
     return json;
-  }
-
-  protected boolean isAdmin(Session session, UserDAO dao, User user)
-      throws RepositoryException {
-    return Admin.getInstance(session).getGroup()
-        .isMember(dao.jackrabbitUser(user));
   }
 
   protected UserDAO getUserDAO(Session session) {

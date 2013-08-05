@@ -3,6 +3,7 @@ package service.filestore;
 import javax.jcr.RepositoryException;
 
 import models.Flag;
+import models.Notification;
 import models.User;
 
 import org.codehaus.jackson.node.ArrayNode;
@@ -21,6 +22,14 @@ public class JsonBuilder {
     json.put("name", user.getName());
     json.put("email", user.getEmail());
     json.put("isAdmin", isAdmin);
+    return json;
+  }
+
+  public ObjectNode toJson(final Notification notification) {
+    final ObjectNode json = Json.newObject();
+    json.put("id", notification.getId());
+    json.put("read", notification.isRead());
+    json.put("message", notification.getMessage());
     return json;
   }
 

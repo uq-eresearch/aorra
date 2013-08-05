@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import javax.jcr.RepositoryException;
 
+import models.Notification;
 import models.User;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -139,6 +140,29 @@ public class JsonBuilderTest {
     assertThat(json.get("isAdmin")).isNotNull();
     assertThat(json.get("isAdmin").asBoolean()).isEqualTo(false);
   }
+
+  @Test
+  public void testNotification() {
+    final JsonBuilder jb = new JsonBuilder();
+    final String randomId = UUID.randomUUID().toString();
+    final Notification notification = new Notification() {
+      @Override
+      public String getId() {
+        return randomId;
+      }
+    };
+    notification.setMessage("Test message.");
+    // Get JSON
+    final ObjectNode json = jb.toJson(notification);
+    assertThat(json.get("id")).isNotNull();
+    assertThat(json.get("id").asText()).isEqualTo(notification.getId());
+    assertThat(json.get("read")).isNotNull();
+    assertThat(json.get("read").asBoolean()).isEqualTo(false);
+    assertThat(json.get("message")).isNotNull();
+    assertThat(json.get("message").asText())
+      .isEqualTo(notification.getMessage());
+  }
+
 
   private class TestFolder implements FileStore.Folder {
 

@@ -7,7 +7,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.JsObject
 
-object NotificationFormatter {
+object EventFormatter {
 
   private val dtFormat = DateFormat.getDateTimeInstance()
 

@@ -149,6 +149,13 @@ define(['backbone'], function(Backbone) {
     url: '/flags/watch'
   });
   
+  var Notification = Backbone.Model.extend({});
+  
+  var Notifications = Backbone.Collection.extend({
+    model: Notification,
+    url: '/user/notifications'
+  });
+  
   var User = Backbone.Model.extend({});
   
   var Users = Backbone.Collection.extend({
@@ -179,6 +186,7 @@ define(['backbone'], function(Backbone) {
     FileOrFolder: FileOrFolder,
     FileStore: FileStore,
     Folder: Folder,
+    Notifications: Notifications,
     VersionInfo: VersionInfo,
     VersionList: VersionList,
     Users: Users

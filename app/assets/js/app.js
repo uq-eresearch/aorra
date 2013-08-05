@@ -5,7 +5,7 @@ require(['models', 'views'], function(models, views) {
     _.extend(obj, Backbone.Events);
     _.extend(obj, {
       url: function() {
-        return '/notifications?from='+obj.lastEventId
+        return '/events?from='+obj.lastEventId
       },
       updateLastId: function(id) {
         obj.lastEventId = id;
@@ -263,7 +263,7 @@ require(['models', 'views'], function(models, views) {
       });
     });
     
-
+    window.notifications = new models.Notifications();
     window.fs = fs;
 
     // Open feed
