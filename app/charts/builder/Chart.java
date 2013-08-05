@@ -1,4 +1,6 @@
-package charts;
+package charts.builder;
+
+import charts.Dimensions;
 
 public class Chart {
 

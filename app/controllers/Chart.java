@@ -3,9 +3,7 @@ package controllers;
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.jcr.Session;
 
@@ -14,7 +12,6 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.codehaus.jackson.node.ArrayNode;
@@ -31,10 +28,10 @@ import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
-import charts.ChartDescription;
-import charts.ChartFactory;
 import charts.ChartRenderer;
-import charts.ChartType;
+import charts.builder.ChartBuilder;
+import charts.builder.ChartDescription;
+import charts.builder.ChartType;
 import charts.spreadsheet.DataSource;
 import charts.spreadsheet.XlsDataSource;
 import charts.spreadsheet.XlsxDataSource;
@@ -60,16 +57,15 @@ public class Chart extends SessionAwareController {
     this.fileStore = fileStore;
   }
 
-  private String buildUrl(charts.Chart chart, String format,
+  private String buildUrl(charts.builder.Chart chart, String format,
       List<String> paths) throws UnsupportedEncodingException {
-    List<NameValuePair> qparams = new ArrayList<NameValuePair>();
-    for (Map.Entry<String, String> me : chart.getDescription().getProperties()
-        .entrySet()) {
-      qparams.add(new BasicNameValuePair(me.getKey(), me.getValue()));
+    List<BasicNameValuePair> qparams = Lists.newArrayList();
+    if(chart.getDescription() != null && chart.getDescription().getRegion() != null) {
+        qparams.add(new BasicNameValuePair("region", chart.getDescription().getRegion().getName()));
     }
     return controllers.routes.Chart.chart(
-        chart.getDescription().getType().toString().toLowerCase(),
-        format, paths).url() + "&" + URLEncodedUtils.format(qparams, "UTF-8");
+            chart.getDescription().getType().toString().toLowerCase(),
+            format, paths).url() + "&" + URLEncodedUtils.format(qparams, "UTF-8");
   }
 
   private List<DataSource> getDatasources(Session session, List<String> paths)
@@ -97,17 +93,15 @@ public class Chart extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, paths);
-        ChartFactory f = new ChartFactory(datasources);
-        List<charts.Chart> charts = f.getCharts(request().queryString());
+        ChartBuilder builder = new ChartBuilder(datasources);
+        List<charts.builder.Chart> charts = builder.getCharts(request().queryString());
         final ObjectNode json = Json.newObject();
         final ArrayNode aNode = json.putArray("charts");
-        for (charts.Chart chart : charts) {
+        for (charts.builder.Chart chart : charts) {
           ChartDescription desc = chart.getDescription();
           final ObjectNode chartNode = Json.newObject();
           chartNode.put("type", desc.getType().toString());
-          for (Map.Entry<String, String> me : desc.getProperties().entrySet()) {
-            chartNode.put(me.getKey(), me.getValue());
-          }
+          chartNode.put("region", desc.getRegion().getName());
           chartNode.put("url",
               buildUrl(chart, format, paths));
           aNode.add(chartNode);
@@ -123,14 +117,14 @@ public class Chart extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, paths);
-        ChartFactory f = new ChartFactory(datasources);
+        ChartBuilder builder = new ChartBuilder(datasources);
         final ChartType type;
         try {
           type = ChartType.getChartType(chart);
         } catch (IllegalArgumentException e) {
           return notFound("unknown chart type " + chart);
         }
-        List<charts.Chart> charts = f.getCharts(type, request()
+        List<charts.builder.Chart> charts = builder.getCharts(type, request()
             .queryString());
         if (charts.isEmpty()) {
           return notFound();

@@ -1,14 +1,15 @@
-package charts;
+package charts.builder;
 
 import java.util.List;
 import java.util.Map;
 
+import charts.BeerCoaster;
 import charts.spreadsheet.DataSource;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class Marine {
+public class MarineSpreadsheetChartBuilder implements ChartTypeBuilder {
 
     private static final ImmutableMap<Region, Integer> OFFSETS =
             new ImmutableMap.Builder<Region, Integer>()
@@ -21,40 +22,7 @@ public class Marine {
                 .put(Region.GBR, 6)
                 .build();
 
-    private DataSource datasource;
-
-    public Marine(DataSource datasource) {
-        this.datasource = datasource;
-    }
-
-    public List<Chart> getCharts(Map<String, String[]> properties) {
-        List<Chart> result = Lists.newArrayList();
-        if(isMarineSpreadsheet()) {
-            List<Region> regions = getRegion(properties);
-            if(regions != null && !regions.isEmpty()) {
-                for(Region region : regions) {
-                    Chart chart = getChart(region);
-                    if(chart != null) {
-                        result.add(chart);
-                    }
-                }
-            } else {
-                for(Region r : OFFSETS.keySet()) {
-                    Chart chart = getChart(r);
-                    if(chart != null) {
-                        result.add(chart);
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    public boolean isMarineSpreadsheet() {
-        return isMarineSpreadsheet(datasource);
-    }
-
-    public static boolean isMarineSpreadsheet(DataSource datasource) {
+    private boolean isMarineSpreadsheet(DataSource datasource) {
         try {
             return "MARINE SUMMARY".equalsIgnoreCase(datasource.select("Summary!B18").format("value"));
         } catch(Exception e) {
@@ -62,11 +30,11 @@ public class Marine {
         }
     }
 
-    private Chart getChart(Region region) {
-        BeerCoaster beercoaster = getDrawable(region);
+    private Chart getChart(DataSource datasource, Region region) {
+        BeerCoaster beercoaster = getDrawable(datasource, region);
         if(beercoaster != null) {
             return new Chart(new ChartDescription(
-                    ChartType.MARINE, ImmutableMap.of("region", region.getName())), beercoaster);
+                    ChartType.MARINE, region), beercoaster);
         } else {
             return null;
         }
@@ -86,7 +54,7 @@ public class Marine {
         return result;
     }
 
-    private BeerCoaster getDrawable(Region region) {
+    private BeerCoaster getDrawable(DataSource datasource, Region region) {
         try {
             Integer offset = OFFSETS.get(region);
             if(offset == null) {
@@ -156,6 +124,51 @@ public class Marine {
         } catch(NumberFormatException e) {
             return null;
         }
+    }
+
+    private List<Chart> build(DataSource datasource, Map<String, String[]> query) {
+        List<Chart> charts = Lists.newArrayList();
+        List<Region> regions = getRegion(query);
+        if(regions != null && !regions.isEmpty()) {
+            for(Region region : regions) {
+                Chart chart = getChart(datasource, region);
+                if(chart != null) {
+                    charts.add(chart);
+                }
+            }
+        } else {
+            for(Region r : OFFSETS.keySet()) {
+                Chart chart = getChart(datasource, r);
+                if(chart != null) {
+                    charts.add(chart);
+                }
+            }
+        }
+        return charts;
+    }
+
+    @Override
+    public boolean canHandle(ChartType type, List<DataSource> datasources) {
+        if(type == null || type.equals(ChartType.MARINE)) {
+            for(DataSource ds : datasources) {
+                if(isMarineSpreadsheet(ds)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public List<Chart> build(List<DataSource> datasources,
+            Map<String, String[]> query) {
+        List<Chart> charts = Lists.newArrayList();
+        for(DataSource datasource : datasources) {
+            if(isMarineSpreadsheet(datasource)) {
+                charts.addAll(build(datasource, query));
+            }
+        }
+        return charts;
     }
 
 }

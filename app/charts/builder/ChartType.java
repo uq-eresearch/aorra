@@ -1,4 +1,4 @@
-package charts;
+package charts.builder;
 
 public enum ChartType {
     MARINE;

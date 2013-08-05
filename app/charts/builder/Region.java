@@ -1,15 +1,15 @@
-package charts;
+package charts.builder;
 
 
 public enum Region {
 
+    GBR("GBR"),
     CAPE_YORK("Cape York"),
     WET_TROPICS("Wet Tropics"),
     BURDEKIN("Burdekin"),
     MACKAY_WHITSUNDAYS("Mackay Whitsundays"),
     FITZROY("Fitzroy"),
-    BURNETT_MARY("Burnett Mary"),
-    GBR("GBR");
+    BURNETT_MARY("Burnett Mary");
 
     private String name;
 
