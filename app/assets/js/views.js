@@ -1013,6 +1013,56 @@ define([
     }
   });
 
+  var NotificationMessageView = Backbone.Marionette.ItemView.extend({
+    tagName: 'li',
+    className: 'media',
+    template: function(data) {
+      return templates.renderSync('notification_message', data);
+    }
+  });
+
+  var NotificationsView = Backbone.Marionette.CompositeView.extend({
+    collectionEvents: {
+      'sync': 'render'
+    },
+    itemView: NotificationMessageView,
+    itemViewContainer: '.notifications',
+    onCompositeCollectionRendered: function() {
+      if (this.collection.isEmpty())
+        this.$el.hide();
+      else
+        this.$el.show();
+    },
+    template: function(serialized_model) {
+      return templates.renderSync('notifications_view', serialized_model);
+    }
+  });
+
+  var NotificationsNavView = Backbone.Marionette.ItemView.extend({
+    tagName: 'a',
+    collectionEvents: {
+      'sync': 'render'
+    },
+    attributes: {
+      "data-placement": "bottom",
+      href: '#notifications',
+      rel: "tooltip",
+      title: "Notification messages"
+    },
+    serializeData: function() {
+      return {
+        hasUnread: this.collection.findWhere({read: false}) != null,
+        messageCount: this.collection.size()
+      };
+    },
+    template: function(data) {
+      return templates.renderSync('notifications_nav_item', data);
+    },
+    onRender: function() {
+      this.$el.tooltip();
+    }
+  });
+
   var AppLayout = Backbone.Marionette.Layout.extend({
     template: "#main-layout",
     regions: {
@@ -1020,8 +1070,17 @@ define([
       sidebar: "#sidebar"
     },
     initialize: function(options) {
-      // Create Flag
       this.users = options.users;
+      this.notificationMessages = options.notifications;
+      this.addRegions({
+        notifications: new Backbone.Marionette.Region({
+          el: '#notifications-nav-item'
+        })
+      });
+      this.notifications.show(new NotificationsNavView({
+        collection: this.notificationMessages
+      }));
+      this.notificationMessages.fetch();
     },
     getFileTree: function() {
       if (_.isUndefined(this._fileTree)) {
@@ -1032,6 +1091,12 @@ define([
     changePassword: function() {
       this.sidebar.show(new UserMenu());
       this.main.show(new ChangePasswordView())
+    },
+    showNotifications: function() {
+      this.sidebar.show(new UserMenu());
+      this.main.show(new NotificationsView({
+        collection: this.notificationMessages
+      }));
     },
     showLoading: function() {
       this.main.show(this.getFileTree());

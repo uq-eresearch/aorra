@@ -137,6 +137,7 @@ require(['models', 'views'], function(models, views) {
 
     var layout = new views.AppLayout({
       el: '#content',
+      notifications: new models.Notifications(),
       users: users
     });
     layout.render();
@@ -172,7 +173,8 @@ require(['models', 'views'], function(models, views) {
         "change-password": "changePassword",
         "file/:id": "showFile",
         "folder/:id": "showFolder",
-        "file/:id/version/:version/diff": "showFileDiff"
+        "file/:id/version/:version/diff": "showFileDiff",
+        "notifications": "showNotifications"
       },
       start: function() {
         layout.showStart();
@@ -180,6 +182,10 @@ require(['models', 'views'], function(models, views) {
       },
       changePassword: function() {
         layout.changePassword();
+        this._setMainActive();
+      },
+      showNotifications: function() {
+        layout.showNotifications();
         this._setMainActive();
       },
       showFolder: function(id) {
@@ -262,9 +268,6 @@ require(['models', 'views'], function(models, views) {
         notificationFeed.trigger('recheck');
       });
     });
-    
-    window.notifications = new models.Notifications();
-    window.fs = fs;
 
     // Open feed
     notificationFeed.open();
