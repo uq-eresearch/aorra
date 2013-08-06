@@ -92,7 +92,7 @@ public class NotificationManagerTest {
         Notification notification = flaguser.getNotifications().get(0);
         String messageContent = notification.getMessage();
         assertThat(messageContent).isNotNull();
-        assertThat(messageContent).contains("editing the file");
+        assertThat(messageContent).contains("editing");
         assertThat(messageContent).contains("/test.txt");
         assertThat(messageContent).contains(
             absoluteUrl(controllers.routes.FileStoreController.showFile(

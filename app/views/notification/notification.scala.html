@@ -11,8 +11,13 @@
   <li>
   @items.get(event.info.id) match {
     case file: File => {
-      @defining(file.getAuthor) { author =>
-        <a href="mailto:@author.getEmail">@author.getName</a>
+      @file.getAuthor match {
+        case null => {
+          Somebody
+        }
+        case author: models.User => {
+          <a href="mailto:@author.getEmail">@author.getName</a>
+        }
       }
       @(event.`type`)d
       <a href="@absUrl(event)">
