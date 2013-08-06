@@ -2,6 +2,7 @@ package controllers;
 
 import static service.filestore.roles.Admin.isAdmin;
 
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -72,8 +73,7 @@ public final class UserController extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
-        final NotificationDAO dao = new NotificationDAO(session, jcrom);
-        final Notification n = dao.loadById(id);
+        final Notification n = findNotificationByID(session, id);
         if (n == null)
           return notFound();
         return ok(jb.toJson(n)).as("application/json; charset=utf-8");
@@ -88,7 +88,7 @@ public final class UserController extends SessionAwareController {
       public final Result apply(Session session) throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
         final NotificationDAO dao = new NotificationDAO(session, jcrom);
-        final Notification n = dao.loadById(id);
+        final Notification n = findNotificationByID(session, id);
         if (n == null)
           return notFound();
         final JsonNode json = ctx().request().body().asJson();
@@ -107,13 +107,29 @@ public final class UserController extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws RepositoryException {
         final NotificationDAO dao = new NotificationDAO(session, jcrom);
-        final Notification n = dao.loadById(id);
+        final Notification n = findNotificationByID(session, id);
         if (n == null)
           return notFound();
         dao.removeById(n.getId());
         return noContent();
       }
     });
+  }
+
+  /**
+   * Inefficient but safe & simple finder for notifications by ID.
+   *
+   * @param session
+   * @param id
+   * @return
+   */
+  protected Notification findNotificationByID(Session session, String id) {
+    final UserDAO dao = new UserDAO(session, jcrom);
+    for (Notification n : dao.get(getUser()).getNotifications()) {
+      if (n.getId().equals(id))
+        return n;
+    }
+    return null;
   }
 
 }

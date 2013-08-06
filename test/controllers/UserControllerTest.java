@@ -16,6 +16,7 @@ import static test.AorraTestUtils.jcrom;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -160,18 +161,62 @@ public class UserControllerTest {
           assertThat(contentAsString(result)).isEqualTo(
               jb.toJson(n).toString());
         }
-        // Mark as read notification
+        // Delete notification
         {
           final Result result = callAction(
               controllers.routes.ref.UserController.deleteNotification(
                   n.getId()),
-              newRequest.withJsonBody(jb.toJson(n)));
+              newRequest);
           assertThat(status(result)).isEqualTo(204);
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
           // Should have no more notifications
           assertThat((new UserDAO(session, jcrom()))
             .loadById(user.getId()).getNotifications()).isEmpty();
+        }
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void notificationsNotFound() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final String nonExistentId = (new UUID(0, 0)).toString();
+        // Fetch single notification
+        {
+          final Result result = callAction(
+              controllers.routes.ref.UserController.getNotification(
+                  nonExistentId),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+        }
+        // Mark as read notification
+        {
+          final Result result = callAction(
+              controllers.routes.ref.UserController.putNotification(
+                  nonExistentId),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+        }
+        // Delete notification
+        {
+          final Result result = callAction(
+              controllers.routes.ref.UserController.deleteNotification(
+                  nonExistentId),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
         }
         return session;
       }
