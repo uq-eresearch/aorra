@@ -5,7 +5,6 @@ import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.geom.Rectangle2D
 import java.awt.image.BufferedImage
-import org.imgscalr.Scalr
 import org.apache.batik.dom.svg.SVGDOMImplementation
 import org.w3c.dom.svg.SVGDocument
 import org.apache.batik.svggen.SVGGraphics2D
