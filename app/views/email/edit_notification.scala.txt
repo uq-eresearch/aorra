@@ -1,8 +1,0 @@
-@(path: String,
-  fileType: service.filestore.EventManager.Event.NodeType,
-  name: String,
-  targetId: String)
-@import _root_.notification.NotificationManager.absUrl
-
-@name is now editing the @fileType '@path'
-@absUrl(fileType, targetId)

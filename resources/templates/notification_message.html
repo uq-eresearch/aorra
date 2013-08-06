@@ -1,6 +1,6 @@
 <div class="pull-left">
   {{#read}}
-  <i class="icon-envelope-alt icon-2x media-object"></i>
+  <i class="icon-envelope-alt icon-2x media-object" title="Read"></i>
   {{/read}}
   {{^read}}
   <a href="#" class="unread" title="Mark as read">
@@ -12,5 +12,6 @@
   <button type="button" class="close delete" title="Delete Message">
     &times;
   </button>
-  {{message}}
+  {{&message}}
+  <div class="timestamp text-muted pull-right">{{timestamp}}</div>
 </div>

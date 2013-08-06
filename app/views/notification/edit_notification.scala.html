@@ -1,0 +1,11 @@
+@(path: String,
+  fileType: service.filestore.EventManager.Event.NodeType,
+  user: models.User,
+  targetId: String)
+@import _root_.notification.NotificationManager.absUrl
+
+<p>
+  <a href="mailto:@user.getEmail">@user.getName</a>
+  is now editing the @fileType 
+  <a href="@absUrl(fileType, targetId)">@path</a>
+</p>

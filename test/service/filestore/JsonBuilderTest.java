@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -20,7 +21,9 @@ import models.Notification;
 import models.User;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.log4j.helpers.ISO8601DateFormat;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.util.ISO8601Utils;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.junit.Test;
@@ -150,6 +153,11 @@ public class JsonBuilderTest {
       public String getId() {
         return randomId;
       }
+
+      @Override
+      public Date getCreated() {
+        return new Date(0);
+      }
     };
     notification.setMessage("Test message.");
     // Get JSON
@@ -161,6 +169,9 @@ public class JsonBuilderTest {
     assertThat(json.get("message")).isNotNull();
     assertThat(json.get("message").asText())
       .isEqualTo(notification.getMessage());
+    assertThat(json.get("timestamp")).isNotNull();
+    assertThat(json.get("timestamp").asText()).isEqualTo(
+        ISO8601Utils.format(notification.getCreated()));
   }
 
 

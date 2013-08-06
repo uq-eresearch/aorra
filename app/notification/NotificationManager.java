@@ -231,8 +231,8 @@ public class NotificationManager extends Plugin {
                 final List<Event> e = notifications.get(email);
                 Map<String, FileStore.FileOrFolder> items =
                     getItems(manager, e);
-                final String message = views.txt.email.notification.render(
-                        e, items).toString();
+                final String message = views.html.notification.notification
+                    .render(e, items).toString();
                 sendNotification(session, email, message);
             }
         }
@@ -289,8 +289,8 @@ public class NotificationManager extends Plugin {
               type = Event.NodeType.FOLDER;
             }
             String path = ff.getPath();
-            String msg = views.txt.email.edit_notification.render(
-                    path, type, user.getName(), fofId).toString();
+            String msg = views.html.notification.edit_notification
+                .render(path, type, user, fofId).toString();
             for(String email : emails) {
               sendNotification(session, email, msg);
             }

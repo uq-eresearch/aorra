@@ -153,7 +153,14 @@ define(['backbone'], function(Backbone) {
 
   var Notifications = Backbone.Collection.extend({
     model: Notification,
-    url: '/user/notifications'
+    url: '/user/notifications',
+    // Reverse sort
+    comparator: function(v1, v2) {
+      var d1 = v1.get('timestamp'), d2 = v2.get('timestamp');
+      if (d1 == d2)
+        return 0;
+      return d1 > d2 ? -1 : 1;
+    }
   });
 
   var User = Backbone.Model.extend({});

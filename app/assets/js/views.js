@@ -10,6 +10,13 @@ define([
         'jquery.fileupload'
         ], function(models, templates, moment, diff_match_patch, glyphtree, $, Backbone) {
   'use strict';
+
+  var formatTimestamp = function($n) {
+    var dt = moment($n.text());
+    $n.attr('title', $n.text());
+    $n.text(dt.format('dddd, D MMMM YYYY @ h:mm:ss a'));
+  };
+
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
       { pattern: /^image/, type: 'image' },
@@ -191,13 +198,13 @@ define([
           _.each(data.result.files, function(file) {
             var $alert = $('<div/>');
             var render = function(type, msg) {
-              templates.renderInto($alert, 'alert_box', {
+              $alert.html(templates.renderSync('alert_box', {
                 type: type,
                 message: _.template(
                     "<strong><%= f.name %></strong>: <%= f.msg %>",
                     { name: file.name, msg: msg },
                     { variable: 'f' })
-              });
+              }));
             };
             if (_.isUndefined(file['error'])) {
               render('success', 'Uploaded successfully.');
@@ -269,10 +276,7 @@ define([
       return templates.renderSync('version_row', serialized_model);
     },
     onRender: function($e) {
-      var $n = this.ui.timestamp;
-      var dt = moment($n.text());
-      $n.attr('title', $n.text());
-      $n.text(dt.format('dddd, D MMMM YYYY @ h:mm:ss a'));
+      formatTimestamp(this.ui.timestamp);
     }
   });
 
@@ -1026,6 +1030,9 @@ define([
     },
     template: function(data) {
       return templates.renderSync('notification_message', data);
+    },
+    onRender: function($e) {
+      formatTimestamp(this.$('.timestamp'));
     },
     onNotificationRead: function() {
       this.model.set('read', true);

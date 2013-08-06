@@ -6,6 +6,7 @@ import models.Flag;
 import models.Notification;
 import models.User;
 
+import org.codehaus.jackson.map.util.ISO8601Utils;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
@@ -28,8 +29,9 @@ public class JsonBuilder {
   public ObjectNode toJson(final Notification notification) {
     final ObjectNode json = Json.newObject();
     json.put("id", notification.getId());
-    json.put("read", notification.isRead());
     json.put("message", notification.getMessage());
+    json.put("read", notification.isRead());
+    json.put("timestamp", ISO8601Utils.format(notification.getCreated()));
     return json;
   }
 
