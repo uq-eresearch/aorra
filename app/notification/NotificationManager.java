@@ -77,6 +77,21 @@ public class NotificationManager extends Plugin {
           this.jcrom = jcrom;
           this.maxHoldMs =
               application.configuration().getLong(WAIT_MILLIS_KEY, 15000L);
+          updateUserModels();
+        }
+
+        // Handle old users without notifications by resaving the model
+        private void updateUserModels() {
+          Logger.debug("Updating user models");
+          sessionFactory.inSession(new Function<Session, Session>() {
+            @Override
+            public Session apply(Session session) {
+              UserDAO dao = new UserDAO(session, jcrom);
+              for (User u : dao.list())
+                dao.update(u);
+              return session;
+            }
+          });
         }
 
         @Override
@@ -86,14 +101,14 @@ public class NotificationManager extends Plugin {
                 try {
                     final List<Event> events = getEvents();
                     if(!stopped && !events.isEmpty()) {
-                        sessionFactory.inSession(new Function<Session, String>() {
-                            @Override
-                            public String apply(Session session)
-                                throws RepositoryException {
-                                processEvents(session, events);
-                                return null;
-                            }
-                          });
+                      sessionFactory.inSession(new Function<Session, Session>() {
+                        @Override
+                        public Session apply(Session session)
+                            throws RepositoryException {
+                          processEvents(session, events);
+                          return session;
+                        }
+                      });
                     }
                 } catch(Throwable t) {
                     t.printStackTrace();
@@ -197,7 +212,7 @@ public class NotificationManager extends Plugin {
           return String.format("%s <%s>", u.getName(), u.getEmail());
         }
 
-        private boolean sendNotification(Session session,
+        private void sendNotification(Session session,
                 final List<Event> events) throws RepositoryException {
             FileStore.Manager manager = fileStore.getManager(session);
             Map<String, List<Event>> notifications = Maps.newHashMap();
@@ -212,7 +227,6 @@ public class NotificationManager extends Plugin {
                     eList.add(event);
                 }
             }
-            boolean send = false;
             for(final String email : notifications.keySet()) {
                 final List<Event> e = notifications.get(email);
                 Map<String, FileStore.FileOrFolder> items =
@@ -220,9 +234,7 @@ public class NotificationManager extends Plugin {
                 final String message = views.txt.email.notification.render(
                         e, items).toString();
                 sendNotification(session, email, message);
-                send = true;
             }
-            return send;
         }
 
         private Map<String, FileStore.FileOrFolder> getItems(
