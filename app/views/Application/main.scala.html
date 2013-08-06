@@ -99,7 +99,6 @@
           <ul class="nav navbar-nav pull-right">
             @subjectPresent() {
               @defining(SessionHelper.currentUser) { currentUser =>
-                <li id="notifications-nav-item"></li>
                 <li class="dropdown">
                   <a href="#" class="dropdown-toggle"
                     role="button"
@@ -128,6 +127,13 @@
             }
           </ul>
         </div>
+        @subjectPresent() {
+          @defining(SessionHelper.currentUser) { currentUser =>
+          <ul id="notifications-nav" class="nav navbar-nav pull-right">
+            <li id="notifications-nav-item"></li>
+          </ul>
+          }
+        }
       </div>
     </div>
 
