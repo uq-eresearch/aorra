@@ -5,7 +5,6 @@
 @import java.net.URL
 @import _root_.notification.NotificationManager.absUrl
 
-The following changes were recently made in the AORRA system:
 @for(event <- events) {
 @(event.info.`type`) "@(items.get(event.info.id).getPath())" @(event.`type`)d
 @absUrl(event)

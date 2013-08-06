@@ -13,6 +13,9 @@ GET     /reset-password             @controllers.Application.forgottenPassword
 POST    /reset-password             @controllers.Application.postForgottenPassword
 GET     /user                       @controllers.UserController.usersJson
 GET     /user/notifications         @controllers.UserController.notificationsJson
+GET     /user/notifications/:id     @controllers.UserController.getNotification(id)
+PUT     /user/notifications/:id     @controllers.UserController.putNotification(id)
+DELETE  /user/notifications/:id     @controllers.UserController.deleteNotification(id)
 GET     /user-exists/:email         @controllers.Application.userExists(email: String)
 GET     /user-unverified/:email     @controllers.Application.userUnverified(email: String)
 GET     /user/:email/verify/:token  @controllers.Application.verify(email: String, token: String)

@@ -959,6 +959,10 @@ define([
   var UserMenu = Backbone.Marionette.ItemView.extend({
     template: function() {
       return templates.renderSync('user_menu', {});
+    },
+    onRender: function() {
+      this.$el.find("[href='"+Backbone.history.location.hash+"']")
+        .parent('li').addClass('active');
     }
   });
   
@@ -1013,6 +1017,69 @@ define([
     }
   });
 
+  var NotificationMessageView = Backbone.Marionette.ItemView.extend({
+    tagName: 'li',
+    className: 'media',
+    triggers: {
+      'click .unread': 'notification:read',
+      'click .delete': 'notification:delete'
+    },
+    template: function(data) {
+      return templates.renderSync('notification_message', data);
+    },
+    onNotificationRead: function() {
+      this.model.set('read', true);
+      this.model.save();
+      return false;
+    },
+    onNotificationDelete: function() {
+      this.model.destroy();
+      return false;
+    }
+  });
+
+  var NotificationsView = Backbone.Marionette.CompositeView.extend({
+    collectionEvents: {
+      'sync': 'render'
+    },
+    itemView: NotificationMessageView,
+    emptyView: Backbone.Marionette.ItemView.extend({
+      template: function() {
+        return '<div class="media-body">No messages.</div>';
+      }
+    }),
+    itemViewContainer: '.notifications',
+    template: function(data) {
+      return templates.renderSync('notifications_view', data);
+    }
+  });
+
+  var NotificationsNavView = Backbone.Marionette.ItemView.extend({
+    tagName: 'a',
+    collectionEvents: {
+      'sync': 'render',
+      'remove': 'render'
+    },
+    attributes: {
+      "data-placement": "bottom",
+      href: '#notifications',
+      rel: "tooltip",
+      title: "Notification messages"
+    },
+    serializeData: function() {
+      return {
+        hasUnread: this.collection.findWhere({read: false}) != null,
+        messageCount: this.collection.size()
+      };
+    },
+    template: function(data) {
+      return templates.renderSync('notifications_nav_item', data);
+    },
+    onRender: function() {
+      this.$el.tooltip();
+    }
+  });
+
   var AppLayout = Backbone.Marionette.Layout.extend({
     template: "#main-layout",
     regions: {
@@ -1020,8 +1087,17 @@ define([
       sidebar: "#sidebar"
     },
     initialize: function(options) {
-      // Create Flag
       this.users = options.users;
+      this.notificationMessages = options.notifications;
+      this.addRegions({
+        notifications: new Backbone.Marionette.Region({
+          el: '#notifications-nav-item'
+        })
+      });
+      this.notifications.show(new NotificationsNavView({
+        collection: this.notificationMessages
+      }));
+      this.notificationMessages.fetch();
     },
     getFileTree: function() {
       if (_.isUndefined(this._fileTree)) {
@@ -1032,6 +1108,12 @@ define([
     changePassword: function() {
       this.sidebar.show(new UserMenu());
       this.main.show(new ChangePasswordView())
+    },
+    showNotifications: function() {
+      this.sidebar.show(new UserMenu());
+      this.main.show(new NotificationsView({
+        collection: this.notificationMessages
+      }));
     },
     showLoading: function() {
       this.main.show(this.getFileTree());

@@ -4,7 +4,5 @@
   targetId: String)
 @import _root_.notification.NotificationManager.absUrl
 
-Following changes were made in the AORRA system.
-
 @name is now editing the @fileType '@path'
 @absUrl(fileType, targetId)

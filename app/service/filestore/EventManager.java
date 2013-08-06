@@ -3,6 +3,7 @@ package service.filestore;
 import javax.jcr.RepositoryException;
 
 import models.Flag;
+import models.Notification;
 import play.api.libs.iteratee.Concurrent.Channel;
 import scala.Tuple2;
 
@@ -76,6 +77,11 @@ public interface EventManager {
         this.id = file.getIdentifier();
       }
 
+      NodeInfo(Notification notification) {
+        this.type = NodeType.NOTIFICATION;
+        this.id = notification.getId();
+      }
+
       NodeInfo(Flag flag) {
         this.type = NodeType.FLAG;
         this.id = flag.getId();
@@ -121,9 +127,9 @@ public interface EventManager {
       return new Event(EventType.CREATE, new NodeInfo(flag));
     }
 
-    public static Event create() 
+    public static Event create(Notification notification)
         throws RepositoryException {
-        return new Event(EventType.CREATE, new NodeInfo(NodeType.NOTIFICATION, null));
+      return new Event(EventType.CREATE, new NodeInfo(notification));
     }
 
     public static Event updateFolder(String folderId)
@@ -135,6 +141,11 @@ public interface EventManager {
     public static Event update(FileStore.File file)
         throws RepositoryException {
       return new Event(EventType.UPDATE, new NodeInfo(file));
+    }
+
+    public static Event update(Notification notification)
+        throws RepositoryException {
+      return new Event(EventType.UPDATE, new NodeInfo(notification));
     }
 
     public static Event delete(FileStore.File file)
@@ -150,6 +161,11 @@ public interface EventManager {
     public static Event delete(Flag flag)
         throws RepositoryException {
       return new Event(EventType.DELETE, new NodeInfo(flag));
+    }
+
+    public static Event delete(Notification notification)
+        throws RepositoryException {
+      return new Event(EventType.DELETE, new NodeInfo(notification));
     }
 
     @Override
