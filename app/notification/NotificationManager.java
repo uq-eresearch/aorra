@@ -157,7 +157,6 @@ public class NotificationManager extends Plugin {
         }
 
         private void processEvents(Session session, List<Event> events) throws RepositoryException {
-          EventManager.Event notificationEvent = null;
           List<Event> filestoreEvents = Lists.newArrayList();
           for(Event event : events) {
             if (stopped) {
@@ -168,25 +167,11 @@ public class NotificationManager extends Plugin {
                     isEditFlag(session, event)) {
               Set<String> emails = getWatchEmails(session, getTargetId(session, event));
               sendEditNotification(session, emails, event);
-              if(notificationEvent == null) {
-                  notificationEvent = createNotificationEvent();
-              }
             } else {
               filestoreEvents.add(event);
             }
           }
-          if(sendNotification(session, filestoreEvents)) {
-              if(notificationEvent == null) {
-                  notificationEvent = createNotificationEvent();
-              }
-          }
-          if(notificationEvent != null) {
-              fileStore.getEventManager().tell(notificationEvent);
-          }
-        }
-
-        private Event createNotificationEvent() throws RepositoryException {
-            return EventManager.Event.create();
+          sendNotification(session, filestoreEvents);
         }
 
         private Set<String> getWatchEmails(Session session, String nodeId) {
@@ -295,23 +280,25 @@ public class NotificationManager extends Plugin {
             String msg = views.txt.email.edit_notification.render(
                     path, type, user.getName(), fofId).toString();
             for(String email : emails) {
-                sendNotification(session, email, msg);
+              sendNotification(session, email, msg);
             }
           } catch (Exception e) {
             throw new RuntimeException(e);
           }
         }
 
-        private void sendNotification(Session session,
-                String email, String msg) throws ItemNotFoundException, RepositoryException {
-            UserDAO userDao = new UserDAO(session, jcrom);
-            User to = userDao.findByEmail(extractEmail(email));
-            NotificationDAO notificationDao = new NotificationDAO(session, jcrom);
-            Notification notification = new Notification(to, msg);
-            if(to != null) {
-                notificationDao.create(notification);
-                session.save();
-            }
+        private void sendNotification(Session session, String email, String msg)
+                    throws ItemNotFoundException, RepositoryException {
+          UserDAO userDao = new UserDAO(session, jcrom);
+          User to = userDao.findByEmail(extractEmail(email));
+          NotificationDAO notificationDao = new NotificationDAO(session, jcrom);
+          Notification notification = new Notification(to, msg);
+          if(to != null) {
+            notificationDao.create(notification);
+            session.save();
+            fileStore.getEventManager().tell(
+                EventManager.Event.create(notification));
+          }
         }
 
         private String extractEmail(String email) {

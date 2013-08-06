@@ -1,6 +1,16 @@
 <div class="pull-left">
-  <i class="icon-envelope{{#read}}-alt{{/read}} icon-2x media-object"></i>
+  {{#read}}
+  <i class="icon-envelope-alt icon-2x media-object"></i>
+  {{/read}}
+  {{^read}}
+  <a href="#" class="unread" title="Mark as read">
+    <i class="icon-envelope icon-2x media-object"></i>
+  </a>
+  {{/read}}
 </div>
 <div class="media-body">
+  <button type="button" class="close delete" title="Delete Message">
+    &times;
+  </button>
   {{message}}
 </div>

@@ -21,6 +21,7 @@ import play.libs.F;
 import providers.CacheableUserProvider;
 import providers.DeadboltHandlerImpl;
 import providers.JackrabbitEmailPasswordAuthProvider;
+import service.filestore.EventManager;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
@@ -81,8 +82,11 @@ public class GuiceInjectionPlugin extends Plugin {
       protected void configure() {
         bind(Jcrom.class).toInstance(jcrom);
         bind(JcrSessionFactory.class).toInstance(sessionFactory);
-        bind(FileStore.class)
-          .toInstance(new FileStoreImpl(sessionFactory, jcrom));
+        {
+          final FileStore fs = new FileStoreImpl(sessionFactory, jcrom);
+          bind(FileStore.class).toInstance(fs);
+          bind(EventManager.class).toInstance(fs.getEventManager());
+        }
         sessionFactory.inSession(new F.Function<Session, Session>() {
           @Override
           public Session apply(Session session) throws Throwable {

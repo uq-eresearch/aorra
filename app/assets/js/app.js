@@ -82,6 +82,7 @@ require(['models', 'views'], function(models, views) {
 
     var users = new models.Users();
     var fs = new models.FileStore();
+    var notifications = new models.Notifications();
     var eventFeed = new EventFeed({
       lastEventId: window.lastEventID
     });
@@ -126,6 +127,22 @@ require(['models', 'views'], function(models, views) {
       function(id) {
         fs.remove(fs.get(id));
       });
+    
+    // Update notifications based on events
+    eventFeed.on("notification:create",
+      function(id) {
+        // TODO: Make this more efficient
+        notifications.fetch();
+      });
+    eventFeed.on("notification:update",
+      function(id) {
+        var n = notifications.get(id);
+        if (n) n.fetch();
+      });
+    eventFeed.on("notification:delete",
+      function(id) {
+        notifications.remove(notifications.get(id));
+      });
 
     var startRouting = function() {
       // If we're using IE8 heavily, then push state is just trouble
@@ -137,7 +154,7 @@ require(['models', 'views'], function(models, views) {
 
     var layout = new views.AppLayout({
       el: '#content',
-      notifications: new models.Notifications(),
+      notifications: notifications,
       users: users
     });
     layout.render();

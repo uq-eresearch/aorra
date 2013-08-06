@@ -959,6 +959,10 @@ define([
   var UserMenu = Backbone.Marionette.ItemView.extend({
     template: function() {
       return templates.renderSync('user_menu', {});
+    },
+    onRender: function() {
+      this.$el.find("[href='"+Backbone.history.location.hash+"']")
+        .parent('li').addClass('active');
     }
   });
   
@@ -1016,8 +1020,21 @@ define([
   var NotificationMessageView = Backbone.Marionette.ItemView.extend({
     tagName: 'li',
     className: 'media',
+    triggers: {
+      'click .unread': 'notification:read',
+      'click .delete': 'notification:delete'
+    },
     template: function(data) {
       return templates.renderSync('notification_message', data);
+    },
+    onNotificationRead: function() {
+      this.model.set('read', true);
+      this.model.save();
+      return false;
+    },
+    onNotificationDelete: function() {
+      this.model.destroy();
+      return false;
     }
   });
 
@@ -1026,22 +1043,22 @@ define([
       'sync': 'render'
     },
     itemView: NotificationMessageView,
+    emptyView: Backbone.Marionette.ItemView.extend({
+      template: function() {
+        return '<div class="media-body">No messages.</div>';
+      }
+    }),
     itemViewContainer: '.notifications',
-    onCompositeCollectionRendered: function() {
-      if (this.collection.isEmpty())
-        this.$el.hide();
-      else
-        this.$el.show();
-    },
-    template: function(serialized_model) {
-      return templates.renderSync('notifications_view', serialized_model);
+    template: function(data) {
+      return templates.renderSync('notifications_view', data);
     }
   });
 
   var NotificationsNavView = Backbone.Marionette.ItemView.extend({
     tagName: 'a',
     collectionEvents: {
-      'sync': 'render'
+      'sync': 'render',
+      'remove': 'render'
     },
     attributes: {
       "data-placement": "bottom",

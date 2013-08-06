@@ -2,7 +2,6 @@ package controllers;
 
 import static service.filestore.roles.Admin.isAdmin;
 
-import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -21,6 +20,8 @@ import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
+import service.filestore.EventManager;
+import service.filestore.EventManager.Event;
 import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
@@ -29,10 +30,14 @@ import com.google.inject.Inject;
 @With(UncacheableAction.class)
 public final class UserController extends SessionAwareController {
 
+  private final EventManager eventManager;
+
   @Inject
   UserController(JcrSessionFactory sessionFactory, Jcrom jcrom,
-      CacheableUserProvider subjectHandler) {
+      CacheableUserProvider subjectHandler,
+      EventManager eventManager) {
     super(sessionFactory, jcrom, subjectHandler);
+    this.eventManager = eventManager;
   }
 
   @SubjectPresent
@@ -96,6 +101,7 @@ public final class UserController extends SessionAwareController {
           return badRequest("Should have read attribute.");
         n.setRead(json.get("read").asBoolean());
         dao.update(n);
+        eventManager.tell(Event.update(n));
         return ok(jb.toJson(n)).as("application/json; charset=utf-8");
       }
     });
@@ -111,6 +117,7 @@ public final class UserController extends SessionAwareController {
         if (n == null)
           return notFound();
         dao.removeById(n.getId());
+        eventManager.tell(Event.delete(n));
         return noContent();
       }
     });

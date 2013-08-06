@@ -28,9 +28,9 @@ define(['backbone'], function(Backbone) {
       };
     }
   });
-  
+
   var GroupPermission = Backbone.Model.extend({});
-  
+
   var GroupPermissions = Backbone.Collection.extend({
     model: GroupPermission,
     initialize: function(attributes, options) {
@@ -136,28 +136,28 @@ define(['backbone'], function(Backbone) {
       return this._infoModel;
     }
   });
-  
+
   var Flag = Backbone.Model.extend({});
-  
+
   var EditFlags = Backbone.Collection.extend({
     model: Flag,
     url: '/flags/edit'
   });
-  
+
   var WatchFlags = Backbone.Collection.extend({
     model: Flag,
     url: '/flags/watch'
   });
-  
+
   var Notification = Backbone.Model.extend({});
-  
+
   var Notifications = Backbone.Collection.extend({
     model: Notification,
     url: '/user/notifications'
   });
-  
+
   var User = Backbone.Model.extend({});
-  
+
   var Users = Backbone.Collection.extend({
     model: User,
     url: '/user',
