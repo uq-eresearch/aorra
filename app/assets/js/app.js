@@ -1,6 +1,6 @@
 require(['models', 'views'], function(models, views) {
   'use strict';
-  var NotificationFeed = function(config) {
+  var EventFeed = function(config) {
     var obj = _.extend({}, config)
     _.extend(obj, Backbone.Events);
     _.extend(obj, {
@@ -56,7 +56,7 @@ require(['models', 'views'], function(models, views) {
             es.addEventListener('ping', function(event) {
               trigger('ping', event.data);
             });
-            _.each(['folder', 'file', 'flag'], function(t) {
+            _.each(['folder', 'file', 'flag', 'notification'], function(t) {
               _.each(['create', 'update', 'delete'], function(n) {
                 var eventName = t+":"+n;
                 es.addEventListener(eventName, function(event) {
@@ -82,11 +82,11 @@ require(['models', 'views'], function(models, views) {
 
     var users = new models.Users();
     var fs = new models.FileStore();
-    var notificationFeed = new NotificationFeed({
+    var eventFeed = new EventFeed({
       lastEventId: window.lastEventID
     });
     // Event handlers
-    notificationFeed.on("folder:create", function(id) {
+    eventFeed.on("folder:create", function(id) {
         // Create a stand-alone folder
         var folder = new models.Folder({ id: id });
         // Get the data for it
@@ -95,19 +95,19 @@ require(['models', 'views'], function(models, views) {
           fs.add([folder.toJSON()]);
         });
       });
-    notificationFeed.on("file:create",
+    eventFeed.on("file:create",
       function(id) {
         var file = new models.File({ id: id })
         file.fetch().done(function() {
           fs.add([file.toJSON()]);
         });
       });
-    notificationFeed.on("folder:update file:update", function(id) {
+    eventFeed.on("folder:update file:update", function(id) {
       var fof = fs.get(id)
       if (fof) fof.fetch();
     });
     // Rather brute-force, but the flag will turn up
-    notificationFeed.on("flag:create",
+    eventFeed.on("flag:create",
       function(id) {
         _.each(users.flags(), function(c) {
           if (c.get(id)) return; // Already exists
@@ -118,11 +118,11 @@ require(['models', 'views'], function(models, views) {
         });
       });
     // We can delete from all without error
-    notificationFeed.on("flag:delete",
+    eventFeed.on("flag:delete",
       function(id) {
         _.each(users.flags(), function(c) { c.remove(id); });
       });
-    notificationFeed.on("folder:delete file:delete",
+    eventFeed.on("folder:delete file:delete",
       function(id) {
         fs.remove(fs.get(id));
       });
@@ -261,15 +261,15 @@ require(['models', 'views'], function(models, views) {
     });
 
     // If our data is out-of-date, refresh and reopen event feed.
-    notificationFeed.on("outofdate", function(id) {
+    eventFeed.on("outofdate", function(id) {
       fs.reset();
       fs.fetch().done(function() {
-        notificationFeed.updateLastId(id);
-        notificationFeed.trigger('recheck');
+        eventFeed.updateLastId(id);
+        eventFeed.trigger('recheck');
       });
     });
 
     // Open feed
-    notificationFeed.open();
+    eventFeed.open();
   });
 });
