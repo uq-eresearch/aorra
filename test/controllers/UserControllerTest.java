@@ -100,6 +100,7 @@ public class UserControllerTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
+        final JsonBuilder jb = new JsonBuilder();
         final User other = createOtherUser(session);
         final FlagStore.Manager flm = flagStore().getManager(session);
         final FileStore.File f = fileStore().getManager(session)
@@ -117,18 +118,61 @@ public class UserControllerTest {
             .loadById(user.getId()).getNotifications();
         assertThat(notifications).hasSize(1);
         final ArrayNode json = JsonNodeFactory.instance.arrayNode();
-        json.add((new JsonBuilder()).toJson(notifications.get(0)));
+        json.add(jb.toJson(notifications.get(0)));
         final String expectedContent = json.toString();
         // Fetch notifications
-        final Result result = callAction(
-            controllers.routes.ref.UserController.notificationsJson(),
-            newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result))
-          .isEqualTo("max-age=0, must-revalidate");
-        assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        {
+          final Result result = callAction(
+              controllers.routes.ref.UserController.notificationsJson(),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        }
+        // Fetch single notification
+        final Notification n = notifications.get(0);
+        {
+          final Result result = callAction(
+              controllers.routes.ref.UserController.getNotification(n.getId()),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          assertThat(contentAsString(result)).isEqualTo(
+              jb.toJson(n).toString());
+        }
+        // Mark as read notification
+        {
+          n.setRead(true);
+          final Result result = callAction(
+              controllers.routes.ref.UserController.putNotification(n.getId()),
+              newRequest.withJsonBody(jb.toJson(n)));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          assertThat(contentAsString(result)).isEqualTo(
+              jb.toJson(n).toString());
+        }
+        // Mark as read notification
+        {
+          final Result result = callAction(
+              controllers.routes.ref.UserController.deleteNotification(
+                  n.getId()),
+              newRequest.withJsonBody(jb.toJson(n)));
+          assertThat(status(result)).isEqualTo(204);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          // Should have no more notifications
+          assertThat((new UserDAO(session, jcrom()))
+            .loadById(user.getId()).getNotifications()).isEmpty();
+        }
         return session;
       }
     });

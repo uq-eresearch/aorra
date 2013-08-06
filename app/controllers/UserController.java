@@ -6,9 +6,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.Notification;
+import models.NotificationDAO;
 import models.User;
 import models.UserDAO;
 
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.jcrom.Jcrom;
@@ -60,6 +62,56 @@ public final class UserController extends SessionAwareController {
           json.add(jb.toJson(n));
         }
         return ok(json).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result getNotification(final String id) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final NotificationDAO dao = new NotificationDAO(session, jcrom);
+        final Notification n = dao.loadById(id);
+        if (n == null)
+          return notFound();
+        return ok(jb.toJson(n)).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result putNotification(final String id) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final NotificationDAO dao = new NotificationDAO(session, jcrom);
+        final Notification n = dao.loadById(id);
+        if (n == null)
+          return notFound();
+        final JsonNode json = ctx().request().body().asJson();
+        if (!json.has("read"))
+          return badRequest("Should have read attribute.");
+        n.setRead(json.get("read").asBoolean());
+        dao.update(n);
+        return ok(jb.toJson(n)).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result deleteNotification(final String id) {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final NotificationDAO dao = new NotificationDAO(session, jcrom);
+        final Notification n = dao.loadById(id);
+        if (n == null)
+          return notFound();
+        dao.removeById(n.getId());
+        return noContent();
       }
     });
   }
