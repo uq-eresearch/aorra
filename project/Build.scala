@@ -40,7 +40,9 @@ object ApplicationBuild extends Build {
     "org.apache.poi" % "poi-ooxml" % "3.8",
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "test"
   )
-  
+
+  val isTravisCI = System.getenv("TRAVIS_SCALA_VERSION") != null
+
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
 
   lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*)
@@ -73,8 +75,13 @@ object ApplicationBuild extends Build {
     //Keys.fork in (Test) := true,
     //javaOptions in (Test) += "-Xdebug",
     //javaOptions in (Test) += "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9998",
-    // Specify central explicitly, so we don't try joscha.github.io unnecessarily
-    resolvers += "Maven central" at "http://repo1.maven.org/maven2/",
+    resolvers ++= (if (isTravisCI) Seq(
+      // Use Travis CI mirror
+      "Travis CI Maven Mirror" at "http://maven.mirrors.travis-ci.org/nexus/content/groups/public/"
+    ) else Seq(
+      // Specify central explicitly, so we don't try joscha.github.io unnecessarily
+      "Maven central" at "http://repo1.maven.org/maven2/"
+    )),
     resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
   ).dependsOn(RootProject(uri(
