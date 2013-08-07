@@ -73,6 +73,8 @@ object ApplicationBuild extends Build {
     //Keys.fork in (Test) := true,
     //javaOptions in (Test) += "-Xdebug",
     //javaOptions in (Test) += "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9998",
+    // Specify central explicitly, so we don't try joscha.github.io unnecessarily
+    resolvers += "Maven central" at "http://repo1.maven.org/maven2/",
     resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
   ).dependsOn(RootProject(uri(
