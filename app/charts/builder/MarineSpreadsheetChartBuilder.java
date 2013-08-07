@@ -9,7 +9,7 @@ import charts.spreadsheet.DataSource;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class MarineSpreadsheetChartBuilder implements ChartTypeBuilder {
+public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilder {
 
     private static final ImmutableMap<Region, Integer> OFFSETS =
             new ImmutableMap.Builder<Region, Integer>()
@@ -21,6 +21,10 @@ public class MarineSpreadsheetChartBuilder implements ChartTypeBuilder {
                 .put(Region.BURNETT_MARY, 5)
                 .put(Region.GBR, 6)
                 .build();
+
+    public MarineSpreadsheetChartBuilder() {
+        super(ChartType.MARINE);
+    }
 
     private boolean isMarineSpreadsheet(DataSource datasource) {
         try {
@@ -126,7 +130,8 @@ public class MarineSpreadsheetChartBuilder implements ChartTypeBuilder {
         }
     }
 
-    private List<Chart> build(DataSource datasource, Map<String, String[]> query) {
+    @Override
+    List<Chart> build(DataSource datasource, Map<String, String[]> query) {
         List<Chart> charts = Lists.newArrayList();
         List<Region> regions = getRegion(query);
         if(regions != null && !regions.isEmpty()) {
@@ -148,27 +153,8 @@ public class MarineSpreadsheetChartBuilder implements ChartTypeBuilder {
     }
 
     @Override
-    public boolean canHandle(ChartType type, List<DataSource> datasources) {
-        if(type == null || type.equals(ChartType.MARINE)) {
-            for(DataSource ds : datasources) {
-                if(isMarineSpreadsheet(ds)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public List<Chart> build(List<DataSource> datasources,
-            Map<String, String[]> query) {
-        List<Chart> charts = Lists.newArrayList();
-        for(DataSource datasource : datasources) {
-            if(isMarineSpreadsheet(datasource)) {
-                charts.addAll(build(datasource, query));
-            }
-        }
-        return charts;
+    boolean canHandle(DataSource datasource) {
+        return isMarineSpreadsheet(datasource);
     }
 
 }

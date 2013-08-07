@@ -14,6 +14,7 @@ public class ChartBuilder {
 
     private static List<ChartTypeBuilder> BUILDERS = new ImmutableList.Builder<ChartTypeBuilder>()
             .add(new MarineSpreadsheetChartBuilder())
+            .add(new CotsOutbreakSpreadsheetBuilder())
             .build();
 
     private List<DataSource> datasources;
