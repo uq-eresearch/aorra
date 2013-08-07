@@ -51,7 +51,7 @@ class FileStoreAsync @Inject()(
     import scala.concurrent.duration._
     val (enumerator, channel) = Concurrent.broadcast[String]
     // Ping every 15 seconds, after the first 1 second delay
-    Akka.system.scheduler.schedule(1 seconds, 15 seconds) {
+    Akka.system.scheduler.schedule(1.seconds, 15.seconds) {
       channel.push(ssePingMessage)
     }
     // Shed
@@ -69,9 +69,9 @@ class FileStoreAsync @Inject()(
   def pollingJsonResponse(authUser: AuthUser, request: Request[AnyContent]) = {
     val eventId = lastIdInQuery(request)
     val response =  JsArray(
-      filestore.getEventManager().getSince(eventId) map { case (id, event) =>
+      filestore.getEventManager().getSince(eventId).map { case (id, event) =>
         jsonMessage(id, event)
-      } toSeq
+      }.toSeq
     )
     Ok(response).as(JSON)
       .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
@@ -88,11 +88,8 @@ class FileStoreAsync @Inject()(
     val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
       lastIdInQuery(request)
     }
-    val eventSourceFormatter = Enumeratee.map[(String, EmEvent)] {
-      case (id, event) => sseMessage(id, event)
-    }
     Ok.feed(
-        Enumerator(initialEventSourceSetup()) andThen
+        initialEventSourceSetup andThen
         (fsEvents(authUser, lastEventId) &> eventSourceFormatter).interleave(
             pingEnumerator)
       ).as("text/event-stream; charset=utf-8")
@@ -122,8 +119,16 @@ class FileStoreAsync @Inject()(
 
   private def pingEnumerator(): Enumerator[String] = ssePingBroadcast
 
-  private def initialEventSourceSetup(): String = {
-    "retry: 2000\n\n"
+  private def initialEventSourceSetup(): Enumerator[String] = {
+    Enumerator("retry: 2000\n\n")
+  }
+
+  private def eventSourceFormatter() = {
+    // Play Framework uses structural types to implement the Enumeratee
+    import scala.language.reflectiveCalls
+    Enumeratee.map[(String, EmEvent)] {
+      case (id, event) => sseMessage(id, event)
+    }
   }
 
 }

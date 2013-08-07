@@ -49,6 +49,8 @@ object ApplicationBuild extends Build {
     requireJs ++= Seq("app.js") ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
+    // Show feature warnings
+    scalacOptions += "-feature",
     // Play Framework can't do parallel testing
     parallelExecution in jacoco.Config := false,
     // Jacoco report output
