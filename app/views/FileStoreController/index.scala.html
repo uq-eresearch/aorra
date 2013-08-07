@@ -11,7 +11,7 @@
 
   @templates()
 
-  <div class="col-lg-6 col-offset-3" id="loading-progress">
+  <div class="col-lg-6 col-lg-offset-3" id="loading-progress">
     <h4>Loading application...</h4>
     <div class="progress progress-striped active">
       <div class="bar" style="width: 0%;"></div>
@@ -25,7 +25,7 @@
     var $outerBar = $('#loading-progress .progress');
     var $innerBar = $outerBar.find('.bar');
     var maxWidth = $outerBar.width();
-    var parts = 10;
+    var parts = 5;
     $innerBar.width(Math.min(maxWidth, $innerBar.width() + maxWidth / parts));
   };
 
