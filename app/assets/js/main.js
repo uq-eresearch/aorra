@@ -9,7 +9,7 @@ requirejs.config({
       'jquery.fileupload': 'lib/jquery.fileupload',
       'jquery.ui.widget': 'lib/jquery.ui.widget',
       'jquery.bootstrap': 'lib/bootstrap',
-      'marionette': '//cdnjs.cloudflare.com/ajax/libs/backbone.marionette/1.0.3-bundled/backbone.marionette.min',
+      'marionette': '//cdnjs.cloudflare.com/ajax/libs/backbone.marionette/1.0.4-bundled/backbone.marionette.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min'
     },
     shim: {

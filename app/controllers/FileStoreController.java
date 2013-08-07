@@ -280,7 +280,6 @@ public final class FileStoreController extends SessionAwareController {
     });
   }
 
-
   @SubjectPresent
   public Result delete(final String fileOrFolderId) {
     return inUserSession(new F.Function<Session, Result>() {
@@ -296,6 +295,29 @@ public final class FileStoreController extends SessionAwareController {
         } else {
           fof.delete();
           return noContent();
+        }
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result deleteVersion(final String fileId, final String versionName) {
+    return versionBasedResult(fileId, versionName, new FileVersionOp() {
+      @Override
+      public final Result apply(
+          final Session session,
+          final FileStore.File file,
+          final FileStore.File version)
+          throws RepositoryException, IOException {
+        final UserDAO dao = getUserDAO(session);
+        final User u = dao.get(getUser());
+        if (!isAdmin(session, dao, u) && !version.getAuthor().equals(u))
+          return forbidden();
+        try {
+          version.delete();
+          return noContent();
+        } catch (AccessDeniedException e) {
+          return forbidden(e.getMessage());
         }
       }
     });

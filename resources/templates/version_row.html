@@ -7,6 +7,11 @@
   {{/author}}
 </td>
 <td>
+  {{#canDelete}}
+  <button type="button" class="close delete" title="Delete Version">
+    &times;
+  </button>
+  {{/canDelete}}
   <div class="visible-lg">
     <a href="{{downloadUrl}}" title="Download Version">
       <i class="icon-download-alt"></i> Download

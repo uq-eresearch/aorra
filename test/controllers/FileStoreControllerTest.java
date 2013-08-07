@@ -674,6 +674,55 @@ public class FileStoreControllerTest {
   }
 
   @Test
+  public void deleteVersion() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        final FileStore.File file =
+            fm.getRoot().createFile("test.txt", "text/plain",
+                new ByteArrayInputStream("Some content.".getBytes()));
+        file.update("text/plain",
+            new ByteArrayInputStream("Some more content.".getBytes()));
+        assertThat(file.getVersions()).hasSize(2);
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.deleteVersion(
+                  file.getIdentifier(), "1.1"),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(204);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          assertThat(file.getVersions()).hasSize(1);
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.deleteVersion(
+                  file.getIdentifier(), "1.1"),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(404);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.deleteVersion(
+                  file.getIdentifier(), "1.0"),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(403);
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          assertThat(file.getVersions()).hasSize(1);
+        }
+        return session;
+      }
+    });
+  }
+
+  @Test
   public void deleteFile() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override

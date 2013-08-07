@@ -46,6 +46,7 @@ PUT     /file/:fileId                   @controllers.FileStoreController.modifyF
 GET     /file/:fileId/info              @controllers.FileStoreController.fileInfo(fileId: String)
 POST    /file/:fileId/version/new       @controllers.FileStoreController.updateFile(fileId)
 GET     /file/:fileId/version/:vn       @controllers.FileStoreController.downloadFile(fileId, vn)
+DELETE  /file/:fileId/version/:vn       @controllers.FileStoreController.deleteVersion(fileId, vn)
 GET     /file/:fileId/version/:vn/text-summary    @controllers.FileStoreController.fileTextSummary(fileId, vn)
 DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)
 

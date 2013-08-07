@@ -257,6 +257,9 @@ define([
     modelEvents: {
       "change": "render"
     },
+    triggers: {
+      "click .delete": "version:delete"
+    },
     ui: {
       timestamp: '.timestamp'
     },
@@ -267,7 +270,8 @@ define([
       });
       if (this.model != this.model.collection.last()) {
         data = _(data).extend({
-          compareUrl: this.model.url().replace(/^\//, '#') + '/diff'
+          compareUrl: this.model.url().replace(/^\//, '#') + '/diff',
+          canDelete: this.options.canDelete
         });
       }
       return data;
@@ -277,23 +281,32 @@ define([
     },
     onRender: function($e) {
       formatTimestamp(this.ui.timestamp);
+    },
+    onVersionDelete: function(e) {
+      e.model.destroy();
     }
   });
 
   var FileInfoView = Backbone.Marionette.CompositeView.extend({
-    initialize: function() {
+    initialize: function(options) {
+      this._users = options.users;
       this.collection = this.model.versionList();
       this.render();
       this.model.fetch();
     },
     itemView: VersionView,
-    itemViewContainer: 'tbody',
-    onCompositeCollectionRendered: function() {
-      if (this.collection.isEmpty())
-        this.$el.hide();
-      else
-        this.$el.show();
+    itemViewOptions: function(model, index) {
+      var author = model.get("author");
+      return {
+        canDelete: author && this._users.current().get("email") == author.email
+      };
     },
+    itemViewContainer: 'tbody',
+    emptyView: Backbone.Marionette.ItemView.extend({
+      template: function() {
+        return '<tr><td><em>Loading version information...</em></td></tr>';
+      }
+    }),
     template: function(serialized_model) {
       return templates.renderSync('version_table', serialized_model);
     }
@@ -756,7 +769,8 @@ define([
       var type = typeFromMimeType(this.model.get('mime'));
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       this.info.show(new FileInfoView({
-        model: this.model.info()
+        model: this.model.info(),
+        users: this._users
       }));
       if (this.model.get('accessLevel') == 'RW') {
         this.upload.show(new FileUploadView({

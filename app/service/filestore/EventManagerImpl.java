@@ -65,12 +65,11 @@ public class EventManagerImpl implements EventManager {
   public void tell(final Event event) {
     Logger.debug(this+" - Adding event to history: "+event);
     history.record(event);
-    Logger.debug(this+" - Pushing event to channels: "+event);
+    Logger.debug(String.format("%s - Pushing event to %d channels: %s",
+        this, channels.size(), event));
     for (Channel<Tuple2<String, Event>> channel : channels) {
       // Push event ID and event
-      channel.push(new Tuple2<String, Event>(
-          history.getLastEventId(), event));
-      Logger.debug(this+" - Pushed to channel: "+channel);
+      channel.push(new Tuple2<String, Event>(history.getLastEventId(), event));
     }
   }
 

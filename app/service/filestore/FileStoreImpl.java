@@ -11,6 +11,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -25,6 +26,7 @@ import javax.jcr.Session;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
+import javax.naming.OperationNotSupportedException;
 
 import models.GroupManager;
 import models.User;
@@ -33,7 +35,9 @@ import models.filestore.Child;
 import models.filestore.FileDAO;
 import models.filestore.FolderDAO;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 import org.jcrom.JcrMappingException;
@@ -481,9 +485,13 @@ public class FileStoreImpl implements FileStore {
     @Override
     public FileStore.File getLatestVersion()
         throws RepositoryException {
-      return new File(
+      return new FileVersion(this,
           getDAO().getVersion(rawPath(), entity.getLatestVersion()),
           filestoreManager, eventManagerImpl);
+    }
+
+    protected String getLatestVersionName() {
+      return entity.getLatestVersion();
     }
 
     @Override
@@ -491,9 +499,11 @@ public class FileStoreImpl implements FileStore {
         throws RepositoryException {
       final ImmutableSortedMap.Builder<String,FileStore.File> b =
           ImmutableSortedMap.<String,FileStore.File>naturalOrder();
-      for (models.filestore.File version : getDAO().getVersionList(rawPath())) {
-        b.put(version.getVersion(),
-            new File(version, filestoreManager, eventManagerImpl));
+      final List<models.filestore.File> versions =
+          getDAO().getVersionListById(entity.getId());
+      for (models.filestore.File version : versions) {
+        b.put(version.getVersion(), new FileVersion(this,
+            version, filestoreManager, eventManagerImpl));
       }
       return b.build();
     }
@@ -512,6 +522,50 @@ public class FileStoreImpl implements FileStore {
     @Override
     public JcrDAO<models.filestore.File> getDAO() {
       return filestoreManager.getFileDAO();
+    }
+
+  }
+
+  protected static class FileVersion extends File {
+
+    protected final File file;
+
+    protected FileVersion(
+        File file,
+        models.filestore.File versionEntity,
+        Manager filestoreManager, EventManager eventManagerImpl)
+        throws RepositoryException {
+      super(versionEntity, filestoreManager, eventManagerImpl);
+      this.file = file;
+    }
+
+    @Override
+    public FileStore.File getLatestVersion()
+        throws RepositoryException {
+      throw new NotImplementedException();
+    }
+
+    @Override
+    public SortedMap<String, service.filestore.FileStore.File> getVersions() {
+      throw new NotImplementedException();
+    }
+
+    @Override
+    public void delete() throws AccessDeniedException, VersionException,
+        LockException, ConstraintViolationException, RepositoryException {
+      final Event event = Event.delete(this);
+      if (entity.getVersion().equals(file.getLatestVersionName())) {
+        final List<models.filestore.File> versions =
+            getDAO().getVersionListById(file.getIdentifier());
+        if (versions.size() < 2) {
+          throw new AccessDeniedException("You can't remove the last version!");
+        }
+        getDAO().restoreVersionById(file.getIdentifier(),
+            versions.get(versions.size()-2).getVersion(), true);
+      }
+      getDAO().removeVersionById(file.getIdentifier(), entity.getVersion());
+      eventManagerImpl.tell(event);
+      file.reload();
     }
 
   }
