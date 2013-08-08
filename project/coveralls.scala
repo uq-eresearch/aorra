@@ -39,9 +39,12 @@ object CoverallJson {
         packageNode <- (xmlReport \\ "package");
         fileNode <- (packageNode \ "sourcefile")
       ) yield {
-        val filename = "app/" + (packageNode \ "@name") + "/" + (fileNode \ "@name")
+        // Determine filename from package & filename
+        val filename = "^/?".r.replaceFirstIn(
+          (packageNode \ "@name") + "/" + (fileNode \ "@name"),
+          "app/")
         // Find file source (very naive)
-        val source = try { 
+        val source = try {
           Some(io.Source.fromFile(filename))
         } catch {
           case _: java.io.FileNotFoundException => None
@@ -66,14 +69,14 @@ object CoverallJson {
       }
     JArray(fileJsObjects.flatten.toList)
   }
-  
+
   def jobId = sys.env.get("TRAVIS_JOB_ID").getOrElse("unknown")
 
   def timestamp = {
     val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
     df.format(new java.util.Date())
   }
-  
+
   override def toString = {
     val json = JObject(List(
       JField("service_job_id", JString(jobId)),
