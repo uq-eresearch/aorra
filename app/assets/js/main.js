@@ -1,8 +1,7 @@
 var FileAPI = {
   staticPath: '/assets/js/lib/',
   flashUrl: '/assets/flash/FileAPI.flash.swf',
-  html5: false,
-  debug: true
+  html5: true
 };
 
 requirejs.config({

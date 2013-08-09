@@ -189,6 +189,7 @@ define([
       };
       // Replace any existing data
       this._progress = progress;
+      var $alerts = this.ui.alerts;
       var xhr = FileAPI.upload({
         url: this.model.uploadUrl(),
         //data: { foo: 'bar' },
@@ -213,7 +214,24 @@ define([
         filecomplete: function(err, xhr) {
           if (!err){
             var response = xhr.responseText;
-            console.log(response);
+            _.each(JSON.parse(response).files, function(file) {
+               var $alert = $('<div/>');
+               var render = function(type, msg) {
+                 $alert.html(templates.renderSync('alert_box', {
+                   type: type,
+                   message: _.template(
+                       "<strong><%= f.name %></strong>: <%= f.msg %>",
+                       { name: file.name, msg: msg },
+                       { variable: 'f' })
+                 }));
+               };
+               if (_.isUndefined(file['error'])) {
+                 render('success', 'Uploaded successfully.');
+               } else {
+                 render('error', file.error);
+               }
+               $alerts.append($alert);
+             });
           }
         },
         progress: function(evt) {
@@ -235,7 +253,6 @@ define([
     },
     onProgressUpdate: function() {
       var p = this._progress;
-      console.log(JSON.stringify(p));
       var done = 100.0 * (p.all.loaded - p.file.loaded) / p.all.total;
       var inprogress = 100.0 * p.file.loaded / p.all.total;
       this.ui.progress.find('.upload-done').css('width', done+'%');
