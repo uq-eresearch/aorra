@@ -169,9 +169,16 @@ define([
       return templates.renderSync('file_upload', data);
     },
     onRender: function() {
+      var $jsWrapper = this.$('.js-fileapi-wrapper');
       var f = _.bind(this.uploadFiles, this);
       FileAPI.event.on(this.ui.upload.get(0), 'change', function(e) {
         f(e);
+      });
+      $jsWrapper.on('mouseover', 'div', function() {
+        // Ensure flash displays below modals
+        $jsWrapper.find('div').css('z-index', 1000);
+        // Set height to something more sensible
+        $jsWrapper.find('div').css('height', $jsWrapper.height()+20+'px');
       });
     },
     uploadFiles: function(event) {
@@ -257,15 +264,6 @@ define([
       var inprogress = 100.0 * p.file.loaded / p.all.total;
       this.ui.progress.find('.upload-done').css('width', done+'%');
       this.ui.progress.find('.upload-progress').css('width', inprogress+'%');
-    },
-    debugFiles: function(files) {
-      var sum = _.reduce(files, function(m, f) {
-        return m + f.size;
-      }, 0);
-      var debugOut = _.reduce(files, function(m, f) {
-        return m + JSON.stringify(f);
-      }, '');
-      this.ui.alerts.html(debugOut+sum);
     }
   });
 
