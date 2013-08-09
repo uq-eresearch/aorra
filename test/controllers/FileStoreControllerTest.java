@@ -615,14 +615,19 @@ public class FileStoreControllerTest {
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
                         "Some content.")));
-          assertThat(contentAsString(result))
-            .isEqualTo("{\"files\":[{\"name\":\"test.txt\",\"size\":13}]}");
-          assertThat(status(result)).isEqualTo(200);
-          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
-          assertThat(IOUtils.toString(
-              ((FileStore.File)
-                  fm.getRoot().getFileOrFolder("test.txt")).getData()))
+          assertThat(status(result)).isEqualTo(201);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+              .isEqualTo("max-age=0, must-revalidate");
+
+          final Set<FileStore.File> files = fm.getRoot().getFiles();
+          assertThat(files).hasSize(1);
+          final FileStore.File file = files.iterator().next();
+          assertThat(IOUtils.toString(file.getData()))
               .isEqualTo("Some content.");
+          assertThat(contentAsString(result))
+              .isEqualTo((new JsonBuilder()).toJsonShallow(file).toString());
         }
         return session;
       }
@@ -659,14 +664,18 @@ public class FileStoreControllerTest {
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
                         "New content.")));
-          assertThat(contentAsString(result))
-            .isEqualTo("{\"files\":[{\"name\":\"test.txt\",\"size\":12}]}");
           assertThat(status(result)).isEqualTo(200);
-          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
-          assertThat(IOUtils.toString(
-              ((FileStore.File)
-                  fm.getByIdentifier(file.getIdentifier())).getData()))
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+              .isEqualTo("max-age=0, must-revalidate");
+          final Set<FileStore.File> files = fm.getRoot().getFiles();
+          assertThat(files).hasSize(1);
+          final FileStore.File updatedFile = files.iterator().next();
+          assertThat(IOUtils.toString(updatedFile.getData()))
               .isEqualTo("New content.");
+          assertThat(contentAsString(result)).isEqualTo(
+              (new JsonBuilder()).toJsonShallow(updatedFile).toString());
         }
         return session;
       }

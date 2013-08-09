@@ -157,13 +157,19 @@ define([
       progress: '.progress',
       upload: 'input[type="file"]'
     },
-    initialize: function() {
+    initialize: function(options) {
+      this._multiple = options.multiple == true;
       if (_.isFunction(this.model.info)) {
         this.listenTo(this.model, 'sync', function() {
           this.model.info().fetch();
         });
       }
       this.render();
+    },
+    serializeData: function() {
+      return {
+        multiple: this._multiple
+      };
     },
     template: function(data) {
       return templates.renderSync('file_upload', data);
@@ -219,26 +225,26 @@ define([
           triggerMethod('progress:update');
         },
         filecomplete: function(err, xhr) {
-          if (!err){
+          console.log(err);
+          if (!err) {
             var response = xhr.responseText;
-            _.each(JSON.parse(response).files, function(file) {
-               var $alert = $('<div/>');
-               var render = function(type, msg) {
-                 $alert.html(templates.renderSync('alert_box', {
-                   type: type,
-                   message: _.template(
-                       "<strong><%= f.name %></strong>: <%= f.msg %>",
-                       { name: file.name, msg: msg },
-                       { variable: 'f' })
-                 }));
-               };
-               if (_.isUndefined(file['error'])) {
-                 render('success', 'Uploaded successfully.');
-               } else {
-                 render('error', file.error);
-               }
-               $alerts.append($alert);
-             });
+            var file = JSON.parse(response);
+            var $alert = $('<div/>');
+            var render = function(type, msg) {
+              $alert.html(templates.renderSync('alert_box', {
+                type: type,
+                message: _.template(
+                    "<strong><%= f.name %></strong>: <%= f.msg %>",
+                    { name: file.name, msg: msg },
+                    { variable: 'f' })
+              }));
+            };
+            if (_.isUndefined(file['error'])) {
+              render('success', 'Uploaded successfully.');
+            } else {
+              render('error', file.error);
+            }
+            $alerts.append($alert);
           }
         },
         progress: function(evt) {
@@ -587,7 +593,8 @@ define([
       if (this.model.get('accessLevel') == 'RW') {
         this.upload.show(new FileUploadView({
           type: 'folder',
-          model: this.model
+          model: this.model,
+          multiple: true
         }));
         this.mkdir.show(new CreateFolderView({ model: this.model }));
         if (this.isAdmin()) {

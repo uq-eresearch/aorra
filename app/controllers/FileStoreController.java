@@ -526,38 +526,23 @@ public final class FileStoreController extends SessionAwareController {
           return badRequest("POST cannot contain multiple files.")
               .as("text/plain");
         }
-        // Assemble the JSON response
-        final ObjectNode json = Json.newObject();
-        {
-          final ArrayNode aNode = json.putArray("files");
-          for (MultipartFormData.FilePart filePart : body.getFiles()) {
-            final ObjectNode jsonFileData = Json.newObject();
-            final String fileName = filePart.getFilename();
-            final File file = filePart.getFile();
-            jsonFileData.put("name", fileName);
-            jsonFileData.put("size", file.length());
-            try {
-              f.update(filePart.getContentType(),
-                  new FileInputStream(filePart.getFile()));
-              session.save();
-              Logger.info(String.format(
-                "file %s content type %s uploaded to %s by %s",
-                fileName, filePart.getContentType(),
-                f.getPath(),
-                getUser()));
-            } catch (ItemExistsException iee) {
-              jsonFileData.put("error", iee.getMessage());
-            } catch (AccessDeniedException ade) {
-              jsonFileData.put("error",
-                  "Insufficient permissions to upload files to folder.");
-            }
-            aNode.add(jsonFileData);
-          }
+        final MultipartFormData.FilePart filePart = body.getFiles().get(0);
+        try {
+          final JsonBuilder jb = new JsonBuilder();
+          f.update(filePart.getContentType(),
+              new FileInputStream(filePart.getFile()));
+          session.save();
+          Logger.info(String.format(
+            "file %s content type %s uploaded to %s by %s",
+            filePart.getFilename(), filePart.getContentType(),
+            f.getPath(), getUser()));
+          return ok(jb.toJsonShallow(f)).as("application/json; charset=utf-8");
+        } catch (ItemExistsException iee) {
+          return forbidden(iee.getMessage());
+        } catch (AccessDeniedException ade) {
+          return forbidden(
+              "Insufficient permissions to upload files to folder.");
         }
-        // even though we return json set the content type to text/html
-        // to prevent IE/Opera from opening a download dialog as described here:
-        // https://github.com/blueimp/jQuery-File-Upload/wiki/Setup
-        return ok(json).as("text/html");
       }
     });
   }
@@ -573,37 +558,27 @@ public final class FileStoreController extends SessionAwareController {
           return badRequest("POST must contain multipart form data.")
               .as("text/plain");
         }
-        // Assemble the JSON response
-        final ObjectNode json = Json.newObject();
-        {
-          final ArrayNode aNode = json.putArray("files");
-          for (MultipartFormData.FilePart filePart : body.getFiles()) {
-            final ObjectNode jsonFileData = Json.newObject();
-            final String fileName = filePart.getFilename();
-            final File file = filePart.getFile();
-            jsonFileData.put("name", fileName);
-            jsonFileData.put("size", file.length());
-            try {
-              FileStore.File f = updateFileContents(folder, filePart);
-              session.save();
-              Logger.info(String.format(
-                "file %s content type %s uploaded to %s by %s",
-                fileName, filePart.getContentType(),
-                f.getPath(),
-                getUser()));
-            } catch (ItemExistsException iee) {
-              jsonFileData.put("error", iee.getMessage());
-            } catch (AccessDeniedException ade) {
-              jsonFileData.put("error",
-                  "Insufficient permissions to upload files to folder.");
-            }
-            aNode.add(jsonFileData);
-          }
+        if (body.getFiles().size() > 1) {
+          return badRequest("Can only upload one file at a time.")
+              .as("text/plain");
         }
-        // even though we return json set the content type to text/html
-        // to prevent IE/Opera from opening a download dialog as described here:
-        // https://github.com/blueimp/jQuery-File-Upload/wiki/Setup
-        return ok(json).as("text/html");
+        final MultipartFormData.FilePart filePart = body.getFiles().get(0);
+        try {
+          final JsonBuilder jb = new JsonBuilder();
+          FileStore.File f = updateFileContents(folder, filePart);
+          session.save();
+          Logger.info(String.format(
+            "file %s content type %s uploaded to %s by %s",
+            filePart.getFilename(), filePart.getContentType(),
+            f.getPath(), getUser()));
+          return created(jb.toJsonShallow(f))
+              .as("application/json; charset=utf-8");
+        } catch (ItemExistsException iee) {
+          return forbidden(iee.getMessage());
+        } catch (AccessDeniedException ade) {
+          return forbidden(
+              "Insufficient permissions to upload files to folder.");
+        }
       }
     });
   }
