@@ -1,7 +1,5 @@
 package charts.builder;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -65,12 +63,16 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
     }
 
     @Override
-    List<Chart> build(DataSource datasource, Map<String, String[]> query) {
-        XYDataset dataset = createDataset(datasource);
-        JFreeChart jfreechart = new CotsOutbreak().createChart(dataset);
-        Chart chart = new Chart(new ChartDescription(ChartType.COTS_OUTBREAK, Region.GBR),
-                createDimensions(jfreechart, query));
-        return Collections.singletonList(chart);
+    Chart build(DataSource datasource, Region region, Map<String, String[]> query) {
+        if(region.equals(Region.GBR)) {
+            XYDataset dataset = createDataset(datasource);
+            JFreeChart jfreechart = new CotsOutbreak().createChart(dataset);
+            Chart chart = new Chart(new ChartDescription(ChartType.COTS_OUTBREAK, region),
+                    createDimensions(jfreechart, query));
+            return chart;
+        } else {
+            return null;
+        }
     }
 
 }

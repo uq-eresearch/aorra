@@ -1,13 +1,11 @@
 package charts.builder;
 
-import java.util.List;
 import java.util.Map;
 
 import charts.BeerCoaster;
 import charts.spreadsheet.DataSource;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilder {
 
@@ -34,7 +32,8 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
         }
     }
 
-    private Chart getChart(DataSource datasource, Region region) {
+    @Override
+    Chart build(DataSource datasource, Region region, Map<String, String[]> query) {
         BeerCoaster beercoaster = getDrawable(datasource, region);
         if(beercoaster != null) {
             return new Chart(new ChartDescription(
@@ -42,20 +41,6 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
         } else {
             return null;
         }
-    }
-
-    private List<Region> getRegion(Map<String, String[]> properties) {
-        List<Region> result = Lists.newArrayList();
-        String[] regions = properties.get("region");
-        if(regions!=null && (regions.length > 0)) {
-            for(String r : regions) {
-                Region region = Region.getRegion(r);
-                if(region != null) {
-                    result.add(region);
-                }
-            }
-        }
-        return result;
     }
 
     private BeerCoaster getDrawable(DataSource datasource, Region region) {
@@ -128,28 +113,6 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
         } catch(NumberFormatException e) {
             return null;
         }
-    }
-
-    @Override
-    List<Chart> build(DataSource datasource, Map<String, String[]> query) {
-        List<Chart> charts = Lists.newArrayList();
-        List<Region> regions = getRegion(query);
-        if(regions != null && !regions.isEmpty()) {
-            for(Region region : regions) {
-                Chart chart = getChart(datasource, region);
-                if(chart != null) {
-                    charts.add(chart);
-                }
-            }
-        } else {
-            for(Region r : OFFSETS.keySet()) {
-                Chart chart = getChart(datasource, r);
-                if(chart != null) {
-                    charts.add(chart);
-                }
-            }
-        }
-        return charts;
     }
 
     @Override

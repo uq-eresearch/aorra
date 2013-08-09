@@ -22,7 +22,7 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
 
     abstract boolean canHandle(DataSource datasource);
 
-    abstract List<Chart> build(DataSource datasource, Map<String, String[]> query);
+    abstract Chart build(DataSource datasource, Region region, Map<String, String[]> query);
 
     @Override
     public boolean canHandle(ChartType type, List<DataSource> datasources) {
@@ -46,6 +46,41 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
             }
         }
         return charts;
+    }
+
+    List<Chart> build(DataSource datasource, Map<String, String[]> query) {
+        List<Chart> charts = Lists.newArrayList();
+        List<Region> regions = getRegion(query);
+        if(regions != null && !regions.isEmpty()) {
+            for(Region region : regions) {
+                Chart chart = build(datasource, region, query);
+                if(chart != null) {
+                    charts.add(chart);
+                }
+            }
+        } else {
+            for(Region region : Region.values()) {
+                Chart chart = build(datasource, region, query);
+                if(chart != null) {
+                    charts.add(chart);
+                }
+            }
+        }
+        return charts;
+    }
+
+    protected List<Region> getRegion(Map<String, String[]> query) {
+        List<Region> result = Lists.newArrayList();
+        String[] regions = query.get("region");
+        if(regions!=null && (regions.length > 0)) {
+            for(String r : regions) {
+                Region region = Region.getRegion(r);
+                if(region != null) {
+                    result.add(region);
+                }
+            }
+        }
+        return result;
     }
 
     Dimensions createDimensions(Drawable d, Map<String, String[]> query) {
