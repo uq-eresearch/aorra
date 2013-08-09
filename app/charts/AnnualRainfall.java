@@ -16,9 +16,9 @@ import org.jfree.data.category.CategoryDataset;
 
 public class AnnualRainfall {
 
-    public JFreeChart createChart(final String title, final CategoryDataset dataset) {
+    public JFreeChart createChart(final String region, final CategoryDataset dataset) {
         final JFreeChart chart = ChartFactory.createBarChart(
-            title,       // chart title
+            getTitle(dataset, region),       // chart title
             "Year",               // domain axis label
             "Rainfall (mm)",                  // range axis label
             dataset,                  // data
@@ -43,6 +43,27 @@ public class AnnualRainfall {
         final CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         return chart;
+    }
+
+    private String getTitle(CategoryDataset dataset, String region) {
+        return String.format("Mean annual rainfall for %s-%s - %s",
+                getMinYear(dataset), getMaxYear(dataset), region);
+    }
+
+    private String getMinYear(CategoryDataset dataset) {
+        if(!dataset.getColumnKeys().isEmpty()) {
+            return dataset.getColumnKeys().get(0).toString();
+        } else {
+            return "";
+        }
+    }
+
+    private String getMaxYear(CategoryDataset dataset) {
+        if(!dataset.getColumnKeys().isEmpty()) {
+            return dataset.getColumnKeys().get(dataset.getColumnKeys().size()-1).toString();
+        } else {
+            return "";
+        }
     }
 
 }

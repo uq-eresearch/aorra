@@ -56,7 +56,6 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
         return dataset;
     }
 
-
     private int parseYear(String y) {
         y = StringUtils.strip(y);
         if(y.contains(".")) {
@@ -79,7 +78,7 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
             Map<String, String[]> query) {
         if(ROW.containsKey(region)) {
             CategoryDataset dataset = createDataset(datasource, region);
-            JFreeChart jfreechart = new AnnualRainfall().createChart("Annual Rainfall", dataset);
+            JFreeChart jfreechart = new AnnualRainfall().createChart(region.getName(), dataset);
             Chart chart = new Chart(new ChartDescription(ChartType.ANNUAL_RAINFALL, region),
                     createDimensions(jfreechart, query));
             return chart;
