@@ -1,3 +1,10 @@
+var FileAPI = {
+  staticPath: '/assets/js/lib/',
+  flashUrl: '/assets/flash/FileAPI.flash.swf',
+  html5: false,
+  debug: true
+};
+
 requirejs.config({
     paths: {
       'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min',
@@ -5,10 +12,9 @@ requirejs.config({
       'glyphtree': 'lib/glyphtree',
       'hogan': '//cdnjs.cloudflare.com/ajax/libs/hogan.js/2.0.0/hogan.min',
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
-      'jquery.iframe-transport': 'lib/jquery.iframe-transport',
-      'jquery.fileupload': 'lib/jquery.fileupload',
       'jquery.ui.widget': 'lib/jquery.ui.widget',
       'jquery.bootstrap': 'lib/bootstrap',
+      'FileAPI': 'lib/FileAPI.min',
       'marionette': '//cdnjs.cloudflare.com/ajax/libs/backbone.marionette/1.0.4-bundled/backbone.marionette.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min'
     },
@@ -31,6 +37,9 @@ requirejs.config({
       'jquery.bootstrap': {
         deps: ['jquery'],
         exports: 'jQuery'
+      },
+      'FileAPI': {
+        exports: 'FileAPI'
       },
       'hogan': {
         exports: 'Hogan'
