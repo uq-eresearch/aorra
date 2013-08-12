@@ -48,14 +48,16 @@ requirejs.config({
 });
 
 require(['jquery.bootstrap'], function() {
-  $('[rel="tooltip"]').tooltip();
-  $('a[rel="back"]').click(function(event) {
-    event.preventDefault();
-    if (window.history.previous) {
-      window.history.back();
-    } else {
-      window.location.pathname = "/";
-      window.location.hash = "#";
-    }
+  $(function() {
+    $('[rel="tooltip"]').tooltip();
+    $('a[rel="back"]').click(function(event) {
+      event.preventDefault();
+      if (window.history.previous) {
+        window.history.back();
+      } else {
+        window.location.pathname = "/";
+        window.location.hash = "#";
+      }
+    })
   });
 });
