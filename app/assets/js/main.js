@@ -11,7 +11,6 @@ requirejs.config({
       'glyphtree': 'lib/glyphtree',
       'hogan': '//cdnjs.cloudflare.com/ajax/libs/hogan.js/2.0.0/hogan.min',
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
-      'jquery.ui.widget': 'lib/jquery.ui.widget',
       'jquery.bootstrap': 'lib/bootstrap',
       'FileAPI': 'lib/FileAPI.min',
       'marionette': '//cdnjs.cloudflare.com/ajax/libs/backbone.marionette/1.0.4-bundled/backbone.marionette.min',
