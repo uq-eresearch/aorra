@@ -215,9 +215,7 @@ define([
         chunkSize: 0, // or chunk size in bytes, eg: FileAPI.MB*.5 (html5)
         chunkUploadRetry: 0, // number of retries during upload chunks (html5)
 
-        prepare: function(file, options) {
-          options.data.filename = file.name;
-        },
+        prepare: function(file, options) {},
         upload: function(xhr, options) {},
         fileupload: function(xhr, options) {},
         fileprogress: function(evt) {
@@ -227,7 +225,7 @@ define([
           progress.file.total = evt.total;
           triggerMethod('progress:update');
         },
-        filecomplete: function(err, xhr) {
+        filecomplete: function(err, xhr, file) {
           var $alert = $('<div/>');
           var render = function(type, name, msg) {
             $alert.html(templates.renderSync('alert_box', {
@@ -239,7 +237,8 @@ define([
             }));
           };
           if (err) {
-            render('error', xhr.options.data.filename, xhr.responseText);
+            render('error', file.name, xhr.responseText || 
+                "Error uploading. Does the file already exist?");
           } else {
             var response = xhr.responseText;
             var file = JSON.parse(response);
