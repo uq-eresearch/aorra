@@ -200,12 +200,13 @@ define([
           total: 0
         }
       };
+      var collection = this.model.collection;
       // Replace any existing data
       this._progress = progress;
       var $alerts = this.ui.alerts;
       var xhr = FileAPI.upload({
         url: this.model.uploadUrl(),
-        //data: { foo: 'bar' },
+        data: {},
         //headers: { 'x-header': '...' },
         files: {
           files: files
@@ -214,7 +215,9 @@ define([
         chunkSize: 0, // or chunk size in bytes, eg: FileAPI.MB*.5 (html5)
         chunkUploadRetry: 0, // number of retries during upload chunks (html5)
 
-        prepare: function(file, options) {},
+        prepare: function(file, options) {
+          options.data.filename = file.name;
+        },
         upload: function(xhr, options) {},
         fileupload: function(xhr, options) {},
         fileprogress: function(evt) {
@@ -225,27 +228,31 @@ define([
           triggerMethod('progress:update');
         },
         filecomplete: function(err, xhr) {
-          console.log(err);
-          if (!err) {
+          var $alert = $('<div/>');
+          var render = function(type, name, msg) {
+            $alert.html(templates.renderSync('alert_box', {
+              type: type,
+              message: _.template(
+                  "<strong><%= f.name %></strong>: <%= f.msg %>",
+                  { name: name, msg: msg },
+                  { variable: 'f' })
+            }));
+          };
+          if (err) {
+            render('error', xhr.options.data.filename, xhr.responseText);
+          } else {
             var response = xhr.responseText;
             var file = JSON.parse(response);
-            var $alert = $('<div/>');
-            var render = function(type, msg) {
-              $alert.html(templates.renderSync('alert_box', {
-                type: type,
-                message: _.template(
-                    "<strong><%= f.name %></strong>: <%= f.msg %>",
-                    { name: file.name, msg: msg },
-                    { variable: 'f' })
-              }));
-            };
-            if (_.isUndefined(file['error'])) {
-              render('success', 'Uploaded successfully.');
+            // Update file in its collection
+            var existingFile = collection.get(file.id);
+            if (existingFile) {
+              existingFile.set(file);
             } else {
-              render('error', file.error);
+              collection.add(file);
             }
-            $alerts.append($alert);
+            render('success', file.name, 'Uploaded successfully.');
           }
+          $alerts.append($alert);
         },
         progress: function(evt) {
           progress.all.loaded = evt.loaded;
