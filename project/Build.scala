@@ -49,7 +49,7 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies, settings = s).settings(
     unmanagedResourceDirectories in Compile += file("resources"),
-    requireJs ++= Seq("app.js") ,
+    requireJs ++= Seq("models.js") ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
     // Show feature warnings
