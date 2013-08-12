@@ -6,8 +6,7 @@ define([
         'glyphtree',
         'jquery.bootstrap',
         'marionette',
-        'jquery.iframe-transport',
-        'jquery.fileupload'
+        'FileAPI'
         ], function(models, templates, moment, diff_match_patch, glyphtree, $, Backbone) {
   'use strict';
 
@@ -151,9 +150,15 @@ define([
     }
   });
 
-  var FileUploadView = Backbone.View.extend({
+  var FileUploadView = Backbone.Marionette.ItemView.extend({
     tagName: 'div',
-    initialize: function() {
+    ui: {
+      alerts: '.alerts',
+      progress: '.progress',
+      upload: 'input[type="file"]'
+    },
+    initialize: function(options) {
+      this._multiple = options.multiple == true;
       if (_.isFunction(this.model.info)) {
         this.listenTo(this.model, 'sync', function() {
           this.model.info().fetch();
@@ -161,63 +166,117 @@ define([
       }
       this.render();
     },
-    render: function() {
-      this.$el.empty();
-      var $alerts = $('<div/>');
-      var $progressbar = $('<div class="progress"></div>')
-          .append('<div class="bar"></div>');
-      var setProgress = function(current, total) {
-        var progress = parseInt(1.0 * current / total * 100, 10);
-        $progressbar.find('.bar').css('width', progress+'%');
+    serializeData: function() {
+      return {
+        multiple: this._multiple
       };
-      setProgress(0, 1);
-      var $input = $('<input type="file" name="files[]" multiple />');
-      this.$el.append($input);
-      $progressbar.hide();
-      this.$el.append($progressbar);
-      this.$el.append($alerts);
-      $input.fileupload({
-        url: this.model.uploadUrl(),
-        type: 'POST',
-        limitMultiFileUploads:
-          (this.model.urlRoot == '/file' ? 1 : undefined),
-        dataType: 'json',
-        sequentialUploads: true,
-        add: _.bind(function (e, data) {
-          $progressbar.show();
-          data.submit();
-        }, this),
-        progressall: function (e, data) {
-          setProgress(data.loaded, data.total);
-          if (data.loaded == data.total) {
-            $progressbar.hide();
-            setProgress(0, 1);
-          }
-        },
-        done: _.bind(function (e, data) {
-          _.each(data.result.files, function(file) {
-            var $alert = $('<div/>');
-            var render = function(type, msg) {
-              $alert.html(templates.renderSync('alert_box', {
-                type: type,
-                message: _.template(
-                    "<strong><%= f.name %></strong>: <%= f.msg %>",
-                    { name: file.name, msg: msg },
-                    { variable: 'f' })
-              }));
-            };
-            if (_.isUndefined(file['error'])) {
-              render('success', 'Uploaded successfully.');
-            } else {
-              render('error', file.error);
-            }
-            $alerts.append($alert);
-          });
-          if (_.isFunction(this.model.info)) {
-            this.model.info().fetch();
-          }
-        }, this)
+    },
+    template: function(data) {
+      return templates.renderSync('file_upload', data);
+    },
+    onRender: function() {
+      var $jsWrapper = this.$('.js-fileapi-wrapper');
+      var f = _.bind(this.uploadFiles, this);
+      FileAPI.event.on(this.ui.upload.get(0), 'change', function(e) {
+        f(e);
       });
+      $jsWrapper.on('mouseover', 'div', function() {
+        // Ensure flash displays below modals
+        $jsWrapper.find('div').css('z-index', 1000);
+        // Set height to something more sensible
+        $jsWrapper.find('div').css('height', $jsWrapper.height()+20+'px');
+      });
+    },
+    uploadFiles: function(event) {
+      var triggerMethod = _.bind(this.triggerMethod, this);
+      var files = FileAPI.getFiles(event);
+      var progress = {
+        all: {
+          loaded: 0,
+          total: 0
+        },
+        file: {
+          loaded: 0,
+          total: 0
+        }
+      };
+      var collection = this.model.collection;
+      // Replace any existing data
+      this._progress = progress;
+      var $alerts = this.ui.alerts;
+      var xhr = FileAPI.upload({
+        url: this.model.uploadUrl(),
+        data: {},
+        //headers: { 'x-header': '...' },
+        files: {
+          files: files
+        },
+
+        chunkSize: 0, // or chunk size in bytes, eg: FileAPI.MB*.5 (html5)
+        chunkUploadRetry: 0, // number of retries during upload chunks (html5)
+
+        prepare: function(file, options) {
+          options.data.filename = file.name;
+        },
+        upload: function(xhr, options) {},
+        fileupload: function(xhr, options) {},
+        fileprogress: function(evt) {
+          // progress file uploading
+          var filePercent = evt.loaded/evt.total*100;
+          progress.file.loaded = evt.loaded;
+          progress.file.total = evt.total;
+          triggerMethod('progress:update');
+        },
+        filecomplete: function(err, xhr) {
+          var $alert = $('<div/>');
+          var render = function(type, name, msg) {
+            $alert.html(templates.renderSync('alert_box', {
+              type: type,
+              message: _.template(
+                  "<strong><%= f.name %></strong>: <%= f.msg %>",
+                  { name: name, msg: msg },
+                  { variable: 'f' })
+            }));
+          };
+          if (err) {
+            render('error', xhr.options.data.filename, xhr.responseText);
+          } else {
+            var response = xhr.responseText;
+            var file = JSON.parse(response);
+            // Update file in its collection
+            var existingFile = collection.get(file.id);
+            if (existingFile) {
+              existingFile.set(file);
+            } else {
+              collection.add(file);
+            }
+            render('success', file.name, 'Uploaded successfully.');
+          }
+          $alerts.append($alert);
+        },
+        progress: function(evt) {
+          progress.all.loaded = evt.loaded;
+          progress.all.total = evt.total;
+          // Reset file progress if done
+          if (progress.file.loaded == progress.file.total) {
+            progress.file.loaded = 0;
+            progress.file.total = 0;
+          }
+          triggerMethod('progress:update');
+        },
+        complete: function(err, xhr) {
+          if (!err){
+            // Congratulations, the uploading was successful!
+          }
+        }
+      });
+    },
+    onProgressUpdate: function() {
+      var p = this._progress;
+      var done = 100.0 * (p.all.loaded - p.file.loaded) / p.all.total;
+      var inprogress = 100.0 * p.file.loaded / p.all.total;
+      this.ui.progress.find('.upload-done').css('width', done+'%');
+      this.ui.progress.find('.upload-progress').css('width', inprogress+'%');
     }
   });
 
@@ -541,7 +600,8 @@ define([
       if (this.model.get('accessLevel') == 'RW') {
         this.upload.show(new FileUploadView({
           type: 'folder',
-          model: this.model
+          model: this.model,
+          multiple: true
         }));
         this.mkdir.show(new CreateFolderView({ model: this.model }));
         if (this.isAdmin()) {
