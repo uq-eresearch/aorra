@@ -98,11 +98,12 @@ public final class FileStoreController extends SessionAwareController {
               (FileStore.Folder) fm.getByIdentifier(folderId);
           final String absPath =
               baseFolder.getPath() + "/" + PathUtils.relativePath(path);
-          fh.mkdir(absPath, true);
+          final FileStore.Folder newFolder = fh.mkdir(absPath, true);
+          return created((new JsonBuilder()).toJsonShallow(newFolder, false))
+              .as("application/json; charset=utf-8");
         } catch (FileOrFolderException e) {
           return badRequest(e.getMessage());
         }
-        return created();
       }
     });
   }

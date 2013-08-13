@@ -1048,7 +1048,7 @@ define([
       return templates.renderSync('start_page', {});
     }
   });
-  
+
   var UserMenu = Backbone.Marionette.ItemView.extend({
     template: function() {
       return templates.renderSync('user_menu', {});
@@ -1058,7 +1058,7 @@ define([
         .parent('li').addClass('active');
     }
   });
-  
+
   var ChangePasswordView = Backbone.Marionette.ItemView.extend({
     initialize: function() { this.render(); },
     events: {

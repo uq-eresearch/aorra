@@ -37,6 +37,7 @@ import play.mvc.Http.Status;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import service.filestore.FileStore;
+import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
@@ -797,10 +798,17 @@ public class FileStoreControllerTest {
                   fm.getRoot().getIdentifier(), "foo"),
               newRequest);
           assertThat(status(result)).isEqualTo(201);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
+          final FileStore.Folder folder = (Folder) fm.getFileOrFolder("/foo");
+          assertThat(folder).isNotNull();
+          final String expectedContent = (new JsonBuilder())
+              .toJsonShallow(folder, false)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
         }
-        assertThat(fm.getFileOrFolder("/foo")).isNotNull();
         // Attempt to create folder when one already exists
         {
           final Result result = callAction(
