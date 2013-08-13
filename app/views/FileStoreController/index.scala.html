@@ -14,7 +14,7 @@
   <div class="col-lg-6 col-lg-offset-3" id="loading-progress">
     <h4>Loading application...</h4>
     <div class="progress progress-striped active">
-      <div class="bar" style="width: 0%;"></div>
+      <div class="progress-bar" style="width: 0%;"></div>
     </div>
   </div>
   
@@ -23,7 +23,7 @@
   var updateModuleProgress = function(context, map, depMaps) {
     // console.log('loading: ' + map.name + ' at ' + map.url);
     var $outerBar = $('#loading-progress .progress');
-    var $innerBar = $outerBar.find('.bar');
+    var $innerBar = $outerBar.find('.progress-bar');
     var maxWidth = $outerBar.width();
     var parts = 5;
     $innerBar.width(Math.min(maxWidth, $innerBar.width() + maxWidth / parts));
