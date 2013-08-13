@@ -322,7 +322,7 @@
           formerType = this.type;
           this.type = this.tree.resolveType(struct);
           this.attributes = struct.attributes;
-          this.container.sort();
+          this.container.refresh();
           this._rebuildElement(formerType);
           return this;
         };
@@ -413,7 +413,7 @@
             node = _ref1[_i];
             node.container = this;
           }
-          this.sort();
+          this._sort();
         }
 
         NodeContainer.prototype.empty = function() {
@@ -423,8 +423,7 @@
         NodeContainer.prototype.add = function(node) {
           this.nodes.push(node);
           node.container = this;
-          this.sort();
-          return this._rebuildElement();
+          return this.refresh();
         };
 
         NodeContainer.prototype.remove = function(node) {
@@ -448,6 +447,11 @@
           } else {
             throw new Error('Node not in this container');
           }
+        };
+
+        NodeContainer.prototype.refresh = function() {
+          this._sort();
+          return this._rebuildElement();
         };
 
         NodeContainer.prototype.element = function() {
@@ -498,7 +502,7 @@
           }
         };
 
-        NodeContainer.prototype.sort = function() {
+        NodeContainer.prototype._sort = function() {
           return this.nodes.sort(this._compareNodes);
         };
 
