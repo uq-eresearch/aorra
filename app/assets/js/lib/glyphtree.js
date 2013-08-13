@@ -48,6 +48,16 @@
       },
       typeResolver: function(struct) {
         return struct.type;
+      },
+      nodeComparator: function(nodeA, nodeB) {
+        switch (false) {
+          case !(nodeA.name < nodeB.name):
+            return -1;
+          case !(nodeA.name > nodeB.name):
+            return 1;
+          default:
+            return 0;
+        }
       }
     };
   };
@@ -71,6 +81,7 @@
         this.idClass = this._options.classPrefix + 'id' + randomId;
         $(this.element).addClass(this.idClass);
         this.classResolver = new ClassResolver(this._options.classPrefix);
+        this.compareNodes = this._options.nodeComparator;
         this.resolveType = this._options.typeResolver;
         this._styleElement = this.setupStyle();
         this.events = this._options.events;
@@ -311,6 +322,7 @@
           formerType = this.type;
           this.type = this.tree.resolveType(struct);
           this.attributes = struct.attributes;
+          this.container.sort();
           this._rebuildElement(formerType);
           return this;
         };
@@ -393,11 +405,15 @@
 
           this.nodes = nodes;
           this._cr = tree.classResolver;
+          this._compareNodes = function(a, b) {
+            return tree.compareNodes(a, b);
+          };
           _ref1 = this.nodes;
           for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
             node = _ref1[_i];
             node.container = this;
           }
+          this.sort();
         }
 
         NodeContainer.prototype.empty = function() {
@@ -405,21 +421,9 @@
         };
 
         NodeContainer.prototype.add = function(node) {
-          var splicePoint;
-
-          splicePoint = function(nodes) {
-            var i, n, _i, _len;
-
-            for (i = _i = 0, _len = nodes.length; _i < _len; i = ++_i) {
-              n = nodes[i];
-              if (n.name > node.name) {
-                return i;
-              }
-            }
-            return nodes.length;
-          };
-          this.nodes.splice(splicePoint(this.nodes), 0, node);
+          this.nodes.push(node);
           node.container = this;
+          this.sort();
           return this._rebuildElement();
         };
 
@@ -492,6 +496,10 @@
           } else {
             return this.element();
           }
+        };
+
+        NodeContainer.prototype.sort = function() {
+          return this.nodes.sort(this._compareNodes);
         };
 
         NodeContainer.prototype.walkNodes = function(f) {

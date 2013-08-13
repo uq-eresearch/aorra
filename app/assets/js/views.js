@@ -99,6 +99,22 @@ define([
         }
         return 'file';
       },
+      nodeComparator: function(a, b) {
+        var getTypeIndex = function(n) { return n.type == 'folder' ? 0 : 1 };
+        if (getTypeIndex(a) == getTypeIndex(b)) {
+          if (a.name < b.name)
+            return -1;
+          else if (a.name > b.name)
+            return 1;
+          else
+            return 0;
+        } else {
+          if (getTypeIndex(a) < getTypeIndex(b))
+            return -1;
+          else
+            return 1;
+        }
+      },
       types: {
         folder: {
           icon: {
