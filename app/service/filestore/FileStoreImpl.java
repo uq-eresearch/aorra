@@ -20,13 +20,13 @@ import java.util.TreeSet;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
+import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
-import javax.naming.OperationNotSupportedException;
 
 import models.GroupManager;
 import models.User;
@@ -37,9 +37,11 @@ import models.filestore.FolderDAO;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
+import org.apache.jackrabbit.spi.Path;
+import org.apache.jackrabbit.spi.commons.conversion.IdentifierResolver;
+import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
 import org.jcrom.JcrMappingException;
 import org.jcrom.Jcrom;
 import org.jcrom.dao.JcrDAO;
@@ -146,17 +148,10 @@ public class FileStoreImpl implements FileStore {
     @Override
     public FileOrFolder getByIdentifier(final String id)
         throws RepositoryException {
-      try {
-        return new Folder(getFolderDAO().loadById(id), this, eventManagerImpl);
-      } catch (ClassCastException e) {
-      } catch (JcrMappingException e) {
-      } catch (NullPointerException e) {}
-      try {
-        return new File(getFileDAO().loadById(id), this, eventManagerImpl);
-      } catch (ClassCastException e) {
-      } catch (JcrMappingException e) {
-      } catch (NullPointerException e) {}
-      return null;
+      final String absPath = NodeWrapper.getPath(session, id);
+      if (absPath == null)
+        return null;
+      return getFileOrFolder(absPath);
     }
 
     @Override
@@ -589,13 +584,46 @@ public class FileStoreImpl implements FileStore {
       updatePath();
     }
 
+    public static String getPath(Session session, String id)
+        throws RepositoryException {
+      try {
+        return getPathFromParts(getPathParts(session, id));
+      } catch (MalformedPathException e) {
+        // Node with identifier doesn't exist
+        return null;
+      }
+    }
+
+    protected static Iterable<String> getPathParts(Session session, String id)
+        throws RepositoryException {
+      final IdentifierResolver resolver = (IdentifierResolver) session;
+      final Path rootPath = resolver.getPath(session.getNode(FILE_STORE_PATH)
+          .getIdentifier());
+      return calculatePathParts(
+          rootPath.computeRelativePath(resolver.getPath(id)));
+    }
+
+    // Calculate parts from relative path
+    private static Iterable<String> calculatePathParts(Path path)
+        throws RepositoryException {
+      if (path.getDepth() <= 0)
+        return Collections.singleton("");
+      return Iterables.concat(
+          calculatePathParts(path.getAncestor(2)), // Skip file/folder container
+          Collections.singleton(path.getName().getLocalName()));
+    }
+
     public int getDepth() {
       return Iterables.size(pathParts) - 1;
     }
 
-    public String getPath() {
+    private static String getPathFromParts(Iterable<String> pathParts) {
       final String path = Joiner.on('/').join(pathParts);
       return path.isEmpty() ? "/" : path;
+    }
+
+    public String getPath() {
+      return getPathFromParts(pathParts);
     }
 
     public Iterable<String> getPathParts() {
@@ -611,11 +639,7 @@ public class FileStoreImpl implements FileStore {
     }
 
     private Iterable<String> calculatePathParts() throws RepositoryException {
-      if (getParent() == null)
-        return Collections.singleton("");
-      return Iterables.concat(
-          ((NodeWrapper<?>) getParent()).getPathParts(),
-          Collections.singleton(getName()));
+      return getPathParts(filestoreManager.getSession(), entity.getId());
     }
 
     public String getName() {
@@ -687,11 +711,12 @@ public class FileStoreImpl implements FileStore {
       try {
         models.filestore.Folder parent = entity.getParent();
         if (parent == null) {
-          parent = filestoreManager.getFolderDAO().get(
+          System.out.println("Looking up parent manually...");
+          parent = filestoreManager.getFolderDAO().loadById(
               PathUtils.getNode(rawPath(), filestoreManager.getSession())
                 .getParent() /* files/folders */
                 .getParent() /* parent */
-                .getPath());
+                .getIdentifier());
         }
         return new Folder(parent, filestoreManager, eventManagerImpl);
       } catch (NullPointerException npe) {

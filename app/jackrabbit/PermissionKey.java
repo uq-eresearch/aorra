@@ -11,10 +11,14 @@ public final class PermissionKey {
     private final String principal;
     private final String id;
 
+    private final int hashCode;
+
     public PermissionKey(String workspace, String principal, String id) {
       this.workspace = workspace;
       this.principal = principal;
       this.id = id;
+      // Hash code will be used *very* often, and will never change
+      this.hashCode = generateHashCode();
     }
 
     public String getWorkspace() {
@@ -31,7 +35,15 @@ public final class PermissionKey {
 
     @Override
     public int hashCode() {
-      return HashCodeBuilder.reflectionHashCode(this);
+      return hashCode;
+    }
+
+    private int generateHashCode() {
+      return (new HashCodeBuilder(17,23))
+        .append(workspace)
+        .append(principal)
+        .append(id)
+        .toHashCode();
     }
 
     @Override

@@ -32,10 +32,10 @@ public class Folder extends AbstractJcrEntity implements Child<Folder> {
   @JcrParentNode
   private Folder parent;
 
-  @JcrChildNode
+  @JcrChildNode(lazy=true)
   private List<Folder> folders;
 
-  @JcrChildNode
+  @JcrChildNode(lazy=true)
   private List<File> files;
 
   public Folder() {}

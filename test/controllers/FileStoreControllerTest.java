@@ -22,11 +22,14 @@ import models.Flag;
 import models.GroupManager;
 import models.User;
 
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Range;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.junit.Test;
 
@@ -816,6 +819,56 @@ public class FileStoreControllerTest {
                   fm.getRoot().getIdentifier(), "foo"),
               newRequest);
           assertThat(status(result)).isEqualTo(400);
+        }
+        return session;
+      }
+    });
+  }
+
+  /**
+   * Test to ensure creating deep folder structures is efficient enough.
+   */
+  @Test
+  public void mkdirPerformance() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        FileStore.Folder parentFolder = fm.getRoot();
+        long totalMillis = 0;
+        for (final Integer i : ContiguousSet.create(
+            Range.closed(1, 50), DiscreteDomain.integers())) {
+          final String name = i.toString();
+          assertThat(parentFolder.getFileOrFolder(name)).isNull();
+          final long requestMillis = System.currentTimeMillis();
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.mkdir(
+                  parentFolder.getIdentifier(), name),
+              newRequest);
+          // Request must complete in 10 seconds
+          assertThat(status(result)).isEqualTo(201);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          final FileStore.Folder folder = (Folder)
+              ((Folder) fm.getByIdentifier(parentFolder.getIdentifier()))
+              .getFileOrFolder(name);
+          assertThat(folder).isNotNull();
+          final String expectedContent = (new JsonBuilder())
+              .toJsonShallow(folder, false)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+          // All requests in this depth range should take less than 2s
+          final long deltaMillis = System.currentTimeMillis() - requestMillis;
+          assertThat(totalMillis).isLessThan(30000L);
+          // This should take less than 30s total
+          totalMillis += deltaMillis;
+          assertThat(totalMillis).isLessThan(30000L);
+          parentFolder = folder;
         }
         return session;
       }
