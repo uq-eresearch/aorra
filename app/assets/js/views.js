@@ -318,7 +318,11 @@ define([
           fs.add(data);
           var $alert = $(templates.renderSync('alert_box', {
             type: 'info',
-            message: '<strong>' + path + '</strong> was successfully created.'
+            message: _.template(
+              '<a href="/#folder/<%=f.id%>"><strong><%=f.name%></strong></a>' +
+              ' was successfully created.',
+              data,
+              { variable: 'f'})
           }));
           $form.find('.messages').append($alert);
           $alert.alert();
