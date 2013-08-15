@@ -308,12 +308,14 @@ define([
       return templates.renderSync('create_folder', serialized_model);
     },
     onFormSubmit: function() {
+      var fs = this.model.collection;
       var $form = this.$el.find('form');
       var path = $form.find('input').val();
       $.ajax({
         method: $form.attr('method'),
         url: $form.attr('action')+"?"+$form.serialize(),
-        success: function() {
+        success: function(data) {
+          fs.add(data);
           var $alert = $(templates.renderSync('alert_box', {
             type: 'info',
             message: '<strong>' + path + '</strong> was successfully created.'
