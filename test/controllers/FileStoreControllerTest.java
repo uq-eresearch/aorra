@@ -624,7 +624,7 @@ public class FileStoreControllerTest {
           assertThat(charset(result)).isEqualTo("utf-8");
           assertThat(header("Cache-Control", result))
               .isEqualTo("max-age=0, must-revalidate");
-
+          fm.getRoot().reload();
           final Set<FileStore.File> files = fm.getRoot().getFiles();
           assertThat(files).hasSize(1);
           final FileStore.File file = files.iterator().next();
@@ -673,6 +673,7 @@ public class FileStoreControllerTest {
           assertThat(charset(result)).isEqualTo("utf-8");
           assertThat(header("Cache-Control", result))
               .isEqualTo("max-age=0, must-revalidate");
+          fm.getRoot().reload();
           final Set<FileStore.File> files = fm.getRoot().getFiles();
           assertThat(files).hasSize(1);
           final FileStore.File updatedFile = files.iterator().next();
@@ -854,17 +855,15 @@ public class FileStoreControllerTest {
           assertThat(charset(result)).isEqualTo("utf-8");
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
+          parentFolder.reload();
           final FileStore.Folder folder = (Folder)
-              ((Folder) fm.getByIdentifier(parentFolder.getIdentifier()))
-              .getFileOrFolder(name);
+              parentFolder.getFileOrFolder(name);
           assertThat(folder).isNotNull();
           final String expectedContent = (new JsonBuilder())
               .toJsonShallow(folder, false)
               .toString();
           assertThat(contentAsString(result)).isEqualTo(expectedContent);
-          // All requests in this depth range should take less than 2s
           final long deltaMillis = System.currentTimeMillis() - requestMillis;
-          assertThat(totalMillis).isLessThan(30000L);
           // This should take less than 30s total
           totalMillis += deltaMillis;
           assertThat(totalMillis).isLessThan(30000L);

@@ -51,9 +51,12 @@ public class FileStoreTest {
             assertThat(folder.getPath()).isEqualTo("/");
             assertThat(folder.getParent()).isNull();
             assertThat(folder.getDepth()).isEqualTo(0);
-            assertThat(fm.getFileOrFolder("/")).isEqualTo(folder);
-            assertThat(fm.getByIdentifier(folder.getIdentifier()))
-              .isEqualTo(folder);
+            assertThat(fm.getRoot().getIdentifier())
+              .isEqualTo(folder.getIdentifier());
+            // Following the removal of identifier-based equality, this is no
+            // longer the case.
+            //assertThat(fm.getByIdentifier(folder.getIdentifier()))
+            //  .isEqualTo(folder);
             return folder.getIdentifier();
           }
         });
@@ -95,7 +98,7 @@ public class FileStoreTest {
   }
 
   @Test
-  public void noImplicitOverwriting() {
+  public void parentKnowsOfChildren() {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
@@ -103,17 +106,52 @@ public class FileStoreTest {
           @Override
           public Session apply(Session session) throws RepositoryException {
             FileStore.Manager fm = fileStore().getManager(session);
+            final FileStore.Folder folder = fm.getRoot().createFolder("test");
+            assertThat(folder.getFiles()).isEmpty();
+            {
+              final FileStore.File file = folder.createFile("test1",
+                  "text/plain",
+                  new ByteArrayInputStream("Hello World!".getBytes()));
+              assertThat(file.getParent()).isEqualTo(folder);
+              assertThat(folder.getFiles()).isNotEmpty();
+              assertThat(folder.getFiles()).containsOnly(file);
+            }
+            {
+              final FileStore.File file = folder.createFile("test2",
+                  "text/plain",
+                  new ByteArrayInputStream("Hello World!".getBytes()));
+              assertThat(file.getParent()).isEqualTo(folder);
+              assertThat(folder.getFiles()).hasSize(2);
+              assertThat(folder.getFiles()).contains(file);
+            }
+            return session;
+          }
+        });
+      }
+    });
+  }
+
+  @Test
+  public void noImplicitOverwriting() {
+    running(fakeAorraApp(), new Runnable() {
+      @Override
+      public void run() {
+        sessionFactory().inSession(new Function<Session,Session>() {
+          @Override
+          public Session apply(Session session) throws RepositoryException {
+            final FileStore.Manager fm = fileStore().getManager(session);
+            final FileStore.Folder rootFolder = fm.getRoot();
             // Test overwritting folder
             {
-              final FileStore.Folder folder = fm.getRoot().createFolder("test");
+              final FileStore.Folder folder = rootFolder.createFolder("test");
               try {
-                fm.getRoot().createFolder("test");
+                rootFolder.createFolder("test");
                 fail("Should have thrown ItemExistsException.");
               } catch (ItemExistsException e) {
                 // All good
               }
               try {
-                fm.getRoot().createFile("test", "text/plain",
+                rootFolder.createFile("test", "text/plain",
                   new ByteArrayInputStream("Hello World!".getBytes()));
                 fail("Should have thrown ItemExistsException.");
               } catch (ItemExistsException e) {
@@ -124,22 +162,42 @@ public class FileStoreTest {
             // Test overwritting file
             {
               final FileStore.File file =
-                  fm.getRoot().createFile("test", "text/plain",
-                      new ByteArrayInputStream("Hello World!".getBytes()));
+                rootFolder.createFile("test", "text/plain",
+                    new ByteArrayInputStream("Hello World!".getBytes()));
               try {
-                fm.getRoot().createFolder("test");
+                rootFolder.createFolder("test");
                 fail("Should have thrown ItemExistsException.");
               } catch (ItemExistsException e) {
                 // All good
               }
               try {
-                fm.getRoot().createFile("test", "text/plain",
+                rootFolder.createFile("test", "text/plain",
                   new ByteArrayInputStream("Hello World!".getBytes()));
                 fail("Should have thrown ItemExistsException.");
               } catch (ItemExistsException e) {
                 // All good
               }
               file.delete();
+            }
+            // Test overwritting file by rename
+            {
+              final FileStore.File file1 =
+                  rootFolder.createFile("test", "text/plain",
+                      new ByteArrayInputStream("Hello World!".getBytes()));
+              final FileStore.File file2 =
+                  rootFolder.createFile("rename.me", "text/plain",
+                      new ByteArrayInputStream("Hello World!".getBytes()));
+              assertThat(rootFolder.getFiles()).hasSize(2);
+              assertThat(file1.getParent()).isEqualTo(rootFolder);
+              assertThat(file2.getParent()).isEqualTo(rootFolder);
+              try {
+                file2.rename("test");
+                fail("Should have thrown ItemExistsException.");
+              } catch (ItemExistsException e) {
+                // All good
+              }
+              assertThat(fm.getByIdentifier(file2.getIdentifier()).getName())
+                .isEqualTo("rename.me");
             }
             return session;
           }
@@ -324,8 +382,7 @@ public class FileStoreTest {
             final String g = "testGroup";
             gm.create(g);
             session.save();
-            final FileStoreImpl.Folder rootFolder = (FileStoreImpl.Folder)
-                fileStoreImpl.getManager(session).getRoot();
+            final Folder rootFolder = fileStoreImpl.getManager(session).getRoot();
             // Assign new user to admin group
             gm.addMember(g, userId);
             final FileStore.Folder testFolder =

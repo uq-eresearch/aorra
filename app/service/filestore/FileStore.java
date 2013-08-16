@@ -115,6 +115,8 @@ public interface FileStore {
     void revokeAccess(String groupName)
         throws RepositoryException;
 
+    void reload();
+
   }
 
   static interface File extends FileOrFolder {

@@ -30,7 +30,6 @@ import org.apache.jackrabbit.api.security.user.Group;
 import play.Play;
 import service.GuiceInjectionPlugin;
 import service.filestore.FileStore;
-import service.filestore.FileStoreImpl.Folder;
 import service.filestore.roles.Admin;
 import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil2;
@@ -300,7 +299,7 @@ public class FileStoreHelper {
               String entrypath = entry.getName();
               String filename = FilenameUtils.getName(entrypath);
               String parent = makePath(path, FilenameUtils.getFullPathNoEndSeparator(entrypath));
-              FileStore.Folder parentFolder = (Folder)manager.getFileOrFolder(parent);
+              FileStore.Folder parentFolder = (service.filestore.FileStore.Folder)manager.getFileOrFolder(parent);
               if(parentFolder == null) {
                   parentFolder = mkdir(parent, true);
               }

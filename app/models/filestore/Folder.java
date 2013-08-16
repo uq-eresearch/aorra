@@ -45,6 +45,7 @@ public class Folder extends AbstractJcrEntity implements Child<Folder> {
     this.setName(name);
   }
 
+  @Override
   public String getId() {
     return id;
   }

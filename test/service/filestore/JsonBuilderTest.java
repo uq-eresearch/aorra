@@ -293,6 +293,9 @@ public class JsonBuilderTest {
       throw new NotImplementedException();
     }
 
+    public void reload() {
+    }
+
   }
 
   private class TestFile implements FileStore.File {
