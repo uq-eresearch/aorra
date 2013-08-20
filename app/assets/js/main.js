@@ -46,7 +46,7 @@ requirejs.config({
 require(['jquery.bootstrap'], function() {
   $(function() {
     $('[rel="tooltip"]').tooltip();
-    $('a[rel="back"]').click(function(event) {
+    $('#nav-back button').click(function(event) {
       event.preventDefault();
       if (window.history.previous) {
         window.history.back();

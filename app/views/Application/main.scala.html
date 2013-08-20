@@ -70,7 +70,7 @@
   </head>
   <body>
 
-    <div class="navbar navbar-inverse navbar-static-top">
+    <div class="navbar navbar-inverse navbar-static-top" role="navigation">
       <div class="container">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
           <span class="icon-bar"></span>
@@ -80,7 +80,8 @@
         @subjectPresent() {
           <ul id="nav-back" class="nav navbar-nav pull-left">
             <li>
-              <a href="#" rel="back">
+              <button type="button" title="Go back"
+                class="btn btn-default navbar-btn">
                 <i class="icon-double-angle-left icon-large"></i>
               </a>
             </li>
@@ -90,43 +91,36 @@
            title="Automated Online Reef Report card Application">
           AORRA
         </a>
-        <div class="nav-collapse collapse navbar-responsive-collapse">
-          <ul class="nav navbar-nav">
-            @subjectPresent() {
-              <li><a href="/invite">Invite New User</a></li>
+        <ul class="nav navbar-nav pull-right hidden-xs">
+          @subjectPresent() {
+            @defining(SessionHelper.currentUser) { currentUser =>
+              <li class="dropdown">
+                <a href="#" class="dropdown-toggle"
+                  role="button"
+                  data-toggle="dropdown"
+                  title="Currently logged-in user">
+                  <i class="icon-user"></i>
+                  <span id="current-user" data-id="@currentUser.getId()">
+                  @currentUser.getName()
+                  </span>
+                  <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a href="/#change-password" rel="tooltip"
+                      role="menu"
+                      data-placement="top"
+                      title="All emails will be sent to this address.">
+                      <em>@currentUser.getEmail()</em>
+                    </a>
+                  </li>
+                  <li class="divider"></li>
+                  <li><a href="/logout">Logout</a></li>
+                </ul>
+              </li>
             }
-          </ul>
-          <ul class="nav navbar-nav pull-right">
-            @subjectPresent() {
-              @defining(SessionHelper.currentUser) { currentUser =>
-                <li class="dropdown">
-                  <a href="#" class="dropdown-toggle"
-                    role="button"
-                    data-toggle="dropdown"
-                    title="Currently logged-in user">
-                    <i class="icon-user"></i>
-                    <span id="current-user" data-id="@currentUser.getId()">
-                    @currentUser.getName()
-                    </span>
-                    <b class="caret"></b>
-                  </a>
-                  <ul class="dropdown-menu">
-                    <li>
-                      <a href="/#change-password" rel="tooltip"
-                        role="menu"
-                        data-placement="top"
-                        title="All emails will be sent to this address.">
-                        <em>@currentUser.getEmail()</em>
-                      </a>
-                    </li>
-                    <li class="divider"></li>
-                    <li><a href="/logout">Logout</a></li>
-                  </ul>
-                </li>
-              }
-            }
-          </ul>
-        </div>
+          }
+        </ul>
         @subjectPresent() {
           @defining(SessionHelper.currentUser) { currentUser =>
           <ul id="notifications-nav" class="nav navbar-nav pull-right">
@@ -134,6 +128,19 @@
           </ul>
           }
         }
+        <div class="collapse navbar-collapse navbar-responsive-collapse">
+          <ul class="nav navbar-nav">
+            @subjectPresent() {
+              <li><a href="/invite">Invite New User</a></li>
+              <li class="visible-xs">
+                <a href="/#change-password">Change Password</a>
+              </li>
+              <li class="visible-xs">
+                <a href="/logout">Logout</a>
+              </li>
+            }
+          </ul>
+        </div>
       </div>
     </div>
 

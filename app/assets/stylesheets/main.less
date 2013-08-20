@@ -11,6 +11,7 @@
 /* Make short labels easily selectable */
 span.glyphtree-node-label {
 	display: inline-block;
+	margin-left: 5px;
 	width: 100%; /* Fill to the right border */
 }
 
@@ -197,11 +198,17 @@ html.hero-page {
 @media @phone {
 	#notifications-nav {
 	  .navbar-toggle();
-    margin: 0;
+    margin-top: 4px;
     top: 0px;
-    right: 60px;
+    right: 20px;
     border: 0;
     padding: 0;
+  }
+  
+  #nav-back {
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
   }
 }
 
@@ -209,7 +216,9 @@ html.hero-page {
 
   #nav-back {
     display: block;
-    margin: 0;
+    li {
+      width: 60px;
+    }
   }
 
   .hero-page .attribution {
