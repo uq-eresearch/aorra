@@ -169,7 +169,17 @@ require(['models', 'views'], function(models, views) {
       });
     });
     fs.on('add', function(m) {
-      fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+      // Retry failed adding, as sometimes events arrive out-of-order
+      var f = function() {
+        try {
+          fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+        } catch (e) {
+          // Try again
+          _.delay(f, 1000);
+          //console.log(m.id+": "+e.message);
+        }
+      };
+      f();
     });
     fs.on('change', function(m) {
       fileTree.tree().update(m.asNodeStruct(), m.get('parent'));

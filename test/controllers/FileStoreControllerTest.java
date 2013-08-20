@@ -30,6 +30,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.junit.Test;
 
@@ -794,30 +795,32 @@ public class FileStoreControllerTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
+        final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStore().getManager(session);
-        assertThat(fm.getFileOrFolder("/foo")).isNull();
+        assertThat(fm.getFileOrFolder("/foo/bar")).isNull();
         {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.mkdir(
-                  fm.getRoot().getIdentifier(), "foo"),
+                  fm.getRoot().getIdentifier(), "foo/bar"),
               newRequest);
           assertThat(status(result)).isEqualTo(201);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
-          final FileStore.Folder folder = (Folder) fm.getFileOrFolder("/foo");
-          assertThat(folder).isNotNull();
-          final String expectedContent = (new JsonBuilder())
-              .toJsonShallow(folder, false)
-              .toString();
-          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+          final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+          for (final String path : new String[]{"/foo", "/foo/bar"}) {
+            final FileStore.Folder folder = (Folder) fm.getFileOrFolder(path);
+            assertThat(folder).isNotNull();
+            json.add(jb.toJsonShallow(folder, false));
+          }
+          assertThat(contentAsString(result)).isEqualTo(json.toString());
         }
         // Attempt to create folder when one already exists
         {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.mkdir(
-                  fm.getRoot().getIdentifier(), "foo"),
+                  fm.getRoot().getIdentifier(), "foo/bar"),
               newRequest);
           assertThat(status(result)).isEqualTo(400);
         }
@@ -859,10 +862,10 @@ public class FileStoreControllerTest {
           final FileStore.Folder folder = (Folder)
               parentFolder.getFileOrFolder(name);
           assertThat(folder).isNotNull();
-          final String expectedContent = (new JsonBuilder())
+          final String folderJson = (new JsonBuilder())
               .toJsonShallow(folder, false)
               .toString();
-          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+          assertThat(contentAsString(result)).isEqualTo("["+folderJson+"]");
           final long deltaMillis = System.currentTimeMillis() - requestMillis;
           // This should take less than 30s total
           totalMillis += deltaMillis;

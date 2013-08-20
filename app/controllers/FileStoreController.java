@@ -1,16 +1,15 @@
 package controllers;
 
 import static service.filestore.roles.Admin.isAdmin;
-
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileOrFolderException;
 import jackrabbit.AorraAccessManager;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import javax.jcr.AccessDeniedException;
@@ -25,6 +24,7 @@ import models.UserDAO;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.jackrabbit.api.security.user.Group;
+import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -52,6 +52,7 @@ import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
@@ -91,6 +92,7 @@ public final class FileStoreController extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         final FileStoreHelper fh = new FileStoreHelper(session);
         try {
@@ -99,8 +101,15 @@ public final class FileStoreController extends SessionAwareController {
           final String absPath =
               baseFolder.getPath() + "/" + PathUtils.relativePath(path);
           final FileStore.Folder newFolder = fh.mkdir(absPath, true);
-          return created((new JsonBuilder()).toJsonShallow(newFolder, false))
-              .as("application/json; charset=utf-8");
+          final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+          FileStore.Folder f = newFolder;
+          while (f != null && !f.getIdentifier().equals(folderId)) {
+            // Shift onto the front, because we need to return in order
+            // of creation.
+            json.insert(0, jb.toJsonShallow(f, false));
+            f = f.getParent();
+          }
+          return created(json).as("application/json; charset=utf-8");
         } catch (FileOrFolderException e) {
           return badRequest(e.getMessage());
         }

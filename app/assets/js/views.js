@@ -314,18 +314,21 @@ define([
       $.ajax({
         method: $form.attr('method'),
         url: $form.attr('action')+"?"+$form.serialize(),
-        success: function(data) {
-          fs.add(data);
-          var $alert = $(templates.renderSync('alert_box', {
-            type: 'info',
-            message: _.template(
-              '<a href="/#folder/<%=f.id%>"><strong><%=f.name%></strong></a>' +
-              ' was successfully created.',
-              data,
-              { variable: 'f'})
-          }));
-          $form.find('.messages').append($alert);
-          $alert.alert();
+        success: function(folders) {
+          // Add each returned folder
+          _.each(folders, function(data) {
+            fs.add(data);
+            var $alert = $(templates.renderSync('alert_box', {
+              type: 'info',
+              message: _.template(
+                '<a href="/#folder/<%=f.id%>"><strong><%=f.name%></strong></a>' +
+                ' was successfully created.',
+                data,
+                { variable: 'f'})
+            }));
+            $form.find('.messages').append($alert);
+            $alert.alert();
+          });
         }
       });
       return false;
