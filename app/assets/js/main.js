@@ -9,11 +9,11 @@ requirejs.config({
       'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min',
       'diff_match_patch': 'lib/diff_match_patch',
       'glyphtree': 'lib/glyphtree',
-      'hogan': '//cdnjs.cloudflare.com/ajax/libs/hogan.js/2.0.0/hogan.min',
+      'hogan': 'lib/hogan',
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
       'jquery.bootstrap': 'lib/bootstrap',
       'FileAPI': 'lib/FileAPI.min',
-      'marionette': '//cdnjs.cloudflare.com/ajax/libs/backbone.marionette/1.0.4-bundled/backbone.marionette.min',
+      'marionette': 'lib/backbone.marionette',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min'
     },
     shim: {
@@ -38,9 +38,6 @@ requirejs.config({
       },
       'FileAPI': {
         exports: 'FileAPI'
-      },
-      'hogan': {
-        exports: 'Hogan'
       }
     },
     waitSeconds: 20
