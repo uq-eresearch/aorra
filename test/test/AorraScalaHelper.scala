@@ -29,14 +29,14 @@ object AorraScalaHelper {
   def filestore = injector.getInstance(classOf[FileStore])
   def injector = GuiceInjectionPlugin.getInjector(play.Play.application())
 
-  def testMultipartFormBody(content: String) = {
+  def testMultipartFormBody(content: String, mimeType: String) = {
     val tf = TemporaryFile(java.io.File.createTempFile("multipart", "test"))
     IOUtils.copy(new ByteArrayInputStream(content.getBytes),
         new FileOutputStream(tf.file))
     AnyContentAsMultipartFormData(
       new MultipartFormData(Map(), List(
         FilePart("files", "test.txt",
-          Some("Content-Type: multipart/form-data"),
+          Some(mimeType),
           tf)
         ), List(), List()))
   }

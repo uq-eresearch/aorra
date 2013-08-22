@@ -34,6 +34,7 @@ import org.jcrom.util.PathUtils;
 
 import play.Logger;
 import play.api.http.MediaRange;
+import play.api.libs.MimeTypes;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
@@ -539,12 +540,12 @@ public final class FileStoreController extends SessionAwareController {
         final MultipartFormData.FilePart filePart = body.getFiles().get(0);
         try {
           final JsonBuilder jb = new JsonBuilder();
-          f.update(filePart.getContentType(),
+          f.update(getMimeType(filePart),
               new FileInputStream(filePart.getFile()));
           session.save();
           Logger.info(String.format(
             "file %s content type %s uploaded to %s by %s",
-            filePart.getFilename(), filePart.getContentType(),
+            filePart.getFilename(), getMimeType(filePart),
             f.getPath(), getUser()));
           return ok(jb.toJsonShallow(f)).as("application/json; charset=utf-8");
         } catch (ItemExistsException iee) {
@@ -579,7 +580,7 @@ public final class FileStoreController extends SessionAwareController {
           session.save();
           Logger.info(String.format(
             "file %s content type %s uploaded to %s by %s",
-            filePart.getFilename(), filePart.getContentType(),
+            filePart.getFilename(), getMimeType(filePart),
             f.getPath(), getUser()));
           return created(jb.toJsonShallow(f))
               .as("application/json; charset=utf-8");
@@ -679,7 +680,7 @@ public final class FileStoreController extends SessionAwareController {
       final FileStore.File f;
       if (fof == null) {
         f = folder.createFile(filePart.getFilename(),
-            filePart.getContentType(),
+            getMimeType(filePart),
             new FileInputStream(filePart.getFile()));
       } else if (fof instanceof FileStore.File) {
         throw new ItemExistsException(
@@ -691,6 +692,15 @@ public final class FileStoreController extends SessionAwareController {
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  protected String getMimeType(MultipartFormData.FilePart filePart) {
+    if (filePart.getContentType().equals("application/octet-stream")) {
+      final scala.Option<String> guessed =
+          MimeTypes.forFileName(filePart.getFilename());
+      return guessed.nonEmpty() ? guessed.get() : "application/octet-stream";
+    }
+    return filePart.getContentType();
   }
 
 }

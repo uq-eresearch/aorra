@@ -619,7 +619,7 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "application/json")
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
-                        "Some content.")));
+                        "Some content.", "text/plain")));
           assertThat(status(result)).isEqualTo(201);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
@@ -629,6 +629,49 @@ public class FileStoreControllerTest {
           final Set<FileStore.File> files = fm.getRoot().getFiles();
           assertThat(files).hasSize(1);
           final FileStore.File file = files.iterator().next();
+          assertThat(file.getMimeType()).isEqualTo("text/plain");
+          assertThat(IOUtils.toString(file.getData()))
+              .isEqualTo("Some content.");
+          assertThat(contentAsString(result))
+              .isEqualTo((new JsonBuilder()).toJsonShallow(file).toString());
+        }
+        return session;
+      }
+    });
+  }
+
+  /**
+   * Flash-based uploads will never have correct mime-types, so we should
+   * attempt to autodetect the mime-type.
+   */
+  @Test
+  public void uploadToFolderMimeTypeDetection() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        {
+          // Updating with correct body
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.uploadToFolder(
+                  fm.getRoot().getIdentifier()),
+              newRequest.withHeader("Accept", "application/json")
+                .withBody(
+                    test.AorraScalaHelper.testMultipartFormBody(
+                        "Some content.", "application/octet-stream")));
+          assertThat(status(result)).isEqualTo(201);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+              .isEqualTo("max-age=0, must-revalidate");
+          fm.getRoot().reload();
+          final Set<FileStore.File> files = fm.getRoot().getFiles();
+          assertThat(files).hasSize(1);
+          final FileStore.File file = files.iterator().next();
+          assertThat(file.getMimeType()).isEqualTo("text/plain");
           assertThat(IOUtils.toString(file.getData()))
               .isEqualTo("Some content.");
           assertThat(contentAsString(result))
@@ -668,7 +711,7 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "application/json")
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
-                        "New content.")));
+                        "New content.", "text/plain")));
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
