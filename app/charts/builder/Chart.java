@@ -2,24 +2,10 @@ package charts.builder;
 
 import charts.Dimensions;
 
-public class Chart {
+public interface Chart {
 
-    private final ChartDescription description;
+    public ChartDescription getDescription();
 
-    private final Dimensions chart;
-
-    public Chart(ChartDescription description, Dimensions chart) {
-        super();
-        this.description = description;
-        this.chart = chart;
-    }
-
-    public ChartDescription getDescription() {
-        return description;
-    }
-
-    public Dimensions getChart() {
-        return chart;
-    }
+    public Dimensions getChart();
 
 }

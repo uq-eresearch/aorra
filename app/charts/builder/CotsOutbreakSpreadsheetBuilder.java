@@ -10,6 +10,7 @@ import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
 
 import charts.CotsOutbreak;
+import charts.Dimensions;
 import charts.spreadsheet.DataSource;
 
 public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuilder {
@@ -63,16 +64,25 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
     }
 
     @Override
-    Chart build(DataSource datasource, Region region, Map<String, String[]> query) {
-        if(region.equals(Region.GBR)) {
-            XYDataset dataset = createDataset(datasource);
-            JFreeChart jfreechart = new CotsOutbreak().createChart(dataset);
-            Chart chart = new Chart(new ChartDescription(ChartType.COTS_OUTBREAK, region),
-                    createDimensions(jfreechart, query));
-            return chart;
-        } else {
-            return null;
-        }
+    Chart build(DataSource datasource, final Region region,
+        final Map<String, String[]> query) {
+      if (region.equals(Region.GBR)) {
+        XYDataset dataset = createDataset(datasource);
+        final JFreeChart jfreechart = new CotsOutbreak().createChart(dataset);
+        final Chart chart = new Chart() {
+          @Override
+          public ChartDescription getDescription() {
+            return new ChartDescription(ChartType.COTS_OUTBREAK, region);
+          }
+          @Override
+          public Dimensions getChart() {
+            return createDimensions(jfreechart, query);
+          }
+        };
+        return chart;
+      } else {
+        return null;
+      }
     }
 
 }

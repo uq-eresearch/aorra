@@ -9,6 +9,7 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import charts.AnnualRainfall;
+import charts.Dimensions;
 import charts.spreadsheet.DataSource;
 
 import com.google.common.collect.ImmutableMap;
@@ -74,13 +75,22 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     @Override
-    Chart build(DataSource datasource, Region region,
-            Map<String, String[]> query) {
+    Chart build(DataSource datasource, final Region region,
+            final Map<String, String[]> query) {
         if(ROW.containsKey(region)) {
             CategoryDataset dataset = createDataset(datasource, region);
-            JFreeChart jfreechart = new AnnualRainfall().createChart(region.getName(), dataset);
-            Chart chart = new Chart(new ChartDescription(ChartType.ANNUAL_RAINFALL, region),
-                    createDimensions(jfreechart, query));
+            final JFreeChart jfreechart = new AnnualRainfall().createChart(
+                region.getName(), dataset);
+            final Chart chart = new Chart() {
+              @Override
+              public ChartDescription getDescription() {
+                return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
+              }
+              @Override
+              public Dimensions getChart() {
+                return createDimensions(jfreechart, query);
+              }
+            };
             return chart;
         } else {
             return null;
