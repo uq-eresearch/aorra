@@ -4,9 +4,9 @@ import charts.Dimensions;
 
 public class Chart {
 
-    private ChartDescription description;
+    private final ChartDescription description;
 
-    private Dimensions chart;
+    private final Dimensions chart;
 
     public Chart(ChartDescription description, Dimensions chart) {
         super();

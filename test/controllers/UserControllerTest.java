@@ -14,13 +14,10 @@ import static test.AorraTestUtils.flagStore;
 import static test.AorraTestUtils.jcrom;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.mail.MessagingException;
 
 import models.Flag;
 import models.Notification;

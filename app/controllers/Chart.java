@@ -80,7 +80,7 @@ public class Chart extends SessionAwareController {
         FileStoreImpl.File file = (FileStoreImpl.File) fof;
         if(file.getMimeType().equals(XLS_MIME_TYPE)) {
           result.add(new XlsDataSource(file.getData()));
-        } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) { 
+        } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
           // Check this is an OpenXML document (no chance otherwise)
           result.add(new XlsxDataSource(file.getData()));
         }
@@ -96,7 +96,8 @@ public class Chart extends SessionAwareController {
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, paths);
         ChartBuilder builder = new ChartBuilder(datasources);
-        List<charts.builder.Chart> charts = builder.getCharts(request().queryString());
+        final List<charts.builder.Chart> charts =
+            builder.getCharts(request().queryString());
         final ObjectNode json = Json.newObject();
         final ArrayNode aNode = json.putArray("charts");
         for (charts.builder.Chart chart : charts) {
@@ -131,16 +132,20 @@ public class Chart extends SessionAwareController {
         if (charts.isEmpty()) {
           return notFound();
         } else {
-          Dimensions d = charts.get(0).getChart();
-          ChartRenderer renderer = new ChartRenderer(d);
-          String svg = renderer.render();
-          return toFormat(svg, format);
+          return toFormat(charts.get(0), format);
         }
       }
     });
   }
 
-  private Result toFormat(String svg, String format) throws Exception {
+  private Result toFormat(charts.builder.Chart chart, String format)
+      throws Exception {
+    if (format.equals("csv")) {
+      return ok().as("text/csv; charset=utf-8");
+    }
+    Dimensions d = chart.getChart();
+    ChartRenderer renderer = new ChartRenderer(d);
+    String svg = renderer.render();
     if ("png".equals(format)) {
       Document doc = toDocument(svg, false);
       ByteArrayOutputStream os = new ByteArrayOutputStream();
