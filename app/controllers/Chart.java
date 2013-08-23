@@ -126,12 +126,15 @@ public class Chart extends SessionAwareController {
         }
         final List<charts.builder.Chart> charts = builder.getCharts(type,
             request().queryString());
-        if (charts.isEmpty()) {
-          return notFound();
-        } else {
-          final Representation r = charts.get(0).outputAs(format);
-          return ok(r.getContent()).as(r.getContentType());
+        for (charts.builder.Chart chart : charts) {
+          try {
+            final Representation r = chart.outputAs(format);
+            return ok(r.getContent()).as(r.getContentType());
+          } catch (charts.builder.Chart.UnsupportedFormatException e) {
+            continue;
+          }
         }
+        return notFound();
       }
     });
   }

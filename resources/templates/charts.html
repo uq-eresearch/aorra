@@ -12,6 +12,12 @@
     {{#charts}}
     <div class="tab-pane {{#first}}active{{/first}}" id="chart-image-{{slug}}">
       <img src="{{url}}" alt="Chart for {{region}}" />
+      <p>
+      <a href="{{csv}}">
+        <i class="icon-table"></i>
+        Download as CSV
+      </a>
+      </p>
     </div>
     {{/charts}}
   </div>

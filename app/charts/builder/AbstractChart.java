@@ -32,7 +32,7 @@ public abstract class AbstractChart implements Chart {
 
   public abstract Dimensions getChart();
 
-  public abstract String getCSV();
+  public abstract String getCSV() throws UnsupportedFormatException;
 
   @Override
   public Representation outputAs(Format format)

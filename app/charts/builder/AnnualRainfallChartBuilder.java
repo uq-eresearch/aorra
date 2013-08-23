@@ -93,8 +93,8 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
                 return createDimensions(jfreechart, query);
               }
               @Override
-              public String getCSV() {
-                return "";
+              public String getCSV() throws UnsupportedFormatException {
+                throw new Chart.UnsupportedFormatException();
               }
             };
             return chart;

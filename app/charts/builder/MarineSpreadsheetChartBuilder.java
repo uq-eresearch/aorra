@@ -8,8 +8,6 @@ import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
 import charts.BeerCoaster;
-import charts.representations.Format;
-import charts.representations.Representation;
 import charts.spreadsheet.DataSource;
 import charts.BeerCoaster.Category;
 import charts.BeerCoaster.Condition;
