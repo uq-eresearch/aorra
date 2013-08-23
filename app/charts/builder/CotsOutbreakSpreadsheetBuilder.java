@@ -1,9 +1,5 @@
 package charts.builder;
 
-import static charts.builder.ChartBuilder.getFloat;
-import static charts.builder.ChartBuilder.renderPNG;
-import static charts.builder.ChartBuilder.renderSVG;
-
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +10,7 @@ import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
 
 import charts.CotsOutbreak;
+import charts.Dimensions;
 import charts.representations.Format;
 import charts.representations.Representation;
 import charts.spreadsheet.DataSource;
@@ -74,28 +71,18 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
       if (region.equals(Region.GBR)) {
         XYDataset dataset = createDataset(datasource);
         final JFreeChart jfreechart = new CotsOutbreak().createChart(dataset);
-        final Chart chart = new Chart() {
+        final Chart chart = new AbstractChart(query) {
           @Override
           public ChartDescription getDescription() {
             return new ChartDescription(ChartType.COTS_OUTBREAK, region);
           }
           @Override
-          public Representation outputAs(Format format)
-              throws UnsupportedFormatException {
-            switch (format) {
-            case CSV:
-              // TODO: Replace with real implementation
-              return format.createRepresentation("");
-            case SVG:
-              return format.createRepresentation(
-                  renderSVG(createDimensions(jfreechart, query)));
-            case PNG:
-              return format.createRepresentation(
-                  renderPNG(createDimensions(jfreechart, query),
-                      getFloat(query.get("width")),
-                      getFloat(query.get("height"))));
-            }
-            throw new Chart.UnsupportedFormatException();
+          public Dimensions getChart() {
+            return createDimensions(jfreechart, query);
+          }
+          @Override
+          public String getCSV() {
+            return "";
           }
         };
         return chart;

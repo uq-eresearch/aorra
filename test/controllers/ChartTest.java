@@ -189,7 +189,6 @@ public class ChartTest {
     });
   }
 
-  @Ignore
   @Test
   public void csvChart() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
@@ -213,9 +212,11 @@ public class ChartTest {
         List<String> row;
         while ((row = listReader.read()) != null) {
           assertThat(row).hasSize(2);
+          // GBR values are all "MODERATE"
+          assertThat(row.get(1)).isEqualTo("MODERATE");
           rowCount++;
         }
-        //assertThat(rowCount).isGreaterThan(1);
+        assertThat(rowCount).isEqualTo(13);
         listReader.close();
         return session;
       }

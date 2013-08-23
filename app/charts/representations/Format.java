@@ -16,12 +16,12 @@ public enum Format {
   }
 
   public Representation createRepresentation(final String content) {
-    final String ct = String.format("%s; charset=UTF-8", this.mimeType);
+    final String ct = String.format("%s; charset=utf-8", this.mimeType);
     return new Representation() {
       @Override
-      public InputStream getContent() {
+      public byte[] getContent() {
         try {
-          return new ByteArrayInputStream(content.getBytes("UTF-8"));
+          return content.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
           throw new RuntimeException(e); // Should never happen
         }
@@ -37,8 +37,8 @@ public enum Format {
     final String ct = this.mimeType;
     return new Representation() {
       @Override
-      public InputStream getContent() {
-        return new ByteArrayInputStream(content);
+      public byte[] getContent() {
+        return content;
       }
       @Override
       public String getContentType() {

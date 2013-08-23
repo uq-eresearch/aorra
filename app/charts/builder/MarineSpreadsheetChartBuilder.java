@@ -1,10 +1,11 @@
 package charts.builder;
 
-import static charts.builder.ChartBuilder.getFloat;
-import static charts.builder.ChartBuilder.renderPNG;
-import static charts.builder.ChartBuilder.renderSVG;
-
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Map;
+
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.BeerCoaster;
 import charts.representations.Format;
@@ -13,6 +14,7 @@ import charts.spreadsheet.DataSource;
 import charts.BeerCoaster.Category;
 import charts.BeerCoaster.Condition;
 import charts.BeerCoaster.Indicator;
+import charts.Dimensions;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -47,28 +49,35 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
         final Map<String, String[]> query) {
       final BeerCoaster beercoaster = getDrawable(datasource, region);
       if(beercoaster != null) {
-        return new Chart() {
+        return new AbstractChart(query) {
           @Override
           public ChartDescription getDescription() {
             return new ChartDescription(ChartType.MARINE, region);
           }
           @Override
-          public Representation outputAs(Format format)
-              throws UnsupportedFormatException {
-            switch (format) {
-            case CSV:
-              // TODO: Replace with real implementation
-              return format.createRepresentation("");
-            case SVG:
-              return format.createRepresentation(
-                  renderSVG(beercoaster));
-            case PNG:
-              return format.createRepresentation(
-                  renderPNG(beercoaster,
-                      getFloat(query.get("width")),
-                      getFloat(query.get("height"))));
+          public Dimensions getChart() {
+            return beercoaster;
+          }
+          @Override
+          public String getCSV() {
+            final StringWriter sw = new StringWriter();
+            try {
+              final CsvListWriter csv = new CsvListWriter(sw,
+                  CsvPreference.STANDARD_PREFERENCE);
+              csv.write("Overall marine condition",
+                  beercoaster.getOverallCondition());
+              for (Category c : Category.values()) {
+                csv.write(c.getName(), beercoaster.getCondition(c));
+              }
+              for (Indicator i : Indicator.values()) {
+                csv.write(i.getName(), beercoaster.getCondition(i));
+              }
+              csv.close();
+            } catch (IOException e) {
+              // How on earth would you get an IOException with a StringWriter?
+              throw new RuntimeException(e);
             }
-            throw new Chart.UnsupportedFormatException();
+            return sw.toString();
           }
         };
       } else {
