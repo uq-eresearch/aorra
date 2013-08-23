@@ -1,24 +1,15 @@
 package controllers;
 
-import java.io.ByteArrayOutputStream;
-import java.io.CharArrayReader;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import javax.jcr.Session;
 
-import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
-import org.apache.batik.transcoder.SVGAbstractTranscoder;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.image.PNGTranscoder;
-import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 import org.jcrom.Jcrom;
-import org.w3c.dom.Document;
 
 import play.libs.F;
 import play.libs.Json;
@@ -29,11 +20,11 @@ import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
-import charts.ChartRenderer;
-import charts.Dimensions;
 import charts.builder.ChartBuilder;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
+import charts.representations.Format;
+import charts.representations.Representation;
 import charts.spreadsheet.DataSource;
 import charts.spreadsheet.XlsDataSource;
 import charts.spreadsheet.XlsxDataSource;
@@ -115,78 +106,34 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result chart(final String chart, final String format, final List<String> paths) {
+  public Result chart(final String chart, final String formatStr, final List<String> paths) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        List<DataSource> datasources = getDatasources(session, paths);
-        ChartBuilder builder = new ChartBuilder(datasources);
+        final List<DataSource> datasources = getDatasources(session, paths);
+        final ChartBuilder builder = new ChartBuilder(datasources);
         final ChartType type;
         try {
           type = ChartType.getChartType(chart);
         } catch (IllegalArgumentException e) {
           return notFound("unknown chart type " + chart);
         }
-        List<charts.builder.Chart> charts = builder.getCharts(type, request()
-            .queryString());
+        final Format format;
+        try {
+          format = Format.valueOf(formatStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+          return badRequest("unknown chart format: " + formatStr);
+        }
+        final List<charts.builder.Chart> charts = builder.getCharts(type,
+            request().queryString());
         if (charts.isEmpty()) {
           return notFound();
         } else {
-          return toFormat(charts.get(0), format);
+          final Representation r = charts.get(0).outputAs(format);
+          return ok(r.getContent()).as(r.getContentType());
         }
       }
     });
   }
 
-  private Result toFormat(charts.builder.Chart chart, String format)
-      throws Exception {
-    if (format.equals("csv")) {
-      return ok().as("text/csv; charset=utf-8");
-    }
-    Dimensions d = chart.getChart();
-    ChartRenderer renderer = new ChartRenderer(d);
-    String svg = renderer.render();
-    if ("png".equals(format)) {
-      Document doc = toDocument(svg, false);
-      ByteArrayOutputStream os = new ByteArrayOutputStream();
-      PNGTranscoder t = new PNGTranscoder();
-      Float width = getParam("width");
-      if(width != null) {
-          t.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, width);
-      }
-      Float height = getParam("height");
-      if(height != null) {
-          t.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, height);
-      }
-      t.transcode(new TranscoderInput(doc), new TranscoderOutput(os));
-      return ok(os.toByteArray()).as("image/png");
-    } else {
-      return ok(svg).as("image/svg+xml");
-    }
-  }
-
-  Float getParam(String name) {
-      try {
-          return Float.parseFloat(request().queryString().get(name)[0]);
-      } catch(Exception e) {
-          return null;
-      }
-  }
-
-  private Document toDocument(String svg, boolean relativeDimensions) throws Exception {
-    // Turn back into DOM
-    String parserName = XMLResourceDescriptor.getXMLParserClassName();
-    SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parserName);
-    Document doc = f.createDocument("file:///test.svg",
-        new CharArrayReader(svg.toCharArray()));
-    String h = doc.getDocumentElement().getAttribute("height");
-    String w = doc.getDocumentElement().getAttribute("width");
-    doc.getDocumentElement().setAttributeNS(null, "viewbox",
-        String.format("0 0 %s %s", w, h));
-    if(relativeDimensions) {
-        doc.getDocumentElement().setAttribute("height", "100%");
-        doc.getDocumentElement().setAttribute("width", "100%");
-    }
-    return doc;
-  }
 }

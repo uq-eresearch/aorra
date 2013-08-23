@@ -1,11 +1,15 @@
 package charts.builder;
 
+import static charts.builder.ChartBuilder.getFloat;
+import static charts.builder.ChartBuilder.renderPNG;
+import static charts.builder.ChartBuilder.renderSVG;
+
 import java.util.Map;
 
 import charts.BeerCoaster;
-import charts.Dimensions;
+import charts.representations.Format;
+import charts.representations.Representation;
 import charts.spreadsheet.DataSource;
-
 import charts.BeerCoaster.Category;
 import charts.BeerCoaster.Condition;
 import charts.BeerCoaster.Indicator;
@@ -40,7 +44,7 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
 
     @Override
     Chart build(DataSource datasource, final Region region,
-        Map<String, String[]> query) {
+        final Map<String, String[]> query) {
       final BeerCoaster beercoaster = getDrawable(datasource, region);
       if(beercoaster != null) {
         return new Chart() {
@@ -49,8 +53,22 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
             return new ChartDescription(ChartType.MARINE, region);
           }
           @Override
-          public Dimensions getChart() {
-            return beercoaster;
+          public Representation outputAs(Format format)
+              throws UnsupportedFormatException {
+            switch (format) {
+            case CSV:
+              // TODO: Replace with real implementation
+              return format.createRepresentation("");
+            case SVG:
+              return format.createRepresentation(
+                  renderSVG(beercoaster));
+            case PNG:
+              return format.createRepresentation(
+                  renderPNG(beercoaster,
+                      getFloat(query.get("width")),
+                      getFloat(query.get("height"))));
+            }
+            throw new Chart.UnsupportedFormatException();
           }
         };
       } else {

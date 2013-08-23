@@ -1,5 +1,9 @@
 package charts.builder;
 
+import static charts.builder.ChartBuilder.getFloat;
+import static charts.builder.ChartBuilder.renderPNG;
+import static charts.builder.ChartBuilder.renderSVG;
+
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -9,7 +13,8 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import charts.AnnualRainfall;
-import charts.Dimensions;
+import charts.representations.Format;
+import charts.representations.Representation;
 import charts.spreadsheet.DataSource;
 
 import com.google.common.collect.ImmutableMap;
@@ -87,8 +92,22 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
                 return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
               }
               @Override
-              public Dimensions getChart() {
-                return createDimensions(jfreechart, query);
+              public Representation outputAs(Format format)
+                  throws UnsupportedFormatException {
+                switch (format) {
+                case CSV:
+                  // TODO: Replace with real implementation
+                  return format.createRepresentation("");
+                case SVG:
+                  return format.createRepresentation(
+                      renderSVG(createDimensions(jfreechart, query)));
+                case PNG:
+                  return format.createRepresentation(
+                      renderPNG(createDimensions(jfreechart, query),
+                          getFloat(query.get("width")),
+                          getFloat(query.get("height"))));
+                }
+                throw new Chart.UnsupportedFormatException();
               }
             };
             return chart;

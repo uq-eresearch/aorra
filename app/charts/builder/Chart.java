@@ -1,11 +1,17 @@
 package charts.builder;
 
 import charts.Dimensions;
+import charts.representations.Format;
+import charts.representations.Representation;
 
 public interface Chart {
 
-    public ChartDescription getDescription();
+  @SuppressWarnings("serial")
+  public class UnsupportedFormatException extends Exception {}
 
-    public Dimensions getChart();
+  public ChartDescription getDescription();
+
+  public Representation outputAs(Format format)
+      throws UnsupportedFormatException;
 
 }
