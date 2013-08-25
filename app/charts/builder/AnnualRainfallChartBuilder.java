@@ -4,11 +4,11 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.util.CellReference;
-import org.jfree.chart.JFreeChart;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import charts.AnnualRainfall;
+import charts.Drawable;
 import charts.spreadsheet.DataSource;
 
 import com.google.common.collect.ImmutableMap;
@@ -78,9 +78,9 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
             Map<String, String[]> query) {
         if(ROW.containsKey(region)) {
             CategoryDataset dataset = createDataset(datasource, region);
-            JFreeChart jfreechart = new AnnualRainfall().createChart(region.getName(), dataset);
-            Chart chart = new Chart(new ChartDescription(ChartType.ANNUAL_RAINFALL, region),
-                    createDimensions(jfreechart, query));
+            Drawable d = new AnnualRainfall().createChart(region.getName(), dataset,
+                    getChartSize(query, 750, 500));
+            Chart chart = new Chart(new ChartDescription(ChartType.ANNUAL_RAINFALL, region), d);
             return chart;
         } else {
             return null;

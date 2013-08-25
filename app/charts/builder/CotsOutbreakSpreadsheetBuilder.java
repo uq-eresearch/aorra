@@ -3,13 +3,13 @@ package charts.builder;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jfree.chart.JFreeChart;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
 
 import charts.CotsOutbreak;
+import charts.Drawable;
 import charts.spreadsheet.DataSource;
 
 public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuilder {
@@ -66,9 +66,8 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
     Chart build(DataSource datasource, Region region, Map<String, String[]> query) {
         if(region.equals(Region.GBR)) {
             XYDataset dataset = createDataset(datasource);
-            JFreeChart jfreechart = new CotsOutbreak().createChart(dataset);
-            Chart chart = new Chart(new ChartDescription(ChartType.COTS_OUTBREAK, region),
-                    createDimensions(jfreechart, query));
+            Drawable d = new CotsOutbreak().createChart(dataset, getChartSize(query, 750, 500));
+            Chart chart = new Chart(new ChartDescription(ChartType.COTS_OUTBREAK, region), d);
             return chart;
         } else {
             return null;

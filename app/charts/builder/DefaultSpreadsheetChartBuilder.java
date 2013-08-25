@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jfree.ui.Drawable;
 
-import charts.Dimensions;
 import charts.spreadsheet.DataSource;
 
 import com.google.common.collect.Lists;
@@ -83,9 +81,9 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
         return result;
     }
 
-    Dimensions createDimensions(Drawable d, Map<String, String[]> query) {
-        return new DimensionsWrapper(d, new Dimension(
-                getParam(query, "width", 750), getParam(query, "height", 500)));
+    Dimension getChartSize(Map<String, String[]> query, int width, int height) {
+        return new Dimension(getParam(query, "chartwidth", width),
+                getParam(query, "chartheight", height));
     }
 
     int getParam(Map<String, String[]> query, String name, int def) {

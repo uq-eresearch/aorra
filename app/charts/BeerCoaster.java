@@ -13,14 +13,13 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import org.jfree.text.TextUtilities;
 import org.jfree.ui.TextAnchor;
 
-public class BeerCoaster implements Dimensions {
+public class BeerCoaster implements Drawable {
 
     private static final Color NOT_EVALUATED = new Color(229,229,229);
 
@@ -332,7 +331,7 @@ public class BeerCoaster implements Dimensions {
         }
     }
 
-    private void draw(Graphics2D graphics) {
+    public void draw(Graphics2D graphics) {
         Graphics2D g2d = (Graphics2D) graphics.create();
         try {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -366,20 +365,7 @@ public class BeerCoaster implements Dimensions {
     }
 
     @Override
-    public void draw(Graphics2D graphics, Rectangle2D area) {
-        if(dimension == null){
-            dimension = new Dimension((int)area.getWidth(), (int)area.getHeight());
-        }
-        draw(graphics);
-    }
-
-    @Override
-    public Dimension getDimension() {
+    public Dimension getDimension(Graphics2D graphics) {
         return new Dimension(dimension);
-    }
-
-    @Override
-    public void setDimension(Dimension dimension) {
-        throw new RuntimeException("can't render with other dimensions, try scaling the result image");
     }
 }

@@ -16,6 +16,7 @@ public class ChartBuilder {
             .add(new MarineSpreadsheetChartBuilder())
             .add(new CotsOutbreakSpreadsheetBuilder())
             .add(new AnnualRainfallChartBuilder())
+            .add(new ProgressTableChartBuilder())
             .build();
 
     private List<DataSource> datasources;

@@ -1,14 +1,14 @@
 package charts.builder;
 
-import charts.Dimensions;
+import charts.Drawable;
 
 public class Chart {
 
     private ChartDescription description;
 
-    private Dimensions chart;
+    private Drawable chart;
 
-    public Chart(ChartDescription description, Dimensions chart) {
+    public Chart(ChartDescription description, Drawable chart) {
         super();
         this.description = description;
         this.chart = chart;
@@ -18,7 +18,7 @@ public class Chart {
         return description;
     }
 
-    public Dimensions getChart() {
+    public Drawable getChart() {
         return chart;
     }
 

@@ -1,6 +1,7 @@
 package charts;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.text.SimpleDateFormat;
 
 import org.jfree.chart.ChartFactory;
@@ -16,7 +17,7 @@ import org.jfree.ui.RectangleInsets;
 
 public class CotsOutbreak {
 
-    public JFreeChart createChart(final XYDataset dataset) {
+    public Drawable createChart(final XYDataset dataset, Dimension dimension) {
         JFreeChart chart = ChartFactory.createTimeSeriesChart(
                 "Crown-of-thorns starfish outbreaks",  // title
                 "Year",             // x-axis label
@@ -42,7 +43,7 @@ public class CotsOutbreak {
         axis.setDateFormatOverride(new SimpleDateFormat("yyyy"));
         DateTickUnit unit = new DateTickUnit(DateTickUnitType.YEAR, 1, new SimpleDateFormat("yyyy"));
         axis.setTickUnit(unit);
-        return chart;
+        return new JFreeChartDrawable(chart, dimension);
     }
 
 }

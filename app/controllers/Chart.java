@@ -30,7 +30,7 @@ import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
 import charts.ChartRenderer;
-import charts.Dimensions;
+import charts.Drawable;
 import charts.builder.ChartBuilder;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
@@ -131,7 +131,7 @@ public class Chart extends SessionAwareController {
         if (charts.isEmpty()) {
           return notFound();
         } else {
-          Dimensions d = charts.get(0).getChart();
+          Drawable d = charts.get(0).getChart();
           ChartRenderer renderer = new ChartRenderer(d);
           String svg = renderer.render();
           return toFormat(svg, format);

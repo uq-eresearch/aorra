@@ -1,20 +1,17 @@
 package charts
 
-import java.awt.Dimension
-import java.awt.Graphics2D
-import java.awt.RenderingHints
-import java.awt.geom.Rectangle2D
-import java.awt.image.BufferedImage
-import org.apache.batik.dom.svg.SVGDOMImplementation
-import org.w3c.dom.svg.SVGDocument
-import org.apache.batik.svggen.SVGGraphics2D
-import java.io.CharArrayWriter
-import java.awt.GraphicsEnvironment
 import java.awt.Font
+import java.awt.GraphicsEnvironment
+import java.awt.RenderingHints
+import java.io.CharArrayWriter
+
+import org.apache.batik.dom.svg.SVGDOMImplementation
 import org.apache.batik.svggen.DefaultExtensionHandler
 import org.apache.batik.svggen.ImageHandlerBase64Encoder
+import org.apache.batik.svggen.SVGGraphics2D
+import org.w3c.dom.svg.SVGDocument
 
-class ChartRenderer(val chart: Dimensions) {
+class ChartRenderer(val chart: Drawable) {
 
   def render() = {
     // Make sure our fonts are available
@@ -33,11 +30,11 @@ class ChartRenderer(val chart: Dimensions) {
     )
     g2.setFont(new Font("Liberation Sans", Font.PLAIN, 11))
 
-    val d = chart.getDimension
+    val d = chart.getDimension(g2)
     g2.setRenderingHint(
       RenderingHints.KEY_ANTIALIASING,
       RenderingHints.VALUE_ANTIALIAS_ON)
-    chart.draw(g2, new Rectangle2D.Double(0, 0, d.width, d.height))
+    chart.draw(g2)
     g2.setSVGCanvasSize(d)
 
     val cw = new CharArrayWriter()
