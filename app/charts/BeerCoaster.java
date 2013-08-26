@@ -16,6 +16,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Collections;
 
 import org.jfree.text.TextUtilities;
 import org.jfree.ui.TextAnchor;
@@ -178,22 +179,18 @@ public class BeerCoaster implements Dimensions {
     private int bcy;
     private float bcr;
     private GraphUtils g;
-    // indicator condition
-    private final Condition[] iCondition = new Condition[Indicator.values().length];
-    // category condition
-    private final Condition[] cCondition = new Condition[Category.values().length];
+    // indicator condition - NOT_EVALUATED by default
+    private final Condition[] iCondition = Collections.nCopies(
+        Indicator.values().length,
+        Condition.NOT_EVALUATED).toArray(new Condition[0]);
+    // category condition - NOT_EVALUATED by default
+    private final Condition[] cCondition = Collections.nCopies(
+        Category.values().length,
+        Condition.NOT_EVALUATED).toArray(new Condition[0]);
 
-    private Condition overall;
+    private Condition overall = Condition.NOT_EVALUATED;
 
-    public BeerCoaster() {
-      for (int i = 0; i < this.iCondition.length; i++) {
-        iCondition[i] = Condition.NOT_EVALUATED;
-      }
-      for (int i = 0; i < this.cCondition.length; i++) {
-        cCondition[i] = Condition.NOT_EVALUATED;
-      }
-      overall = Condition.NOT_EVALUATED;
-    }
+    public BeerCoaster() {}
 
     public Condition getCondition(Indicator indicator) {
       return iCondition[indicator.ordinal()];
