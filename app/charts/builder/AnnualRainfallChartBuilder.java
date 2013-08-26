@@ -1,5 +1,10 @@
 package charts.builder;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -7,6 +12,9 @@ import org.apache.poi.ss.util.CellReference;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.time.TimeSeriesDataItem;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AnnualRainfall;
 import charts.Dimensions;
@@ -32,31 +40,32 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
         super(ChartType.ANNUAL_RAINFALL);
     }
 
-    private CategoryDataset createDataset(DataSource datasource, Region region) {
-        int i = 1;
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        final String series = "rainfall";
-        Integer row = ROW.get(region);
-        while(true) {
-            try {
-                String year = datasource.select(new CellReference(0, i).formatAsString()).format("value");
-                if(StringUtils.equalsIgnoreCase("Annual Average", year)) {
-                    break;
-                }
-                String outbreaks = datasource.select(new CellReference(row, i).formatAsString()).format("value");
-                if(StringUtils.isNotBlank(year) && StringUtils.isNotBlank(outbreaks)) {
-                    double val = Double.parseDouble(outbreaks);
-                    dataset.addValue(val, series, Integer.toString(parseYear(year)));
-                } else {
-                    break;
-                }
-                i++;
-            } catch(Exception e) {
-                e.printStackTrace();
-                break;
-            }
+    private DefaultCategoryDataset createDataset(
+        DataSource datasource, Region region) {
+      int i = 1;
+      DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+      final String series = "rainfall";
+      Integer row = ROW.get(region);
+      while(true) {
+        try {
+          String year = datasource.select(new CellReference(0, i).formatAsString()).format("value");
+          if(StringUtils.equalsIgnoreCase("Annual Average", year)) {
+              break;
+          }
+          String outbreaks = datasource.select(new CellReference(row, i).formatAsString()).format("value");
+          if(StringUtils.isNotBlank(year) && StringUtils.isNotBlank(outbreaks)) {
+              double val = Double.parseDouble(outbreaks);
+              dataset.addValue(val, series, Integer.toString(parseYear(year)));
+          } else {
+              break;
+          }
+          i++;
+        } catch(Exception e) {
+          e.printStackTrace();
+          break;
         }
-        return dataset;
+      }
+      return dataset;
     }
 
     private int parseYear(String y) {
@@ -80,26 +89,41 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
     Chart build(DataSource datasource, final Region region,
             final Map<String, String[]> query) {
         if(ROW.containsKey(region)) {
-            CategoryDataset dataset = createDataset(datasource, region);
-            final JFreeChart jfreechart = new AnnualRainfall().createChart(
-                region.getName(), dataset);
-            final Chart chart = new AbstractChart(query) {
-              @Override
-              public ChartDescription getDescription() {
-                return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
+          final DefaultCategoryDataset dataset = createDataset(datasource, region);
+          final JFreeChart jfreechart = new AnnualRainfall().createChart(
+              region.getName(), dataset);
+          final Chart chart = new AbstractChart(query) {
+            @Override
+            public ChartDescription getDescription() {
+              return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
+            }
+            @Override
+            public Dimensions getChart() {
+              return createDimensions(jfreechart, query);
+            }
+            @Override
+            public String getCSV() {
+              final StringWriter sw = new StringWriter();
+              try {
+                final CsvListWriter csv = new CsvListWriter(sw,
+                    CsvPreference.STANDARD_PREFERENCE);
+                csv.write("Year", "Railfall (mm)");
+                for (int i = 0; i < dataset.getColumnCount(); i++) {
+                  csv.write(
+                    dataset.getColumnKey(i),
+                    dataset.getValue(0, i));
+                }
+                csv.close();
+              } catch (IOException e) {
+                // How on earth would you get an IOException with a StringWriter?
+                throw new RuntimeException(e);
               }
-              @Override
-              public Dimensions getChart() {
-                return createDimensions(jfreechart, query);
-              }
-              @Override
-              public String getCSV() throws UnsupportedFormatException {
-                throw new Chart.UnsupportedFormatException();
-              }
-            };
-            return chart;
+              return sw.toString();
+            }
+          };
+          return chart;
         } else {
-            return null;
+          return null;
         }
     }
 
