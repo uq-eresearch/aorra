@@ -212,8 +212,8 @@ public class ChartTest {
         List<String> row;
         while ((row = listReader.read()) != null) {
           assertThat(row).hasSize(2);
-          // GBR values are all "MODERATE"
-          assertThat(row.get(1)).isEqualTo("MODERATE");
+          // GBR values are all MODERATE
+          assertThat(row.get(1)).isEqualTo("Moderate");
           rowCount++;
         }
         assertThat(rowCount).isEqualTo(13);

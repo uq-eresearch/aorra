@@ -63,12 +63,15 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
               final CsvListWriter csv = new CsvListWriter(sw,
                   CsvPreference.STANDARD_PREFERENCE);
               csv.write("Overall marine condition",
-                  beercoaster.getOverallCondition());
+                  beercoaster.getOverallCondition().getLabel());
               for (Category c : Category.values()) {
-                csv.write(c.getName(), beercoaster.getCondition(c));
-              }
-              for (Indicator i : Indicator.values()) {
-                csv.write(i.getName(), beercoaster.getCondition(i));
+                csv.write(c.getName(), beercoaster.getCondition(c).getLabel());
+                for (Indicator i : Indicator.values()) {
+                  if (i.getCategory() == c) {
+                    csv.write(i.getName(),
+                        beercoaster.getCondition(i).getLabel());
+                  }
+                }
               }
               csv.close();
             } catch (IOException e) {
@@ -112,7 +115,7 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
 
     private Condition determineCondition(Double index) {
       if (index == null) {
-        return null;
+        return Condition.NOT_EVALUATED;
       } else if(index >= 80) {
         return Condition.VERY_GOOD;
       } else if(index >= 60) {
