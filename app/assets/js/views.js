@@ -676,7 +676,7 @@ define([
           return _(c).extend({
             first: i == 0,
             slug: _.str.slugify(c.region),
-            csv: c.url.replace(".svg?", ".csv?")
+            csv: c.url.replace(/\.(png|svg)\?/, ".csv?")
           });
         })
       };
