@@ -1,5 +1,7 @@
 package boxrenderer.xhtml;
 
+import graphics.GraphUtils;
+
 import java.awt.TexturePaint;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -7,7 +9,6 @@ import java.awt.image.BufferedImage;
 import org.apache.commons.lang3.StringUtils;
 
 import boxrenderer.Box;
-import boxrenderer.GraphUtils;
 
 
 public class BackgroundTextureCssStyle extends AbstractCssStyle implements CssStyle {

@@ -1,9 +1,10 @@
 package boxrenderer.xhtml;
 
+import graphics.GraphUtils;
+
 import org.apache.commons.lang3.StringUtils;
 
 import boxrenderer.Box;
-import boxrenderer.GraphUtils;
 
 
 public class RotationCssStyle extends AbstractCssStyle implements CssStyle {

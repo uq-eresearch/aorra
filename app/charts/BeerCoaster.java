@@ -1,5 +1,7 @@
 package charts;
 
+import graphics.GraphUtils;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;

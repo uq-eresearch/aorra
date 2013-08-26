@@ -47,7 +47,7 @@ class ChartRenderer(val chart: Drawable) {
   protected def registerFonts() {
     val ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
     Seq("Regular", "Bold").map(f => s"LiberationSans-$f.ttf").foreach { font =>
-      val fontStream = classOf[GraphUtils].getResourceAsStream(font)
+      val fontStream = classOf[ChartRenderer].getResourceAsStream(font)
       try {
         ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, fontStream))
       } catch { // It's in the classpath, so failure should never happen

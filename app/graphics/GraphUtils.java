@@ -1,4 +1,4 @@
-package charts;
+package graphics;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -39,7 +39,6 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 
 import com.jhlabs.image.GaussianGlowFilter;
-
 
 public class GraphUtils {
 
