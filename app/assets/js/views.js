@@ -675,7 +675,8 @@ define([
         charts: _.map(this._charts, function(c, i) {
           return _(c).extend({
             first: i == 0,
-            slug: _.str.slugify(c.region)
+            slug: _.str.slugify(c.region),
+            csv: c.url.replace(/\.(png|svg)\?/, ".csv?")
           });
         })
       };

@@ -1,25 +1,16 @@
 package charts.builder;
 
-import charts.Drawable;
+import charts.representations.Format;
+import charts.representations.Representation;
 
-public class Chart {
+public interface Chart {
 
-    private ChartDescription description;
+  @SuppressWarnings("serial")
+  public class UnsupportedFormatException extends Exception {}
 
-    private Drawable chart;
+  public ChartDescription getDescription();
 
-    public Chart(ChartDescription description, Drawable chart) {
-        super();
-        this.description = description;
-        this.chart = chart;
-    }
-
-    public ChartDescription getDescription() {
-        return description;
-    }
-
-    public Drawable getChart() {
-        return chart;
-    }
+  public Representation outputAs(Format format)
+      throws UnsupportedFormatException;
 
 }

@@ -11,7 +11,7 @@ object ApplicationBuild extends Build {
 
   def crshVersion = "1.2.6"
   val BatikVersion = "1.7"
-  
+
   val appDependencies = Seq(
     javaCore,
     "javax.jcr" % "jcr" % "2.0",
@@ -39,7 +39,8 @@ object ApplicationBuild extends Build {
     "org.apache.poi" % "poi" % "3.8",
     "org.apache.poi" % "poi-ooxml" % "3.8",
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "test",
-    "com.kitfox.svg" % "svg-salamander" % "1.0"
+    "com.kitfox.svg" % "svg-salamander" % "1.0",
+    "net.sf.supercsv" % "super-csv" % "2.1.0"
   )
 
   val isTravisCI = System.getenv("TRAVIS_SCALA_VERSION") != null

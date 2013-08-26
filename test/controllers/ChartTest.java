@@ -14,6 +14,8 @@ import static test.AorraTestUtils.fileStore;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.StringReader;
+import java.util.List;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -22,7 +24,13 @@ import models.User;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.supercsv.cellprocessor.constraint.NotNull;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvListReader;
+import org.supercsv.io.ICsvListReader;
+import org.supercsv.prefs.CsvPreference;
 
 import com.google.common.collect.ImmutableList;
 
@@ -176,6 +184,40 @@ public class ChartTest {
             newRequest);
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/png");
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void csvChart() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.File f = createChartFile(session);
+        final Result result = callAction(
+            controllers.routes.ref.Chart.chart("marine", "csv",
+                ImmutableList.<String>of(f.getPath())),
+            newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("text/csv");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        final ICsvListReader listReader = new CsvListReader(
+            new StringReader(contentAsString(result)),
+            CsvPreference.STANDARD_PREFERENCE);
+        int rowCount = 0;
+        List<String> row;
+        while ((row = listReader.read()) != null) {
+          assertThat(row).hasSize(2);
+          // GBR values are all MODERATE
+          assertThat(row.get(1)).isEqualTo("Moderate");
+          rowCount++;
+        }
+        assertThat(rowCount).isEqualTo(13);
+        listReader.close();
         return session;
       }
     });
