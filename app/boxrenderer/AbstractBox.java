@@ -81,6 +81,8 @@ public abstract class AbstractBox implements Box {
 
     private Color linearGradientTo;
 
+    private boolean printdebug = false;
+
     public AbstractBox() {
     }
 
@@ -224,6 +226,20 @@ public abstract class AbstractBox implements Box {
         pInner.dispose();
         bInner.dispose();
         mInner.dispose();
+        if(printdebug) {
+            if(StringUtils.isNotBlank(getId())) {
+                System.out.println("print debug for element id: " + getId());
+            } else if(StringUtils.isNotBlank(getTag())) {
+                System.out.println("print debug for tag: " + getTag());
+            }
+            Dimension d = getDimension(g2);
+            System.out.println(String.format("dimension %sx%s", d.width, d.height));
+            System.out.println(String.format("margin %s", margin.toString()));
+            System.out.println(String.format("border %s", border.toString()));
+            System.out.println(String.format("padding %s", padding.toString()));
+            Dimension cd = getContentDimension(g2);
+            System.out.println(String.format("content %sx%s", cd.width, cd.height));
+        }
     }
 
     private void drawBackgroundImage(Graphics2D g2) {
@@ -347,6 +363,9 @@ public abstract class AbstractBox implements Box {
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+        if(attributes != null) {
+            this.printdebug = StringUtils.equalsIgnoreCase(attributes.get("printdebug"), "true");
+        }
     }
 
     public void addRule(Rule cssrule) {

@@ -36,10 +36,15 @@ public class FontManager {
     public Font getFont(String family, int style, int size) {
         Font font = fonts.get(family);
         if(font != null) {
-            return font.deriveFont(style, size);
+            return font.deriveFont(style, getSize(size));
         } else {
-            return new Font(family, style, size);
+            return new Font(family, style, getSize(size));
         }
+    }
+
+    // fixes the font size, http://www.3rd-evolution.de/tkrammer/docs/java_font_size.html
+    public int getSize(int size) {
+        return (int)Math.round((double)size * 96.0 / 72.0);
     }
 
 }

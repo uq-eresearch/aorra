@@ -139,4 +139,10 @@ public class Spacing {
         return paint;
     }
 
+    @Override
+    public String toString() {
+        return String.format("top:%s, bottom: %s, left: %s, right: %s",
+                getTop(), getBottom(), getLeft(), getRight());
+    }
+
 }
