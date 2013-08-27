@@ -221,6 +221,7 @@ require(['models', 'views'], function(models, views) {
           layout.showDeleted();
         } else {
           layout.showFolder(fs.get(node.id));
+          fileTree.expandTo(node);
         }
         this._setMainActive();
       },
@@ -230,6 +231,7 @@ require(['models', 'views'], function(models, views) {
           layout.showDeleted();
         } else {
           layout.showFile(fs.get(node.id));
+          fileTree.expandTo(node);
         }
         this._setMainActive();
       },

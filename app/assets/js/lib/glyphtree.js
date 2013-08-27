@@ -86,7 +86,7 @@
         this._styleElement = this.setupStyle();
         this.events = this._options.events;
         this.startExpanded = this._options.startExpanded;
-        this._setRootContainer(new NodeContainer([], this));
+        this._setRootContainer(new NodeContainer([], this, null));
       }
 
       GlyphTree.prototype.setupStyle = function() {
@@ -179,7 +179,7 @@
             _results.push(new Node(root, this));
           }
           return _results;
-        }).call(this), this));
+        }).call(this), this, null));
         return this;
       };
 
@@ -291,7 +291,7 @@
             }
             return _results;
           }).call(this) : [];
-          this.children = new NodeContainer(children, this.tree);
+          this.children = new NodeContainer(children, this.tree, this);
           expandedClass = this._cr.state('expanded');
           this.isExpanded = function() {
             return this.element().hasClass(expandedClass);
@@ -303,6 +303,10 @@
             return this.element().removeClass(expandedClass);
           };
         }
+
+        Node.prototype.parent = function() {
+          return this.container.parentNode;
+        };
 
         Node.prototype.addChild = function(node) {
           var wasLeaf;
@@ -400,10 +404,11 @@
       })();
 
       NodeContainer = (function() {
-        function NodeContainer(nodes, tree) {
+        function NodeContainer(nodes, tree, parentNode) {
           var node, _i, _len, _ref1;
 
           this.nodes = nodes;
+          this.parentNode = parentNode;
           this._cr = tree.classResolver;
           this._compareNodes = function(a, b) {
             return tree.compareNodes(a, b);

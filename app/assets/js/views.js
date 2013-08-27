@@ -38,12 +38,30 @@ define([
 
   var FileTree = Backbone.View.extend({
     tagName: "div",
+    initialize: function() {
+      this._hint$el =
+        $('<p><i class="icon-arrow-up"></i> Click to Expand</p>')
+          .addClass('alert alert-info');
+    },
     render: function() {
       this.tree().element.detach();
       this.$el.append(this.tree().element);
+      this.$el.append(this._hint$el);
     },
     close: function() {
       this.tree().element.detach();
+    },
+    expandTo: function(node) {
+      var n = node;
+      var nodes = [];
+      while (n != null) {
+        nodes.push(n);
+        n = n.parent();
+      }
+      _.each(nodes.reverse(), function(n) {
+        if (!n.isLeaf()) n.expand();
+      });
+      this._hint$el.hide();
     },
     _buildTree: function() {
       var tree = glyphtree($('<div/>'), this.options);
@@ -62,6 +80,11 @@ define([
       var setTooltipText = function(e) {
         $(e.currentTarget).tooltip('show');
       };
+      var $hint = this._hint$el;
+      var toggleHint = function(e) {
+        var isClosed = function(node) { return !node.isExpanded(); };
+        $hint.toggle(_.all(tree.nodes(), isClosed));
+      };
       var createTooltip = function(e, node) {
         if (node.isLeaf()) return;
         $(e.currentTarget).tooltip({
@@ -75,6 +98,7 @@ define([
       };
       tree.events.label.click = [selectHandler];
       tree.events.icon.click.push(setTooltipText);
+      tree.events.icon.click.push(toggleHint);
       tree.events.icon.mouseenter = [createTooltip, hoverHandler];
       tree.events.icon.mouseleave = [hoverHandler];
       return tree;
@@ -86,7 +110,7 @@ define([
       return this._tree;
     },
     options: {
-      startExpanded: true,
+      startExpanded: false,
       typeResolver: function(struct) {
         if (struct.type == 'folder') {
           return 'folder';
