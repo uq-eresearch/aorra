@@ -68,7 +68,13 @@ public class ExtractionHelperTest {
 
       private void testPlainText(ExtractionHelper eh)
           throws RepositoryException {
-        assertThat(eh.getPlainText()).startsWith("This is a test document.");
+        final String plainText = eh.getPlainText();
+        assertThat(plainText).isEqualTo(
+            "This is a test document.\n"+
+            "\n"+
+            "![image](embedded:image1.png)\n"+
+            "\n"+
+            "There are two lines in it.\n");
       }
 
       private void testMetadata(ExtractionHelper eh)
