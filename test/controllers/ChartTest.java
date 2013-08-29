@@ -81,7 +81,8 @@ public class ChartTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/json");
         assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
         final JsonNode json = Json.parse(contentAsString(result));
         assertThat(json.has("charts")).isTrue();
         assertThat(json.get("charts").isArray()).isTrue();
@@ -107,7 +108,8 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+        final FileStore.Folder folder =
+            fileStore().getManager(session).getRoot();
         final FileStore.File f = folder.createFile("test.txt",
             "text/plain",
             new ByteArrayInputStream("Test content.".getBytes()));
@@ -120,7 +122,8 @@ public class ChartTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
           final JsonNode json = Json.parse(contentAsString(result));
           assertThat(json.has("charts")).isTrue();
           assertThat(json.get("charts").isArray()).isTrue();
@@ -135,7 +138,8 @@ public class ChartTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
           final JsonNode json = Json.parse(contentAsString(result));
           assertThat(json.has("charts")).isTrue();
           assertThat(json.get("charts").isArray()).isTrue();
@@ -154,14 +158,26 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createMarineChartFile(session);
+        checkChart("marine",
+            createMarineChartFile(session), newRequest);
+        checkChart("annual_rainfall",
+            createAnnualRainfallChartFile(session), newRequest);
+        checkChart("cots_outbreak",
+            createCOTOutbreakChartFile(session), newRequest);
+        checkChart("progress_table",
+            createProgressTableChartFile(session), newRequest);
+        return session;
+      }
+      private void checkChart(
+          final String chartType,
+          final FileStore.File f,
+          final FakeRequest newRequest) {
         final Result result = callAction(
-            controllers.routes.ref.Chart.chart("marine", "svg",
+            controllers.routes.ref.Chart.chart(chartType, "svg",
                 ImmutableList.<String>of(f.getPath())),
             newRequest);
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/svg+xml");
-        return session;
       }
     });
   }
@@ -174,14 +190,26 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createMarineChartFile(session);
+        checkChart("marine",
+            createMarineChartFile(session), newRequest);
+        checkChart("annual_rainfall",
+            createAnnualRainfallChartFile(session), newRequest);
+        checkChart("cots_outbreak",
+            createCOTOutbreakChartFile(session), newRequest);
+        checkChart("progress_table",
+            createProgressTableChartFile(session), newRequest);
+        return session;
+      }
+      private void checkChart(
+          final String chartType,
+          final FileStore.File f,
+          final FakeRequest newRequest) {
         final Result result = callAction(
-            controllers.routes.ref.Chart.chart("marine", "png",
+            controllers.routes.ref.Chart.chart(chartType, "png",
                 ImmutableList.<String>of(f.getPath())),
             newRequest);
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/png");
-        return session;
       }
     });
   }
@@ -220,7 +248,7 @@ public class ChartTest {
         }
         // COT chart CSV
         {
-          final FileStore.File f = createCOTChartFile(session);
+          final FileStore.File f = createCOTOutbreakChartFile(session);
           final Result result = callAction(
               controllers.routes.ref.Chart.chart("cots_outbreak", "csv",
                   ImmutableList.<String>of(f.getPath())),
@@ -349,12 +377,12 @@ public class ChartTest {
         new FileInputStream("test/marine.xlsx"));
   }
 
-  public FileStore.File createCOTChartFile(final Session session)
+  public FileStore.File createCOTOutbreakChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
-    return folder.createFile("cot.xlsx",
+    return folder.createFile("cots_outbreak.xlsx",
         Chart.XLSX_MIME_TYPE,
-        new FileInputStream("test/cots.xlsx"));
+        new FileInputStream("test/cots_outbreak.xlsx"));
   }
 
   public FileStore.File createAnnualRainfallChartFile(final Session session)
