@@ -24,10 +24,7 @@ import models.User;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.supercsv.cellprocessor.constraint.NotNull;
-import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
@@ -275,6 +272,40 @@ public class ChartTest {
           assertThat(rowCount).isEqualTo(24);
           listReader.close();
         }
+        // Progress
+        {
+          final FileStore.File f = createProgressTableChartFile(session);
+          final Result result = callAction(
+              controllers.routes.ref.Chart.chart("progress_table", "csv",
+                  ImmutableList.<String>of(f.getPath())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/csv");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          final ICsvListReader listReader = new CsvListReader(
+              new StringReader(contentAsString(result)),
+              CsvPreference.STANDARD_PREFERENCE);
+          int rowCount = 0;
+          List<String> row = listReader.read();
+          {
+            final String[] headers = new String[] {
+                "", "Grazing", "Sugarcane", "Horticulture",
+                "Groundcover", "Nitrogen", "Sediment", "Pesticides" };
+            for (int i = 1; i < row.size(); i++) {
+              assertThat(row.get(i)).isEqualTo(headers[i]);
+            }
+          }
+          while ((row = listReader.read()) != null) {
+            for (int i = 1; i < row.size(); i++) {
+              if (row.get(i) != null) {
+                assertThat(row.get(i)).contains("%");
+              }
+            }
+            rowCount++;
+          }
+          assertThat(rowCount).isEqualTo(7);
+          listReader.close();
+        }
         return session;
       }
     });
@@ -334,5 +365,12 @@ public class ChartTest {
         new FileInputStream("test/annual_rainfall.xlsx"));
   }
 
+  public FileStore.File createProgressTableChartFile(final Session session)
+      throws RepositoryException, FileNotFoundException {
+    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    return folder.createFile("progress_table.xlsx",
+        Chart.XLSX_MIME_TYPE,
+        new FileInputStream("test/progress_table.xlsx"));
+  }
 
 }

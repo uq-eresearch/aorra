@@ -1,12 +1,20 @@
 package charts.builder;
 
+import static com.google.common.base.Objects.firstNonNull;
+
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.Drawable;
 import charts.ProgressTable;
+import charts.BeerCoaster.Category;
+import charts.BeerCoaster.Indicator;
 import charts.spreadsheet.DataSource;
 import charts.spreadsheet.SpreadsheetHelper;
 
@@ -43,23 +51,54 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
     @Override
     Chart build(final DataSource datasource, Region region,
             Map<String, String[]> query) {
-        if(region == Region.GBR) {
-          return new AbstractChart(query) {
-            @Override
-            public ChartDescription getDescription() {
-              return new ChartDescription(ChartType.PROGRESS_TABLE, Region.GBR);
+      final ProgressTable.Dataset ds = getDataset(datasource);
+      if(region == Region.GBR) {
+        return new AbstractChart(query) {
+          @Override
+          public ChartDescription getDescription() {
+            return new ChartDescription(ChartType.PROGRESS_TABLE, Region.GBR);
+          }
+          @Override
+          public Drawable getChart() {
+            return new ProgressTable(ds);
+          }
+          @Override
+          public String getCSV() throws UnsupportedFormatException {
+            final StringWriter sw = new StringWriter();
+            try {
+              final CsvListWriter csv = new CsvListWriter(sw,
+                  CsvPreference.STANDARD_PREFERENCE);
+              {
+                final List<String> cList = Lists.newLinkedList();
+                cList.add("");
+                for (ProgressTable.Column c : ds.columns) {
+                  cList.add(c.header);
+                }
+                csv.write(cList);
+              }
+              for (ProgressTable.Row r : ds.rows) {
+                final List<String> rList = Lists.newLinkedList();
+                rList.add(r.header);
+                for (ProgressTable.Cell c : r.cells) {
+                  if (c.condition == null) {
+                    rList.add("");
+                  } else {
+                    rList.add(String.format("%s (%s)",
+                        c.condition, c.progress));
+                  }
+                }
+                csv.write(rList);
+              }
+              csv.close();
+            } catch (IOException e) {
+              // How on earth would you get an IOException with a StringWriter?
+              throw new RuntimeException(e);
             }
-            @Override
-            public Drawable getChart() {
-              return new ProgressTable(getDataset(datasource));
-            }
-            @Override
-            public String getCSV() throws UnsupportedFormatException {
-              throw new Chart.UnsupportedFormatException();
-            }
-          };
-        }
-        return null;
+            return sw.toString();
+          }
+        };
+      }
+      return null;
     }
 
     private ProgressTable.Dataset getDataset(DataSource datasource) {
@@ -88,7 +127,7 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
         return rows;
     }
 
-    private ProgressTable.Row getRow(List<ProgressTable.Column> columns, 
+    private ProgressTable.Row getRow(List<ProgressTable.Column> columns,
             DataSource datasource, Region region) {
         SpreadsheetHelper helper = new SpreadsheetHelper(datasource);
         Integer row = ROWS.get(region);
@@ -105,7 +144,7 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
             Double progress = getProgress(helper.selectText(row, columns.indexOf(column)+2));
             if(progress != null) {
                 ProgressTable.Indicator indicator = getIndicator(column.header, region);
-                ProgressTable.Condition condition = getCondition(helper, columns, indicator, region); 
+                ProgressTable.Condition condition = getCondition(helper, columns, indicator, region);
                 cells.add(new ProgressTable.Cell(indicator, condition , formatProgress(progress)));
             } else {
                 cells.add(new ProgressTable.Cell());
