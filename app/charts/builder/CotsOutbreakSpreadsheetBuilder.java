@@ -12,66 +12,56 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.TimeSeriesDataItem;
 import org.jfree.data.time.Year;
-import org.jfree.data.xy.XYDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
 import charts.CotsOutbreak;
 import charts.Drawable;
-import charts.BeerCoaster.Category;
-import charts.BeerCoaster.Indicator;
-import charts.representations.Format;
-import charts.representations.Representation;
 import charts.spreadsheet.DataSource;
 
 public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuilder {
 
     public CotsOutbreakSpreadsheetBuilder() {
-        super(ChartType.COTS_OUTBREAK);
+      super(ChartType.COTS_OUTBREAK);
     }
 
     private boolean isCotsOutbreakSpreadsheet(DataSource datasource) {
-        try {
-            return "TOTALOUTBREAKS".equalsIgnoreCase(datasource.select("B1").format("value"));
-        } catch(Exception e) {
-            return false;
-        }
+      try {
+        return "TOTALOUTBREAKS".equalsIgnoreCase(
+            datasource.select("B1").format("value"));
+      } catch(Exception e) {
+        return false;
+      }
     }
 
     private TimeSeriesCollection createDataset(DataSource datasource) {
-        int i = 2;
-        TimeSeries s1 = new TimeSeries("outbreaks");
-        while(true) {
-            try {
-                String year = datasource.select("A"+i).format("value");
-                String outbreaks = datasource.select("B"+i).format("value");
-                if(StringUtils.isNotBlank(year) && StringUtils.isNotBlank(outbreaks)) {
-                    double val = Double.parseDouble(outbreaks);
-                    s1.add(new Year(parseYear(year)), val);
-                } else {
-                    break;
-                }
-                i++;
-            } catch(Exception e) {
-                break;
-            }
+      TimeSeries s1 = new TimeSeries("outbreaks");
+      try {
+        for (int i = 2; true; i++) {
+          String year = datasource.select("A"+i).format("value");
+          String outbreaks = datasource.select("B"+i).format("value");
+          if (StringUtils.isBlank(year) || StringUtils.isBlank(outbreaks))
+            break;
+          double val = Double.parseDouble(outbreaks);
+          s1.add(new Year(parseYear(year)), val);
         }
-        TimeSeriesCollection dataset = new TimeSeriesCollection();
-        dataset.addSeries(s1);
-        return dataset;
+      } catch (Exception e) {}
+      TimeSeriesCollection dataset = new TimeSeriesCollection();
+      dataset.addSeries(s1);
+      return dataset;
     }
 
     private int parseYear(String y) {
-        y = StringUtils.strip(y);
-        if(y.contains(".")) {
-            y = StringUtils.substringBefore(y, ".");
-        }
-        return Integer.parseInt(y);
+      y = StringUtils.strip(y);
+      if(y.contains(".")) {
+          y = StringUtils.substringBefore(y, ".");
+      }
+      return Integer.parseInt(y);
     }
 
     @Override
     boolean canHandle(DataSource datasource) {
-        return isCotsOutbreakSpreadsheet(datasource);
+      return isCotsOutbreakSpreadsheet(datasource);
     }
 
     @Override

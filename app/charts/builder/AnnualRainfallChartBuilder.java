@@ -37,8 +37,8 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
       DefaultCategoryDataset dataset = new DefaultCategoryDataset();
       final String series = "rainfall";
       Integer row = ROW.get(region);
-      for (int i = 1; true; i++) {
-        try {
+      try {
+        for (int i = 1; true; i++) {
           String year = datasource.select(
               new CellReference(0, i).formatAsString()).format("value");
           if (StringUtils.equalsIgnoreCase("Annual Average", year)) {
@@ -51,10 +51,9 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
           }
           double val = Double.parseDouble(outbreaks);
           dataset.addValue(val, series, Integer.toString(parseYear(year)));
-        } catch (Exception e) {
-          e.printStackTrace();
-          break;
         }
+      } catch (Exception e) {
+        e.printStackTrace();
       }
       return dataset;
     }
