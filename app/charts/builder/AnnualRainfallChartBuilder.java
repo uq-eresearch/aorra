@@ -29,30 +29,29 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
                 .build();
 
     public AnnualRainfallChartBuilder() {
-        super(ChartType.ANNUAL_RAINFALL);
+      super(ChartType.ANNUAL_RAINFALL);
     }
 
     private DefaultCategoryDataset createDataset(
         DataSource datasource, Region region) {
-      int i = 1;
       DefaultCategoryDataset dataset = new DefaultCategoryDataset();
       final String series = "rainfall";
       Integer row = ROW.get(region);
-      while(true) {
+      for (int i = 1; true; i++) {
         try {
-          String year = datasource.select(new CellReference(0, i).formatAsString()).format("value");
-          if(StringUtils.equalsIgnoreCase("Annual Average", year)) {
-              break;
+          String year = datasource.select(
+              new CellReference(0, i).formatAsString()).format("value");
+          if (StringUtils.equalsIgnoreCase("Annual Average", year)) {
+            break;
           }
-          String outbreaks = datasource.select(new CellReference(row, i).formatAsString()).format("value");
-          if(StringUtils.isNotBlank(year) && StringUtils.isNotBlank(outbreaks)) {
-              double val = Double.parseDouble(outbreaks);
-              dataset.addValue(val, series, Integer.toString(parseYear(year)));
-          } else {
-              break;
+          String outbreaks = datasource.select(
+              new CellReference(row, i).formatAsString()).format("value");
+          if (StringUtils.isBlank(year) || StringUtils.isBlank(outbreaks)) {
+            break;
           }
-          i++;
-        } catch(Exception e) {
+          double val = Double.parseDouble(outbreaks);
+          dataset.addValue(val, series, Integer.toString(parseYear(year)));
+        } catch (Exception e) {
           e.printStackTrace();
           break;
         }
@@ -61,62 +60,63 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     private int parseYear(String y) {
-        y = StringUtils.strip(y);
-        if(y.contains(".")) {
-            y = StringUtils.substringBefore(y, ".");
-        }
-        return Integer.parseInt(y);
+      y = StringUtils.strip(y);
+      if (y.contains(".")) {
+        y = StringUtils.substringBefore(y, ".");
+      }
+      return Integer.parseInt(y);
     }
 
     @Override
     boolean canHandle(DataSource datasource) {
-        try {
-            return "Great Barrier Reef".equalsIgnoreCase(datasource.select("A7").format("value"));
-        } catch(Exception e) {
-            return false;
-        }
+      try {
+        return "Great Barrier Reef".equalsIgnoreCase(
+            datasource.select("A7").format("value"));
+      } catch (Exception e) {
+        return false;
+      }
     }
 
     @Override
     Chart build(DataSource datasource, final Region region,
             final Map<String, String[]> query) {
-        if(ROW.containsKey(region)) {
-          final DefaultCategoryDataset dataset = createDataset(datasource, region);
-          final Drawable drawable = new AnnualRainfall().createChart(
-              region.getName(), dataset, getChartSize(query, 750, 500));
-          final Chart chart = new AbstractChart(query) {
-            @Override
-            public ChartDescription getDescription() {
-              return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
-            }
-            @Override
-            public Drawable getChart() {
-              return drawable;
-            }
-            @Override
-            public String getCSV() {
-              final StringWriter sw = new StringWriter();
-              try {
-                final CsvListWriter csv = new CsvListWriter(sw,
-                    CsvPreference.STANDARD_PREFERENCE);
-                csv.write("Year", "Railfall (mm)");
-                for (int i = 0; i < dataset.getColumnCount(); i++) {
-                  csv.write(
-                    dataset.getColumnKey(i),
-                    dataset.getValue(0, i));
-                }
-                csv.close();
-              } catch (IOException e) {
-                // How on earth would you get an IOException with a StringWriter?
-                throw new RuntimeException(e);
+      if (ROW.containsKey(region)) {
+        final DefaultCategoryDataset dataset =
+            createDataset(datasource, region);
+        final Chart chart = new AbstractChart(query) {
+          @Override
+          public ChartDescription getDescription() {
+            return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
+          }
+          @Override
+          public Drawable getChart() {
+            return new AnnualRainfall().createChart(
+                region.getName(), dataset, getChartSize(query, 750, 500));
+          }
+          @Override
+          public String getCSV() {
+            final StringWriter sw = new StringWriter();
+            try {
+              final CsvListWriter csv = new CsvListWriter(sw,
+                  CsvPreference.STANDARD_PREFERENCE);
+              csv.write("Year", "Railfall (mm)");
+              for (int i = 0; i < dataset.getColumnCount(); i++) {
+                csv.write(
+                  dataset.getColumnKey(i),
+                  dataset.getValue(0, i));
               }
-              return sw.toString();
+              csv.close();
+            } catch (IOException e) {
+              // How on earth would IOException occur with a StringWriter?
+              throw new RuntimeException(e);
             }
-          };
-          return chart;
-        } else {
-          return null;
-        }
+            return sw.toString();
+          }
+        };
+        return chart;
+      } else {
+        return null;
+      }
     }
 
 }

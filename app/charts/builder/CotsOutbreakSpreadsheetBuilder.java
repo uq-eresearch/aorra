@@ -79,8 +79,6 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
         final Map<String, String[]> query) {
       if (region.equals(Region.GBR)) {
         final TimeSeriesCollection dataset = createDataset(datasource);
-        final Drawable drawable = new CotsOutbreak().createChart(dataset,
-            getChartSize(query, 750, 500));
         final Chart chart = new AbstractChart(query) {
           @Override
           public ChartDescription getDescription() {
@@ -88,7 +86,8 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
           }
           @Override
           public Drawable getChart() {
-            return drawable;
+            return new CotsOutbreak().createChart(dataset,
+                getChartSize(query, 750, 500));
           }
           @SuppressWarnings("unchecked")
           @Override
