@@ -76,7 +76,7 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createChartFile(session);
+        final FileStore.File f = createMarineChartFile(session);
         final Result result = callAction(
             controllers.routes.ref.Chart.charts("svg",
                 ImmutableList.<String>of(f.getPath())),
@@ -157,7 +157,7 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createChartFile(session);
+        final FileStore.File f = createMarineChartFile(session);
         final Result result = callAction(
             controllers.routes.ref.Chart.chart("marine", "svg",
                 ImmutableList.<String>of(f.getPath())),
@@ -177,7 +177,7 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createChartFile(session);
+        final FileStore.File f = createMarineChartFile(session);
         final Result result = callAction(
             controllers.routes.ref.Chart.chart("marine", "png",
                 ImmutableList.<String>of(f.getPath())),
@@ -197,7 +197,7 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createChartFile(session);
+        final FileStore.File f = createMarineChartFile(session);
         final Result result = callAction(
             controllers.routes.ref.Chart.chart("marine", "csv",
                 ImmutableList.<String>of(f.getPath())),
@@ -221,6 +221,39 @@ public class ChartTest {
         return session;
       }
     });
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.File f = createCOTChartFile(session);
+        final Result result = callAction(
+            controllers.routes.ref.Chart.chart("cots_outbreak", "csv",
+                ImmutableList.<String>of(f.getPath())),
+            newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("text/csv");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        final ICsvListReader listReader = new CsvListReader(
+            new StringReader(contentAsString(result)),
+            CsvPreference.STANDARD_PREFERENCE);
+        int rowCount = 0;
+        List<String> row = listReader.read();
+        assertThat(row).contains("Year", "Outbreaks");
+        while ((row = listReader.read()) != null) {
+          assertThat(row).hasSize(2);
+          // COT years start at 1998
+          assertThat(row.get(0)).isEqualTo((1998+rowCount)+"");
+          // COT outbreaks start at 29, decreasing by two each year
+          assertThat(row.get(1)).isEqualTo((29-(2*rowCount))+"");
+          rowCount++;
+        }
+        assertThat(rowCount).isEqualTo(12);
+        listReader.close();
+        return session;
+      }
+    });
   }
 
   @Test
@@ -231,7 +264,7 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createChartFile(session);
+        final FileStore.File f = createMarineChartFile(session);
         // Invalid type
         {
           final Result result = callAction(
@@ -253,12 +286,20 @@ public class ChartTest {
     });
   }
 
-  public FileStore.File createChartFile(final Session session)
+  public FileStore.File createMarineChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
-    return folder.createFile("chart.xlsx",
+    return folder.createFile("marine.xlsx",
         Chart.XLSX_MIME_TYPE,
-        new FileInputStream("test/chart_01.xlsx"));
+        new FileInputStream("test/marine.xlsx"));
+  }
+
+  public FileStore.File createCOTChartFile(final Session session)
+      throws RepositoryException, FileNotFoundException {
+    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    return folder.createFile("cot.xlsx",
+        Chart.XLSX_MIME_TYPE,
+        new FileInputStream("test/cots.xlsx"));
   }
 
 

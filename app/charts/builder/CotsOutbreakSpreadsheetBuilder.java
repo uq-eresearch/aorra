@@ -103,7 +103,7 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
                   dataset.getSeries(0).getItems();
               for (TimeSeriesDataItem i : items) {
                 csv.write(
-                  yearOnly.format(i.getPeriod().getEnd()),
+                  yearOnly.format(i.getPeriod().getStart()),
                   i.getValue().intValue()+"");
               }
               csv.close();
