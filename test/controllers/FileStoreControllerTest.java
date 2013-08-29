@@ -910,9 +910,9 @@ public class FileStoreControllerTest {
               .toString();
           assertThat(contentAsString(result)).isEqualTo("["+folderJson+"]");
           final long deltaMillis = System.currentTimeMillis() - requestMillis;
-          // This should take less than 30s total
+          // This should take less than 32s total
           totalMillis += deltaMillis;
-          assertThat(totalMillis).isLessThan(30000L);
+          assertThat(totalMillis).isLessThan(32000L);
           parentFolder = folder;
         }
         return session;
