@@ -80,6 +80,13 @@ abstract class SpreadsheetDataSource implements DataSource {
         
     }
 
+    private static class EmptyCell implements Value {
+        @Override
+        public String format(String pattern) throws Exception {
+            return null;
+        }
+    }
+    
     void init(Workbook workbook, FormulaEvaluator evaluator) {
         this.workbook = workbook;
         this.evaluator = evaluator;
@@ -105,11 +112,11 @@ abstract class SpreadsheetDataSource implements DataSource {
         }
         Row row = sheet.getRow(cr.getRow());
         if(row == null) {
-            throw new Exception(String.format("Row %s does not exists in sheet", selector));
+            return new EmptyCell();
         }
         Cell cell = row.getCell(cr.getCol());
         if(cell == null) {
-            throw new Exception(String.format("Cell %s does not exists in sheet", selector));
+            return new EmptyCell();
         }
         return new SpreadsheetCellValue(cell, evaluator);
     }

@@ -3,18 +3,77 @@ package charts;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.xml.sax.InputSource;
 
 import boxrenderer.Box;
 import boxrenderer.Resolver;
+import boxrenderer.XmlUtils;
 import boxrenderer.xhtml.Parser;
 
 public class ProgressTable implements Drawable {
 
+    public static enum Indicator {
+        GRAZING, SUGARCANE, GRAIN, HORTICULTURE, GROUNDCOVER,
+        NITROGEN, SEDIMENT, PESTICIDES;
+    }
+
+    public static enum Condition {
+        VERYPOOR, POOR, MODERATE, GOOD, VERYGOOD;
+    }
+
+    public static class Cell {
+        public Indicator indicator;
+        public Condition condition;
+        public String progress;
+        public Cell() {}
+        public Cell(Indicator indicator, Condition condition, String progress) {
+            super();
+            this.indicator = indicator;
+            this.condition = condition;
+            this.progress = progress;
+        }
+    }
+
+    public static class Column {
+        public String header;
+        public String description;
+        public String target;
+        public Column(String header, String description, String target) {
+            super();
+            this.header = header;
+            this.description = description;
+            this.target = target;
+        }
+    }
+
+    public static class Row {
+        public String header;
+        public String description;
+        public List<Cell> cells;
+        public Row(String header, String description, List<Cell> cells) {
+            super();
+            this.header = header;
+            this.description = description;
+            this.cells = cells;
+        }
+    }
+
+    public static class Dataset {
+        public List<Column> columns;
+        public List<Row> rows;
+        public Dataset(List<Column> columns, List<Row> rows) {
+            super();
+            this.columns = columns;
+            this.rows = rows;
+        }
+    }
     private Box box;
 
-    public ProgressTable() {
+    public ProgressTable(Dataset dataset) {
         try {
             Resolver resolver = new Resolver() {
                 @Override
@@ -29,7 +88,9 @@ public class ProgressTable implements Drawable {
                     return stream;
                 }};
             Parser parser = new Parser(resolver);
-            box = parser.parse(resolver.resolve("progresstable.html"));
+            box = parser.parse(XmlUtils.parse(new InputSource(
+                    new StringReader(views.html.chart.progresstable.render(
+                            dataset.columns, dataset.rows).toString()))));
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
@@ -53,7 +114,6 @@ public class ProgressTable implements Drawable {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
 }

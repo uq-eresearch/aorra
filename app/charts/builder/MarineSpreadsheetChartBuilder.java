@@ -23,7 +23,7 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
           .put(Region.CAPE_YORK, 0)
           .put(Region.WET_TROPICS, 1)
           .put(Region.BURDEKIN, 2)
-          .put(Region.MACKAY_WHITSUNDAYS, 3)
+          .put(Region.MACKAY_WHITSUNDAY, 3)
           .put(Region.FITZROY, 4)
           .put(Region.BURNETT_MARY, 5)
           .put(Region.GBR, 6)

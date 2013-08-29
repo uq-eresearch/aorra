@@ -1,0 +1,45 @@
+@(
+    columns: List[charts.ProgressTable.Column],
+    rows: List[charts.ProgressTable.Row]
+)
+@import org.apache.commons.lang3.StringUtils.lowerCase
+@import org.apache.commons.lang3.StringUtils.replaceChars
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="progresstable.css"/>
+</head>
+<body>
+<table>
+<tr>
+<td></td>
+@for(column <- columns) {
+<td class="headercell"><div class="hcontainer">
+<span class="header">@column.header</span>
+<div class="text">@column.description</div>
+<div class="text-bold">@column.target</div></div>
+</td>
+} 
+</tr>
+@for(row <- rows) {
+<tr><td colspan="@{columns.size()+1}" class="fake-border"></td></tr>
+<tr>
+<td class="regioncell @{replaceChars(lowerCase(row.header), ' ', '-')}"><div class="regionheader">
+<span class="header">@row.header</span>
+<div class="text">@row.description</div></div>
+</td>
+@for(cell <- row.cells) {
+<td align="center" class="datacell">
+@if(cell.condition != null) {
+<div class="@{lowerCase(cell.condition.toString())} @{lowerCase(cell.indicator.toString())} statusbox"></div>
+<div class="text-data">@cell.progress</div>
+@if(cell.indicator == charts.ProgressTable.Indicator.GRAIN) {
+<div style="font-family:LiberationSans;">(Grains)</div>
+}
+}
+</td>
+}
+</tr>
+}
+</table>
+</body>
+</html>

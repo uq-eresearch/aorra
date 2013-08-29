@@ -1,0 +1,158 @@
+@font-face {
+font-family: LiberationSansBold;
+src: url('LiberationSans-Bold.ttf');
+}
+@font-face {
+font-family: LiberationSans;
+src: url('LiberationSans-Regular.ttf');
+}
+body {
+margin: 0px;
+background-color: white;
+}
+td {
+padding: 0px;
+}
+table {
+border-collapse:collapse;
+}
+.hcontainer {
+margin-left: 10px;
+}
+.header {
+font-family:LiberationSansBold;
+}
+.regionheader {
+margin-left:40px;
+margin-right:15px;
+font-family:LiberationSansBold;
+}
+.text {
+font-family:LiberationSans;
+font-size:0.8em;
+white-space: pre;
+}
+.text-bold {
+font-family:LiberationSansBold;
+font-size:0.8em;
+white-space: pre;
+}
+.headercell {
+vertical-align:top;
+padding-bottom: 10px;
+width:140px;
+}
+.regioncell {
+width: 255px;
+}
+.datacell {
+width: 134px;
+height: 170px;
+vertical-align: top;
+}
+.text-data {
+padding-top: 12px;
+font-family:LiberationSansBold;
+}
+
+.statusbox {
+margin-top: 12px;
+width: 105px;
+height: 105px;
+border-radius: 5px;
+background-repeat:no-repeat;
+background-size:100px;
+background-position:center;
+}
+
+.great-barrier-reef {
+background-image: -moz-linear-gradient(left, #65A3DD, #ffffff);
+background-image: -webkit-linear-gradient(left, #65A3DD, #ffffff);
+}
+
+.cape-york {
+background-image: -moz-linear-gradient(left, #DE8944, #ffffff);
+background-image: -webkit-linear-gradient(left, #DE8944, #ffffff);
+}
+
+.wet-tropics {
+background-image: -moz-linear-gradient(left, #A8DC62, #ffffff);
+background-image: -webkit-linear-gradient(left, #A8DC62, #ffffff);
+}
+
+.burdekin {
+background-image: -moz-linear-gradient(left, #84B553, #ffffff);
+background-image: -webkit-linear-gradient(left, #84B553, #ffffff);
+}
+
+.mackay-whitsunday {
+background-image: -moz-linear-gradient(left, #EBBB72, #ffffff);
+background-image: -webkit-linear-gradient(left, #EBBB72, #ffffff);
+}
+
+.fitzroy {
+background-image: -moz-linear-gradient(left, #B66737, #ffffff);
+background-image: -webkit-linear-gradient(left, #B66737, #ffffff);
+}
+
+.burnett-mary {
+background-image: -moz-linear-gradient(left, #F3C44C, #ffffff);
+background-image: -webkit-linear-gradient(left, #F3C44C, #ffffff);
+}
+
+.verygood {
+background-color:rgb(0,118,70);
+}
+
+.good {
+background-color:rgb(168,198,162);
+}
+
+.moderate {
+background-color:rgb(252,203,38);
+}
+
+.poor {
+background-color:rgb(244,141,64);
+}
+
+.verypoor {
+background-color:rgb(233,44,48);
+}
+
+.grazing {
+background-image:url('grazing.svg');
+}
+
+.sugarcane {
+background-image:url('cane.svg');
+}
+
+.horticulture {
+background-image:url('banana.svg');
+}
+
+.groundcover {
+background-image:url('groundcover.svg');
+}
+
+.nitrogen {
+background-image:url('beaker.svg');
+}
+
+.sediment {
+background-image:url('beaker.svg');
+}
+
+.pesticides {
+background-image:url('beaker.svg');
+}
+
+.grain {
+background-image:url('grain.svg');
+}
+
+.fake-border {
+height: 2px;
+background-color: black;
+}
