@@ -197,60 +197,84 @@ public class ChartTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createMarineChartFile(session);
-        final Result result = callAction(
-            controllers.routes.ref.Chart.chart("marine", "csv",
-                ImmutableList.<String>of(f.getPath())),
-            newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("text/csv");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        final ICsvListReader listReader = new CsvListReader(
-            new StringReader(contentAsString(result)),
-            CsvPreference.STANDARD_PREFERENCE);
-        int rowCount = 0;
-        List<String> row;
-        while ((row = listReader.read()) != null) {
-          assertThat(row).hasSize(2);
-          // GBR values are all MODERATE
-          assertThat(row.get(1)).isEqualTo("Moderate");
-          rowCount++;
+        // Marine chart CSV
+        {
+          final FileStore.File f = createMarineChartFile(session);
+          final Result result = callAction(
+              controllers.routes.ref.Chart.chart("marine", "csv",
+                  ImmutableList.<String>of(f.getPath())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/csv");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          final ICsvListReader listReader = new CsvListReader(
+              new StringReader(contentAsString(result)),
+              CsvPreference.STANDARD_PREFERENCE);
+          int rowCount = 0;
+          List<String> row;
+          while ((row = listReader.read()) != null) {
+            assertThat(row).hasSize(2);
+            // GBR values are all MODERATE
+            assertThat(row.get(1)).isEqualTo("Moderate");
+            rowCount++;
+          }
+          assertThat(rowCount).isEqualTo(13);
+          listReader.close();
         }
-        assertThat(rowCount).isEqualTo(13);
-        listReader.close();
-        return session;
-      }
-    });
-    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
-      @Override
-      public Session apply(
-          final Session session,
-          final User user,
-          final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f = createCOTChartFile(session);
-        final Result result = callAction(
-            controllers.routes.ref.Chart.chart("cots_outbreak", "csv",
-                ImmutableList.<String>of(f.getPath())),
-            newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("text/csv");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        final ICsvListReader listReader = new CsvListReader(
-            new StringReader(contentAsString(result)),
-            CsvPreference.STANDARD_PREFERENCE);
-        int rowCount = 0;
-        List<String> row = listReader.read();
-        assertThat(row).contains("Year", "Outbreaks");
-        while ((row = listReader.read()) != null) {
-          assertThat(row).hasSize(2);
-          // COT years start at 1998
-          assertThat(row.get(0)).isEqualTo((1998+rowCount)+"");
-          // COT outbreaks start at 29, decreasing by two each year
-          assertThat(row.get(1)).isEqualTo((29-(2*rowCount))+"");
-          rowCount++;
+        // COT chart CSV
+        {
+          final FileStore.File f = createCOTChartFile(session);
+          final Result result = callAction(
+              controllers.routes.ref.Chart.chart("cots_outbreak", "csv",
+                  ImmutableList.<String>of(f.getPath())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/csv");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          final ICsvListReader listReader = new CsvListReader(
+              new StringReader(contentAsString(result)),
+              CsvPreference.STANDARD_PREFERENCE);
+          int rowCount = 0;
+          List<String> row = listReader.read();
+          assertThat(row).contains("Year", "Outbreaks");
+          while ((row = listReader.read()) != null) {
+            assertThat(row).hasSize(2);
+            // COT years start at 1998
+            assertThat(row.get(0)).isEqualTo((1998+rowCount)+"");
+            // COT outbreaks start at 29, decreasing by two each year
+            assertThat(row.get(1)).isEqualTo((29-(2*rowCount))+"");
+            rowCount++;
+          }
+          assertThat(rowCount).isEqualTo(12);
+          listReader.close();
         }
-        assertThat(rowCount).isEqualTo(12);
-        listReader.close();
+        // Rainfall
+        {
+          final FileStore.File f = createAnnualRainfallChartFile(session);
+          final Result result = callAction(
+              controllers.routes.ref.Chart.chart("annual_rainfall", "csv",
+                  ImmutableList.<String>of(f.getPath())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/csv");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          final ICsvListReader listReader = new CsvListReader(
+              new StringReader(contentAsString(result)),
+              CsvPreference.STANDARD_PREFERENCE);
+          int rowCount = 0;
+          List<String> row = listReader.read();
+          assertThat(row).contains("Year", "Railfall (mm)");
+          while ((row = listReader.read()) != null) {
+            assertThat(row).hasSize(2);
+            // Rainfall years start at 1988
+            assertThat(row.get(0)).isEqualTo((1988+rowCount)+"");
+            // Test rainfall data starts at 105, increasing by one each year
+            assertThat(row.get(1)).isEqualTo((105+rowCount)+".0");
+            rowCount++;
+          }
+          assertThat(rowCount).isEqualTo(24);
+          listReader.close();
+        }
         return session;
       }
     });
@@ -300,6 +324,14 @@ public class ChartTest {
     return folder.createFile("cot.xlsx",
         Chart.XLSX_MIME_TYPE,
         new FileInputStream("test/cots.xlsx"));
+  }
+
+  public FileStore.File createAnnualRainfallChartFile(final Session session)
+      throws RepositoryException, FileNotFoundException {
+    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    return folder.createFile("annual_rainfall.xlsx",
+        Chart.XLSX_MIME_TYPE,
+        new FileInputStream("test/annual_rainfall.xlsx"));
   }
 
 
