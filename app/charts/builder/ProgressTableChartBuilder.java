@@ -1,7 +1,5 @@
 package charts.builder;
 
-import static com.google.common.base.Objects.firstNonNull;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
@@ -13,8 +11,6 @@ import org.supercsv.prefs.CsvPreference;
 
 import charts.Drawable;
 import charts.ProgressTable;
-import charts.BeerCoaster.Category;
-import charts.BeerCoaster.Indicator;
 import charts.spreadsheet.DataSource;
 import charts.spreadsheet.SpreadsheetHelper;
 
