@@ -36,7 +36,6 @@ import org.supercsv.prefs.CsvPreference;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import play.api.mvc.Call;
 import play.libs.F;
@@ -169,6 +168,8 @@ public class ChartTest {
           final FakeRequest newRequest) throws Throwable {
         checkChart("marine",
             createMarineChartFile(session), newRequest);
+        checkChart("marine",
+            createMarineXlsChartFile(session), newRequest);
         checkChart("annual_rainfall",
             createAnnualRainfallChartFile(session), newRequest);
         checkChart("cots_outbreak",
@@ -233,6 +234,8 @@ public class ChartTest {
           final FakeRequest newRequest) throws Throwable {
         checkChart("marine",
             createMarineChartFile(session), newRequest);
+        checkChart("marine",
+            createMarineXlsChartFile(session), newRequest);
         checkChart("annual_rainfall",
             createAnnualRainfallChartFile(session), newRequest);
         checkChart("cots_outbreak",
@@ -416,6 +419,15 @@ public class ChartTest {
     return folder.createFile("marine.xlsx",
         Chart.XLSX_MIME_TYPE,
         new FileInputStream("test/marine.xlsx"));
+  }
+
+  // Old-style office document
+  public FileStore.File createMarineXlsChartFile(final Session session)
+      throws RepositoryException, FileNotFoundException {
+    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    return folder.createFile("marine.xls",
+        Chart.XLS_MIME_TYPE,
+        new FileInputStream("test/marine.xls"));
   }
 
   public FileStore.File createCOTOutbreakChartFile(final Session session)
