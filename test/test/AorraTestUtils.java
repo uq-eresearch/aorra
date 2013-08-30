@@ -127,6 +127,20 @@ public class AorraTestUtils {
   // Also used in FileStoreAsyncSpec
   public static void asAdminUser(
       final F.Function3<Session, User, FakeRequest, Session> op) {
+    asAdminUserSession(
+        new F.Function3<Session, User, Http.Session, Session>() {
+      @Override
+      public Session apply(Session session, User user, Http.Session httpSession)
+          throws Throwable {
+        return op.apply(session, user,
+            loggedInRequest(fakeRequest(), httpSession));
+      }
+    });
+  }
+
+  // Also used in FileStoreAsyncSpec
+  public static void asAdminUserSession(
+      final F.Function3<Session, User, Http.Session, Session> op) {
     running(fakeAorraApp(), new Runnable() {
       @Override
       public void run() {
@@ -140,13 +154,20 @@ public class AorraTestUtils {
             Admin.getInstance(session).getGroup().addMember(
                 gm.create("testgroup"));
             gm.addMember("testgroup", user.getJackrabbitUserId());
-            // Do op
-            op.apply(session, user, loggedInRequest(user, password));
-            return session;
+            return op.apply(session, user, loggedInSession(user, password));
           }
         });
       }
     });
+  }
+
+  public static FakeRequest loggedInRequest(
+      FakeRequest newRequest,
+      Http.Session httpSession) {
+    for (Map.Entry<String, String> e : httpSession.entrySet()) {
+      newRequest = newRequest.withSession(e.getKey(), e.getValue());
+    }
+    return newRequest;
   }
 
   private static User createNewUser(final String email, final String password) {
@@ -174,7 +195,7 @@ public class AorraTestUtils {
   /*
    * Must be used while application is running.
    */
-  private static FakeRequest loggedInRequest(
+  private static Http.Session loggedInSession(
       final User user, final String password) {
     final Map<String,String> data = new HashMap<String,String>();
     data.put("email", user.getEmail());
@@ -182,12 +203,7 @@ public class AorraTestUtils {
     final Result result = callAction(
         controllers.routes.ref.Application.postLogin(),
         fakeRequest().withFormUrlEncodedBody(data));
-    FakeRequest newRequest = fakeRequest();
-    final Http.Session session = session(result);
-    for (Map.Entry<String, String> e : session.entrySet()) {
-      newRequest = newRequest.withSession(e.getKey(), e.getValue());
-    }
-    return newRequest;
+    return session(result);
   }
 
 }

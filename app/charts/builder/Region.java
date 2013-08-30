@@ -1,5 +1,8 @@
 package charts.builder;
 
+import java.util.Set;
+
+import com.google.common.collect.Sets;
 
 public enum Region {
 
@@ -11,34 +14,34 @@ public enum Region {
     FITZROY("Fitzroy"),
     BURNETT_MARY("Burnett Mary");
 
-    private String properName;
-
-    private String name;
+    private final String properName;
+    private final String name;
 
     private Region(String name) {
-        this.name = name;
+      this(name, name);
     }
 
     private Region(String name, String properName) {
-        this(name);
-        this.properName= properName;
+      this.name = name;
+      this.properName = properName;
     }
 
     public String getName() {
-        return name;
+      return name;
     }
 
     public String getProperName() {
-        return properName!=null?properName:name;
+      return properName;
     }
 
-    public static Region getRegion(String name) {
-        for(Region region : Region.values()) {
-            if(region.name.equals(name)) {
-                return region;
-            }
+    public static Set<Region> getRegions(Set<String> names) {
+      final Set<Region> s = Sets.newHashSet();
+      for (Region region : values()) {
+        if (names.contains(region.name)) {
+          s.add(region);
         }
-        return null;
+      }
+      return s;
     }
 
 }

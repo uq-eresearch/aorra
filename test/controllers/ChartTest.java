@@ -6,15 +6,19 @@ import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
+import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.header;
 import static play.test.Helpers.status;
 import static test.AorraTestUtils.asAdminUser;
+import static test.AorraTestUtils.asAdminUserSession;
+import static test.AorraTestUtils.loggedInRequest;
 import static test.AorraTestUtils.fileStore;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.jcr.RepositoryException;
@@ -29,11 +33,15 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import play.api.mvc.Call;
 import play.libs.F;
 import play.libs.Json;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import service.filestore.FileStore;
@@ -152,7 +160,8 @@ public class ChartTest {
 
   @Test
   public void svgChart() {
-    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+    asAdminUser(
+        new F.Function3<Session, User, FakeRequest, Session>() {
       @Override
       public Session apply(
           final Session session,
@@ -176,6 +185,37 @@ public class ChartTest {
             controllers.routes.ref.Chart.chart(chartType, "svg",
                 ImmutableList.<String>of(f.getPath())),
             newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("image/svg+xml");
+      }
+    });
+    asAdminUserSession(
+        new F.Function3<Session, User, Http.Session, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final Http.Session httpSession) throws Throwable {
+        checkChartWithRegions("marine", Arrays.asList("Cape York"),
+            createMarineChartFile(session), httpSession);
+        checkChartWithRegions("annual_rainfall", Arrays.asList("Fitzroy"),
+            createAnnualRainfallChartFile(session), httpSession);
+        return session;
+      }
+      private void checkChartWithRegions(
+          final String chartType,
+          final List<String> regions,
+          final FileStore.File f,
+          final Http.Session httpSession) {
+        final List<String> pairs = Lists.newLinkedList();
+        for (String r : regions) {
+          pairs.add("region="+r);
+        }
+        final String qs = Joiner.on("&").join(pairs);
+        final Result result = callAction(
+            controllers.routes.ref.Chart.chart(chartType, "svg",
+                ImmutableList.<String>of(f.getPath())),
+            loggedInRequest(new FakeRequest("GET", "?"+qs), httpSession));
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/svg+xml");
       }
