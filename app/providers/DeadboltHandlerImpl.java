@@ -113,7 +113,7 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
             .isMember((new UserDAO(s, jcrom)).jackrabbitUser(u));
       }
     });
-    return new CacheableUser(authUser, user, roles);
+    return new CacheableUser(authUser.getProvider(), user, roles);
   }
 
   private class SimpleRole implements Role {

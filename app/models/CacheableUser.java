@@ -25,9 +25,9 @@ public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
   private final String jackrabbitUserId;
   private final List<Role> roles;
 
-  public CacheableUser(AuthUser authUser, User user, Iterable<Role> roles) {
+  public CacheableUser(String provider, User user, Iterable<Role> roles) {
     this.id = user.getId();
-    this.provider = authUser.getProvider();
+    this.provider = provider;
     this.email = user.getEmail();
     this.name = user.getName();
     this.jackrabbitUserId = user.getJackrabbitUserId();
