@@ -1,5 +1,7 @@
 package charts;
 
+import static views.html.chart.progresstable.render;
+
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.io.InputStream;
@@ -8,6 +10,8 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.InputSource;
+
+import com.google.common.collect.ImmutableList;
 
 import boxrenderer.Box;
 import boxrenderer.Resolver;
@@ -28,7 +32,7 @@ public class ProgressTable implements Drawable {
     GOOD ("Good"),
     VERYGOOD ("Very Good");
 
-    private String label;
+    private final String label;
 
     private Condition(final String label) {
       this.label = label;
@@ -38,19 +42,20 @@ public class ProgressTable implements Drawable {
     public String toString() {
       return label;
     }
-
   }
 
   public static class Cell {
-    public Indicator indicator;
-    public Condition condition;
-    public String progress;
+    public final Indicator indicator;
+    public final Condition condition;
+    public final String progress;
 
     public Cell() {
+      this.indicator = null;
+      this.condition = null;
+      this.progress = null;
     }
 
     public Cell(Indicator indicator, Condition condition, String progress) {
-      super();
       this.indicator = indicator;
       this.condition = condition;
       this.progress = progress;
@@ -58,12 +63,11 @@ public class ProgressTable implements Drawable {
   }
 
   public static class Column {
-    public String header;
-    public String description;
-    public String target;
+    public final String header;
+    public final String description;
+    public final String target;
 
     public Column(String header, String description, String target) {
-      super();
       this.header = header;
       this.description = description;
       this.target = target;
@@ -71,50 +75,47 @@ public class ProgressTable implements Drawable {
   }
 
   public static class Row {
-    public String header;
-    public String description;
-    public List<Cell> cells;
+    public final String header;
+    public final String description;
+    public final List<Cell> cells;
 
     public Row(String header, String description, List<Cell> cells) {
-      super();
       this.header = header;
       this.description = description;
-      this.cells = cells;
+      this.cells = ImmutableList.copyOf(cells);
     }
   }
 
   public static class Dataset {
-    public List<Column> columns;
-    public List<Row> rows;
+    public final List<Column> columns;
+    public final List<Row> rows;
 
     public Dataset(List<Column> columns, List<Row> rows) {
-      super();
-      this.columns = columns;
-      this.rows = rows;
+      this.columns = ImmutableList.copyOf(columns);
+      this.rows = ImmutableList.copyOf(rows);
     }
   }
 
-  private Box box;
+  private final Box box;
 
   public ProgressTable(Dataset dataset) {
     try {
-      Resolver resolver = new Resolver() {
+      final Resolver resolver = new Resolver() {
         @Override
         public InputStream resolve(String source) throws Exception {
           if (StringUtils.startsWith(source, "url('")) {
             source = StringUtils.substringBetween(source, "('", "')");
           }
-          InputStream stream = ProgressTable.class.getResourceAsStream(source);
+          final InputStream stream =
+              ProgressTable.class.getResourceAsStream(source);
           if (stream == null) {
             throw new Exception("failed to load resource " + source);
           }
           return stream;
         }
       };
-      Parser parser = new Parser(resolver);
-      box = parser.parse(XmlUtils.parse(new InputSource(new StringReader(
-          views.html.chart.progresstable.render(dataset.columns, dataset.rows)
-              .toString()))));
+      box = new Parser(resolver).parse(XmlUtils.parse(new InputSource(
+          new StringReader(render(dataset.columns, dataset.rows).toString()))));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
