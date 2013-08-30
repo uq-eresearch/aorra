@@ -1,17 +1,18 @@
 package charts.builder;
 
+import static com.google.common.collect.Iterables.getFirst;
+import static com.google.common.base.Objects.firstNonNull;
+
 import java.awt.Dimension;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.Set;
 
 import charts.spreadsheet.DataSource;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder {
 
@@ -51,14 +52,14 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
   }
 
   List<Chart> build(DataSource datasource, Map<String, String[]> query) {
-    List<Chart> charts = Lists.newArrayList();
     List<Region> regions = getRegion(query);
-    if (regions == null || regions.isEmpty()) {
+    if (regions.isEmpty()) {
       regions = ImmutableList.copyOf(Region.values());
     }
+    final List<Chart> charts = Lists.newArrayList();
     for (Region region : regions) {
       Chart chart = build(datasource, region, query);
-      if(chart != null) {
+      if (chart != null) {
         charts.add(chart);
       }
     }
@@ -66,11 +67,7 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
   }
 
   protected List<Region> getRegion(Map<String, String[]> query) {
-    final String[] regions = query.get("region");
-    if (regions == null || regions.length == 0) {
-      return Collections.emptyList();
-    }
-    return Lists.newArrayList(Region.getRegions(Sets.newHashSet(regions)));
+    return Lists.newArrayList(Region.getRegions(getValues(query, "region")));
   }
 
   Dimension getChartSize(Map<String, String[]> query, int width, int height) {
@@ -80,22 +77,15 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
 
   int getParam(Map<String, String[]> query, String name, int def) {
     try {
-      String tmp = getParam(query, name);
-      if (StringUtils.isBlank(tmp)) {
-        throw new Exception("Param is blank.");
-      }
-      return Integer.parseInt(tmp);
+      // Note: In Java, empty string will not parse to 0 - it's an error
+      return Integer.parseInt(getFirst(getValues(query, name), ""));
     } catch(Exception e) {
       return def;
     }
   }
 
-  String getParam(Map<String, String[]> query, String name) {
-    final String[] tmp = query.get(name);
-    if (tmp == null || tmp.length == 0) {
-      return null;
-    }
-    return tmp[0];
+  private static Set<String> getValues(Map<String, String[]> m, String key) {
+    return ImmutableSet.copyOf(firstNonNull(m.get(key), new String[0]));
   }
 
 }

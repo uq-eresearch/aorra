@@ -211,6 +211,7 @@ public class ChartTest {
         for (String r : regions) {
           pairs.add("region="+r);
         }
+        pairs.add("chartwidth=100");
         final String qs = Joiner.on("&").join(pairs);
         final Result result = callAction(
             controllers.routes.ref.Chart.chart(chartType, "svg",
