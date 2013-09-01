@@ -280,7 +280,7 @@ define([
             render('error', file.name, xhr.responseText || 
                 "Error uploading. Does the file already exist?");
           } else {
-            var response = xhr.responseText;
+            var response = xhr.responseText;1
             var file = JSON.parse(response);
             // Update file in its collection
             var existingFile = collection.get(file.id);
@@ -658,6 +658,10 @@ define([
           }));
         }
         this.buttons.show(new InlineListView([
+          new WatchingButtonView({
+            collection: this._users,
+            targetId: this.model.id
+          }),
           new DownloadButtonView({ url: this.model.url()+"/archive" }),
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
