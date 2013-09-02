@@ -63,4 +63,9 @@ public class Notification {
         return created;
     }
 
+    @Override
+    public String toString() {
+      return String.format("[%s] %s", id, message);
+    }
+
 }

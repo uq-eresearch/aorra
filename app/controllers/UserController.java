@@ -117,6 +117,7 @@ public final class UserController extends SessionAwareController {
         if (n == null)
           return notFound();
         dao.removeById(n.getId());
+        session.save();
         eventManager.tell(Event.delete(n));
         return noContent();
       }
