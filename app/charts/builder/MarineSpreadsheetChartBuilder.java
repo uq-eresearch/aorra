@@ -43,7 +43,7 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
     }
 
     @Override
-    Chart build(DataSource datasource, final Region region,
+    Chart build(DataSource datasource, ChartType type, final Region region,
         final Map<String, String[]> query) {
       final BeerCoaster beercoaster = getDrawable(datasource, region);
       if(beercoaster != null) {

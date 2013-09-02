@@ -36,4 +36,22 @@ public class SpreadsheetHelper {
         }
     }
 
+    public Double selectDouble(int row, int col) {
+        String s = selectText(row, col);
+        if(StringUtils.isNotBlank(s)) {
+            return new Double(s);
+        } else {
+            return null;
+        }
+    }
+
+    public Integer selectInt(int row, int col) {
+        String s = selectText(row, col);
+        if(StringUtils.isNotBlank(s)) {
+            return new Integer(Math.round(Float.parseFloat(s)));
+        } else {
+            return null;
+        }
+    }
+
 }

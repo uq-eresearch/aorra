@@ -1,7 +1,7 @@
 package charts.builder;
 
-import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.collect.Iterables.getFirst;
 
 import java.awt.Dimension;
 import java.util.List;
@@ -10,61 +10,81 @@ import java.util.Set;
 
 import charts.spreadsheet.DataSource;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
 public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder {
 
-  private final ChartType type;
+    private List<ChartType> types;
 
-  public DefaultSpreadsheetChartBuilder(ChartType type) {
-    this.type = type;
-  }
+    public DefaultSpreadsheetChartBuilder(ChartType type) {
+        types = Lists.newArrayList(type);
+    }
 
-  abstract boolean canHandle(DataSource datasource);
+    public DefaultSpreadsheetChartBuilder(List<ChartType> types) {
+        this.types = types;
+    }
 
-  abstract Chart build(DataSource datasource, Region region,
-      Map<String, String[]> query);
+    abstract boolean canHandle(DataSource datasource);
 
-  @Override
-  public boolean canHandle(ChartType type, List<DataSource> datasources) {
-    if (type == null || type.equals(this.type)) {
-      for (DataSource ds : datasources) {
-        if (canHandle(ds)) {
-          return true;
+    abstract Chart build(DataSource datasource, ChartType type, Region region, Map<String, String[]> query);
+
+    List<Chart> buildAll(DataSource datasource, ChartType type, Region region, Map<String, String[]> query) {
+        List<Chart> charts = Lists.newArrayList();
+        if(type == null) {
+            for(ChartType t : types) {
+                Chart chart = build(datasource, t, region, query);
+                if(chart != null) {
+                    charts.add(chart);
+                }
+            }
+        } else {
+            Chart chart = build(datasource, type, region, query);
+            if(chart != null) {
+                charts.add(chart);
+            }
         }
-      }
+        return charts;
     }
-    return false;
-  }
 
-  @Override
-  public List<Chart> build(List<DataSource> datasources,
-          Map<String, String[]> query) {
-    List<Chart> charts = Lists.newArrayList();
-    for (DataSource datasource : datasources) {
-      if (canHandle(datasource)) {
-        charts.addAll(build(datasource, query));
-      }
+    @Override
+    public boolean canHandle(ChartType type, List<DataSource> datasources) {
+        if(type == null || types.contains(type)) {
+            for(DataSource ds : datasources) {
+                if(canHandle(ds)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
-    return charts;
-  }
 
-  List<Chart> build(DataSource datasource, Map<String, String[]> query) {
-    List<Region> regions = getRegion(query);
-    if (regions.isEmpty()) {
-      regions = ImmutableList.copyOf(Region.values());
+    @Override
+    public List<Chart> build(List<DataSource> datasources, ChartType type,
+            Map<String, String[]> query) {
+        List<Chart> charts = Lists.newArrayList();
+        for(DataSource datasource : datasources) {
+            if(canHandle(datasource)) {
+                charts.addAll(build(datasource, type, query));
+            }
+        }
+        return charts;
     }
-    final List<Chart> charts = Lists.newArrayList();
-    for (Region region : regions) {
-      Chart chart = build(datasource, region, query);
-      if (chart != null) {
-        charts.add(chart);
-      }
+
+    List<Chart> build(DataSource datasource, ChartType type, Map<String, String[]> query) {
+        List<Chart> charts = Lists.newArrayList();
+        List<Region> regions = getRegion(query);
+        if(regions != null && !regions.isEmpty()) {
+            for(Region region : regions) {
+                charts.addAll(buildAll(datasource, type, region, query));
+            }
+        } else {
+            for(Region region : Region.values()) {
+                charts.addAll(buildAll(datasource, type, region, query));
+            }
+        }
+        return charts;
     }
-    return charts;
-  }
 
   protected List<Region> getRegion(Map<String, String[]> query) {
     return Lists.newArrayList(Region.getRegions(getValues(query, "region")));

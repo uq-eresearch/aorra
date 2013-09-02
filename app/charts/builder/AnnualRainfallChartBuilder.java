@@ -77,7 +77,7 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     @Override
-    Chart build(DataSource datasource, final Region region,
+    Chart build(DataSource datasource, ChartType type, final Region region,
             final Map<String, String[]> query) {
       if (ROW.containsKey(region)) {
         final DefaultCategoryDataset dataset =

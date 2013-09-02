@@ -18,6 +18,7 @@ public class ChartBuilder {
       .add(new CotsOutbreakSpreadsheetBuilder())
       .add(new AnnualRainfallChartBuilder())
       .add(new ProgressTableChartBuilder())
+      .add(new TrackingTowardsTagetsBuilder())
       .build();
 
   private final List<DataSource> datasources;
@@ -30,7 +31,7 @@ public class ChartBuilder {
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : BUILDERS) {
       if (builder.canHandle(type, datasources)) {
-        result.addAll(builder.build(datasources, query));
+        result.addAll(builder.build(datasources, type, query));
       }
     }
     // make sure charts are sorted by region

@@ -65,7 +65,7 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
     }
 
     @Override
-    Chart build(DataSource datasource, final Region region,
+    Chart build(DataSource datasource, ChartType type, final Region region,
         final Map<String, String[]> query) {
       if (region.equals(Region.GBR)) {
         final TimeSeriesCollection dataset = createDataset(datasource);

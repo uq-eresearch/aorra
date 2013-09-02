@@ -45,7 +45,7 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     @Override
-    Chart build(final DataSource datasource, Region region,
+    Chart build(final DataSource datasource, ChartType type, Region region,
             Map<String, String[]> query) {
       final ProgressTable.Dataset ds = getDataset(datasource);
       if(region == Region.GBR) {
