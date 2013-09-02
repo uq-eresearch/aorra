@@ -12,6 +12,7 @@ import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.injector;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -24,9 +25,11 @@ import models.User;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
@@ -885,7 +888,7 @@ public class FileStoreControllerTest {
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
         FileStore.Folder parentFolder = fm.getRoot();
-        long totalMillis = 0;
+        final List<Long> runtimes = Lists.newLinkedList();
         for (final Integer i : ContiguousSet.create(
             Range.closed(1, 50), DiscreteDomain.integers())) {
           final String name = i.toString();
@@ -910,10 +913,20 @@ public class FileStoreControllerTest {
               .toString();
           assertThat(contentAsString(result)).isEqualTo("["+folderJson+"]");
           final long deltaMillis = System.currentTimeMillis() - requestMillis;
-          // This should take less than 32s total
-          totalMillis += deltaMillis;
-          assertThat(totalMillis).isLessThan(32000L);
+          runtimes.add(deltaMillis);
           parentFolder = folder;
+        }
+        // Check runtime is increasing close to linearly
+        final double allowedRelativeIncrease = 1.20;
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        stats.setWindowSize(10);
+        double allowedRuntime = Double.POSITIVE_INFINITY;
+        for (Long ms : runtimes) {
+          stats.addValue(ms);
+          if (stats.getN() >= 10) {
+            assertThat(stats.getMean()).isLessThan(allowedRuntime);
+            allowedRuntime = allowedRelativeIncrease * stats.getMean();
+          }
         }
         return session;
       }

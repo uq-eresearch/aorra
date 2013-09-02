@@ -40,7 +40,8 @@ object ApplicationBuild extends Build {
     "org.apache.poi" % "poi-ooxml" % "3.8",
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "test",
     "com.kitfox.svg" % "svg-salamander" % "1.0",
-    "net.sf.supercsv" % "super-csv" % "2.1.0"
+    "net.sf.supercsv" % "super-csv" % "2.1.0",
+    "org.apache.commons" % "commons-math3" % "3.2"
   )
 
   val isTravisCI = System.getenv("TRAVIS_SCALA_VERSION") != null
