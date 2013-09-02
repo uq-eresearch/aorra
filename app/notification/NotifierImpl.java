@@ -31,10 +31,12 @@ import scala.Tuple2;
 import scala.concurrent.duration.Duration;
 import service.JcrSessionFactory;
 import service.filestore.EventManager;
-import service.filestore.EventManager.ChannelMessage;
+import service.filestore.EventManager.EventReceiver;
+import service.filestore.EventManager.EventReceiverMessage;
 import service.filestore.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
+import service.filestore.OrderedEvent;
 import akka.actor.TypedActor;
 
 import com.google.common.collect.Lists;
@@ -91,26 +93,19 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   protected void scheduleTick() {
     final Notifier n = TypedActor.<Notifier>self();
-    final Concurrent.Channel<Tuple2<String, Event>> channel =
-        new Concurrent.Channel<Tuple2<String, Event>>() {
+    final EventReceiver er = new EventReceiver() {
       @Override
       public void end() {}
 
       @Override
-      public void end(Throwable arg0) {}
+      public void end(Throwable e) {}
 
       @Override
-      public void eofAndEnd() {}
-
-      @Override
-      public void push(Input<Tuple2<String, Event>> arg0) {}
-
-      @Override
-      public void push(Tuple2<String, Event> arg0) {
+      public void push(OrderedEvent e) {
         n.tick();
       }
     };
-    fileStore.getEventManager().tell(ChannelMessage.add(channel, null));
+    fileStore.getEventManager().tell(EventReceiverMessage.add(er, null));
     TypedActor.context().system().scheduler().schedule(
         Duration.create(10, TimeUnit.MILLISECONDS),
         Duration.create(500, TimeUnit.MILLISECONDS),
@@ -173,12 +168,12 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   private List<Event> getNewEvents() {
     List<Event> result = Lists.newArrayList();
-    Iterable<Tuple2<String, Event>> events = fileStore.getEventManager()
+    Iterable<OrderedEvent> events = fileStore.getEventManager()
         .getSince(lastEventId);
-    for (Tuple2<String, Event> pair : events) {
-      String eventId = pair._1;
+    for (OrderedEvent oe : events) {
+      String eventId = oe.id();
       lastEventId = eventId;
-      EventManager.Event event = pair._2;
+      EventManager.Event event = oe.event();
       if (event.info != null
           && event.info.type == EventManager.Event.NodeType.NOTIFICATION) {
         continue;

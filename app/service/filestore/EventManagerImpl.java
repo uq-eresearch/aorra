@@ -8,8 +8,6 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 
 import play.Logger;
-import play.api.libs.iteratee.Concurrent.Channel;
-import scala.Tuple2;
 import service.EventTimeline;
 import service.EventTimeline.ForgottenEventException;
 import service.InMemoryEventTimeline;
@@ -19,9 +17,9 @@ public class EventManagerImpl implements EventManager {
   private final EventTimeline<String, Event> history =
       new InMemoryEventTimeline<Event>();
 
-  private final Set<Channel<Tuple2<String, Event>>> channels =
+  private final Set<EventReceiver> receivers =
       Collections.synchronizedSet(
-          new HashSet<Channel<Tuple2<String, Event>>>());
+          new HashSet<EventReceiver>());
 
   @Override
   public String getLastEventId() {
@@ -29,34 +27,33 @@ public class EventManagerImpl implements EventManager {
   }
 
   @Override
-  public Iterable<Tuple2<String,Event>> getSince(final String lastId) {
-    final ImmutableList.Builder<Tuple2<String,Event>> b =
-        ImmutableList.<Tuple2<String,Event>>builder();
+  public Iterable<OrderedEvent> getSince(final String lastId) {
+    final ImmutableList.Builder<OrderedEvent> b = ImmutableList.builder();
     Map<String, Event> missed;
     try {
       missed = lastId == null ? history.getKnown() : history.getSince(lastId);
     } catch (ForgottenEventException e1) {
       // TODO Handle forgotten history
-      return ImmutableList.of(outOfDateTuple());
+      return ImmutableList.of(outOfDateOrderedEvent());
     }
     for (Map.Entry<String, Event> e : missed.entrySet()) {
       // Push event ID and event
-      b.add(new Tuple2<String, Event>(e.getKey(), e.getValue()));
+      b.add(new OrderedEvent(e.getKey(), e.getValue()));
     }
     return b.build();
   }
 
   @Override
-  public void tell(final ChannelMessage<Tuple2<String, Event>> message) {
+  public void tell(final EventReceiverMessage message) {
     switch (message.type) {
     case ADD:
       Logger.debug(this+" - Adding notification channel.");
-      performCatchup(message.channel, message.lastId);
-      channels.add(message.channel);
+      performCatchup(message.er, message.lastId);
+      receivers.add(message.er);
       break;
     case REMOVE:
       Logger.debug(this+" - Removing notification channel.");
-      channels.remove(message.channel);
+      receivers.remove(message.er);
       break;
     }
   }
@@ -66,40 +63,38 @@ public class EventManagerImpl implements EventManager {
     Logger.debug(this+" - Adding event to history: "+event);
     history.record(event);
     Logger.debug(String.format("%s - Pushing event to %d channels: %s",
-        this, channels.size(), event));
-    for (Channel<Tuple2<String, Event>> channel : channels) {
+        this, receivers.size(), event));
+    for (EventReceiver er : receivers) {
       // Push event ID and event
-      channel.push(new Tuple2<String, Event>(history.getLastEventId(), event));
+      er.push(new OrderedEvent(history.getLastEventId(), event));
     }
   }
 
   protected void performCatchup(
-      final Channel<Tuple2<String, Event>> channel,
+      final EventReceiver er,
       final String lastId) {
     Logger.debug("Catching up from "+lastId);
     if (lastId == null) {
-      channel.push(outOfDateTuple());
-      channel.end();
+      er.push(outOfDateOrderedEvent());
+      er.end();
     } else {
       try {
         final Map<String, Event> missed = history.getSince(lastId);
         for (Map.Entry<String, Event> e : missed.entrySet()) {
-          Logger.debug(this+"- Pushing missed event "+e+" to channel: "+channel);
+          Logger.debug(this+"- Pushing missed event "+e+" to channel: "+er);
           // Push event ID and event
-          channel.push(new Tuple2<String, Event>(
-              e.getKey(), e.getValue()));
+          er.push(new OrderedEvent(e.getKey(), e.getValue()));
         }
       } catch (ForgottenEventException e) {
-        channel.push(outOfDateTuple());
+        er.push(outOfDateOrderedEvent());
         // Close the channel
-        channel.end(e);
+        er.end(e);
       }
     }
   }
 
-  protected Tuple2<String, Event> outOfDateTuple() {
-    return new Tuple2<String, Event>(
-        history.getLastEventId(), Event.outOfDate());
+  protected OrderedEvent outOfDateOrderedEvent() {
+    return new OrderedEvent(history.getLastEventId(), Event.outOfDate());
   }
 
 }

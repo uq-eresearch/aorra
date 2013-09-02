@@ -25,9 +25,11 @@ import play.api.mvc.AnyContent
 import play.api.mvc.Controller
 import play.api.mvc.EssentialAction
 import play.api.mvc.Request
-import service.filestore.EventManager.ChannelMessage
+import service.filestore.EventManager.EventReceiver
+import service.filestore.EventManager.EventReceiverMessage
 import service.filestore.EventManager.{Event => EmEvent}
 import play.api.libs.json.JsArray
+import service.filestore.OrderedEvent
 
 /**
  *
@@ -69,7 +71,7 @@ class FileStoreAsync @Inject()(
   def pollingJsonResponse(authUser: AuthUser, request: Request[AnyContent]) = {
     val eventId = lastIdInQuery(request)
     val response =  JsArray(
-      filestore.getEventManager().getSince(eventId).map { case (id, event) =>
+      filestore.getEventManager().getSince(eventId).map { case OrderedEvent(id, event) =>
         jsonMessage(id, event)
       }.toSeq
     )
@@ -98,21 +100,21 @@ class FileStoreAsync @Inject()(
 
   private def fsEvents(authUser: AuthUser, lastEventId: String) = {
     val em = filestore.getEventManager
-    var c: Channel[(String, EmEvent)] = null;
-    Concurrent.unicast[(String, EmEvent)](
-      onStart = { channel: Channel[(String, EmEvent)] =>
-        c = channel
-        em tell ChannelMessage.add(c, lastEventId)
+    var er: EventReceiver = null;
+    Concurrent.unicast[OrderedEvent](
+      onStart = { channel: Channel[OrderedEvent] =>
+        er = ChannelEventReceiver(channel)
+        em tell EventReceiverMessage.add(er, lastEventId)
       },
       // This is a pass-by-name (ie. lazy evaluation) parameter
       // (no () => required)
       onComplete = {
         // Note: This only triggers when a new event happens and gets rejected,
         // not when the socket closes.
-        em tell ChannelMessage.remove(c)
+        em tell EventReceiverMessage.remove(er)
       },
-      onError = { (s: String, i: Input[(String, EmEvent)]) =>
-        em tell ChannelMessage.remove(c)
+      onError = { (s: String, i: Input[OrderedEvent]) =>
+        em tell EventReceiverMessage.remove(er)
       }
     )
   }
@@ -126,9 +128,18 @@ class FileStoreAsync @Inject()(
   private def eventSourceFormatter() = {
     // Play Framework uses structural types to implement the Enumeratee
     import scala.language.reflectiveCalls
-    Enumeratee.map[(String, EmEvent)] {
-      case (id, event) => sseMessage(id, event)
+    Enumeratee.map[OrderedEvent] {
+      case OrderedEvent(id, event) => sseMessage(id, event)
     }
+  }
+
+  private case class ChannelEventReceiver(val c: Channel[OrderedEvent])
+    extends EventReceiver {
+
+    def push(oe: OrderedEvent) = c.push(oe)
+    def end() = c.end
+    def end(e: Throwable) = c.end(e)
+
   }
 
 }

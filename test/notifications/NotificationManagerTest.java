@@ -23,12 +23,12 @@ import org.junit.Test;
 
 import play.libs.F;
 import play.test.FakeRequest;
-import scala.Tuple2;
 import service.filestore.EventManager;
 import service.filestore.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
+import service.filestore.OrderedEvent;
 
 public class NotificationManagerTest {
 
@@ -116,9 +116,9 @@ public class NotificationManagerTest {
         if (retries-- <= 0) {
             throw new RuntimeException("time out waiting for notification");
         }
-        Iterable<Tuple2<String, Event>> events = fileStore().getEventManager().getSince(null);
-        for(Tuple2<String, Event> pair : events) {
-            EventManager.Event event = pair._2;
+        Iterable<OrderedEvent> events = fileStore().getEventManager().getSince(null);
+        for(OrderedEvent oe : events) {
+            EventManager.Event event = oe.event();
             if(event.info!=null && event.info.type == EventManager.Event.NodeType.NOTIFICATION) {
                 return;
             }
