@@ -1,6 +1,6 @@
 package notification;
 
-import java.util.List;
+import java.util.Set;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
@@ -31,7 +31,7 @@ import service.filestore.FlagStore;
 import service.filestore.OrderedEvent;
 import akka.actor.TypedActor;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 public class NotifierImpl implements Notifier, TypedActor.PreStart {
@@ -131,7 +131,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   }
 
   private Iterable<User> getWatchUsers(Session session, String nodeId) {
-    final List<User> users = Lists.newLinkedList();
+    final Set<User> users = Sets.newHashSet();
     FlagStore.Manager manager = flagStore.getManager(session);
     for (Flag flag : manager.getFlags(FlagStore.FlagType.WATCH)) {
       if (flag.getTargetId().equals(nodeId)) {
