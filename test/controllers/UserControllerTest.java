@@ -7,7 +7,7 @@ import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
 import static play.test.Helpers.header;
 import static play.test.Helpers.status;
-import static notifications.NotificationManagerTest.awaitNotification;
+import static notifications.NotificationManagerTest.awaitNotifications;
 import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.flagStore;
@@ -111,15 +111,18 @@ public class UserControllerTest {
         final Flag flag = flm.setFlag(FlagType.EDIT, f.getIdentifier(), other);
         fileStore().getEventManager().tell(Event.create(flag));
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(2);
-        awaitNotification();
-        final List<Notification> notifications = (new UserDAO(session, jcrom()))
-            .loadById(user.getId()).getNotifications();
-        assertThat(notifications).hasSize(1);
-        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
-        json.add(jb.toJson(notifications.get(0)));
-        final String expectedContent = json.toString();
+        awaitNotifications(2);
+        List<Notification> notifications =
+            (new UserDAO(session, jcrom())).loadById(user.getId())
+              .getNotifications();
+        assertThat(notifications).hasSize(2);
         // Fetch notifications
         {
+          final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+          for (Notification n : notifications) {
+            json.add(jb.toJson(n));
+          }
+          final String expectedContent = json.toString();
           final Result result = callAction(
               controllers.routes.ref.UserController.notificationsJson(),
               newRequest);
@@ -163,7 +166,7 @@ public class UserControllerTest {
           final UserDAO dao = new UserDAO(session, jcrom());
           final List<Notification> existingNotifications =
               dao.loadById(user.getId()).getNotifications();
-          assertThat(existingNotifications).hasSize(1);
+          assertThat(existingNotifications).hasSize(2);
           assertThat(existingNotifications.get(0).getId()).isEqualTo(n.getId());
           final Result result = callAction(
               controllers.routes.ref.UserController.deleteNotification(
@@ -177,8 +180,6 @@ public class UserControllerTest {
           for (Notification i : dao.loadById(user.getId()).getNotifications()) {
             assertThat(i.getId()).isNotEqualTo(n.getId());
           }
-          // TODO: Find out why another notification has turned up here.
-          //assertThat(dao.loadById(user.getId()).getNotifications()).isEmpty();
         }
         return session;
       }

@@ -106,21 +106,11 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
       }
     };
     fileStore.getEventManager().tell(EventReceiverMessage.add(er, null));
-    TypedActor.context().system().scheduler().schedule(
-        Duration.create(10, TimeUnit.MILLISECONDS),
-        Duration.create(500, TimeUnit.MILLISECONDS),
-        new Runnable() {
-          @Override
-          public void run() {
-            n.tick();
-          }
-        },
-        TypedActor.dispatcher());
   }
 
   @Override
   public void tick() {
-    final List<Event> events = getEvents();
+    final List<Event> events = getNewEvents();
     if (events.isEmpty()) {
       return;
     }
@@ -133,41 +123,11 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     });
   }
 
-  private List<Event> getEvents() {
+  private List<Event> getNewEvents() {
     List<Event> result = Lists.newArrayList();
     if (lastEventId == null) {
       lastEventId = fileStore.getEventManager().getLastEventId();
     }
-    List<Event> newEvents = getNewEvents();
-    long now = System.currentTimeMillis();
-    for (Event event : newEvents) {
-      events.add(Pair.of(now, event));
-    }
-    Iterator<Pair<Long, Event>> iter = events.iterator();
-    List<Event> fileStoreEvents = Lists.newArrayList();
-    long oldest = Long.MAX_VALUE;
-    while (iter.hasNext()) {
-      Pair<Long, Event> p = iter.next();
-      long time = p.getLeft();
-      Event event = p.getRight();
-      if ((event.info != null)
-          && (event.info.type == EventManager.Event.NodeType.FLAG)) {
-        result.add(event);
-        iter.remove();
-      } else {
-        fileStoreEvents.add(event);
-        oldest = Math.min(oldest, time);
-      }
-    }
-    if (!fileStoreEvents.isEmpty() && ((oldest + maxHoldMs) < now)) {
-      events.clear();
-      result.addAll(fileStoreEvents);
-    }
-    return result;
-  }
-
-  private List<Event> getNewEvents() {
-    List<Event> result = Lists.newArrayList();
     Iterable<OrderedEvent> events = fileStore.getEventManager()
         .getSince(lastEventId);
     for (OrderedEvent oe : events) {
@@ -191,7 +151,6 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   private void processEvents(Session session, List<Event> events)
       throws RepositoryException {
-    List<Event> filestoreEvents = Lists.newArrayList();
     for (Event event : events) {
       if ((event.info != null)
           && (event.info.type == EventManager.Event.NodeType.FLAG)
@@ -200,10 +159,9 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
             getTargetId(session, event));
         sendEditNotification(session, emails, event);
       } else {
-        filestoreEvents.add(event);
+        sendNotification(session, Lists.newArrayList(event));
       }
     }
-    sendNotification(session, filestoreEvents);
   }
 
   private Set<String> getWatchEmails(Session session, String nodeId) {
