@@ -9,7 +9,7 @@ import play.Plugin;
 import play.api.mvc.Call;
 import play.libs.Akka;
 import service.GuiceInjectionPlugin;
-import service.filestore.EventManager;
+import service.filestore.FileStore;
 import akka.actor.TypedActor;
 import akka.actor.TypedProps;
 import akka.japi.Creator;
@@ -51,29 +51,22 @@ public class NotificationManager extends Plugin {
         });
   }
 
-  public static String absUrl(EventManager.Event event) {
-    return absUrl(event.info.type, event.info.id);
-  }
-
-  public static String absUrl(EventManager.Event.NodeType type, String id) {
+  public static String absUrl(FileStore.FileOrFolder fof) {
     try {
       URL baseUrl = new URL(
           Play.application().configuration().getString("application.baseUrl"));
-      final Call call;
-      switch (type) {
-      case FILE:
-        call = controllers.routes.FileStoreController.showFile(id);
-        break;
-      case FOLDER:
-        call = controllers.routes.FileStoreController.showFolder(id);
-        break;
-      default:
-        throw new RuntimeException(
-            "Invalid event type for URL: " + type);
-      }
-      return (new URL(baseUrl, call.url())).toString();
+      return (new URL(baseUrl, getCall(fof).url())).toString();
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private static Call getCall(FileStore.FileOrFolder fof) {
+    final String id = fof.getIdentifier();
+    if (fof instanceof FileStore.File) {
+      return controllers.routes.FileStoreController.showFile(id);
+    } else {
+      return controllers.routes.FileStoreController.showFolder(id);
     }
   }
 

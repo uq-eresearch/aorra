@@ -1,11 +1,13 @@
-@(path: String,
-  fileType: service.filestore.EventManager.Event.NodeType,
-  user: models.User,
-  targetId: String)
+@(user: models.User,
+  target: service.filestore.FileStore.FileOrFolder)
+@import service.filestore.FileStore.{File, Folder}
 @import _root_.notification.NotificationManager.absUrl
 
 <p>
   <a href="mailto:@user.getEmail">@user.getName</a>
-  is now editing the @fileType 
-  <a href="@absUrl(fileType, targetId)">@path</a>
+  is now editing the @target match {
+    case _: File => { file }
+    case _: Folder => { folder }
+  } 
+  <a href="@absUrl(target)">@target.getPath</a>
 </p>

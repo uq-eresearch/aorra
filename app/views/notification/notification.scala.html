@@ -17,12 +17,12 @@
       }
     }
     @(event.`type`)d
-    <a href="@absUrl(event)">
+    <a href="@absUrl(file)">
       @file.getPath()
     </a>
   }
   case folder: Folder => {
-    <a href="@absUrl(event)">
+    <a href="@absUrl(folder)">
       @folder.getPath())
     </a>
     was

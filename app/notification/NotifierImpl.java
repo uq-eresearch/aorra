@@ -1,8 +1,6 @@
 package notification;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
@@ -14,13 +12,13 @@ import models.NotificationDAO;
 import models.User;
 import models.UserDAO;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.jackrabbit.core.SessionImpl;
 import org.apache.jackrabbit.core.id.NodeId;
 import org.jcrom.Jcrom;
 
 import play.Application;
 import play.Logger;
+import play.api.templates.Html;
 import play.libs.F;
 import service.JcrSessionFactory;
 import service.filestore.EventManager;
@@ -175,33 +173,20 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   }
 
   private boolean isEditFlag(Session session, Event event) {
-    FlagStore.Manager mgr = flagStore.getManager(session);
-    for (Flag f : mgr.getFlags(FlagStore.FlagType.EDIT)) {
-      if (f.getId().equals(event.info.id)) {
-        return true;
-      }
-    }
-    return false;
+    final FlagStore.Manager mgr = flagStore.getManager(session);
+    final Flag f = mgr.getFlag(FlagStore.FlagType.EDIT, event.info.id);
+    return f != null;
   }
 
   private void sendEditNotification(Session session, final Iterable<User> users,
       final Event event) throws RepositoryException {
-    Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-    String fofId = flag.getTargetId();
-    User user = flag.getUser();
-    FileStore.Manager manager = fileStore.getManager(session);
-    FileStore.FileOrFolder ff = manager.getByIdentifier(fofId);
-    Event.NodeType type;
-    if (ff instanceof FileStore.File) {
-      type = Event.NodeType.FILE;
-    } else {
-      type = Event.NodeType.FOLDER;
-    }
-    String path = ff.getPath();
-    String msg = views.html.notification.edit_notification.render(path, type,
-        user, fofId).toString();
+    final Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+    final User creator = flag.getUser();
+    final FileStore.Manager manager = fileStore.getManager(session);
+    FileStore.FileOrFolder fof = manager.getByIdentifier(flag.getTargetId());
+    Html msg = views.html.notification.edit_notification.render(creator, fof);
     for (User u : users) {
-      sendNotification(session, u, msg);
+      sendNotification(session, u, msg.toString());
     }
   }
 
@@ -209,11 +194,9 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
       throws ItemNotFoundException, RepositoryException {
     NotificationDAO notificationDao = new NotificationDAO(session, jcrom);
     Notification notification = new Notification(to, msg);
-    if (to != null) {
-      notificationDao.create(notification);
-      session.save();
-      fileStore.getEventManager().tell(EventManager.Event.create(notification));
-    }
+    notificationDao.create(notification);
+    session.save();
+    fileStore.getEventManager().tell(EventManager.Event.create(notification));
   }
 
 }
