@@ -1,7 +1,9 @@
 package notification;
 
+import service.filestore.OrderedEvent;
+
 public interface Notifier {
 
-  void tick();
+  void handleEvent(OrderedEvent oe);
 
 }

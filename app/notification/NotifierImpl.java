@@ -1,11 +1,8 @@
 package notification;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.concurrent.TimeUnit;
 
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
@@ -18,44 +15,30 @@ import models.User;
 import models.UserDAO;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jackrabbit.core.SessionImpl;
 import org.apache.jackrabbit.core.id.NodeId;
 import org.jcrom.Jcrom;
 
 import play.Application;
 import play.Logger;
-import play.api.libs.iteratee.Concurrent;
-import play.api.libs.iteratee.Input;
 import play.libs.F;
-import scala.Tuple2;
-import scala.concurrent.duration.Duration;
 import service.JcrSessionFactory;
 import service.filestore.EventManager;
+import service.filestore.EventManager.Event;
+import service.filestore.EventManager.Event.EventType;
 import service.filestore.EventManager.EventReceiver;
 import service.filestore.EventManager.EventReceiverMessage;
-import service.filestore.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import service.filestore.OrderedEvent;
 import akka.actor.TypedActor;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 public class NotifierImpl implements Notifier, TypedActor.PreStart {
-
-  public static final String WAIT_MILLIS_KEY = "notifications.waitMillis";
-
-  private final long maxHoldMs;
-
-  private String lastEventId;
-
-  private final List<Pair<Long, Event>> events = Lists.newArrayList();
 
   private final JcrSessionFactory sessionFactory;
   private final FileStore fileStore;
@@ -70,8 +53,6 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     this.fileStore = fileStore;
     this.flagStore = flagStore;
     this.jcrom = jcrom;
-    this.maxHoldMs = application.configuration().getLong(WAIT_MILLIS_KEY,
-        15000L);
     updateUserModels();
   }
 
@@ -104,29 +85,23 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
       public void end(Throwable e) {}
 
       @Override
-      public void push(OrderedEvent e) {
-        n.tick();
+      public void push(OrderedEvent oe) {
+        // Skip out-of-date messages
+        if (oe.event().type == EventType.OUTOFDATE)
+          return;
+        // Trigger notification for event
+        n.handleEvent(oe);
       }
     };
     fileStore.getEventManager().tell(EventReceiverMessage.add(er, null));
   }
 
   @Override
-  public void tick() {
-    final List<OrderedEvent> events = getNewEvents();
-    if (events.isEmpty()) {
+  public void handleEvent(final OrderedEvent oe) {
+    if (isNotificationEvent(oe.event())) {
+      // Notification events do not produce notifications! ;-)
       return;
     }
-    handleEvents(events);
-  }
-
-  protected void handleEvents(final List<OrderedEvent> events) {
-    for (final OrderedEvent oe : events) {
-      handleEvent(oe);
-    }
-  }
-
-  protected void handleEvent(final OrderedEvent oe) {
     sessionFactory.inSession(new F.Function<Session, Session>() {
       @Override
       public Session apply(Session session) throws RepositoryException {
@@ -136,41 +111,24 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     });
   }
 
-  private List<OrderedEvent> getNewEvents() {
-    List<OrderedEvent> result = Lists.newArrayList();
-    for (OrderedEvent oe : getNewEventsSinceLast()) {
-      if (isNotificationEvent(oe.event())) {
-        continue;
-      }
-      result.add(oe);
-    }
-    return result;
-  }
-
-  private SortedSet<OrderedEvent> getNewEventsSinceLast() {
-    if (lastEventId == null) {
-      lastEventId = fileStore.getEventManager().getLastEventId();
-    }
-    SortedSet<OrderedEvent> events = ImmutableSortedSet.copyOf(
-        fileStore.getEventManager().getSince(lastEventId));
-    if (!events.isEmpty())
-      lastEventId = events.last().id();
-    return events;
-  }
-
-  private boolean isNotificationEvent(final Event event) {
+  private static boolean isNotificationEvent(final Event event) {
     return event.info != null
         && event.info.type == EventManager.Event.NodeType.NOTIFICATION;
   }
 
+  private static boolean isFlagEvent(final Event event) {
+    return event.info != null
+        && event.info.type == EventManager.Event.NodeType.FLAG;
+  }
+
   private void processEvent(Session session, Event event)
       throws RepositoryException {
-    if ((event.info != null)
-        && (event.info.type == EventManager.Event.NodeType.FLAG)
-        && isEditFlag(session, event)) {
-      Set<String> emails = getWatchEmails(session,
-          getTargetId(session, event));
-      sendEditNotification(session, emails, event);
+    if (isFlagEvent(event)) {
+      if (isEditFlag(session, event)) {
+        Set<String> emails = getWatchEmails(session,
+            getTargetId(session, event));
+        sendEditNotification(session, emails, event);
+      }
     } else {
       sendNotification(session, Lists.newArrayList(event));
     }
