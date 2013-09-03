@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.TimeUnit;
 
 import javax.jcr.ItemNotFoundException;
@@ -39,6 +40,8 @@ import service.filestore.FlagStore;
 import service.filestore.OrderedEvent;
 import akka.actor.TypedActor;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -110,57 +113,66 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   @Override
   public void tick() {
-    final List<Event> events = getNewEvents();
+    final List<OrderedEvent> events = getNewEvents();
     if (events.isEmpty()) {
       return;
     }
+    handleEvents(events);
+  }
+
+  protected void handleEvents(final List<OrderedEvent> events) {
+    for (final OrderedEvent oe : events) {
+      handleEvent(oe);
+    }
+  }
+
+  protected void handleEvent(final OrderedEvent oe) {
     sessionFactory.inSession(new F.Function<Session, Session>() {
       @Override
       public Session apply(Session session) throws RepositoryException {
-        processEvents(session, events);
+        processEvent(session, oe.event());
         return session;
       }
     });
   }
 
-  private List<Event> getNewEvents() {
-    List<Event> result = Lists.newArrayList();
-    if (lastEventId == null) {
-      lastEventId = fileStore.getEventManager().getLastEventId();
-    }
-    Iterable<OrderedEvent> events = fileStore.getEventManager()
-        .getSince(lastEventId);
-    for (OrderedEvent oe : events) {
-      String eventId = oe.id();
-      lastEventId = eventId;
-      EventManager.Event event = oe.event();
-      if (event.info != null
-          && event.info.type == EventManager.Event.NodeType.NOTIFICATION) {
+  private List<OrderedEvent> getNewEvents() {
+    List<OrderedEvent> result = Lists.newArrayList();
+    for (OrderedEvent oe : getNewEventsSinceLast()) {
+      if (isNotificationEvent(oe.event())) {
         continue;
       }
-      result.add(event);
-      try {
-        Logger.debug(String.format(
-            "got event id %s type %s event info type %s with node id %s",
-            eventId, event.type, event.info.type, event.info.id));
-      } catch (Exception e) {
-      }
+      result.add(oe);
     }
     return result;
   }
 
-  private void processEvents(Session session, List<Event> events)
+  private SortedSet<OrderedEvent> getNewEventsSinceLast() {
+    if (lastEventId == null) {
+      lastEventId = fileStore.getEventManager().getLastEventId();
+    }
+    SortedSet<OrderedEvent> events = ImmutableSortedSet.copyOf(
+        fileStore.getEventManager().getSince(lastEventId));
+    if (!events.isEmpty())
+      lastEventId = events.last().id();
+    return events;
+  }
+
+  private boolean isNotificationEvent(final Event event) {
+    return event.info != null
+        && event.info.type == EventManager.Event.NodeType.NOTIFICATION;
+  }
+
+  private void processEvent(Session session, Event event)
       throws RepositoryException {
-    for (Event event : events) {
-      if ((event.info != null)
-          && (event.info.type == EventManager.Event.NodeType.FLAG)
-          && isEditFlag(session, event)) {
-        Set<String> emails = getWatchEmails(session,
-            getTargetId(session, event));
-        sendEditNotification(session, emails, event);
-      } else {
-        sendNotification(session, Lists.newArrayList(event));
-      }
+    if ((event.info != null)
+        && (event.info.type == EventManager.Event.NodeType.FLAG)
+        && isEditFlag(session, event)) {
+      Set<String> emails = getWatchEmails(session,
+          getTargetId(session, event));
+      sendEditNotification(session, emails, event);
+    } else {
+      sendNotification(session, Lists.newArrayList(event));
     }
   }
 

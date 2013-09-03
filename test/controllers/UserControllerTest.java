@@ -105,6 +105,8 @@ public class UserControllerTest {
             .getRoot()
             .createFile("test.txt", "text/plain",
                 new ByteArrayInputStream("Test content.".getBytes()));
+        // Wait, so we don't end up watching retroactively
+        Thread.sleep(100);
         flm.setFlag(FlagType.WATCH, f.getIdentifier(), user);
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(1);
         // Perform set flag and trigger event
