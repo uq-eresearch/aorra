@@ -47,12 +47,12 @@ public class EventManagerImpl implements EventManager {
   public void tell(final EventReceiverMessage message) {
     switch (message.type) {
     case ADD:
-      Logger.debug(this+" - Adding notification channel.");
+      Logger.debug("Adding event receiver to " + this);
       performCatchup(message.er, message.lastId);
       receivers.add(message.er);
       break;
     case REMOVE:
-      Logger.debug(this+" - Removing notification channel.");
+      Logger.debug("Removing event receiver from " + this);
       receivers.remove(message.er);
       break;
     }
@@ -60,9 +60,8 @@ public class EventManagerImpl implements EventManager {
 
   @Override
   public void tell(final Event event) {
-    Logger.debug(this+" - Adding event to history: "+event);
     history.record(event);
-    Logger.debug(String.format("%s - Pushing event to %d channels: %s",
+    Logger.debug(String.format("%s pushing event to %d receivers: %s",
         this, receivers.size(), event));
     for (EventReceiver er : receivers) {
       // Push event ID and event
@@ -81,7 +80,9 @@ public class EventManagerImpl implements EventManager {
       try {
         final Map<String, Event> missed = history.getSince(lastId);
         for (Map.Entry<String, Event> e : missed.entrySet()) {
-          Logger.debug(this+"- Pushing missed event "+e+" to channel: "+er);
+          Logger.debug(String.format(
+              "%s pushing missed event %s to receiver: %s",
+              this, e.getKey(), er));
           // Push event ID and event
           er.push(new OrderedEvent(e.getKey(), e.getValue()));
         }
@@ -95,6 +96,11 @@ public class EventManagerImpl implements EventManager {
 
   protected OrderedEvent outOfDateOrderedEvent() {
     return new OrderedEvent(history.getLastEventId(), Event.outOfDate());
+  }
+
+  @Override
+  public String toString() {
+    return "EM#"+System.identityHashCode(this);
   }
 
 }
