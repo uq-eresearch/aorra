@@ -1,37 +1,31 @@
 @(
-  events: List[service.filestore.EventManager.Event],
-  items: Map[String, service.filestore.FileStore.FileOrFolder]
+  event: service.filestore.EventManager.Event,
+  item: service.filestore.FileStore.FileOrFolder
 )
 @import java.net.URL
 @import service.filestore.FileStore.{File, Folder}
 @import _root_.notification.NotificationManager.absUrl
 
-<ul class="list-unstyled">
-@for(event <- events) {
-  <li>
-  @items.get(event.info.id) match {
-    case file: File => {
-      @file.getAuthor match {
-        case null => {
-          Somebody
-        }
-        case author: models.User => {
-          <a href="mailto:@author.getEmail">@author.getName</a>
-        }
+@item match {
+  case file: File => {
+    @file.getAuthor match {
+      case null => {
+        Somebody
       }
-      @(event.`type`)d
-      <a href="@absUrl(event)">
-        @file.getPath()
-      </a>
+      case author: models.User => {
+        <a href="mailto:@author.getEmail">@author.getName</a>
+      }
     }
-    case folder: Folder => {
-      <a href="@absUrl(event)">
-        @folder.getPath())
-      </a>
-      was
-      @(event.`type`)d
-    }
+    @(event.`type`)d
+    <a href="@absUrl(file)">
+      @file.getPath()
+    </a>
   }
-  </li>
+  case folder: Folder => {
+    <a href="@absUrl(folder)">
+      @folder.getPath())
+    </a>
+    was
+    @(event.`type`)d
+  }
 }
-</ul>

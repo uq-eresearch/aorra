@@ -208,14 +208,27 @@ public class User {
     this.notifications = notifications;
   }
 
-@Override
-  public boolean equals(Object other) {
-    return EqualsBuilder.reflectionEquals(this, other);
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj == null || obj.getClass() != getClass()) {
+      return false;
+    }
+    final User other = (User) obj;
+    return new EqualsBuilder()
+      .append(this.getId(), other.getId())
+      .append(this.getEmail(), other.getEmail())
+      .isEquals();
   }
 
   @Override
   public int hashCode() {
-    return HashCodeBuilder.reflectionHashCode(this);
+    return new HashCodeBuilder()
+      .append(this.getId())
+      .append(this.getEmail())
+      .toHashCode();
   }
 
   @Override

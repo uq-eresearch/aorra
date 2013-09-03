@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
-import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -44,7 +43,6 @@ import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 import org.apache.jackrabbit.spi.Path;
 import org.apache.jackrabbit.spi.commons.conversion.IdentifierResolver;
 import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
-import org.jcrom.JcrMappingException;
 import org.jcrom.Jcrom;
 import org.jcrom.dao.JcrDAO;
 import org.jcrom.util.PathUtils;

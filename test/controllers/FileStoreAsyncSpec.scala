@@ -156,7 +156,7 @@ class FileStoreAsyncSpec extends Specification {
         val events = filestore.getEventManager().getSince(null)
           .toIterable.toSeq
         events must haveSize(1)
-        val expectedId = events.head._1
+        val expectedId = events.head.id
 
         val Some(result) = route(
             FakeRequest(GET, "/events",

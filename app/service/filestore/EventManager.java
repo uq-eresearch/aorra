@@ -4,41 +4,47 @@ import javax.jcr.RepositoryException;
 
 import models.Flag;
 import models.Notification;
-import play.api.libs.iteratee.Concurrent.Channel;
-import scala.Tuple2;
 
 public interface EventManager {
 
   public abstract String getLastEventId();
 
-  public abstract Iterable<Tuple2<String, Event>> getSince(String eventId);
+  public abstract Iterable<OrderedEvent> getSince(String eventId);
 
-  public abstract void tell(
-      ChannelMessage<Tuple2<String, Event>> message);
+  public abstract void tell(EventReceiverMessage message);
 
   public abstract void tell(Event event);
 
-  public static class ChannelMessage<T> {
+  public interface EventReceiver {
+    void push(OrderedEvent oe);
+    void end();
+    void end(Throwable e);
+  }
 
-    public static enum MessageType { ADD, REMOVE }
+  public static class EventReceiverMessage {
+
+    public static enum MessageType {
+      ADD, REMOVE
+    }
 
     public final MessageType type;
-    public final Channel<T> channel;
+    public final EventReceiver er;
     public final String lastId;
 
-    protected ChannelMessage(final MessageType type, final Channel<T> channel,
-        final String lastId) {
+    protected EventReceiverMessage(final MessageType type,
+        final EventReceiver er, final String lastId) {
       this.type = type;
-      this.channel = channel;
+      this.er = er;
       this.lastId = lastId;
     }
 
-    public static <T> ChannelMessage<T> add(Channel<T> channel, String lastId) {
-      return new ChannelMessage<T>(MessageType.ADD, channel, lastId);
+    public static EventReceiverMessage add(EventReceiver er,
+        String lastId) {
+      return new EventReceiverMessage(MessageType.ADD, er, lastId);
     }
 
-    public static <T> ChannelMessage<T> remove(Channel<T> channel) {
-      return new ChannelMessage<T>(MessageType.REMOVE, channel, null);
+    public static EventReceiverMessage remove(EventReceiver er) {
+      return new EventReceiverMessage(MessageType.REMOVE, er, null);
     }
 
   }
