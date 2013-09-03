@@ -34,8 +34,6 @@ import service.filestore.OrderedEvent;
 import akka.actor.TypedActor;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 public class NotifierImpl implements Notifier, TypedActor.PreStart {
@@ -72,10 +70,10 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   @Override
   public void preStart() {
-    scheduleTick();
+    attachEventReceiver();
   }
 
-  protected void scheduleTick() {
+  protected void attachEventReceiver() {
     final Notifier n = TypedActor.<Notifier>self();
     final EventReceiver er = new EventReceiver() {
       @Override
@@ -125,142 +123,96 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
       throws RepositoryException {
     if (isFlagEvent(event)) {
       if (isEditFlag(session, event)) {
-        Set<String> emails = getWatchEmails(session,
-            getTargetId(session, event));
-        sendEditNotification(session, emails, event);
+        sendEditNotification(session,
+            getWatchUsers(session, getTargetId(session, event)),
+            event);
       }
     } else {
-      sendNotification(session, Lists.newArrayList(event));
+      sendNotification(session, event);
     }
   }
 
-  private Set<String> getWatchEmails(Session session, String nodeId) {
-    Set<String> emails = Sets.newHashSet();
+  private Iterable<User> getWatchUsers(Session session, String nodeId) {
+    final List<User> users = Lists.newLinkedList();
     FlagStore.Manager manager = flagStore.getManager(session);
-    Set<Flag> flags = manager.getFlags(FlagStore.FlagType.WATCH);
-    for (Flag flag : flags) {
+    for (Flag flag : manager.getFlags(FlagStore.FlagType.WATCH)) {
       if (flag.getTargetId().equals(nodeId)) {
-        emails.add(getEmailAddress(flag.getUser()));
+        users.add(flag.getUser());
       } else {
         try {
           if (((SessionImpl) session).getHierarchyManager().isAncestor(
               new NodeId(flag.getTargetId()), new NodeId(nodeId))) {
-            emails.add(getEmailAddress(flag.getUser()));
+            users.add(flag.getUser());
           }
-        } catch (Exception e) {
+        } catch (RepositoryException e) {
+          // Dump trace and ignore
+          e.printStackTrace();
         }
       }
     }
-    return emails;
+    return users;
   }
 
-  private String getEmailAddress(User u) {
-    return String.format("%s <%s>", u.getName(), u.getEmail());
-  }
-
-  private void sendNotification(Session session, final List<Event> events)
+  private void sendNotification(Session session, final Event event)
       throws RepositoryException {
-    FileStore.Manager manager = fileStore.getManager(session);
-    Map<String, List<Event>> notifications = Maps.newHashMap();
-    for (Event event : events) {
-      Set<String> emails = getWatchEmails(session, event.info.id);
-      for (String email : emails) {
-        List<Event> eList = notifications.get(email);
-        if (eList == null) {
-          eList = Lists.newArrayList();
-          notifications.put(email, eList);
-        }
-        eList.add(event);
-      }
-    }
-    for (final String email : notifications.keySet()) {
-      final List<Event> e = notifications.get(email);
-      Map<String, FileStore.FileOrFolder> items = getItems(manager, e);
-      final String message = views.html.notification.notification.render(e,
-          items).toString();
-      sendNotification(session, email, message);
+    final FileStore.Manager manager = fileStore.getManager(session);
+    for (final User user : getWatchUsers(session, event.info.id)) {
+      FileStore.FileOrFolder item = getItem(manager, event);
+      final String message = views.html.notification.notification.render(event,
+          item).toString();
+      sendNotification(session, user, message);
     }
   }
 
-  private Map<String, FileStore.FileOrFolder> getItems(
-      FileStore.Manager manager, List<Event> events) throws RepositoryException {
-    final Map<String, FileStore.FileOrFolder> m = Maps.newHashMap();
-    for (final Event event : events) {
-      final String fofId = event.info.id;
-      if (!m.containsKey(fofId))
-        m.put(fofId, manager.getByIdentifier(fofId));
-    }
-    return m;
+  private FileStore.FileOrFolder getItem(
+      FileStore.Manager manager, Event event) throws RepositoryException {
+    return manager.getByIdentifier(event.info.id);
   }
 
   private String getTargetId(Session session, Event event) {
-    try {
-      Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-      return flag.getTargetId();
-    } catch (Exception e) {
-      return null;
-    }
+    Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+    return flag.getTargetId();
   }
 
   private boolean isEditFlag(Session session, Event event) {
-    try {
-      FlagStore.Manager mgr = flagStore.getManager(session);
-      Flag flag = mgr.getFlag(event.info.id);
-      for (Flag f : mgr.getFlags(FlagStore.FlagType.EDIT)) {
-        if (f.getId().equals(flag.getId())) {
-          return true;
-        }
+    FlagStore.Manager mgr = flagStore.getManager(session);
+    for (Flag f : mgr.getFlags(FlagStore.FlagType.EDIT)) {
+      if (f.getId().equals(event.info.id)) {
+        return true;
       }
-      return false;
-    } catch (Exception e) {
-      return false;
     }
+    return false;
   }
 
-  private void sendEditNotification(Session session, final Set<String> emails,
+  private void sendEditNotification(Session session, final Iterable<User> users,
       final Event event) throws RepositoryException {
-    try {
-      Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-      String fofId = flag.getTargetId();
-      User user = flag.getUser();
-      FileStore.Manager manager = fileStore.getManager(session);
-      FileStore.FileOrFolder ff = manager.getByIdentifier(fofId);
-      Event.NodeType type;
-      if (ff instanceof FileStore.File) {
-        type = Event.NodeType.FILE;
-      } else {
-        type = Event.NodeType.FOLDER;
-      }
-      String path = ff.getPath();
-      String msg = views.html.notification.edit_notification.render(path, type,
-          user, fofId).toString();
-      for (String email : emails) {
-        sendNotification(session, email, msg);
-      }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+    String fofId = flag.getTargetId();
+    User user = flag.getUser();
+    FileStore.Manager manager = fileStore.getManager(session);
+    FileStore.FileOrFolder ff = manager.getByIdentifier(fofId);
+    Event.NodeType type;
+    if (ff instanceof FileStore.File) {
+      type = Event.NodeType.FILE;
+    } else {
+      type = Event.NodeType.FOLDER;
+    }
+    String path = ff.getPath();
+    String msg = views.html.notification.edit_notification.render(path, type,
+        user, fofId).toString();
+    for (User u : users) {
+      sendNotification(session, u, msg);
     }
   }
 
-  private void sendNotification(Session session, String email, String msg)
+  private void sendNotification(Session session, User to, String msg)
       throws ItemNotFoundException, RepositoryException {
-    UserDAO userDao = new UserDAO(session, jcrom);
-    User to = userDao.findByEmail(extractEmail(email));
     NotificationDAO notificationDao = new NotificationDAO(session, jcrom);
     Notification notification = new Notification(to, msg);
     if (to != null) {
       notificationDao.create(notification);
       session.save();
       fileStore.getEventManager().tell(EventManager.Event.create(notification));
-    }
-  }
-
-  private String extractEmail(String email) {
-    String e = StringUtils.substringBetween(email, "<", ">");
-    if (StringUtils.isNotBlank(e)) {
-      return e;
-    } else {
-      return email;
     }
   }
 
