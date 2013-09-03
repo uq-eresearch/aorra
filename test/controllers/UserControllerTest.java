@@ -111,11 +111,11 @@ public class UserControllerTest {
         final Flag flag = flm.setFlag(FlagType.EDIT, f.getIdentifier(), other);
         fileStore().getEventManager().tell(Event.create(flag));
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(2);
-        awaitNotifications(2);
+        awaitNotifications(1);
         List<Notification> notifications =
             (new UserDAO(session, jcrom())).loadById(user.getId())
               .getNotifications();
-        assertThat(notifications).hasSize(2);
+        assertThat(notifications).hasSize(1);
         // Fetch notifications
         {
           final ArrayNode json = JsonNodeFactory.instance.arrayNode();
@@ -166,7 +166,7 @@ public class UserControllerTest {
           final UserDAO dao = new UserDAO(session, jcrom());
           final List<Notification> existingNotifications =
               dao.loadById(user.getId()).getNotifications();
-          assertThat(existingNotifications).hasSize(2);
+          assertThat(existingNotifications).hasSize(1);
           assertThat(existingNotifications.get(0).getId()).isEqualTo(n.getId());
           final Result result = callAction(
               controllers.routes.ref.UserController.deleteNotification(
