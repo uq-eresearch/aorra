@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -67,6 +68,91 @@ public class TrackingTowardsTargets {
         }
     }
 
+    private static double sqr(double a) {
+        return a*a;
+    }
+
+    private static Point2D rotate(double x, double y, double a) {
+      double x2 = x * Math.cos(a) - y * Math.sin(a);
+      double y2 = x * Math.sin(a) + y * Math.cos(a);
+      return new Point2D.Double(x2, y2);
+    }
+
+    private static Point2D translate(Point2D point, double x, double y) {
+        return new Point2D.Double(point.getX() + x, point.getY() + y);
+    }
+
+    private static double gradient(Point2D p1, Point2D p2) {
+        return Math.atan((p2.getY() - p1.getY()) / (p2.getX() - p1.getX()));
+    }
+
+    private static class LineSection {
+
+        private Point2D w1Start;
+        private Point2D w1End;
+
+        private Point2D w2Start;
+        private Point2D w2End;
+
+        private boolean first;
+
+        public LineSection(Point2D p1, Point2D p2, boolean first, boolean last, double lh) {
+            this.first = first;
+            double gradient = gradient(p1, p2);
+            Point2D p3 = rotate(lh, 0, gradient + (-Math.PI/2));
+//          Point p3 is on the parallel line of p1 -> p2 with the sought line width
+            if(last) {
+                Point2D pTipTrans = translate(p2, -p1.getX(), -p1.getY());
+                double length = Math.sqrt(sqr(pTipTrans.getX())+sqr(pTipTrans.getY()));
+                double c3 = length-(ARROWHEAD_EDGE_LENGTH/2*Math.sqrt(3));
+                double x3 = Math.cos(gradient) * c3;
+                double y3 = Math.sin(gradient) * c3;
+                // line p1 -> p(x3,y3) is the same direction as line p1 -> p2 but shortened so
+                // that there is some space for the arrowhead
+
+                // point(ahx1,ahy1) and point(ahx2,ahy2) are both 
+                // orthogonally translated from line p1 -> point(x3, y3) each by LINE_WIDTH / 2
+                double ograd = gradient+(-Math.PI/2);
+                Point2D p1Trans = rotate(lh, 0, ograd);
+                Point2D p2Trans = rotate(lh, 0, ograd+Math.PI);
+                double ahx1 = x3+p1.getX()+p1Trans.getX();
+                double ahy1 = y3+p1.getY()+p1Trans.getY();
+                double ahx2 = x3+p1.getX()+p2Trans.getX();
+                double ahy2 = y3+p1.getY()+p2Trans.getY();
+                w1End = new Point2D.Double(ahx1, ahy1);
+                w2Start = new Point2D.Double(ahx2, ahy2);
+            } else {
+                w1End = new Point2D.Double(p2.getX()+p3.getX(), p2.getY()+p3.getY());
+                w2Start = new Point2D.Double(p2.getX()-p3.getX(), p2.getY()-p3.getY());
+            }
+            if(first) {
+//              The formula for a line with a point (p3) and the gradient known is
+//              f(x) = gradient * ( x - p.x ) + p.y
+//              The formula below calculates the intersection of that line and the x-axis (f(x) = 0)
+                double x = p3.getX() - p3.getY() / Math.tan(gradient);
+                w1Start = new Point2D.Double(p1.getX()+x, p1.getY());
+                w2End = new Point2D.Double(p1.getX()-x, p1.getY());
+            } else {
+                w1Start = new Point2D.Double(p1.getX()+p3.getX(), p1.getY()+p3.getY());
+                w2End = new Point2D.Double(p1.getX()-p3.getX(), p1.getY()-p3.getY());
+            }
+        }
+
+        public void addW1(Path2D path) {
+            if(first) {
+                path.moveTo(w1Start.getX(), w1Start.getY());
+            } else {
+                path.lineTo(w1Start.getX(), w1Start.getY());
+            }
+            path.lineTo(w1End.getX(), w1End.getY());
+        }
+
+        public void addW2(Path2D path) {
+            path.lineTo(w2Start.getX(), w2Start.getY());
+            path.lineTo(w2End.getX(), w2End.getY());
+        }
+    }
+
     private static class Renderer extends LineAndShapeRenderer {
 
         private Font legendFont;
@@ -83,17 +169,18 @@ public class TrackingTowardsTargets {
                 CategoryDataset dataset, int row, int column, int pass) {
             if(column == 0) {
                 Shape shape = createShape(state, dataArea, plot, domainAxis, rangeAxis, dataset, row);
-                if(pass == 0) {
-                    // render all drop shadows first (pass 0)
-                    Graphics2D g0 = (Graphics2D)g2.create();
-                    g0.translate(2, 2);
-                    g0.setPaint(Color.darkGray);
-                    g0.fill(shape);
-                    g0.dispose();
-                } else if(pass == 1) {
-                    g2.setPaint(getSeriesPaint(row));
-                    g2.fill(shape);
-                    g2.setPaint(Color.black);
+                if(shape != null) {
+                    if(pass == 0) {
+                        // render all drop shadows first (pass 0)
+                        Graphics2D g0 = (Graphics2D)g2.create();
+                        g0.translate(2, 2);
+                        g0.setPaint(Color.darkGray);
+                        g0.fill(shape);
+                        g0.dispose();
+                    } else if(pass == 1) {
+                        g2.setPaint(getSeriesPaint(row));
+                        g2.fill(shape);
+                    }
                 }
             }
         }
@@ -101,63 +188,33 @@ public class TrackingTowardsTargets {
         private Shape createShape(CategoryItemRendererState state, Rectangle2D dataArea,
                 CategoryPlot plot, CategoryAxis domainAxis, ValueAxis rangeAxis,
                 CategoryDataset dataset, int row) {
+            List<Point2D> points = getPoints(row, dataArea, dataset, plot, domainAxis, rangeAxis, state);
             double lineWidth = ((BasicStroke)getSeriesStroke(row)).getLineWidth();
             double lh = lineWidth / 2;
-            List<Point2D> points = getPoints(row, dataArea, dataset, plot, domainAxis, rangeAxis, state);
-            Path2D path = new Path2D.Double();
-            Point2D offset[] = new Point2D[points.size()];
-            for(int i=0; i<points.size()-1; i++) {
-                if(i == 0) {
-//                  The points p1 and p2 are derived from the dataset. To create a line width (>1)
-//                  translate the point p1 on the x axis. 
-                    Point2D p1 = points.get(i);
-                    Point2D p2 = points.get(i+1);
-                    double gradient = gradient(p1, p2);
-//                  Point p3 is on the parallel line of p1 -> p2 with the sought line width
-                    Point2D p3 = rotate(lh, 0, gradient + (-Math.PI/2));
-//                  The formula for a line with a point (p3) and the gradient known is
-//                  f(x) = gradient * ( x - p.x ) + p.y
-//                  The formula below calculates the intersection of that line and with the x-axis (f(x) = 0)
-                    double x = p3.getX() - p3.getY() / Math.tan(gradient);
-//                  store the offset so we don't have to do it again on the way back
-                    offset[0] = new Point2D.Double(x, 0);
-                    path.moveTo(p1.getX()+x, p1.getY());
-                } else {
-                    Point2D p1 = points.get(i-1);
-                    Point2D p2 = points.get(i);
-                    double gradient = gradient(p1, p2);
-                    Point2D p3 = rotate(lh, 0, gradient + (-Math.PI/2));
-                    offset[i] = new Point2D.Double(p3.getX(), p3.getY());
-                    path.lineTo(p2.getX()+p3.getX(), p2.getY()+p3.getY());
-                }
+            if(points.isEmpty()) {
+                return null;
             }
-            Point2D p1 = points.get(points.size()-2);
-            Point2D p2 = points.get(points.size()-1);
-            addArrowhead(path, p1, p2, lh);
-            for(int i=points.size()-2; i >= 0; i--) {
-                Point2D p = points.get(i);
-                path.lineTo(p.getX()-offset[i].getX(), p.getY()-offset[i].getY());
+            if(points.size() == 1) {
+                Point2D p = points.get(0);
+                return new Ellipse2D.Double(p.getX()-lh,p.getY()-lh,lineWidth,lineWidth);
+            }
+            Path2D path = new Path2D.Double();
+            List<LineSection> sections = Lists.newArrayList();
+            for(int i=0; i<points.size()-1; i++) {
+                Point2D p1 = points.get(i);
+                Point2D p2 = points.get(i+1);
+                LineSection section = new LineSection(p1, p2, i==0, i==(points.size()-2), lh);
+                sections.add(section);
+            }
+            for(LineSection section : sections) {
+                section.addW1(path);
+            }
+            addArrowhead(path, points.get(points.size()-2), points.get(points.size()-1), lh);
+            for(LineSection section : Lists.reverse(sections)) {
+                section.addW2(path);
             }
             path.closePath();
             return path;
-        }
-
-        private double sqr(double a) {
-            return a*a;
-        }
-
-        private Point2D rotate(double x, double y, double a) {
-          double x2 = x * Math.cos(a) - y * Math.sin(a);
-          double y2 = x * Math.sin(a) + y * Math.cos(a);
-          return new Point2D.Double(x2, y2);
-        }
-
-        private Point2D translate(Point2D point, double x, double y) {
-            return new Point2D.Double(point.getX() + x, point.getY() + y);
-        }
-
-        private double gradient(Point2D p1, Point2D p2) {
-            return Math.atan((p2.getY() - p1.getY()) / (p2.getX() - p1.getX()));
         }
 
         private void addArrowhead(Path2D path, Point2D p1, Point2D p2, double lh) {
@@ -185,7 +242,7 @@ public class TrackingTowardsTargets {
             Point2D pV2Trans = rotate(ARROWHEAD_EDGE_LENGTH/2, 0, ograd+Math.PI);
             double ahx3 = x3+p1.getX()+pV1Trans.getX();
             double ahy3 = y3+p1.getY()+pV1Trans.getY();
-            // line to upper base vertex of arrowhead
+            // line to one of the base vertices of arrowhead
             path.lineTo(ahx3, ahy3);
             // line to tip of arrowhead
             path.lineTo(p2.getX(), p2.getY());
