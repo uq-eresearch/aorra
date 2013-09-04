@@ -500,6 +500,7 @@ public class FileStoreControllerTest {
         final FileStore.File file =
             fm.getRoot().createFile("test.txt", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
+        assertThat(file.getVersions()).hasSize(1);
         ObjectNode json = Json.newObject();
         json.put("id", file.getIdentifier());
         json.put("name", "renamed file.txt");
@@ -519,6 +520,7 @@ public class FileStoreControllerTest {
             .toJsonShallow(expectedFile)
             .toString();
         assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        assertThat(file.getVersions()).hasSize(1);
         return session;
       }
     });

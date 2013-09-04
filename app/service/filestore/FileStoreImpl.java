@@ -583,9 +583,13 @@ public class FileStoreImpl implements FileStore {
           ImmutableSortedMap.<String,FileStore.File>naturalOrder();
       final List<models.filestore.File> versions =
           getDAO().getVersionListById(entity.getId());
+      models.filestore.File lastVersion = null;
       for (models.filestore.File version : versions) {
+        if (version.containsSameDataAs(lastVersion))
+          continue;
         b.put(version.getVersion(), new FileVersion(this,
             version, filestoreManager, eventManagerImpl));
+        lastVersion = version;
       }
       return b.build();
     }

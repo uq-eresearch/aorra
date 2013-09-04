@@ -1,10 +1,19 @@
 package models.filestore;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
 
 import javax.jcr.nodetype.NodeType;
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.jcrom.AbstractJcrEntity;
 import org.jcrom.JcrDataProvider;
 import org.jcrom.JcrDataProviderImpl;
@@ -17,6 +26,9 @@ import org.jcrom.annotations.JcrParentNode;
 import org.jcrom.annotations.JcrProperty;
 import org.jcrom.annotations.JcrProtectedProperty;
 import org.jcrom.annotations.JcrVersionName;
+
+import play.api.libs.Files.TemporaryFile;
+import play.api.libs.Files.TemporaryFile$;
 
 @JcrNode(
     nodeType = NodeType.NT_UNSTRUCTURED,
@@ -56,6 +68,9 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
   @JcrProperty(name="jcr:lastModifiedBy")
   protected String lastModifiedBy;
 
+  @JcrProperty(name="sha512")
+  protected byte[] digest = new byte[512/8];
+
   @JcrParentNode
   protected Folder parent;
 
@@ -76,12 +91,40 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
     this.setData(data);
   }
 
+  protected InputStream bufferAndDigest(InputStream data) {
+    final MessageDigest md;
+    try {
+      md = MessageDigest.getInstance("SHA-512");
+    } catch (NoSuchAlgorithmException e) {
+      // Should never happen
+      throw new RuntimeException(e);
+    }
+    final TemporaryFile tf = TemporaryFile$.MODULE$.apply("aorraTempData", "");
+    try {
+      FileUtils.copyInputStreamToFile(new DigestInputStream(data, md), tf.file());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    this.digest = md.digest();
+    try {
+      return new FileInputStream(tf.file()) {
+        // Reference to couple FileInputStream lifetime to TemporaryFile
+        @SuppressWarnings("unused")
+        private final TemporaryFile temporaryFile = tf;
+      };
+    } catch (FileNotFoundException e) {
+      // Rather unlikely to occur - certainly not recoverable
+      throw new RuntimeException(e);
+    }
+  }
+
+
   public void setMimeType(final String mime) {
     this.data.setMimeType(mime);
   }
 
   public void setData(final InputStream data) {
-    this.data.setDataProvider(new JcrDataProviderImpl(data));
+    this.data.setDataProvider(new JcrDataProviderImpl(bufferAndDigest(data)));
     this.data.setLastModified(Calendar.getInstance());
   }
 
@@ -93,6 +136,7 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
     return this.data.getDataProvider();
   }
 
+  @Override
   public String getId() {
     return id;
   }
@@ -110,9 +154,17 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
     return parent;
   }
 
+  protected void setDigest(byte[] digest) {
+    this.digest = digest;
+  }
+
+  public String getDigest() {
+    return new HexBinaryAdapter().marshal(digest).toLowerCase();
+  }
+
   @Override
   public String toString() {
-    return String.format("%s [%s]", getPath(), getId());
+    return String.format("%s [%s] (%s)", getPath(), getId(), getDigest());
   }
 
   public String getLastModifiedBy() {
@@ -126,6 +178,15 @@ public class File extends AbstractJcrEntity implements Child<Folder> {
   public void setLastModified(String userId) {
     this.lastModifiedBy = userId;
     this.lastModified = Calendar.getInstance();
+  }
+
+  public boolean containsSameDataAs(File other) {
+    if (other == null)
+      return false;
+    return new EqualsBuilder()
+      .append(getDigest(), other.getDigest())
+      .append(getLastModified(), other.getLastModified())
+      .isEquals();
   }
 
 }
