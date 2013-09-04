@@ -705,7 +705,7 @@ define([
           return _(c).extend({
             first: i == 0,
             title: showTypes
-              ? _.str.capitalize(_.str.humanize(c.type))+" - "+c.region
+              ? c.type + " - " + c.region
               : c.region,
             slug: _.str.slugify(c.type)+"-"+_.str.slugify(c.region),
             csv: c.url.replace(/\.(png|svg)\?/, ".csv?")

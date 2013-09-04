@@ -97,7 +97,7 @@ public class ChartTest {
         for (JsonNode chartJson : (ArrayNode) json.get("charts")) {
           assertThat(chartJson.isObject()).as("chart is object").isTrue();
           assertThat(chartJson.has("type")).as("has type").isTrue();
-          assertThat(chartJson.get("type").asText()).isEqualTo("MARINE");
+          assertThat(chartJson.get("type").asText()).isEqualTo("Marine");
           assertThat(chartJson.has("region")).as("has region").isTrue();
           assertThat(chartJson.has("url")).as("has region").isTrue();
           assertThat(chartJson.get("url").asText()).contains("svg");
