@@ -1,5 +1,7 @@
 package charts;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import graphics.GraphUtils;
 
 import java.awt.BasicStroke;
@@ -15,8 +17,6 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.Collections;
 
 import org.jfree.text.TextUtilities;
@@ -118,7 +118,6 @@ public class BeerCoaster implements Drawable {
       private final int arcAngle;
       private final Rotation textDirection;
       private final int textAngle;
-      private final String imageName;
 
       Category(String name, int startAngle, int arcAngle, Rotation textDirection,
           int textAngle, String imageName) {
@@ -127,15 +126,10 @@ public class BeerCoaster implements Drawable {
         this.arcAngle = arcAngle;
         this.textDirection = textDirection;
         this.textAngle = textAngle;
-        this.imageName = imageName;
       }
 
       public String getName() {
         return name;
-      }
-
-      public void setName(String name) {
-        this.name = name;
       }
 
       public int getStartAngle() {
@@ -152,14 +146,6 @@ public class BeerCoaster implements Drawable {
 
       public int getTextAngle() {
         return textAngle;
-      }
-
-      public BufferedImage getImage() {
-        try {
-          return GraphUtils.getImage("images/" + imageName);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
       }
     }
 
@@ -179,7 +165,6 @@ public class BeerCoaster implements Drawable {
     private int bcx;
     private int bcy;
     private float bcr;
-    private GraphUtils g;
     // indicator condition - NOT_EVALUATED by default
     private final Condition[] iCondition = Collections.nCopies(
         Indicator.values().length,
@@ -198,9 +183,7 @@ public class BeerCoaster implements Drawable {
     }
 
     public void setCondition(Indicator indicator, Condition condition) {
-      if (condition == null)
-        throw new NullPointerException();
-      iCondition[indicator.ordinal()] = condition;
+      iCondition[indicator.ordinal()] = checkNotNull(condition);
     }
 
     public Condition getCondition(Category category) {
@@ -208,9 +191,7 @@ public class BeerCoaster implements Drawable {
     }
 
     public void setCondition(Category category, Condition condition) {
-      if (condition == null)
-        throw new NullPointerException();
-      cCondition[category.ordinal()] = condition;
+      cCondition[category.ordinal()] = checkNotNull(condition);
     }
 
     public Condition getOverallCondition() {
@@ -221,61 +202,55 @@ public class BeerCoaster implements Drawable {
       this.overall = overall;
     }
 
-    private void drawArc(float radius, int startAngle, int arcAngle, Condition condition,
+    private void drawArc(GraphUtils g, float radius, int startAngle, int arcAngle, Condition condition,
             String label, float labelRadius, int labelAngle, Rotation labelDirection,
             Color fc, GraphUtils.TextAnchor anchor) {
       Stroke stroke = g.getGraphics().getStroke();
-      try {
-        g.getGraphics().setColor(condition.getColor());
-        g.fillArc(bcx, bcy, radius, startAngle, arcAngle);
-        g.getGraphics().setColor(Color.WHITE);
-        g.getGraphics().setStroke(new BasicStroke(BORDER_WIDTH));
-        g.drawArc(bcx, bcy, radius, startAngle, arcAngle);
-        g.getGraphics().setColor(fc);
-        g.drawCircleText(label, bcx, bcy, labelRadius,
-          GraphUtils.toRadians(labelAngle),
-          labelDirection == Rotation.CLOCKWISE, anchor);
-      } finally {
-          g.getGraphics().setStroke(stroke);
-      }
+      g.getGraphics().setColor(condition.getColor());
+      g.fillArc(bcx, bcy, radius, startAngle, arcAngle);
+      g.getGraphics().setColor(Color.WHITE);
+      g.getGraphics().setStroke(new BasicStroke(BORDER_WIDTH));
+      g.drawArc(bcx, bcy, radius, startAngle, arcAngle);
+      g.getGraphics().setColor(fc);
+      g.drawCircleText(label, bcx, bcy, labelRadius,
+        GraphUtils.toRadians(labelAngle),
+        labelDirection == Rotation.CLOCKWISE, anchor);
+      g.getGraphics().setStroke(stroke);
     }
 
-    private void drawIndicator(Indicator indicator) {
+    private void drawIndicator(GraphUtils g, Indicator indicator) {
       g.getGraphics().setFont(INDICATOR_FONT);
       FontMetrics fm = g.getGraphics().getFontMetrics();
-      drawArc(bcr, indicator.getStartAngle(), indicator.getArcAngle(),
+      drawArc(g, bcr, indicator.getStartAngle(), indicator.getArcAngle(),
               getCondition(indicator), indicator.getName(), bcr - (fm.getDescent() + fm.getAscent()),
               indicator.getTextAngle(), indicator.getTextDirection(),
               INDICATOR_FONT_COLOR, GraphUtils.TextAnchor.BASELINE);
     }
 
-    private void drawCategory(Category category) {
+    private void drawCategory(GraphUtils g, Category category) {
       g.getGraphics().setFont(CATEGORY_FONT);
-      drawArc(bcr/3*2, category.getStartAngle(), category.getArcAngle(),
+      drawArc(g, bcr/3*2, category.getStartAngle(), category.getArcAngle(),
               getCondition(category), category.getName(), bcr/2,
               category.getTextAngle(), category.getTextDirection(),
               CATEGORY_FONT_COLOR, GraphUtils.TextAnchor.CENTER);
     }
 
-    private void drawCategoryBorder() {
+    private void drawCategoryBorder(GraphUtils g) {
       Graphics2D g2d = g.getGraphics();
       Stroke stroke = g2d.getStroke();
       AffineTransform transform = g2d.getTransform();
-      try {
-        g2d.setColor(Color.WHITE);
-        g2d.setStroke(new BasicStroke(CATEGORY_BORDER_WIDTH));
-        g2d.drawLine(bcx, bcy, bcx, (int)(bcy-bcr));
-        g2d.setTransform(AffineTransform.getRotateInstance(GraphUtils.toRadians(120), bcx, bcy));
-        g2d.drawLine(bcx, bcy, bcx, (int)(bcy-bcr));
-        g2d.setTransform(AffineTransform.getRotateInstance(GraphUtils.toRadians(240), bcx, bcy));
-        g2d.drawLine(bcx, bcy, bcx, (int)(bcy-bcr));
-      } finally {
-        g2d.setStroke(stroke);
-        g2d.setTransform(transform);
-      }
+      g2d.setColor(Color.WHITE);
+      g2d.setStroke(new BasicStroke(CATEGORY_BORDER_WIDTH));
+      g2d.drawLine(bcx, bcy, bcx, (int)(bcy-bcr));
+      g2d.setTransform(AffineTransform.getRotateInstance(GraphUtils.toRadians(120), bcx, bcy));
+      g2d.drawLine(bcx, bcy, bcx, (int)(bcy-bcr));
+      g2d.setTransform(AffineTransform.getRotateInstance(GraphUtils.toRadians(240), bcx, bcy));
+      g2d.drawLine(bcx, bcy, bcx, (int)(bcy-bcr));
+      g2d.setStroke(stroke);
+      g2d.setTransform(transform);
     }
 
-    private void drawLegend() {
+    private void drawLegend(GraphUtils g) {
       g.getGraphics().setFont(LEGEND_FONT);
       g.setColor(LEGEND_FONT_COLOR);
       FontMetrics fm = g.getGraphics().getFontMetrics();
@@ -313,7 +288,7 @@ public class BeerCoaster implements Drawable {
       }
     }
 
-    private void drawMarineCondition() {
+    private void drawMarineCondition(GraphUtils g) {
       g.setColor(getOverallCondition().getColor());
       g.fillCircle(bcx, bcy, bcr/3);
       g.setStroke(CATEGORY_BORDER_WIDTH);
@@ -325,7 +300,7 @@ public class BeerCoaster implements Drawable {
       TextUtilities.drawAlignedString("condition", g.getGraphics(), bcx, bcy, TextAnchor.TOP_CENTER);
     }
 
-    private void drawCoralNotEvaluated() {
+    private void drawCoralNotEvaluated(GraphUtils g) {
       if (getCondition(Category.CORAL) == Condition.NOT_EVALUATED) {
         g.setColor(Color.black);
         g.getGraphics().setFont(NOT_EVALUATED_FONT);
@@ -337,34 +312,30 @@ public class BeerCoaster implements Drawable {
     @Override
     public void draw(Graphics2D graphics) {
       Graphics2D g2d = (Graphics2D) graphics.create();
-      try {
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g = new GraphUtils(g2d);
-        g2d.setColor(Color.WHITE);
-        g2d.fillRect(0, 0, dimension.width, dimension.height);
+      g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+      GraphUtils g = new GraphUtils(g2d);
+      g2d.setColor(Color.WHITE);
+      g2d.fillRect(0, 0, dimension.width, dimension.height);
 
-        g2d.setFont(CATEGORY_FONT);
-        FontMetrics fm = g.getGraphics().getFontMetrics();
-        // measured from original screenshoot
-        int radius = 188;
-        this.bcr = radius - fm.getHeight();
-        this.bcx = radius;
-        this.bcy = radius;
+      g2d.setFont(CATEGORY_FONT);
+      FontMetrics fm = g.getGraphics().getFontMetrics();
+      // measured from original screenshoot
+      int radius = 188;
+      this.bcr = radius - fm.getHeight();
+      this.bcx = radius;
+      this.bcy = radius;
 
-        for(Indicator indicator : Indicator.values()) {
-            drawIndicator(indicator);
-        }
-        for(Category category : Category.values()) {
-            drawCategory(category);
-        }
-        drawCategoryBorder();
-        drawMarineCondition();
-        drawCoralNotEvaluated();
-        drawLegend();
-      } finally {
-        g2d.dispose();
-        g=null;
+      for(Indicator indicator : Indicator.values()) {
+          drawIndicator(g, indicator);
       }
+      for(Category category : Category.values()) {
+          drawCategory(g, category);
+      }
+      drawCategoryBorder(g);
+      drawMarineCondition(g);
+      drawCoralNotEvaluated(g);
+      drawLegend(g);
+      g2d.dispose();
     }
 
     @Override
