@@ -935,16 +935,16 @@ public class FileStoreControllerTest {
         }
         // Check runtime is increasing close to linearly
         final double allowedRelativeIncrease = 1.20;
-        DescriptiveStatistics stats = new DescriptiveStatistics();
-        stats.setWindowSize(10);
-        double allowedRuntime = Double.POSITIVE_INFINITY;
+        final DescriptiveStatistics stats = new DescriptiveStatistics();
+        Long previousMs = null;
         for (Long ms : runtimes) {
-          stats.addValue(ms);
-          if (stats.getN() >= 10) {
-            assertThat(stats.getMean()).isLessThan(allowedRuntime);
-            allowedRuntime = allowedRelativeIncrease * stats.getMean();
+          if (previousMs != null) {
+            // Percentage increase
+            stats.addValue(1.0 * ms / previousMs);
           }
+          previousMs = ms;
         }
+        assertThat(stats.getMean()).isLessThan(allowedRelativeIncrease);
         return session;
       }
     });
