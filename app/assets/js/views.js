@@ -699,11 +699,15 @@ define([
       $.get(url, _.bind(onSuccess, this));
     },
     serializeData: function() {
+      var showTypes = _.uniq(_.pluck(this._charts, 'type')).length > 1;
       return {
         charts: _.map(this._charts, function(c, i) {
           return _(c).extend({
             first: i == 0,
-            slug: _.str.slugify(c.region),
+            title: showTypes
+              ? _.str.capitalize(_.str.humanize(c.type))+" - "+c.region
+              : c.region,
+            slug: _.str.slugify(c.type)+"-"+_.str.slugify(c.region),
             csv: c.url.replace(/\.(png|svg)\?/, ".csv?")
           });
         })
