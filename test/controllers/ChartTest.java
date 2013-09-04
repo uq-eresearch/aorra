@@ -176,6 +176,13 @@ public class ChartTest {
             createCOTOutbreakChartFile(session), newRequest);
         checkChart("progress_table",
             createProgressTableChartFile(session), newRequest);
+        final String[] trackingTowardsTargetCharts = new String[] {
+          "ttt_cane_and_hort","ttt_grazing","ttt_sediment","ttt_nitro_and_pest"
+        };
+        for (String c : trackingTowardsTargetCharts) {
+          checkChart(c, createTrackingTowardsTargetsChartFile(session, c),
+              newRequest);
+        }
         return session;
       }
       private void checkChart(
@@ -424,7 +431,7 @@ public class ChartTest {
   // Old-style office document
   public FileStore.File createMarineXlsChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
-    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    final FileStore.Folder folder  = fileStore().getManager(session).getRoot();
     return folder.createFile("marine.xls",
         Chart.XLS_MIME_TYPE,
         new FileInputStream("test/marine.xls"));
@@ -452,6 +459,14 @@ public class ChartTest {
     return folder.createFile("progress_table.xlsx",
         Chart.XLSX_MIME_TYPE,
         new FileInputStream("test/progress_table.xlsx"));
+  }
+
+  public FileStore.File createTrackingTowardsTargetsChartFile(
+      final Session session, final String prefix) throws RepositoryException,
+      FileNotFoundException {
+    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    return folder.createFile(prefix + ".xlsx", Chart.XLSX_MIME_TYPE,
+        new FileInputStream("test/tracking_towards_targets.xlsx"));
   }
 
 }
