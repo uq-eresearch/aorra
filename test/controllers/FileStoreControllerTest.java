@@ -624,6 +624,7 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "application/json")
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
+                        "test.txt",
                         "Some content.", "text/plain")));
           assertThat(status(result)).isEqualTo(201);
           assertThat(contentType(result)).isEqualTo("application/json");
@@ -639,6 +640,18 @@ public class FileStoreControllerTest {
               .isEqualTo("Some content.");
           assertThat(contentAsString(result))
               .isEqualTo((new JsonBuilder()).toJsonShallow(file).toString());
+        }
+        {
+          // Check we can't overwrite files with this method
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.uploadToFolder(
+                  fm.getRoot().getIdentifier()),
+              newRequest.withHeader("Accept", "application/json")
+                .withBody(
+                    test.AorraScalaHelper.testMultipartFormBody(
+                        "test.txt",
+                        "Some content.", "text/plain")));
+          assertThat(status(result)).isEqualTo(403);
         }
         return session;
       }
@@ -666,6 +679,7 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "application/json")
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
+                        "test.txt",
                         "Some content.", "application/octet-stream")));
           assertThat(status(result)).isEqualTo(201);
           assertThat(contentType(result)).isEqualTo("application/json");
@@ -716,6 +730,7 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "application/json")
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
+                        "test.txt",
                         "New content.", "text/plain")));
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");

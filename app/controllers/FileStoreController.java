@@ -457,11 +457,10 @@ public final class FileStoreController extends SessionAwareController {
           return null;
         }
         // Check this user has appropriate permissions
-        if (fof.getAccessLevel() == FileStore.Permission.RW) {
-          return fof.getIdentifier();
-        } else {
+        if (fof.getAccessLevel() != FileStore.Permission.RW) {
           return null;
         }
+        return fof.getIdentifier();
       }
     });
     if (id == null) {
