@@ -70,7 +70,7 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
             final double target;
             final String targetBy;
             switch(type) {
-            case TTT_CANE_AND_HORT: 
+            case TTT_CANE_AND_HORT:
                 addSeries(helper, dataset, Series.CANE);
                 addSeries(helper, dataset, Series.HORTICULTURE);
                 target = getTarget(helper, Series.CANE);
@@ -92,7 +92,7 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
                 target = getTarget(helper, Series.SEDIMENT);
                 targetBy = getTargetBy(helper, Series.SEDIMENT);
                 break;
-            default: 
+            default:
                 throw new RuntimeException("chart type not supported "+type.toString());
             }
             return new AbstractChart(query) {
@@ -110,7 +110,7 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
 
                 @Override
                 public String getCSV() throws UnsupportedFormatException {
-                    throw new RuntimeException("not implemented");
+                    throw new Chart.UnsupportedFormatException();
                 }};
         }
         return null;
@@ -131,7 +131,7 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
                 dataset.addValue(null, series.toString(), columns.get(col));
             }
         }
-        
+
     }
 
     private List<String> getColumns(SpreadsheetHelper helper) {
