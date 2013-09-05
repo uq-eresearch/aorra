@@ -7,6 +7,7 @@ import java.util.Map;
 
 import charts.builder.spreadsheet.AnnualRainfallBuilder;
 import charts.builder.spreadsheet.CotsOutbreakBuilder;
+import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;
 import charts.builder.spreadsheet.MarineBuilder;
 import charts.builder.spreadsheet.ProgressTableBuilder;
 import charts.builder.spreadsheet.TrackingTowardsTagetsBuilder;
@@ -16,24 +17,20 @@ import com.google.common.collect.Lists;
 
 public class ChartBuilder {
 
-  private static List<ChartTypeBuilder> BUILDERS =
+  private List<ChartTypeBuilder> builders =
     new ImmutableList.Builder<ChartTypeBuilder>()
       .add(new MarineBuilder())
       .add(new CotsOutbreakBuilder())
       .add(new AnnualRainfallBuilder())
       .add(new ProgressTableBuilder())
       .add(new TrackingTowardsTagetsBuilder())
+      .add(new GrazingPracticeSystemsBuilder())
       .build();
 
-  private final List<DataSource> datasources;
-
-  public ChartBuilder(List<DataSource> datasources) {
-    this.datasources = datasources;
-  }
-
-  public List<Chart> getCharts(ChartType type, Map<String, String[]> query) {
+  public List<Chart> getCharts(List<DataSource> datasources,
+          ChartType type, Map<String, String[]> query) {
     final List<Chart> result = Lists.newLinkedList();
-    for (final ChartTypeBuilder builder : BUILDERS) {
+    for (final ChartTypeBuilder builder : builders) {
       if (builder.canHandle(type, datasources)) {
         result.addAll(builder.build(datasources, type, query));
       }
@@ -60,8 +57,8 @@ public class ChartBuilder {
     return result;
   }
 
-  public List<Chart> getCharts(Map<String, String[]> query) {
-    return getCharts(null, query);
+  public List<Chart> getCharts(List<DataSource> datasources, Map<String, String[]> query) {
+    return getCharts(datasources, null, query);
   }
 
 }

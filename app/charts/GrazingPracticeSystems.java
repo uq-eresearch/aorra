@@ -13,6 +13,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RectangularShape;
+import java.text.NumberFormat;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -33,7 +34,6 @@ import org.jfree.chart.renderer.category.CategoryItemRendererState;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.title.LegendTitle;
 import org.jfree.chart.title.TextTitle;
-import org.jfree.data.Range;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
@@ -244,9 +244,14 @@ public class GrazingPracticeSystems {
         legend.setPosition(RectangleEdge.BOTTOM);
         legend.setMargin(new RectangleInsets(0,30,0,0));
         legend.setPadding(RectangleInsets.ZERO_INSETS);
-//        legend.setLegendItemGraphicPadding(RectangleInsets.ZERO_INSETS);
         legend.setLegendItemGraphicPadding(new RectangleInsets(0,20,0,0));
         return legend;
+    }
+
+    private static NumberFormat percentFormatter() {
+        NumberFormat percentFormat = NumberFormat.getPercentInstance();
+        percentFormat.setMaximumFractionDigits(0);
+        return percentFormat;
     }
 
     public static Drawable createChart(CategoryDataset dataset, String title, Dimension dimension) {
@@ -265,7 +270,7 @@ public class GrazingPracticeSystems {
         chart.setTitle(textTitle);
         
         chart.addLegend(createLegend(
-                dataset.getRowKey(0).toString(), dataset.getRowKey(0).toString()));
+                dataset.getRowKey(0).toString(), dataset.getRowKey(1).toString()));
         CategoryPlot plot = (CategoryPlot) chart.getPlot();
         plot.setBackgroundPaint(Color.white);
         plot.setOutlineVisible(false);
@@ -277,7 +282,7 @@ public class GrazingPracticeSystems {
 
         NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setAutoTickUnitSelection(true);
-        rangeAxis.setTickUnit(new NumberTickUnit(20));
+        rangeAxis.setTickUnit(new NumberTickUnit(0.2, percentFormatter()));
         rangeAxis.setAxisLineVisible(true);
         rangeAxis.setLabel("% of graziers");
         rangeAxis.setAxisLineStroke(new BasicStroke(2));
@@ -288,7 +293,7 @@ public class GrazingPracticeSystems {
         rangeAxis.setLabelInsets(new RectangleInsets(0,0,0,-10));
         rangeAxis.setUpperMargin(0);
         rangeAxis.setAutoRange(false);
-        rangeAxis.setRange(new Range(0,100));
+        rangeAxis.setRange(0, 1);
 
         CategoryAxis cAxis = plot.getDomainAxis();
         cAxis.setTickMarksVisible(false);

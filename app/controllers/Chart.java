@@ -43,11 +43,14 @@ public class Chart extends SessionAwareController {
 
   private final FileStore fileStore;
 
+  private final ChartBuilder chartBuilder;
+
   @Inject
   public Chart(final JcrSessionFactory sessionFactory, final Jcrom jcrom,
-      final CacheableUserProvider sessionHandler, final FileStore fileStore) {
+      final CacheableUserProvider sessionHandler, final FileStore fileStore, final ChartBuilder chartBuilder) {
     super(sessionFactory, jcrom, sessionHandler);
     this.fileStore = fileStore;
+    this.chartBuilder = chartBuilder;
   }
 
   private String buildUrl(charts.builder.Chart chart, String format,
@@ -86,9 +89,8 @@ public class Chart extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, paths);
-        ChartBuilder builder = new ChartBuilder(datasources);
         final List<charts.builder.Chart> charts =
-            builder.getCharts(request().queryString());
+            chartBuilder.getCharts(datasources, request().queryString());
         final ObjectNode json = Json.newObject();
         final ArrayNode aNode = json.putArray("charts");
         for (charts.builder.Chart chart : charts) {
@@ -111,7 +113,6 @@ public class Chart extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws Exception {
         final List<DataSource> datasources = getDatasources(session, paths);
-        final ChartBuilder builder = new ChartBuilder(datasources);
         final ChartType type;
         try {
           type = ChartType.getChartType(chart);
@@ -124,7 +125,7 @@ public class Chart extends SessionAwareController {
         } catch (IllegalArgumentException e) {
           return badRequest("unknown chart format: " + formatStr);
         }
-        final List<charts.builder.Chart> charts = builder.getCharts(type,
+        final List<charts.builder.Chart> charts = chartBuilder.getCharts(datasources, type,
             request().queryString());
         for (charts.builder.Chart chart : charts) {
           try {

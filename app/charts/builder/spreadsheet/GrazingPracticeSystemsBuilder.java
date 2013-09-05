@@ -1,8 +1,11 @@
 package charts.builder.spreadsheet;
 
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 
 import charts.Drawable;
 import charts.GrazingPracticeSystems;
@@ -13,6 +16,7 @@ import charts.builder.ChartType;
 import charts.builder.Region;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 public class GrazingPracticeSystemsBuilder extends
         AbstractBuilder {
@@ -36,12 +40,7 @@ public class GrazingPracticeSystemsBuilder extends
 
     @Override
     boolean canHandle(SpreadsheetDataSource datasource) {
-        try {
-            return "grazing practice systems".equalsIgnoreCase(
-                    datasource.select("A1").format("value"));
-        } catch(Exception e) {
-            return false;
-        }
+        return TITLE.equalsIgnoreCase(StringUtils.strip(datasource.select("A1").asString()));
     }
 
     @Override
@@ -54,7 +53,8 @@ public class GrazingPracticeSystemsBuilder extends
           }
           @Override
           public Drawable getChart() {
-            return GrazingPracticeSystems.createChart(createDataset(datasource, region), TITLE,
+            return GrazingPracticeSystems.createChart(createDataset(datasource, region),
+                    TITLE + " - " + region.getProperName(),
                     getChartSize(query, 750, 500));
           }
           @Override
@@ -64,8 +64,21 @@ public class GrazingPracticeSystemsBuilder extends
         };
     }
 
-    private CategoryDataset createDataset(SpreadsheetDataSource datasource, Region region) {
-        return null;
+    private CategoryDataset createDataset(SpreadsheetDataSource ds, Region region) {
+        Integer row = ROWS.get(region);
+        if(row == null) {
+            throw new RuntimeException(String.format("region %s not supported", region));
+        }
+        row++;
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        List<String> categories = Lists.newArrayList("A", "B", "C", "D");
+        for(int i = 0; i<2;i++) {
+            String series = ds.select(row+i, 0).asString();
+            for(int col=0;col<4;col++) {
+                dataset.addValue(ds.select(row+i, col+1).asDouble(), series, categories.get(col));
+            }
+        }
+        return dataset;
     }
 
 }
