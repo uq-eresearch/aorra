@@ -44,7 +44,6 @@ import play.mvc.Http.Status;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import service.filestore.FileStore;
-import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
@@ -617,15 +616,22 @@ public class FileStoreControllerTest {
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
         {
-          // Updating with correct body
+          // Check bad request behaviour
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.uploadToFolder(
+                  fm.getRoot().getIdentifier()),
+              newRequest.withHeader("Accept", "application/json"));
+          assertThat(status(result)).isEqualTo(400);
+        }
+        {
+          // Good request
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.uploadToFolder(
                   fm.getRoot().getIdentifier()),
               newRequest.withHeader("Accept", "application/json")
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
-                        "test.txt",
-                        "Some content.", "text/plain")));
+                        "test.txt", "Some content.", "text/plain")));
           assertThat(status(result)).isEqualTo(201);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
@@ -649,8 +655,19 @@ public class FileStoreControllerTest {
               newRequest.withHeader("Accept", "application/json")
                 .withBody(
                     test.AorraScalaHelper.testMultipartFormBody(
-                        "test.txt",
-                        "Some content.", "text/plain")));
+                        "test.txt", "Some content.", "text/plain")));
+          assertThat(status(result)).isEqualTo(403);
+        }
+        fm.getRoot().createFolder("README");
+        {
+          // Check we can't overwrite files with this method
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.uploadToFolder(
+                  fm.getRoot().getIdentifier()),
+              newRequest.withHeader("Accept", "application/json")
+                .withBody(
+                    test.AorraScalaHelper.testMultipartFormBody(
+                        "README", "Some content.", "text/plain")));
           assertThat(status(result)).isEqualTo(403);
         }
         return session;
@@ -672,7 +689,6 @@ public class FileStoreControllerTest {
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
         {
-          // Updating with correct body
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.uploadToFolder(
                   fm.getRoot().getIdentifier()),
@@ -687,12 +703,38 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result))
               .isEqualTo("max-age=0, must-revalidate");
           fm.getRoot().reload();
-          final Set<FileStore.File> files = fm.getRoot().getFiles();
-          assertThat(files).hasSize(1);
-          final FileStore.File file = files.iterator().next();
+          final FileStore.File file = (FileStore.File)
+              fm.getFileOrFolder("test.txt");
+          assertThat(file).isNotNull();
           assertThat(file.getMimeType()).isEqualTo("text/plain");
           assertThat(IOUtils.toString(file.getData()))
               .isEqualTo("Some content.");
+          assertThat(contentAsString(result))
+              .isEqualTo((new JsonBuilder()).toJsonShallow(file).toString());
+        }
+        {
+          // When all else fails => application/octet-stream
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.uploadToFolder(
+                  fm.getRoot().getIdentifier()),
+              newRequest.withHeader("Accept", "application/json")
+                .withBody(
+                    test.AorraScalaHelper.testMultipartFormBody(
+                        "test",
+                        new byte[] { 0, 127, -92},
+                        "application/octet-stream")));
+          assertThat(status(result)).isEqualTo(201);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+              .isEqualTo("max-age=0, must-revalidate");
+          fm.getRoot().reload();
+          final FileStore.File file = (FileStore.File)
+              fm.getFileOrFolder("test");
+          assertThat(file).isNotNull();
+          assertThat(file.getMimeType()).isEqualTo("application/octet-stream");
+          assertThat(IOUtils.toByteArray(file.getData()))
+              .isEqualTo(new byte[] { 0, 127, -92});
           assertThat(contentAsString(result))
               .isEqualTo((new JsonBuilder()).toJsonShallow(file).toString());
         }
@@ -873,7 +915,8 @@ public class FileStoreControllerTest {
             .isEqualTo("max-age=0, must-revalidate");
           final ArrayNode json = JsonNodeFactory.instance.arrayNode();
           for (final String path : new String[]{"/foo", "/foo/bar"}) {
-            final FileStore.Folder folder = (Folder) fm.getFileOrFolder(path);
+            final FileStore.Folder folder = (FileStore.Folder)
+                fm.getFileOrFolder(path);
             assertThat(folder).isNotNull();
             json.add(jb.toJsonShallow(folder, false));
           }
@@ -922,7 +965,7 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
           parentFolder.reload();
-          final FileStore.Folder folder = (Folder)
+          final FileStore.Folder folder = (FileStore.Folder)
               parentFolder.getFileOrFolder(name);
           assertThat(folder).isNotNull();
           final String folderJson = (new JsonBuilder())
@@ -962,11 +1005,11 @@ public class FileStoreControllerTest {
         final FileStore.File file =
             fm.getRoot().createFile("test.txt", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
-        {
+        for (String versionString : new String[] {"1.0", "latest"}) {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.downloadFile(
                   file.getIdentifier(),
-                  "1.0"),
+                  versionString),
               newRequest.withHeader("Accept", "text/plain"));
           assertThat(status(result)).isEqualTo(200);
           assertThat(header("Cache-Control", result))

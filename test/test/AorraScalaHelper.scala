@@ -2,11 +2,9 @@ package test
 
 import java.io.ByteArrayInputStream
 import java.io.FileOutputStream
-
 import org.apache.commons.io.IOUtils
 import org.specs2.execute.PendingException
 import org.specs2.matcher.MatchFailureException
-
 import javax.jcr.Session
 import models.User
 import play.api.libs.Files.TemporaryFile
@@ -19,6 +17,7 @@ import play.libs.F
 import play.test.{FakeRequest => JFakeRequest}
 import service.GuiceInjectionPlugin
 import service.filestore.FileStore
+import play.api.mvc.AnyContentAsMultipartFormData
 
 object AorraScalaHelper {
 
@@ -29,10 +28,17 @@ object AorraScalaHelper {
   def filestore = injector.getInstance(classOf[FileStore])
   def injector = GuiceInjectionPlugin.getInjector(play.Play.application())
 
+
   def testMultipartFormBody(
-      filename: String, content: String, mimeType: String) = {
+      filename: String, content: String, mimeType: String
+      ): AnyContentAsMultipartFormData  =
+    testMultipartFormBody(filename, content.getBytes, mimeType)
+
+  def testMultipartFormBody(
+      filename: String, content: Array[Byte], mimeType: String
+      ): AnyContentAsMultipartFormData = {
     val tf = TemporaryFile("multipart", "test")
-    IOUtils.copy(new ByteArrayInputStream(content.getBytes),
+    IOUtils.copy(new ByteArrayInputStream(content),
         new FileOutputStream(tf.file))
     AnyContentAsMultipartFormData(
       new MultipartFormData(Map(), List(

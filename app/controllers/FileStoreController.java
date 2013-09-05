@@ -525,12 +525,8 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session, FileStore.File f)
           throws RepositoryException, FileNotFoundException {
         final MultipartFormData body = request().body().asMultipartFormData();
-        if (body == null) {
-          return badRequest("POST must contain multipart form data.")
-              .as("text/plain");
-        }
-        if (body.getFiles().size() > 1) {
-          return badRequest("POST cannot contain multiple files.")
+        if (body == null || body.getFiles().size() != 1) {
+          return badRequest("Request must contain a single file to upload.")
               .as("text/plain");
         }
         final MultipartFormData.FilePart filePart = body.getFiles().get(0);
@@ -561,12 +557,8 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session, FileStore.Folder folder)
           throws RepositoryException {
         final MultipartFormData body = request().body().asMultipartFormData();
-        if (body == null) {
-          return badRequest("POST must contain multipart form data.")
-              .as("text/plain");
-        }
-        if (body.getFiles().size() > 1) {
-          return badRequest("Can only upload one file at a time.")
+        if (body == null || body.getFiles().size() != 1) {
+          return badRequest("Request must contain a single file to upload.")
               .as("text/plain");
         }
         final MultipartFormData.FilePart filePart = body.getFiles().get(0);
