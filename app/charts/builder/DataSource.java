@@ -1,9 +1,14 @@
 package charts.builder;
 
-
-
 public interface DataSource {
 
-    public Value select(String selector);
+  @SuppressWarnings("serial")
+  public class MissingDataException extends Exception {
+    public MissingDataException(String msg) {
+      super(msg);
+    }
+  }
+
+  public Value select(String selector) throws MissingDataException;
 
 }

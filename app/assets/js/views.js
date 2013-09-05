@@ -708,13 +708,20 @@ define([
               ? c.type + " - " + c.region
               : c.region,
             slug: _.str.slugify(c.type)+"-"+_.str.slugify(c.region),
-            csv: c.url.replace(/\.(png|svg)\?/, ".csv?")
+            csv: c.url.replace(/\.(png|svg)\?/, ".csv?"),
+            html: c.url.replace(/\.(png|svg)\?/, ".html?")
           });
         })
       };
     },
     template: function(serialized_model) {
       return templates.renderSync('charts', serialized_model);
+    },
+    onRender: function() {
+      this.$el.find('.commentary').each(function(i, e) {
+        var $e = $(e);
+        $e.load($e.attr('data-url'));
+      });
     }
   });
 

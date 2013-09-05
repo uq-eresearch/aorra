@@ -12,7 +12,9 @@ import charts.builder.AbstractChart;
 import charts.builder.Chart;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
+import charts.builder.DataSource.MissingDataException;
 import charts.builder.Region;
+import charts.builder.Chart.UnsupportedFormatException;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -55,8 +57,8 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
   public boolean canHandle(SpreadsheetDataSource datasource) {
     try {
       return "tracking towards tagets".equalsIgnoreCase(datasource.select("A1")
-          .format("value"));
-    } catch (Exception e) {
+          .getValue());
+    } catch (MissingDataException e) {
       return false;
     }
   }
@@ -68,32 +70,36 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
       final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
       final double target;
       final String targetBy;
-      switch (type) {
-      case TTT_CANE_AND_HORT:
-        addSeries(ds, dataset, Series.CANE);
-        addSeries(ds, dataset, Series.HORTICULTURE);
-        target = getTarget(ds, Series.CANE);
-        targetBy = getTargetBy(ds, Series.CANE);
-        break;
-      case TTT_GRAZING:
-        addSeries(ds, dataset, Series.GRAZING);
-        target = getTarget(ds, Series.GRAZING);
-        targetBy = getTargetBy(ds, Series.GRAZING);
-        break;
-      case TTT_NITRO_AND_PEST:
-        addSeries(ds, dataset, Series.TOTAL_NITROGEN);
-        addSeries(ds, dataset, Series.PESTICIDES);
-        target = getTarget(ds, Series.TOTAL_NITROGEN);
-        targetBy = getTargetBy(ds, Series.TOTAL_NITROGEN);
-        break;
-      case TTT_SEDIMENT:
-        addSeries(ds, dataset, Series.SEDIMENT);
-        target = getTarget(ds, Series.SEDIMENT);
-        targetBy = getTargetBy(ds, Series.SEDIMENT);
-        break;
-      default:
-        throw new RuntimeException("chart type not supported "
-            + type.toString());
+      try {
+        switch (type) {
+        case TTT_CANE_AND_HORT:
+          addSeries(ds, dataset, Series.CANE);
+          addSeries(ds, dataset, Series.HORTICULTURE);
+          target = getTarget(ds, Series.CANE);
+          targetBy = getTargetBy(ds, Series.CANE);
+          break;
+        case TTT_GRAZING:
+          addSeries(ds, dataset, Series.GRAZING);
+          target = getTarget(ds, Series.GRAZING);
+          targetBy = getTargetBy(ds, Series.GRAZING);
+          break;
+        case TTT_NITRO_AND_PEST:
+          addSeries(ds, dataset, Series.TOTAL_NITROGEN);
+          addSeries(ds, dataset, Series.PESTICIDES);
+          target = getTarget(ds, Series.TOTAL_NITROGEN);
+          targetBy = getTargetBy(ds, Series.TOTAL_NITROGEN);
+          break;
+        case TTT_SEDIMENT:
+          addSeries(ds, dataset, Series.SEDIMENT);
+          target = getTarget(ds, Series.SEDIMENT);
+          targetBy = getTargetBy(ds, Series.SEDIMENT);
+          break;
+        default:
+          throw new RuntimeException("chart type not supported "
+              + type.toString());
+        }
+      } catch (MissingDataException e) {
+        throw new RuntimeException(e);
       }
       return new AbstractChart(query) {
 
@@ -112,13 +118,18 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
         public String getCSV() throws UnsupportedFormatException {
           throw new Chart.UnsupportedFormatException();
         }
+
+        @Override
+        public String getCommentary() throws UnsupportedFormatException {
+          throw new UnsupportedFormatException();
+        }
       };
     }
     return null;
   }
 
   private void addSeries(SpreadsheetDataSource ds,
-      DefaultCategoryDataset dataset, Series series) {
+      DefaultCategoryDataset dataset, Series series) throws MissingDataException {
     Integer row = ROW.get(series);
     if (row == null) {
       throw new RuntimeException("no row configured for series " + series);
@@ -136,7 +147,7 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
 
   }
 
-  private List<String> getColumns(SpreadsheetDataSource ds) {
+  private List<String> getColumns(SpreadsheetDataSource ds) throws MissingDataException {
     List<String> columns = Lists.newArrayList();
     for (int col = 3; true; col++) {
       String s = ds.select(0, col).asString();
@@ -148,11 +159,11 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
     return columns;
   }
 
-  private double getTarget(SpreadsheetDataSource ds, Series series) {
+  private double getTarget(SpreadsheetDataSource ds, Series series) throws MissingDataException {
     return ds.select(ROW.get(series), 1).asDouble();
   }
 
-  private String getTargetBy(SpreadsheetDataSource ds, Series series) {
+  private String getTargetBy(SpreadsheetDataSource ds, Series series) throws MissingDataException {
     return ds.select(ROW.get(series), 2).asInteger().toString();
   }
 

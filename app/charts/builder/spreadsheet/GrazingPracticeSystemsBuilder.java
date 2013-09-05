@@ -7,13 +7,16 @@ import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+import play.api.templates.Html;
 import charts.Drawable;
 import charts.GrazingPracticeSystems;
 import charts.builder.AbstractChart;
 import charts.builder.Chart;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
+import charts.builder.DataSource.MissingDataException;
 import charts.builder.Region;
+import charts.builder.Chart.UnsupportedFormatException;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -39,8 +42,12 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
 
   @Override
   public boolean canHandle(SpreadsheetDataSource datasource) {
-    return TITLE.equalsIgnoreCase(StringUtils.strip(datasource.select("A1")
-        .asString()));
+    try {
+      return TITLE.equalsIgnoreCase(StringUtils.strip(datasource.select("A1")
+          .asString()));
+    } catch (MissingDataException e) {
+      return false;
+    }
   }
 
   @Override
@@ -65,6 +72,11 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
       public String getCSV() throws UnsupportedFormatException {
         throw new UnsupportedFormatException();
       }
+
+      @Override
+      public String getCommentary() throws UnsupportedFormatException {
+        throw new UnsupportedFormatException();
+      }
     };
   }
 
@@ -72,18 +84,24 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
       createDataset(SpreadsheetDataSource ds, Region region) {
     Integer row = ROWS.get(region);
     if (row == null) {
+      // TODO: Handle this better
       throw new RuntimeException(String.format("region %s not supported",
           region));
     }
     row++;
     DefaultCategoryDataset dataset = new DefaultCategoryDataset();
     List<String> categories = Lists.newArrayList("A", "B", "C", "D");
-    for (int i = 0; i < 2; i++) {
-      String series = ds.select(row + i, 0).asString();
-      for (int col = 0; col < 4; col++) {
-        dataset.addValue(ds.select(row + i, col + 1).asDouble(), series,
-            categories.get(col));
+    try {
+      for (int i = 0; i < 2; i++) {
+        String series = ds.select(row + i, 0).asString();
+        for (int col = 0; col < 4; col++) {
+          dataset.addValue(ds.select(row + i, col + 1).asDouble(), series,
+              categories.get(col));
+        }
       }
+    } catch (MissingDataException e) {
+      // TODO: Handle this better
+      throw new RuntimeException(e);
     }
     return dataset;
   }

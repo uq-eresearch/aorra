@@ -32,14 +32,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
     }
 
     @Override
-    public String format(String pattern) throws Exception {
-      if ("value".equals(pattern)) {
-        return getValue();
-      }
-      throw new Exception("unknown pattern " + pattern);
-    }
-
-    private String getValue() {
+    public String getValue() {
       String result;
       CellValue cellValue = evaluator.evaluate(cell);
       if (cellValue == null) {
@@ -109,7 +102,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   private static class EmptyCell implements Value {
     @Override
-    public String format(String pattern) throws Exception {
+    public String getValue() {
       return null;
     }
 
@@ -141,12 +134,14 @@ public abstract class SpreadsheetDataSource implements DataSource {
    *          - starts with 0
    * @param col
    *          - starts with 0
+   * @throws MissingDataException
    */
-  public Value select(int row, int col) {
+  public Value select(int row, int col) throws MissingDataException {
     return select(null, row, col);
   }
 
-  public Value select(String sheetname, int row, int col) {
+  public Value select(String sheetname, int row, int col)
+      throws MissingDataException {
     String cellref = new CellReference(row, col).formatAsString();
     if (StringUtils.isNotBlank(sheetname)) {
       cellref = sheetname + "!" + cellref;
@@ -155,7 +150,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
   }
 
   @Override
-  public Value select(String selector) {
+  public Value select(String selector) throws MissingDataException {
     // currently only CellReference selectors are supported like
     // [sheet!]<row><column>
     // e.g. Coral!A1 or just B20 which will select the cell from the first
@@ -166,13 +161,13 @@ public abstract class SpreadsheetDataSource implements DataSource {
     if (sheetName != null) {
       sheet = getSheet(sheetName);
       if (sheet == null) {
-        throw new RuntimeException(String.format(
+        throw new MissingDataException(String.format(
             "Sheet '%s' does not exist in workbook", sheetName));
       }
     } else {
       sheet = workbook.getSheetAt(0);
       if (sheet == null) {
-        throw new RuntimeException(
+        throw new MissingDataException(
             String.format("Sheet does not exist in workbook"));
       }
     }

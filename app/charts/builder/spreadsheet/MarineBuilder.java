@@ -17,9 +17,13 @@ import charts.builder.Chart;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
 import charts.builder.DataSource;
+import charts.builder.DataSource.MissingDataException;
 import charts.builder.Region;
+import charts.builder.Value;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Table.Cell;
 
 public class MarineBuilder extends AbstractBuilder {
 
@@ -45,15 +49,16 @@ public class MarineBuilder extends AbstractBuilder {
 
   private boolean isMarineSpreadsheet(DataSource datasource) {
     try {
-      return "MARINE SUMMARY".equalsIgnoreCase(datasource.select("Summary!B18")
-          .format("value"));
-    } catch (Exception e) {
+      return "MARINE SUMMARY".equalsIgnoreCase(
+          datasource.select("Summary!B18").getValue());
+    } catch (MissingDataException e) {
       return false;
     }
   }
 
   @Override
-  public Chart build(SpreadsheetDataSource datasource, ChartType type,
+  public Chart build(final SpreadsheetDataSource datasource,
+      final ChartType type,
       final Region region, final Map<String, String[]> query) {
     final BeerCoaster beercoaster = getDrawable(datasource, region);
     if (beercoaster != null) {
@@ -90,6 +95,24 @@ public class MarineBuilder extends AbstractBuilder {
             throw new RuntimeException(e);
           }
           return sw.toString();
+        }
+
+        @Override
+        public String getCommentary() throws UnsupportedFormatException {
+          try {
+            for (int nRow = 1; nRow < Integer.MAX_VALUE; nRow++) {
+              final String k = datasource.select("Commentary", nRow, 0)
+                  .asString();
+              final String v = datasource.select("Commentary", nRow, 1)
+                  .asString();
+              if (k == null || v == null)
+                break;
+              if (region.getName().equals(k)) {
+                return v;
+              }
+            }
+          } catch (MissingDataException e) {}
+          throw new UnsupportedFormatException();
         }
       };
     } else {
@@ -163,8 +186,7 @@ public class MarineBuilder extends AbstractBuilder {
 
   private Double getValue(DataSource ds, String column, int row, int rowOffset)
       throws Exception {
-    String str = ds.select("Summary!" + column + (row + rowOffset)).format(
-        "value");
+    String str = ds.select("Summary!" + column + (row + rowOffset)).getValue();
     try {
       return Double.parseDouble(str);
     } catch (NumberFormatException e) {

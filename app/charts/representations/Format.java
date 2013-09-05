@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 
 public enum Format {
   CSV ("text/csv"),
+  HTML ("text/html"),
   PNG ("image/png"),
   SVG ("image/svg+xml");
 

@@ -28,6 +28,7 @@ import models.User;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
@@ -386,6 +387,32 @@ public class ChartTest {
           listReader.close();
         }
         return session;
+      }
+    });
+  }
+
+  @Test
+  public void commentary() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        // Marine chart CSV
+        {
+          final FileStore.File f = createMarineChartFile(session);
+          final Result result = callAction(
+              controllers.routes.ref.Chart.chart("marine", "html",
+                  ImmutableList.<String>of(f.getPath())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/html");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(contentAsString(result)).isEqualTo(
+              "This is a commentary about the Great Barrier Reef region.");
+          return session;
+        }
       }
     });
   }

@@ -15,6 +15,7 @@ import charts.builder.AbstractChart;
 import charts.builder.Chart;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
+import charts.builder.DataSource.MissingDataException;
 import charts.builder.Region;
 
 import com.google.common.collect.ImmutableMap;
@@ -71,8 +72,8 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
   public boolean canHandle(SpreadsheetDataSource datasource) {
     try {
       return "Great Barrier Reef".equalsIgnoreCase(datasource.select("A7")
-          .format("value"));
-    } catch (Exception e) {
+          .getValue());
+    } catch (MissingDataException e) {
       return false;
     }
   }
@@ -112,6 +113,11 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
           throw new RuntimeException(e);
         }
         return sw.toString();
+      }
+
+      @Override
+      public String getCommentary() throws UnsupportedFormatException {
+        throw new UnsupportedFormatException();
       }
     };
     return chart;

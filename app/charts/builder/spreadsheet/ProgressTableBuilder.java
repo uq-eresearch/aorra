@@ -15,7 +15,9 @@ import charts.builder.AbstractChart;
 import charts.builder.Chart;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
+import charts.builder.DataSource.MissingDataException;
 import charts.builder.Region;
+import charts.builder.Chart.UnsupportedFormatException;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -41,8 +43,8 @@ public class ProgressTableBuilder extends AbstractBuilder {
   public boolean canHandle(SpreadsheetDataSource datasource) {
     try {
       return "progress towards targets indicators".equalsIgnoreCase(datasource
-          .select("A1").format("value"));
-    } catch (Exception e) {
+          .select("A1").getValue());
+    } catch (MissingDataException e) {
       return false;
     }
   }
@@ -50,7 +52,13 @@ public class ProgressTableBuilder extends AbstractBuilder {
   @Override
   public Chart build(final SpreadsheetDataSource datasource, ChartType type,
       Region region, Map<String, String[]> query) {
-    final ProgressTable.Dataset ds = getDataset(datasource);
+    final ProgressTable.Dataset ds;
+    try {
+      ds = getDataset(datasource);
+    } catch (MissingDataException e) {
+      // TODO: Handle this better
+      throw new RuntimeException(e);
+    }
     if (region == Region.GBR) {
       return new AbstractChart(query) {
         @Override
@@ -96,18 +104,25 @@ public class ProgressTableBuilder extends AbstractBuilder {
           }
           return sw.toString();
         }
+
+        @Override
+        public String getCommentary() throws UnsupportedFormatException {
+          throw new UnsupportedFormatException();
+        }
       };
     }
     return null;
   }
 
-  private ProgressTable.Dataset getDataset(SpreadsheetDataSource datasource) {
+  private ProgressTable.Dataset getDataset(SpreadsheetDataSource datasource)
+      throws MissingDataException {
     List<ProgressTable.Column> columns = getColumns(datasource);
     List<ProgressTable.Row> rows = getRows(columns, datasource);
     return new ProgressTable.Dataset(columns, rows);
   }
 
-  private List<ProgressTable.Column> getColumns(SpreadsheetDataSource ds) {
+  private List<ProgressTable.Column> getColumns(SpreadsheetDataSource ds)
+      throws MissingDataException {
     List<ProgressTable.Column> columns = Lists.newArrayList();
     int col = 2;
     while (StringUtils.isNotBlank(ds.select(0, col).asString())) {
@@ -119,7 +134,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
   }
 
   private List<ProgressTable.Row> getRows(List<ProgressTable.Column> columns,
-      SpreadsheetDataSource datasource) {
+      SpreadsheetDataSource datasource) throws MissingDataException {
     List<ProgressTable.Row> rows = Lists.newArrayList();
     for (Region region : Region.values()) {
       rows.add(getRow(columns, datasource, region));
@@ -128,7 +143,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
   }
 
   private ProgressTable.Row getRow(List<ProgressTable.Column> columns,
-      SpreadsheetDataSource ds, Region region) {
+      SpreadsheetDataSource ds, Region region) throws MissingDataException {
     Integer row = ROWS.get(region);
     if (row == null) {
       throw new RuntimeException("row not configured for region "
@@ -185,7 +200,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
 
   private ProgressTable.Condition getCondition(SpreadsheetDataSource ds,
       List<ProgressTable.Column> columns, ProgressTable.Indicator indicator,
-      Region region) {
+      Region region) throws MissingDataException {
     if (indicator == ProgressTable.Indicator.GRAIN) {
       indicator = ProgressTable.Indicator.SUGARCANE;
     }
@@ -199,7 +214,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
   }
 
   private int getConditionColumn(SpreadsheetDataSource ds,
-      ProgressTable.Indicator indicator) {
+      ProgressTable.Indicator indicator) throws MissingDataException {
     int col = 1;
     while (true) {
       String s = ds.select("condition", 0, col).asString();

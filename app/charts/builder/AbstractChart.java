@@ -34,12 +34,16 @@ public abstract class AbstractChart implements Chart {
 
   public abstract String getCSV() throws UnsupportedFormatException;
 
+  public abstract String getCommentary() throws UnsupportedFormatException;
+
   @Override
   public Representation outputAs(Format format)
       throws UnsupportedFormatException {
     switch (format) {
     case CSV:
       return format.createRepresentation(getCSV());
+    case HTML:
+      return format.createRepresentation(getCommentary());
     case SVG:
       return format.createRepresentation(
           renderSVG(getChart()));

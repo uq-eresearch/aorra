@@ -21,7 +21,9 @@ import charts.builder.AbstractChart;
 import charts.builder.Chart;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
+import charts.builder.DataSource.MissingDataException;
 import charts.builder.Region;
+import charts.builder.Chart.UnsupportedFormatException;
 
 public class CotsOutbreakBuilder extends AbstractBuilder {
 
@@ -31,9 +33,9 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
 
   private boolean isCotsOutbreakSpreadsheet(SpreadsheetDataSource datasource) {
     try {
-      return "TOTALOUTBREAKS".equalsIgnoreCase(datasource.select("B1").format(
-          "value"));
-    } catch (Exception e) {
+      return "TOTALOUTBREAKS".equalsIgnoreCase(datasource.select("B1")
+          .getValue());
+    } catch (MissingDataException e) {
       return false;
     }
   }
@@ -42,8 +44,8 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
     TimeSeries s1 = new TimeSeries("outbreaks");
     try {
       for (int i = 2; true; i++) {
-        String year = datasource.select("A" + i).format("value");
-        String outbreaks = datasource.select("B" + i).format("value");
+        String year = datasource.select("A" + i).getValue();
+        String outbreaks = datasource.select("B" + i).getValue();
         if (StringUtils.isBlank(year) || StringUtils.isBlank(outbreaks))
           break;
         double val = Double.parseDouble(outbreaks);
@@ -109,6 +111,11 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
           throw new RuntimeException(e);
         }
         return sw.toString();
+      }
+
+      @Override
+      public String getCommentary() throws UnsupportedFormatException {
+        throw new UnsupportedFormatException();
       }
     };
     return chart;
