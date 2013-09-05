@@ -17,6 +17,7 @@ import charts.builder.Region;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+
 public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
 
   private static final String TITLE = "Grazing practice systems";
@@ -62,7 +63,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
 
       @Override
       public String getCSV() throws UnsupportedFormatException {
-        throw new RuntimeException("not implemented");
+        throw new UnsupportedFormatException();
       }
     };
   }
