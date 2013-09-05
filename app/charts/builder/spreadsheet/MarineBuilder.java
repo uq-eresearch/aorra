@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
 
+import org.pegdown.PegDownProcessor;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
@@ -108,7 +109,7 @@ public class MarineBuilder extends AbstractBuilder {
               if (k == null || v == null)
                 break;
               if (region.getName().equals(k)) {
-                return v;
+                return (new PegDownProcessor()).markdownToHtml(v);
               }
             }
           } catch (MissingDataException e) {}

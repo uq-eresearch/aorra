@@ -410,7 +410,11 @@ public class ChartTest {
           assertThat(contentType(result)).isEqualTo("text/html");
           assertThat(charset(result)).isEqualTo("utf-8");
           assertThat(contentAsString(result)).isEqualTo(
-              "This is a commentary about the Great Barrier Reef region.");
+            "<p>This is the <em>Great Barrier Reef</em> overview.</p>\n"+
+            "<ul>\n"+
+            "  <li>Write in Markdown</li>\n"+
+            "  <li>It's converted to HTML</li>\n"+
+            "</ul>");
           return session;
         }
       }
