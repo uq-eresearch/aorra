@@ -23,11 +23,11 @@ import be.objectify.deadbolt.java.actions.SubjectPresent;
 import charts.builder.ChartBuilder;
 import charts.builder.ChartDescription;
 import charts.builder.ChartType;
+import charts.builder.DataSource;
+import charts.builder.spreadsheet.XlsDataSource;
+import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 import charts.representations.Representation;
-import charts.spreadsheet.DataSource;
-import charts.spreadsheet.XlsDataSource;
-import charts.spreadsheet.XlsxDataSource;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

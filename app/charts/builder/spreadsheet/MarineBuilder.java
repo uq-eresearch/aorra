@@ -1,4 +1,4 @@
-package charts.builder;
+package charts.builder.spreadsheet;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -8,15 +8,20 @@ import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
 import charts.BeerCoaster;
-import charts.spreadsheet.DataSource;
 import charts.BeerCoaster.Category;
 import charts.BeerCoaster.Condition;
 import charts.BeerCoaster.Indicator;
 import charts.Drawable;
+import charts.builder.AbstractChart;
+import charts.builder.Chart;
+import charts.builder.ChartDescription;
+import charts.builder.ChartType;
+import charts.builder.DataSource;
+import charts.builder.Region;
 
 import com.google.common.collect.ImmutableMap;
 
-public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilder {
+public class MarineBuilder extends AbstractBuilder {
 
     private static final ImmutableMap<Region, Integer> OFFSETS =
         new ImmutableMap.Builder<Region, Integer>()
@@ -29,7 +34,7 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
           .put(Region.GBR, 6)
           .build();
 
-    public MarineSpreadsheetChartBuilder() {
+    public MarineBuilder() {
       super(ChartType.MARINE);
     }
 
@@ -43,7 +48,7 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
     }
 
     @Override
-    Chart build(DataSource datasource, ChartType type, final Region region,
+    Chart build(SpreadsheetDataSource datasource, ChartType type, final Region region,
         final Map<String, String[]> query) {
       final BeerCoaster beercoaster = getDrawable(datasource, region);
       if(beercoaster != null) {
@@ -159,7 +164,7 @@ public class MarineSpreadsheetChartBuilder extends DefaultSpreadsheetChartBuilde
     }
 
     @Override
-    boolean canHandle(DataSource datasource) {
+    boolean canHandle(SpreadsheetDataSource datasource) {
       return isMarineSpreadsheet(datasource);
     }
 

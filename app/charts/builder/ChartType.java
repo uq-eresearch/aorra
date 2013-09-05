@@ -8,7 +8,8 @@ public enum ChartType {
     TTT_CANE_AND_HORT ("Tracking Towards Target - Cane and Horticulture"),
     TTT_GRAZING ("Tracking Towards Target - Grazing"),
     TTT_SEDIMENT ("Tracking Towards Target - Sediment"),
-    TTT_NITRO_AND_PEST ("Tracking Towards Target - Nitrogen and Pesticide");
+    TTT_NITRO_AND_PEST ("Tracking Towards Target - Nitrogen and Pesticide"),
+    GPS ("Grazing Practice Systems");
 
     private final String label;
 

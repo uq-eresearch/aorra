@@ -1,4 +1,4 @@
-package charts.builder;
+package charts.builder.spreadsheet;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -11,13 +11,16 @@ import org.supercsv.prefs.CsvPreference;
 
 import charts.Drawable;
 import charts.ProgressTable;
-import charts.spreadsheet.DataSource;
-import charts.spreadsheet.SpreadsheetHelper;
+import charts.builder.AbstractChart;
+import charts.builder.Chart;
+import charts.builder.ChartDescription;
+import charts.builder.ChartType;
+import charts.builder.Region;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
+public class ProgressTableBuilder extends AbstractBuilder {
 
     private static final ImmutableMap<Region, Integer> ROWS =
             new ImmutableMap.Builder<Region, Integer>()
@@ -30,12 +33,12 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
                 .put(Region.BURNETT_MARY, 9)
                 .build();
 
-    public ProgressTableChartBuilder() {
+    public ProgressTableBuilder() {
         super(ChartType.PROGRESS_TABLE);
     }
 
     @Override
-    boolean canHandle(DataSource datasource) {
+    boolean canHandle(SpreadsheetDataSource datasource) {
         try {
             return "progress towards targets indicators".equalsIgnoreCase(
                     datasource.select("A1").format("value"));
@@ -45,7 +48,7 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     @Override
-    Chart build(final DataSource datasource, ChartType type, Region region,
+    Chart build(final SpreadsheetDataSource datasource, ChartType type, Region region,
             Map<String, String[]> query) {
       final ProgressTable.Dataset ds = getDataset(datasource);
       if(region == Region.GBR) {
@@ -97,25 +100,25 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
       return null;
     }
 
-    private ProgressTable.Dataset getDataset(DataSource datasource) {
+    private ProgressTable.Dataset getDataset(SpreadsheetDataSource datasource) {
         List<ProgressTable.Column> columns = getColumns(datasource);
         List<ProgressTable.Row> rows = getRows(columns, datasource);
         return new ProgressTable.Dataset(columns, rows);
     }
 
-    private List<ProgressTable.Column> getColumns(DataSource datasource) {
-        SpreadsheetHelper helper = new SpreadsheetHelper(datasource);
+    private List<ProgressTable.Column> getColumns(SpreadsheetDataSource ds) {
         List<ProgressTable.Column> columns = Lists.newArrayList();
         int col = 2;
-        while(StringUtils.isNotBlank(helper.selectText(0, col))) {
-            columns.add(new ProgressTable.Column(helper.selectText(0, col),
-                    helper.selectText(1, col), helper.selectText(2, col)));
+        while(StringUtils.isNotBlank(ds.select(0, col).asString())) {
+            columns.add(new ProgressTable.Column(ds.select(0, col).asString(),
+                    ds.select(1, col).asString(), ds.select(2, col).asString()));
             col++;
         }
         return columns;
     }
 
-    private List<ProgressTable.Row> getRows(List<ProgressTable.Column> columns , DataSource datasource) {
+    private List<ProgressTable.Row> getRows(List<ProgressTable.Column> columns,
+            SpreadsheetDataSource datasource) {
         List<ProgressTable.Row> rows = Lists.newArrayList();
         for(Region region : Region.values()) {
             rows.add(getRow(columns, datasource, region));
@@ -124,29 +127,28 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     private ProgressTable.Row getRow(List<ProgressTable.Column> columns,
-            DataSource datasource, Region region) {
-        SpreadsheetHelper helper = new SpreadsheetHelper(datasource);
+            SpreadsheetDataSource ds, Region region) {
         Integer row = ROWS.get(region);
         if(row == null) {
             throw new RuntimeException("row not configured for region "+region.getProperName());
         }
-        String r = helper.selectText(row, 0);
+        String r = ds.select(row, 0).asString();
         if(!StringUtils.equals(region.getProperName(), r)) {
             throw new RuntimeException(String.format("expected %s in row %s column 0 but found %s",
                 region.getProperName(), row, r));
         }
         List<ProgressTable.Cell> cells = Lists.newArrayList();
         for(ProgressTable.Column column : columns) {
-            Double progress = getProgress(helper.selectText(row, columns.indexOf(column)+2));
+            Double progress = getProgress(ds.select(row, columns.indexOf(column)+2).asString());
             if(progress != null) {
                 ProgressTable.Indicator indicator = getIndicator(column.header, region);
-                ProgressTable.Condition condition = getCondition(helper, columns, indicator, region);
+                ProgressTable.Condition condition = getCondition(ds, columns, indicator, region);
                 cells.add(new ProgressTable.Cell(indicator, condition , formatProgress(progress)));
             } else {
                 cells.add(new ProgressTable.Cell());
             }
         }
-        return new ProgressTable.Row(region.getProperName(), helper.selectText(row, 1), cells);
+        return new ProgressTable.Row(region.getProperName(), ds.select(row, 1).asString(), cells);
     }
 
     private Double getProgress(String value) {
@@ -172,23 +174,23 @@ public class ProgressTableChartBuilder extends DefaultSpreadsheetChartBuilder {
         return i;
     }
 
-    private ProgressTable.Condition getCondition(SpreadsheetHelper helper,
+    private ProgressTable.Condition getCondition(SpreadsheetDataSource ds,
             List<ProgressTable.Column> columns, ProgressTable.Indicator indicator, Region region) {
         if(indicator == ProgressTable.Indicator.GRAIN) {
             indicator = ProgressTable.Indicator.SUGARCANE;
         }
-        return getCondition(helper.selectText(
-                "condition", region.ordinal()+1, getConditionColumn(helper, indicator)));
+        return getCondition(ds.select("condition", region.ordinal()+1,
+                getConditionColumn(ds, indicator)).asString());
     }
 
     private ProgressTable.Condition getCondition(String str) {
         return ProgressTable.Condition.valueOf(StringUtils.upperCase(StringUtils.replace(str, " ", "")));
     }
 
-    private int getConditionColumn(SpreadsheetHelper helper, ProgressTable.Indicator indicator) {
+    private int getConditionColumn(SpreadsheetDataSource ds, ProgressTable.Indicator indicator) {
         int col = 1;
         while(true) {
-            String s = helper.selectText("condition", 0, col);
+            String s = ds.select("condition", 0, col).asString();
             if(StringUtils.equalsIgnoreCase(s, indicator.toString())) {
                 return col;
             } else if(StringUtils.isBlank(s)) {

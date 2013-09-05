@@ -1,4 +1,4 @@
-package charts.builder;
+package charts.builder.spreadsheet;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.collect.Iterables.getFirst;
@@ -8,28 +8,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import charts.spreadsheet.DataSource;
+import charts.builder.Chart;
+import charts.builder.ChartType;
+import charts.builder.ChartTypeBuilder;
+import charts.builder.DataSource;
+import charts.builder.Region;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder {
+public abstract class AbstractBuilder implements ChartTypeBuilder {
 
     private List<ChartType> types;
 
-    public DefaultSpreadsheetChartBuilder(ChartType type) {
+    public AbstractBuilder(ChartType type) {
         types = Lists.newArrayList(type);
     }
 
-    public DefaultSpreadsheetChartBuilder(List<ChartType> types) {
+    public AbstractBuilder(List<ChartType> types) {
         this.types = types;
     }
 
-    abstract boolean canHandle(DataSource datasource);
+    abstract boolean canHandle(SpreadsheetDataSource datasource);
 
-    abstract Chart build(DataSource datasource, ChartType type, Region region, Map<String, String[]> query);
+    abstract Chart build(SpreadsheetDataSource datasource, ChartType type, Region region, Map<String, String[]> query);
 
-    List<Chart> buildAll(DataSource datasource, ChartType type, Region region, Map<String, String[]> query) {
+    List<Chart> buildAll(SpreadsheetDataSource datasource, ChartType type, Region region, Map<String, String[]> query) {
         List<Chart> charts = Lists.newArrayList();
         if(type == null) {
             for(ChartType t : types) {
@@ -51,7 +55,7 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
     public boolean canHandle(ChartType type, List<DataSource> datasources) {
         if(type == null || types.contains(type)) {
             for(DataSource ds : datasources) {
-                if(canHandle(ds)) {
+                if((ds instanceof SpreadsheetDataSource) && canHandle((SpreadsheetDataSource)ds)) {
                     return true;
                 }
             }
@@ -64,14 +68,16 @@ public abstract class DefaultSpreadsheetChartBuilder implements ChartTypeBuilder
             Map<String, String[]> query) {
         List<Chart> charts = Lists.newArrayList();
         for(DataSource datasource : datasources) {
-            if(canHandle(datasource)) {
-                charts.addAll(build(datasource, type, query));
+            if(datasource instanceof SpreadsheetDataSource) {
+                if(canHandle((SpreadsheetDataSource)datasource)) {
+                    charts.addAll(build((SpreadsheetDataSource)datasource, type, query));
+                }
             }
         }
         return charts;
     }
 
-    List<Chart> build(DataSource datasource, ChartType type, Map<String, String[]> query) {
+    List<Chart> build(SpreadsheetDataSource datasource, ChartType type, Map<String, String[]> query) {
         List<Chart> charts = Lists.newArrayList();
         List<Region> regions = getRegion(query);
         if(regions != null && !regions.isEmpty()) {

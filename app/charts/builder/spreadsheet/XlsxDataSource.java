@@ -1,4 +1,4 @@
-package charts.spreadsheet;
+package charts.builder.spreadsheet;
 
 import java.io.InputStream;
 

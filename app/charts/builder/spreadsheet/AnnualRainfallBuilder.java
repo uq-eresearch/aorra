@@ -1,22 +1,25 @@
-package charts.builder;
+package charts.builder.spreadsheet;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.util.CellReference;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
 import charts.AnnualRainfall;
 import charts.Drawable;
-import charts.spreadsheet.DataSource;
+import charts.builder.AbstractChart;
+import charts.builder.Chart;
+import charts.builder.ChartDescription;
+import charts.builder.ChartType;
+import charts.builder.Region;
 
 import com.google.common.collect.ImmutableMap;
 
-public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
+public class AnnualRainfallBuilder extends AbstractBuilder {
 
     private static final ImmutableMap<Region, Integer> ROW =
             new ImmutableMap.Builder<Region, Integer>()
@@ -28,24 +31,22 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
                 .put(Region.GBR, 6)
                 .build();
 
-    public AnnualRainfallChartBuilder() {
+    public AnnualRainfallBuilder() {
       super(ChartType.ANNUAL_RAINFALL);
     }
 
     private DefaultCategoryDataset createDataset(
-        DataSource datasource, Region region) {
+        SpreadsheetDataSource datasource, Region region) {
       DefaultCategoryDataset dataset = new DefaultCategoryDataset();
       final String series = "rainfall";
       Integer row = ROW.get(region);
       try {
         for (int i = 1; true; i++) {
-          String year = datasource.select(
-              new CellReference(0, i).formatAsString()).format("value");
+          String year = datasource.select(0, i).asString();
           if (StringUtils.equalsIgnoreCase("Annual Average", year)) {
             break;
           }
-          String outbreaks = datasource.select(
-              new CellReference(row, i).formatAsString()).format("value");
+          String outbreaks = datasource.select(row, i).asString();
           if (StringUtils.isBlank(year) || StringUtils.isBlank(outbreaks)) {
             break;
           }
@@ -67,7 +68,7 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     @Override
-    boolean canHandle(DataSource datasource) {
+    boolean canHandle(SpreadsheetDataSource datasource) {
       try {
         return "Great Barrier Reef".equalsIgnoreCase(
             datasource.select("A7").format("value"));
@@ -77,7 +78,7 @@ public class AnnualRainfallChartBuilder extends DefaultSpreadsheetChartBuilder {
     }
 
     @Override
-    Chart build(DataSource datasource, ChartType type, final Region region,
+    Chart build(SpreadsheetDataSource datasource, ChartType type, final Region region,
             final Map<String, String[]> query) {
       if (ROW.containsKey(region)) {
         final DefaultCategoryDataset dataset =

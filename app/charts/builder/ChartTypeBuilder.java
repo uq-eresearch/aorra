@@ -3,7 +3,6 @@ package charts.builder;
 import java.util.List;
 import java.util.Map;
 
-import charts.spreadsheet.DataSource;
 
 public interface ChartTypeBuilder {
 

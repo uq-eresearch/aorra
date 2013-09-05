@@ -5,7 +5,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import charts.spreadsheet.DataSource;
+import charts.builder.spreadsheet.AnnualRainfallBuilder;
+import charts.builder.spreadsheet.CotsOutbreakBuilder;
+import charts.builder.spreadsheet.MarineBuilder;
+import charts.builder.spreadsheet.ProgressTableBuilder;
+import charts.builder.spreadsheet.TrackingTowardsTagetsBuilder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -14,10 +18,10 @@ public class ChartBuilder {
 
   private static List<ChartTypeBuilder> BUILDERS =
     new ImmutableList.Builder<ChartTypeBuilder>()
-      .add(new MarineSpreadsheetChartBuilder())
-      .add(new CotsOutbreakSpreadsheetBuilder())
-      .add(new AnnualRainfallChartBuilder())
-      .add(new ProgressTableChartBuilder())
+      .add(new MarineBuilder())
+      .add(new CotsOutbreakBuilder())
+      .add(new AnnualRainfallBuilder())
+      .add(new ProgressTableBuilder())
       .add(new TrackingTowardsTagetsBuilder())
       .build();
 

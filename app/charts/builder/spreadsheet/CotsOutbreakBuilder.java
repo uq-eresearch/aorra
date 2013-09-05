@@ -1,4 +1,4 @@
-package charts.builder;
+package charts.builder.spreadsheet;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -17,15 +17,19 @@ import org.supercsv.prefs.CsvPreference;
 
 import charts.CotsOutbreak;
 import charts.Drawable;
-import charts.spreadsheet.DataSource;
+import charts.builder.AbstractChart;
+import charts.builder.Chart;
+import charts.builder.ChartDescription;
+import charts.builder.ChartType;
+import charts.builder.Region;
 
-public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuilder {
+public class CotsOutbreakBuilder extends AbstractBuilder {
 
-    public CotsOutbreakSpreadsheetBuilder() {
+    public CotsOutbreakBuilder() {
       super(ChartType.COTS_OUTBREAK);
     }
 
-    private boolean isCotsOutbreakSpreadsheet(DataSource datasource) {
+    private boolean isCotsOutbreakSpreadsheet(SpreadsheetDataSource datasource) {
       try {
         return "TOTALOUTBREAKS".equalsIgnoreCase(
             datasource.select("B1").format("value"));
@@ -34,7 +38,7 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
       }
     }
 
-    private TimeSeriesCollection createDataset(DataSource datasource) {
+    private TimeSeriesCollection createDataset(SpreadsheetDataSource datasource) {
       TimeSeries s1 = new TimeSeries("outbreaks");
       try {
         for (int i = 2; true; i++) {
@@ -60,12 +64,12 @@ public class CotsOutbreakSpreadsheetBuilder extends DefaultSpreadsheetChartBuild
     }
 
     @Override
-    boolean canHandle(DataSource datasource) {
+    boolean canHandle(SpreadsheetDataSource datasource) {
       return isCotsOutbreakSpreadsheet(datasource);
     }
 
     @Override
-    Chart build(DataSource datasource, ChartType type, final Region region,
+    Chart build(SpreadsheetDataSource datasource, ChartType type, final Region region,
         final Map<String, String[]> query) {
       if (region.equals(Region.GBR)) {
         final TimeSeriesCollection dataset = createDataset(datasource);

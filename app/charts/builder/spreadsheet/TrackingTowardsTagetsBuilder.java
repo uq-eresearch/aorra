@@ -1,4 +1,4 @@
-package charts.builder;
+package charts.builder.spreadsheet;
 
 import java.util.List;
 import java.util.Map;
@@ -8,13 +8,16 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 import charts.Drawable;
 import charts.TrackingTowardsTargets;
-import charts.spreadsheet.DataSource;
-import charts.spreadsheet.SpreadsheetHelper;
+import charts.builder.AbstractChart;
+import charts.builder.Chart;
+import charts.builder.ChartDescription;
+import charts.builder.ChartType;
+import charts.builder.Region;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder {
+public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
 
     private static enum Series {
         CANE("Cane"),
@@ -52,7 +55,7 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
     }
 
     @Override
-    boolean canHandle(DataSource datasource) {
+    boolean canHandle(SpreadsheetDataSource datasource) {
         try {
             return "tracking towards tagets".equalsIgnoreCase(
                     datasource.select("A1").format("value"));
@@ -62,35 +65,34 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
     }
 
     @Override
-    Chart build(DataSource datasource, final ChartType type, final Region region,
+    Chart build(SpreadsheetDataSource ds, final ChartType type, final Region region,
             final Map<String, String[]> query) {
         if(region == Region.GBR) {
-            SpreadsheetHelper helper = new SpreadsheetHelper(datasource);
             final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             final double target;
             final String targetBy;
             switch(type) {
             case TTT_CANE_AND_HORT:
-                addSeries(helper, dataset, Series.CANE);
-                addSeries(helper, dataset, Series.HORTICULTURE);
-                target = getTarget(helper, Series.CANE);
-                targetBy = getTargetBy(helper, Series.CANE);
+                addSeries(ds, dataset, Series.CANE);
+                addSeries(ds, dataset, Series.HORTICULTURE);
+                target = getTarget(ds, Series.CANE);
+                targetBy = getTargetBy(ds, Series.CANE);
                 break;
             case TTT_GRAZING:
-                addSeries(helper, dataset, Series.GRAZING);
-                target = getTarget(helper, Series.GRAZING);
-                targetBy = getTargetBy(helper, Series.GRAZING);
+                addSeries(ds, dataset, Series.GRAZING);
+                target = getTarget(ds, Series.GRAZING);
+                targetBy = getTargetBy(ds, Series.GRAZING);
                 break;
             case TTT_NITRO_AND_PEST:
-                addSeries(helper, dataset, Series.TOTAL_NITROGEN);
-                addSeries(helper, dataset, Series.PESTICIDES);
-                target = getTarget(helper, Series.TOTAL_NITROGEN);
-                targetBy = getTargetBy(helper, Series.TOTAL_NITROGEN);
+                addSeries(ds, dataset, Series.TOTAL_NITROGEN);
+                addSeries(ds, dataset, Series.PESTICIDES);
+                target = getTarget(ds, Series.TOTAL_NITROGEN);
+                targetBy = getTargetBy(ds, Series.TOTAL_NITROGEN);
                 break;
             case TTT_SEDIMENT:
-                addSeries(helper, dataset, Series.SEDIMENT);
-                target = getTarget(helper, Series.SEDIMENT);
-                targetBy = getTargetBy(helper, Series.SEDIMENT);
+                addSeries(ds, dataset, Series.SEDIMENT);
+                target = getTarget(ds, Series.SEDIMENT);
+                targetBy = getTargetBy(ds, Series.SEDIMENT);
                 break;
             default:
                 throw new RuntimeException("chart type not supported "+type.toString());
@@ -116,14 +118,14 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
         return null;
     }
 
-    private void addSeries(SpreadsheetHelper helper, DefaultCategoryDataset dataset, Series series) {
+    private void addSeries(SpreadsheetDataSource ds, DefaultCategoryDataset dataset, Series series) {
         Integer row = ROW.get(series);
         if(row == null) {
             throw new RuntimeException("no row configured for series "+series);
         }
-        List<String> columns = getColumns(helper);
+        List<String> columns = getColumns(ds);
         for(int col=0; col<columns.size(); col++) {
-            String s = helper.selectText(row, col+3);
+            String s = ds.select(row, col+3).asString();
             try {
                 Double value = new Double(s);
                 dataset.addValue(value, series.toString(), columns.get(col));
@@ -134,10 +136,10 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
 
     }
 
-    private List<String> getColumns(SpreadsheetHelper helper) {
+    private List<String> getColumns(SpreadsheetDataSource ds) {
         List<String> columns = Lists.newArrayList();
         for(int col=3; true; col++) {
-            String s = helper.selectText(0, col);
+            String s = ds.select(0, col).asString();
             if(StringUtils.isBlank(s)) {
                 break;
             }
@@ -146,12 +148,12 @@ public class TrackingTowardsTagetsBuilder extends DefaultSpreadsheetChartBuilder
         return columns;
     }
 
-    private double getTarget(SpreadsheetHelper helper, Series series) {
-        return helper.selectDouble(ROW.get(series), 1);
+    private double getTarget(SpreadsheetDataSource ds, Series series) {
+        return ds.select(ROW.get(series), 1).asDouble();
     }
 
-    private String getTargetBy(SpreadsheetHelper helper, Series series) {
-        return helper.selectInt(ROW.get(series), 2).toString();
+    private String getTargetBy(SpreadsheetDataSource ds, Series series) {
+        return ds.select(ROW.get(series), 2).asInteger().toString();
     }
 
 }
