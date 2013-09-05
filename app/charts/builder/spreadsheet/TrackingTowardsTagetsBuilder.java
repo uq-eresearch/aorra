@@ -35,10 +35,15 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
     }
   }
 
-  private static final ImmutableMap<Series, Integer> ROW = new ImmutableMap.Builder<Series, Integer>()
-      .put(Series.CANE, 1).put(Series.HORTICULTURE, 2).put(Series.GRAZING, 3)
-      .put(Series.SEDIMENT, 4).put(Series.TOTAL_NITROGEN, 5)
-      .put(Series.PESTICIDES, 6).build();
+  private static final ImmutableMap<Series, Integer> ROW =
+    new ImmutableMap.Builder<Series, Integer>()
+      .put(Series.CANE, 1)
+      .put(Series.HORTICULTURE, 2)
+      .put(Series.GRAZING, 3)
+      .put(Series.SEDIMENT, 4)
+      .put(Series.TOTAL_NITROGEN, 5)
+      .put(Series.PESTICIDES, 6)
+      .build();
 
   public TrackingTowardsTagetsBuilder() {
     super(Lists.newArrayList(ChartType.TTT_CANE_AND_HORT,

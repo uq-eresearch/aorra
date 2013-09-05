@@ -23,13 +23,13 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
 
   private static final ImmutableMap<Region, Integer> ROW =
       new ImmutableMap.Builder<Region, Integer>()
-          .put(Region.BURDEKIN, 1)
-          .put(Region.FITZROY, 2)
-          .put(Region.MACKAY_WHITSUNDAY, 3)
-          .put(Region.BURNETT_MARY, 4)
-          .put(Region.WET_TROPICS, 5)
-          .put(Region.GBR, 6)
-          .build();
+        .put(Region.BURDEKIN, 1)
+        .put(Region.FITZROY, 2)
+        .put(Region.MACKAY_WHITSUNDAY, 3)
+        .put(Region.BURNETT_MARY, 4)
+        .put(Region.WET_TROPICS, 5)
+        .put(Region.GBR, 6)
+        .build();
 
   public AnnualRainfallBuilder() {
     super(ChartType.ANNUAL_RAINFALL);

@@ -23,15 +23,15 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
   private static final String TITLE = "Grazing practice systems";
 
   private static final ImmutableMap<Region, Integer> ROWS =
-          new ImmutableMap.Builder<Region, Integer>()
-            .put(Region.GBR, 1)
-            .put(Region.CAPE_YORK, 5)
-            .put(Region.WET_TROPICS, 9)
-            .put(Region.BURDEKIN, 13)
-            .put(Region.MACKAY_WHITSUNDAY, 17)
-            .put(Region.FITZROY, 21)
-            .put(Region.BURNETT_MARY, 25)
-            .build();
+      new ImmutableMap.Builder<Region, Integer>()
+        .put(Region.GBR, 1)
+        .put(Region.CAPE_YORK, 5)
+        .put(Region.WET_TROPICS, 9)
+        .put(Region.BURDEKIN, 13)
+        .put(Region.MACKAY_WHITSUNDAY, 17)
+        .put(Region.FITZROY, 21)
+        .put(Region.BURNETT_MARY, 25)
+        .build();
 
   public GrazingPracticeSystemsBuilder() {
     super(ChartType.GPS);
