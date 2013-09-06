@@ -51,7 +51,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource datasource, ChartType type,
-      Region region, Map<String, String[]> query) {
+      final Region region, Map<String, String[]> query) {
     final ProgressTable.Dataset ds;
     try {
       ds = getDataset(datasource);
@@ -60,6 +60,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
       throw new RuntimeException(e);
     }
     if (region == Region.GBR) {
+      final AbstractBuilder thisBuilder = this;
       return new AbstractChart(query) {
         @Override
         public ChartDescription getDescription() {
@@ -107,7 +108,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
 
         @Override
         public String getCommentary() throws UnsupportedFormatException {
-          throw new UnsupportedFormatException();
+          return thisBuilder.getCommentary(datasource, region);
         }
       };
     }

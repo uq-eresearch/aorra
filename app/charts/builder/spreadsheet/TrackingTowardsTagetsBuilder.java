@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.pegdown.PegDownProcessor;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -12,10 +13,10 @@ import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
-import charts.Chart.UnsupportedFormatException;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.TrackingTowardsTargets;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
@@ -64,7 +65,7 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
   }
 
   @Override
-  public Chart build(SpreadsheetDataSource ds, final ChartType type,
+  public Chart build(final SpreadsheetDataSource ds, final ChartType type,
       final Region region, final Map<String, String[]> query) {
     if (region == Region.GBR) {
       final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
@@ -121,6 +122,25 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
 
         @Override
         public String getCommentary() throws UnsupportedFormatException {
+          final List<ChartType> cIdx = ImmutableList.copyOf(new ChartType[] {
+            ChartType.TTT_CANE_AND_HORT,
+            ChartType.TTT_GRAZING,
+            ChartType.TTT_NITRO_AND_PEST,
+            ChartType.TTT_SEDIMENT
+          });
+          try {
+            for (int nRow = 0; nRow < Integer.MAX_VALUE; nRow++) {
+              final String k = ds.select("Commentary", nRow, 0)
+                  .asString();
+              final String v = ds.select("Commentary", nRow,
+                  cIdx.indexOf(type) + 1).asString();
+              if (k == null || v == null)
+                break;
+              if (region.getName().equals(k)) {
+                return (new PegDownProcessor()).markdownToHtml(v);
+              }
+            }
+          } catch (MissingDataException e) {}
           throw new UnsupportedFormatException();
         }
       };

@@ -72,12 +72,13 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
   }
 
   @Override
-  public Chart build(SpreadsheetDataSource datasource, ChartType type,
+  public Chart build(final SpreadsheetDataSource datasource, ChartType type,
       final Region region, final Map<String, String[]> query) {
     if (!region.equals(Region.GBR)) {
       return null;
     }
     final TimeSeriesCollection dataset = createDataset(datasource);
+    final AbstractBuilder thisBuilder = this;
     final Chart chart = new AbstractChart(query) {
       @Override
       public ChartDescription getDescription() {
@@ -115,7 +116,7 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
 
       @Override
       public String getCommentary() throws UnsupportedFormatException {
-        throw new UnsupportedFormatException();
+        return thisBuilder.getCommentary(datasource, region);
       }
     };
     return chart;

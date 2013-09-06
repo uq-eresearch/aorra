@@ -415,8 +415,21 @@ public class ChartTest {
             "  <li>Write in Markdown</li>\n"+
             "  <li>It's converted to HTML</li>\n"+
             "</ul>");
-          return session;
         }
+        {
+          final FileStore.File f = createTrackingTowardsTargetsChartFile(
+              session, "grazing");
+          final Result result = callAction(
+              controllers.routes.ref.Chart.chart("ttt_grazing", "html",
+                  ImmutableList.<String>of(f.getPath())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/html");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(contentAsString(result)).isEqualTo(
+            "<p><em>Nothing yet.</em></p>");
+        }
+        return session;
       }
     });
   }

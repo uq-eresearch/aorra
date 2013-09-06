@@ -54,6 +54,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
   public Chart build(final SpreadsheetDataSource datasource,
       final ChartType type, final Region region,
       final Map<String, String[]> query) {
+    final AbstractBuilder thisBuilder = this;
     return new AbstractChart(query) {
       @Override
       public ChartDescription getDescription() {
@@ -75,7 +76,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
 
       @Override
       public String getCommentary() throws UnsupportedFormatException {
-        throw new UnsupportedFormatException();
+        return thisBuilder.getCommentary(datasource, region);
       }
     };
   }

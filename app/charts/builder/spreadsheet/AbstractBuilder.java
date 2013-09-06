@@ -8,11 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.pegdown.PegDownProcessor;
+
 import charts.Chart;
+import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
 import charts.Region;
 import charts.builder.ChartTypeBuilder;
 import charts.builder.DataSource;
+import charts.builder.DataSource.MissingDataException;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -33,6 +37,24 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
 
   public abstract Chart build(SpreadsheetDataSource datasource, ChartType type,
       Region region, Map<String, String[]> query);
+
+  protected String getCommentary(SpreadsheetDataSource datasource,
+      Region region) throws UnsupportedFormatException {
+    try {
+      for (int nRow = 0; nRow < Integer.MAX_VALUE; nRow++) {
+        final String k = datasource.select("Commentary", nRow, 0)
+            .asString();
+        final String v = datasource.select("Commentary", nRow, 1)
+            .asString();
+        if (k == null || v == null)
+          break;
+        if (region.getName().equals(k)) {
+          return (new PegDownProcessor()).markdownToHtml(v);
+        }
+      }
+    } catch (MissingDataException e) {}
+    throw new UnsupportedFormatException();
+  }
 
   public List<Chart> buildAll(SpreadsheetDataSource datasource,
       ChartType type, Region region, Map<String, String[]> query) {

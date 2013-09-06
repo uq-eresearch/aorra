@@ -62,6 +62,7 @@ public class MarineBuilder extends AbstractBuilder {
       final ChartType type,
       final Region region, final Map<String, String[]> query) {
     final BeerCoaster beercoaster = getDrawable(datasource, region);
+    final AbstractBuilder thisBuilder = this;
     if (beercoaster != null) {
       return new AbstractChart(query) {
         @Override
@@ -100,20 +101,7 @@ public class MarineBuilder extends AbstractBuilder {
 
         @Override
         public String getCommentary() throws UnsupportedFormatException {
-          try {
-            for (int nRow = 1; nRow < Integer.MAX_VALUE; nRow++) {
-              final String k = datasource.select("Commentary", nRow, 0)
-                  .asString();
-              final String v = datasource.select("Commentary", nRow, 1)
-                  .asString();
-              if (k == null || v == null)
-                break;
-              if (region.getName().equals(k)) {
-                return (new PegDownProcessor()).markdownToHtml(v);
-              }
-            }
-          } catch (MissingDataException e) {}
-          throw new UnsupportedFormatException();
+          return thisBuilder.getCommentary(datasource, region);
         }
       };
     } else {
