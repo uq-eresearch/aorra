@@ -1,4 +1,4 @@
-package charts.builder;
+package charts;
 
 public enum ChartType {
     MARINE ("Marine"),
@@ -9,7 +9,10 @@ public enum ChartType {
     TTT_GRAZING ("Tracking Towards Target - Grazing"),
     TTT_SEDIMENT ("Tracking Towards Target - Sediment"),
     TTT_NITRO_AND_PEST ("Tracking Towards Target - Nitrogen and Pesticide"),
-    GPS ("Grazing Practice Systems");
+    GRAZING_PS ("Grazing Practice Systems"),
+    HORTICULTURE_PS ("Horticulture Practice Systems"),
+    SUGARCANE_PS ("Sugarcane Practice Systems"),
+    GRAINS_PS ("Grains Practice Systems");
 
     private final String label;
 

@@ -1,4 +1,4 @@
-package charts;
+package charts.graphics;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,6 +14,8 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.ui.RectangleInsets;
+
+import charts.Drawable;
 
 public class CotsOutbreak {
 

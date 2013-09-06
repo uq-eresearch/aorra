@@ -1,4 +1,4 @@
-package charts.builder;
+package charts;
 
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayReader;
@@ -14,8 +14,6 @@ import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
 import org.w3c.dom.Document;
 
-import charts.ChartRenderer;
-import charts.Drawable;
 import charts.representations.Format;
 import charts.representations.Representation;
 

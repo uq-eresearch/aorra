@@ -1,6 +1,6 @@
 @(
-    columns: List[charts.ProgressTable.Column],
-    rows: List[charts.ProgressTable.Row]
+    columns: List[charts.graphics.ProgressTable.Column],
+    rows: List[charts.graphics.ProgressTable.Row]
 )
 @import org.apache.commons.lang3.StringUtils.lowerCase
 @import org.apache.commons.lang3.StringUtils.replaceChars
@@ -32,7 +32,7 @@
 @if(cell.condition != null) {
 <div class="@{lowerCase(cell.condition.name())} @{lowerCase(cell.indicator.name())} statusbox"></div>
 <div class="text-data">@cell.progress</div>
-@if(cell.indicator == charts.ProgressTable.Indicator.GRAIN) {
+@if(cell.indicator == charts.graphics.ProgressTable.Indicator.GRAIN) {
 <div style="font-family:LiberationSans;">(Grains)</div>
 }
 }

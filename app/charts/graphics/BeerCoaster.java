@@ -1,4 +1,4 @@
-package charts;
+package charts.graphics;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -21,6 +21,8 @@ import java.util.Collections;
 
 import org.jfree.text.TextUtilities;
 import org.jfree.ui.TextAnchor;
+
+import charts.Drawable;
 
 public class BeerCoaster implements Drawable {
 

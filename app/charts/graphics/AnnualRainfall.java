@@ -1,4 +1,4 @@
-package charts;
+package charts.graphics;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,6 +14,8 @@ import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.CategoryDataset;
+
+import charts.Drawable;
 
 public class AnnualRainfall {
 

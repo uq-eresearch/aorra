@@ -1,4 +1,4 @@
-package charts;
+package charts.graphics;
 
 import static views.html.chart.progresstable.render;
 
@@ -11,12 +11,14 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.InputSource;
 
-import com.google.common.collect.ImmutableList;
-
 import boxrenderer.Box;
 import boxrenderer.Resolver;
 import boxrenderer.XmlUtils;
 import boxrenderer.xhtml.Parser;
+import charts.Chart;
+import charts.Drawable;
+
+import com.google.common.collect.ImmutableList;
 
 public class ProgressTable implements Drawable {
 
@@ -107,7 +109,7 @@ public class ProgressTable implements Drawable {
             source = StringUtils.substringBetween(source, "('", "')");
           }
           final InputStream stream =
-              ProgressTable.class.getResourceAsStream(source);
+              Chart.class.getResourceAsStream(source);
           if (stream == null) {
             throw new Exception("failed to load resource " + source);
           }

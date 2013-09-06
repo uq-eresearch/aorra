@@ -4,7 +4,6 @@ import java.awt.Font
 import java.awt.GraphicsEnvironment
 import java.awt.RenderingHints
 import java.io.CharArrayWriter
-
 import org.apache.batik.dom.svg.SVGDOMImplementation
 import org.apache.batik.svggen.DefaultExtensionHandler
 import org.apache.batik.svggen.ImageHandlerBase64Encoder

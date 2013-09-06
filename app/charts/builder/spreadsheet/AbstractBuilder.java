@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import charts.builder.Chart;
-import charts.builder.ChartType;
+import charts.Chart;
+import charts.ChartType;
+import charts.Region;
 import charts.builder.ChartTypeBuilder;
 import charts.builder.DataSource;
-import charts.builder.Region;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;

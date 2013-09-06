@@ -8,15 +8,15 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import play.api.templates.Html;
+import charts.AbstractChart;
+import charts.Chart;
+import charts.ChartDescription;
+import charts.ChartType;
 import charts.Drawable;
-import charts.GrazingPracticeSystems;
-import charts.builder.AbstractChart;
-import charts.builder.Chart;
-import charts.builder.ChartDescription;
-import charts.builder.ChartType;
+import charts.Region;
+import charts.Chart.UnsupportedFormatException;
 import charts.builder.DataSource.MissingDataException;
-import charts.builder.Region;
-import charts.builder.Chart.UnsupportedFormatException;
+import charts.graphics.GrazingPracticeSystems;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -37,7 +37,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
         .build();
 
   public GrazingPracticeSystemsBuilder() {
-    super(ChartType.GPS);
+    super(ChartType.GRAZING_PS);
   }
 
   @Override

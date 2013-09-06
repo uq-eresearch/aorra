@@ -1,4 +1,4 @@
-package charts.builder;
+package charts;
 
 public class ChartDescription {
 

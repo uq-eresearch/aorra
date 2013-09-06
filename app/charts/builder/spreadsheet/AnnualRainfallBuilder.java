@@ -9,14 +9,14 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AnnualRainfall;
+import charts.AbstractChart;
+import charts.Chart;
+import charts.ChartDescription;
+import charts.ChartType;
 import charts.Drawable;
-import charts.builder.AbstractChart;
-import charts.builder.Chart;
-import charts.builder.ChartDescription;
-import charts.builder.ChartType;
+import charts.Region;
 import charts.builder.DataSource.MissingDataException;
-import charts.builder.Region;
+import charts.graphics.AnnualRainfall;
 
 import com.google.common.collect.ImmutableMap;
 

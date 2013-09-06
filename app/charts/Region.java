@@ -1,4 +1,4 @@
-package charts.builder;
+package charts;
 
 import java.util.Set;
 

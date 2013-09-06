@@ -6,15 +6,15 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+import charts.AbstractChart;
+import charts.Chart;
+import charts.ChartDescription;
+import charts.ChartType;
 import charts.Drawable;
-import charts.TrackingTowardsTargets;
-import charts.builder.AbstractChart;
-import charts.builder.Chart;
-import charts.builder.ChartDescription;
-import charts.builder.ChartType;
+import charts.Region;
+import charts.Chart.UnsupportedFormatException;
 import charts.builder.DataSource.MissingDataException;
-import charts.builder.Region;
-import charts.builder.Chart.UnsupportedFormatException;
+import charts.graphics.TrackingTowardsTargets;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;

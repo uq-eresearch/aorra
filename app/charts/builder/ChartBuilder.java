@@ -5,6 +5,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import charts.Chart;
+import charts.ChartType;
+import charts.Region;
 import charts.builder.spreadsheet.AnnualRainfallBuilder;
 import charts.builder.spreadsheet.CotsOutbreakBuilder;
 import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;

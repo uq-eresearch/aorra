@@ -1,4 +1,4 @@
-package charts.builder;
+package charts;
 
 import charts.representations.Format;
 import charts.representations.Representation;

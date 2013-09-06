@@ -20,9 +20,9 @@ import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import be.objectify.deadbolt.java.actions.SubjectPresent;
+import charts.ChartDescription;
+import charts.ChartType;
 import charts.builder.ChartBuilder;
-import charts.builder.ChartDescription;
-import charts.builder.ChartType;
 import charts.builder.DataSource;
 import charts.builder.spreadsheet.XlsDataSource;
 import charts.builder.spreadsheet.XlsxDataSource;
@@ -53,7 +53,7 @@ public class Chart extends SessionAwareController {
     this.chartBuilder = chartBuilder;
   }
 
-  private String buildUrl(charts.builder.Chart chart, String format,
+  private String buildUrl(charts.Chart chart, String format,
       List<String> paths) throws UnsupportedEncodingException {
     List<BasicNameValuePair> qparams = Lists.newArrayList();
     if(chart.getDescription() != null && chart.getDescription().getRegion() != null) {
@@ -89,11 +89,11 @@ public class Chart extends SessionAwareController {
       @Override
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasources(session, paths);
-        final List<charts.builder.Chart> charts =
+        final List<charts.Chart> charts =
             chartBuilder.getCharts(datasources, request().queryString());
         final ObjectNode json = Json.newObject();
         final ArrayNode aNode = json.putArray("charts");
-        for (charts.builder.Chart chart : charts) {
+        for (charts.Chart chart : charts) {
           ChartDescription desc = chart.getDescription();
           final ObjectNode chartNode = Json.newObject();
           chartNode.put("type", desc.getType().getLabel());
@@ -125,13 +125,13 @@ public class Chart extends SessionAwareController {
         } catch (IllegalArgumentException e) {
           return badRequest("unknown chart format: " + formatStr);
         }
-        final List<charts.builder.Chart> charts = chartBuilder.getCharts(datasources, type,
+        final List<charts.Chart> charts = chartBuilder.getCharts(datasources, type,
             request().queryString());
-        for (charts.builder.Chart chart : charts) {
+        for (charts.Chart chart : charts) {
           try {
             final Representation r = chart.outputAs(format);
             return ok(r.getContent()).as(r.getContentType());
-          } catch (charts.builder.Chart.UnsupportedFormatException e) {
+          } catch (charts.Chart.UnsupportedFormatException e) {
             continue;
           }
         }

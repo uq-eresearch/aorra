@@ -1,10 +1,12 @@
-package charts;
+package charts.graphics;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
 import org.jfree.chart.JFreeChart;
+
+import charts.Drawable;
 
 public class JFreeChartDrawable implements Drawable {
 

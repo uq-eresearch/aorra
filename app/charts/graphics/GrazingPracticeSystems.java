@@ -1,4 +1,4 @@
-package charts;
+package charts.graphics;
 
 import graphics.HatchedRectangle;
 
@@ -37,6 +37,8 @@ import org.jfree.chart.title.TextTitle;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
+
+import charts.Drawable;
 
 import com.google.common.collect.ImmutableMap;
 

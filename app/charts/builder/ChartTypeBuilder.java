@@ -3,6 +3,9 @@ package charts.builder;
 import java.util.List;
 import java.util.Map;
 
+import charts.Chart;
+import charts.ChartType;
+
 public interface ChartTypeBuilder {
 
   boolean canHandle(ChartType type, List<DataSource> datasources);

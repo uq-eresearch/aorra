@@ -1,4 +1,4 @@
-package charts;
+package charts.graphics;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -32,7 +32,8 @@ import boxrenderer.TableBox;
 import boxrenderer.TableCellBox;
 import boxrenderer.TableRowBox;
 import boxrenderer.TextBox;
-import charts.builder.ChartType;
+import charts.ChartType;
+import charts.Drawable;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
