@@ -11,13 +11,16 @@ import charts.Region;
 import charts.builder.spreadsheet.AnnualRainfallBuilder;
 import charts.builder.spreadsheet.CotsOutbreakBuilder;
 import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;
+import charts.builder.spreadsheet.LandPracticeSystemsBuilder;
 import charts.builder.spreadsheet.MarineBuilder;
 import charts.builder.spreadsheet.ProgressTableBuilder;
 import charts.builder.spreadsheet.TrackingTowardsTagetsBuilder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.Singleton;
 
+@Singleton
 public class ChartBuilder {
 
   private List<ChartTypeBuilder> builders =
@@ -28,6 +31,7 @@ public class ChartBuilder {
       .add(new ProgressTableBuilder())
       .add(new TrackingTowardsTagetsBuilder())
       .add(new GrazingPracticeSystemsBuilder())
+      .add(new LandPracticeSystemsBuilder())
       .build();
 
   public List<Chart> getCharts(List<DataSource> datasources,

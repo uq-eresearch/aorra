@@ -254,10 +254,8 @@ public class GraphUtils {
     public void drawGlowString(String label, Color glowColor, float glowRadius, int x, int y) {
         try {
             Font font = g.getFont();
-            FontRenderContext frc = g.getFontRenderContext();
             FontMetrics fm = g.getFontMetrics();
-            GlyphVector gv = font.createGlyphVector(frc, label);
-            Rectangle2D bounds = gv.getVisualBounds();
+            Rectangle2D bounds = getBounds(label);
             Graphics2DHelper helper = newGraphics2D(g, (int)(bounds.getWidth()+4*glowRadius), fm.getHeight()+(int)(4*glowRadius));
             Graphics2D g1 = helper.getGraphics2D();
             g1.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -278,6 +276,13 @@ public class GraphUtils {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Rectangle2D getBounds(String s) {
+        Font font = g.getFont();
+        FontRenderContext frc = g.getFontRenderContext();
+        GlyphVector gv = font.createGlyphVector(frc, s);
+        return gv.getVisualBounds();
     }
 
     private Graphics2DHelper newGraphics2D(Graphics2D src, int width, int height) {
