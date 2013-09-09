@@ -1,6 +1,7 @@
 package controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static play.api.test.Helpers.await;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
@@ -18,6 +19,8 @@ import java.io.FileNotFoundException;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -31,13 +34,16 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 
+import play.api.mvc.AsyncResult;
 import play.api.mvc.Call;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.test.FakeRequest;
+import scala.concurrent.Await;
 import service.filestore.FileStore;
+import ch.qos.logback.core.util.Duration;
 import charts.representations.Format;
 
 import com.google.common.base.Joiner;
@@ -284,7 +290,7 @@ public class ChartTest {
               controllers.routes.ref.Chart.chart(chartType, format.name(),
                   ImmutableList.<String>of(f.getPath())),
               newRequest);
-          assertThat(status(result)).isEqualTo(200);
+          assertThat(status(waitForReady(result, 120))).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo(format.getMimeType());
         }
       }
@@ -498,7 +504,7 @@ public class ChartTest {
   }
 
   // Old-style office document
-  public FileStore.File createMarineXlsChartFile(final Session session)
+  private FileStore.File createMarineXlsChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder  = fileStore().getManager(session).getRoot();
     return folder.createFile("marine.xls",
@@ -506,7 +512,7 @@ public class ChartTest {
         new FileInputStream("test/marine.xls"));
   }
 
-  public FileStore.File createCOTOutbreakChartFile(final Session session)
+  private FileStore.File createCOTOutbreakChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("cots_outbreak.xlsx",
@@ -514,7 +520,7 @@ public class ChartTest {
         new FileInputStream("test/cots_outbreak.xlsx"));
   }
 
-  public FileStore.File createAnnualRainfallChartFile(final Session session)
+  private FileStore.File createAnnualRainfallChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("annual_rainfall.xlsx",
@@ -522,7 +528,7 @@ public class ChartTest {
         new FileInputStream("test/annual_rainfall.xlsx"));
   }
 
-  public FileStore.File createProgressTableChartFile(final Session session)
+  private FileStore.File createProgressTableChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("progress_table.xlsx",
@@ -530,7 +536,7 @@ public class ChartTest {
         new FileInputStream("test/progress_table.xlsx"));
   }
 
-  public FileStore.File createGrazingPracticeChartFile(final Session session)
+  private FileStore.File createGrazingPracticeChartFile(final Session session)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("grazing_practice_systems.xlsx",
@@ -538,7 +544,7 @@ public class ChartTest {
         new FileInputStream("test/grazing_practice_systems.xlsx"));
   }
 
-  public FileStore.File createLandPracticeChartFile(final Session session,
+  private FileStore.File createLandPracticeChartFile(final Session session,
       final String prefix)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
@@ -546,12 +552,18 @@ public class ChartTest {
         new FileInputStream("test/land_practice_systems.xlsx"));
   }
 
-  public FileStore.File createTrackingTowardsTargetsChartFile(
+  private FileStore.File createTrackingTowardsTargetsChartFile(
       final Session session, final String prefix) throws RepositoryException,
       FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile(prefix + ".xlsx", Chart.XLSX_MIME_TYPE,
         new FileInputStream("test/tracking_towards_targets.xlsx"));
+  }
+
+  private Result waitForReady(Result result, int seconds) {
+    await(((AsyncResult)result.getWrappedResult()).result(),
+        seconds, TimeUnit.SECONDS);
+    return result;
   }
 
 }
