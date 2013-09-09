@@ -50,6 +50,10 @@ public class ChartTest {
     "ttt_cane_and_hort","ttt_grazing","ttt_sediment","ttt_nitro_and_pest"
   };
 
+  private static final String[] LAND_PS_CHARTS = new String[] {
+    "horticulture_ps","sugarcane_ps","grains_ps"
+  };
+
   @Test
   public void routes() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
@@ -179,6 +183,11 @@ public class ChartTest {
             createCOTOutbreakChartFile(session), newRequest);
         checkChart("progress_table",
             createProgressTableChartFile(session), newRequest);
+        checkChart("grazing_ps",
+            createGrazingPracticeChartFile(session), newRequest);
+        for (String c : LAND_PS_CHARTS) {
+          checkChart(c, createLandPracticeChartFile(session, c), newRequest);
+        }
         for (String c : TTT_CHARTS) {
           checkChart(c, createTrackingTowardsTargetsChartFile(session, c),
               newRequest);
@@ -255,6 +264,11 @@ public class ChartTest {
             createCOTOutbreakChartFile(session), newRequest);
         checkChart("progress_table",
             createProgressTableChartFile(session), newRequest);
+        checkChart("grazing_ps",
+            createGrazingPracticeChartFile(session), newRequest);
+        for (String c : LAND_PS_CHARTS) {
+          checkChart(c, createLandPracticeChartFile(session, c), newRequest);
+        }
         for (String c : TTT_CHARTS) {
           checkChart(c, createTrackingTowardsTargetsChartFile(session, c),
               newRequest);
@@ -514,6 +528,22 @@ public class ChartTest {
     return folder.createFile("progress_table.xlsx",
         Chart.XLSX_MIME_TYPE,
         new FileInputStream("test/progress_table.xlsx"));
+  }
+
+  public FileStore.File createGrazingPracticeChartFile(final Session session)
+      throws RepositoryException, FileNotFoundException {
+    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    return folder.createFile("grazing_practice_systems.xlsx",
+        Chart.XLSX_MIME_TYPE,
+        new FileInputStream("test/grazing_practice_systems.xlsx"));
+  }
+
+  public FileStore.File createLandPracticeChartFile(final Session session,
+      final String prefix)
+      throws RepositoryException, FileNotFoundException {
+    final FileStore.Folder folder = fileStore().getManager(session).getRoot();
+    return folder.createFile(prefix + ".xlsx", Chart.XLSX_MIME_TYPE,
+        new FileInputStream("test/land_practice_systems.xlsx"));
   }
 
   public FileStore.File createTrackingTowardsTargetsChartFile(
