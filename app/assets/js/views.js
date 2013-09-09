@@ -709,6 +709,7 @@ define([
               : c.region,
             slug: _.str.slugify(c.type)+"-"+_.str.slugify(c.region),
             csv: c.url.replace(/\.(png|svg)\?/, ".csv?"),
+            docx: c.url.replace(/\.(png|svg)\?/, ".docx?"),
             html: c.url.replace(/\.(png|svg)\?/, ".html?")
           });
         })
