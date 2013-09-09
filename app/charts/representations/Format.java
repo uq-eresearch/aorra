@@ -16,8 +16,12 @@ public enum Format {
     this.mimeType = mimeType;
   }
 
+  public String getMimeType() {
+    return mimeType;
+  }
+
   public Representation createRepresentation(final String content) {
-    final String ct = String.format("%s; charset=utf-8", this.mimeType);
+    final String ct = String.format("%s; charset=utf-8", this.getMimeType());
     return new Representation() {
       @Override
       public byte[] getContent() {
@@ -35,7 +39,7 @@ public enum Format {
   }
 
   public Representation createRepresentation(final byte[] content) {
-    final String ct = this.mimeType;
+    final String ct = this.getMimeType();
     return new Representation() {
       @Override
       public byte[] getContent() {

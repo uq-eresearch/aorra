@@ -1,18 +1,16 @@
 package controllers;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.fail;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
-import static play.test.Helpers.fakeRequest;
 import static play.test.Helpers.header;
 import static play.test.Helpers.status;
 import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.asAdminUserSession;
-import static test.AorraTestUtils.loggedInRequest;
 import static test.AorraTestUtils.fileStore;
+import static test.AorraTestUtils.loggedInRequest;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -28,15 +26,10 @@ import models.User;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import play.api.mvc.Call;
 import play.libs.F;
@@ -45,8 +38,17 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.test.FakeRequest;
 import service.filestore.FileStore;
+import charts.representations.Format;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 public class ChartTest {
+
+  private static final String[] TTT_CHARTS = new String[] {
+    "ttt_cane_and_hort","ttt_grazing","ttt_sediment","ttt_nitro_and_pest"
+  };
 
   @Test
   public void routes() {
@@ -177,10 +179,7 @@ public class ChartTest {
             createCOTOutbreakChartFile(session), newRequest);
         checkChart("progress_table",
             createProgressTableChartFile(session), newRequest);
-        final String[] trackingTowardsTargetCharts = new String[] {
-          "ttt_cane_and_hort","ttt_grazing","ttt_sediment","ttt_nitro_and_pest"
-        };
-        for (String c : trackingTowardsTargetCharts) {
+        for (String c : TTT_CHARTS) {
           checkChart(c, createTrackingTowardsTargetsChartFile(session, c),
               newRequest);
         }
@@ -233,8 +232,14 @@ public class ChartTest {
   }
 
   @Test
-  public void pngChart() {
+  public void otherChartFormats() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      private final Format[] OTHER_FORMATS = new Format[] {
+        Format.PNG,
+        Format.EMF,
+        Format.DOCX
+      };
+
       @Override
       public Session apply(
           final Session session,
@@ -250,18 +255,24 @@ public class ChartTest {
             createCOTOutbreakChartFile(session), newRequest);
         checkChart("progress_table",
             createProgressTableChartFile(session), newRequest);
+        for (String c : TTT_CHARTS) {
+          checkChart(c, createTrackingTowardsTargetsChartFile(session, c),
+              newRequest);
+        }
         return session;
       }
       private void checkChart(
           final String chartType,
           final FileStore.File f,
           final FakeRequest newRequest) {
-        final Result result = callAction(
-            controllers.routes.ref.Chart.chart(chartType, "png",
-                ImmutableList.<String>of(f.getPath())),
-            newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("image/png");
+        for (Format format : OTHER_FORMATS) {
+          final Result result = callAction(
+              controllers.routes.ref.Chart.chart(chartType, format.name(),
+                  ImmutableList.<String>of(f.getPath())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo(format.getMimeType());
+        }
       }
     });
   }
