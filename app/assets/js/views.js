@@ -831,7 +831,7 @@ define([
         icon: this.isSet() ? 'eye-open' : 'eye-close',
         flagType: 'watch',
         title: 'Watch',
-        tooltip: 'Receive email notifications when new versions are uploaded.'
+        tooltip: 'Receive notifications when new versions are uploaded.'
       };
     }
   });
