@@ -21,7 +21,6 @@ import models.Notification;
 import models.User;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.log4j.helpers.ISO8601DateFormat;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.util.ISO8601Utils;
 import org.codehaus.jackson.node.ArrayNode;
@@ -293,6 +292,7 @@ public class JsonBuilderTest {
       throw new NotImplementedException();
     }
 
+    @Override
     public void reload() {
     }
 

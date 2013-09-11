@@ -27,7 +27,8 @@ object ApplicationBuild extends Build {
     "org.crsh" % "crsh.jcr.jackrabbit" % crshVersion,
     "tyrex" % "tyrex" % "1.0.1", // JNDI provider for CRSH Jackrabbit access
     "com.feth" %% "play-authenticate" % "0.2.5-SNAPSHOT",
-    "eu.medsea.mimeutil" % "mime-util" % "2.1.3",
+    "eu.medsea.mimeutil" % "mime-util" % "2.1.3"
+      exclude("org.slf4j", "slf4j-log4j12"),
     "org.apache.tika" % "tika-parsers" % "1.3",
     "org.jsoup" % "jsoup" % "1.7.2" % "test",
     "com.icegreen" % "greenmail" % "1.3.1b" % "test",
@@ -75,8 +76,14 @@ object ApplicationBuild extends Build {
       out.write(CoverallJson.toString)
       out.close
     },
-    // Get rid of jBoss logging warning
-    javaOptions := Seq("-Dorg.jboss.logging.provider=slf4j"),
+    javaOptions := Seq(
+      // Get rid of jBoss logging warning
+      "-Dorg.jboss.logging.provider=slf4j",
+      // Silence "Graphics2D from BufferedImage lacks BUFFERED_IMAGE hint"
+      "-Dorg.apache.batik.warn_destination=false",
+      // Silence "org.docx4j.org.xhtmlrenderer.load INFO:: SAX XMLReader in use"
+      "-Dxr.util-logging.java.util.logging.ConsoleHandler.level=OFF"
+    ),
     // Allows mock Http.Contexts to be built for play-authenticate
     libraryDependencies += "play" %% "play-test" % play.core.PlayVersion.current,
     // Debug tests
