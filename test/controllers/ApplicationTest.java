@@ -178,13 +178,8 @@ public class ApplicationTest {
             request);
         }
         assertThat(status(result)).isEqualTo(303);
-        try {
-          assertThat(header("Location", result))
-            .isEqualTo("/user-unverified/" +
-                URLEncoder.encode(user.getEmail(),"UTF-8"));
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
+        assertThat(header("Location", result))
+          .isEqualTo("/user-unverified/" + user.getEmail());
       }
     });
   }
@@ -305,13 +300,8 @@ public class ApplicationTest {
             controllers.routes.ref.Application.postInvite(),
             newRequest.withFormUrlEncodedBody(data));
           assertThat(status(result)).isEqualTo(303);
-          try {
-            assertThat(header("Location", result))
-              .isEqualTo("/user-unverified/" +
-                  URLEncoder.encode(inviteUserEmail,"UTF-8"));
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
+          assertThat(header("Location", result))
+            .isEqualTo("/user-unverified/" + inviteUserEmail);
         }
         // Check the user was created properly
         final UserDAO dao = new UserDAO(session, jcrom());
@@ -533,13 +523,8 @@ public class ApplicationTest {
             controllers.routes.ref.Application.postInvite(),
             newRequest.withFormUrlEncodedBody(data));
           assertThat(status(result)).isEqualTo(303);
-          try {
-            assertThat(header("Location", result))
-              .isEqualTo("/user-exists/" +
-                  URLEncoder.encode(user.getEmail(),"UTF-8"));
-          } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-          }
+          assertThat(header("Location", result))
+            .isEqualTo("/user-exists/" + user.getEmail());
         }
         {
           final Result result = callAction(
