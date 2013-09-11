@@ -206,6 +206,11 @@ require(['models', 'views'], function(models, views) {
       start: function() {
         layout.showStart();
         this._setSidebarActive();
+        // Expand if at root
+        var firstNode = _.first(fileTree.tree().nodes());
+        if (firstNode.name == '/') {
+          fileTree.expandTo(firstNode);
+        }
       },
       changePassword: function() {
         layout.changePassword();
