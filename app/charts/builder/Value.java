@@ -8,4 +8,6 @@ public interface Value {
   Integer asInteger();
 
   String getValue();
+
+  java.awt.Color asColor();
 }

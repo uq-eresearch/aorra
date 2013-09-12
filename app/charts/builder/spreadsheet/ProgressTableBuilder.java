@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
+import play.Logger;
 import charts.AbstractChart;
 import charts.Chart;
 import charts.ChartDescription;
@@ -17,10 +20,16 @@ import charts.Drawable;
 import charts.Region;
 import charts.Chart.UnsupportedFormatException;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.Value;
 import charts.graphics.ProgressTable;
+import charts.graphics.BeerCoaster.Condition;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class ProgressTableBuilder extends AbstractBuilder {
 
@@ -34,6 +43,36 @@ public class ProgressTableBuilder extends AbstractBuilder {
         .put(Region.FITZROY, 8)
         .put(Region.BURNETT_MARY, 9)
         .build();
+
+
+  // Type interpolation would be great here
+  final LoadingCache<
+    SpreadsheetDataSource,
+    Map<java.awt.Color, ProgressTable.Condition>
+  > conditionColorCache = CacheBuilder.newBuilder()
+      .maximumSize(100)
+      .build(
+          new CacheLoader<
+            SpreadsheetDataSource,
+            Map<java.awt.Color, ProgressTable.Condition>
+          >() {
+            @Override
+            public Map<java.awt.Color, ProgressTable.Condition> load(
+                SpreadsheetDataSource ds) {
+              final Map<java.awt.Color, ProgressTable.Condition> m =
+                  Maps.newHashMap();
+              try {
+                for (int row = 0;; row++) {
+                  final Value v = ds.select("condition", row, 0);
+                  if (StringUtils.isBlank(v.asString())) {
+                    break;
+                  }
+                  m.put(v.asColor(), getCondition(v.asString()));
+                }
+              } catch (MissingDataException e) {}
+              return m;
+            }
+          });
 
   public ProgressTableBuilder() {
     super(ChartType.PROGRESS_TABLE);
@@ -205,8 +244,26 @@ public class ProgressTableBuilder extends AbstractBuilder {
     if (indicator == ProgressTable.Indicator.GRAIN) {
       indicator = ProgressTable.Indicator.SUGARCANE;
     }
-    return getCondition(ds.select("condition", region.ordinal() + 1,
-        getConditionColumn(ds, indicator)).asString());
+    return getCondition(ds.select("progress", region.ordinal() + 3,
+        getConditionColumn(ds, indicator)).asColor(), getConditionColors(ds));
+  }
+
+  private ProgressTable.Condition getCondition(
+      java.awt.Color c,
+      Map<java.awt.Color, ProgressTable.Condition> conditions) {
+    if (conditions.containsKey(c)) {
+      return conditions.get(c);
+    }
+    // Not an exact match, so pick closest colour
+    final SortedMap<Double, java.awt.Color> m = Maps.newTreeMap();
+    for (java.awt.Color otherColor : conditions.keySet()) {
+      m.put(distance(c, otherColor), otherColor);
+    }
+    final java.awt.Color closest = m.get(m.firstKey());
+    Logger.debug(String.format("Closest match for %s is %s => %s",
+        c, closest, conditions.get(closest)));
+    // Get the closest colour
+    return conditions.get(closest);
   }
 
   private ProgressTable.Condition getCondition(String str) {
@@ -214,19 +271,39 @@ public class ProgressTableBuilder extends AbstractBuilder {
         .replace(str, " ", "")));
   }
 
+  private Map<java.awt.Color, ProgressTable.Condition> getConditionColors(
+      SpreadsheetDataSource ds) {
+    try {
+      return conditionColorCache.get(ds);
+    } catch (ExecutionException e) {
+      // Shouldn't happen
+      throw new RuntimeException(e);
+    }
+  }
+
   private int getConditionColumn(SpreadsheetDataSource ds,
       ProgressTable.Indicator indicator) throws MissingDataException {
-    int col = 1;
-    while (true) {
-      String s = ds.select("condition", 0, col).asString();
+    for (int col = 2;; col++) {
+      String s = ds.select("progress", 0, col).asString();
       if (StringUtils.equalsIgnoreCase(s, indicator.toString())) {
         return col;
       } else if (StringUtils.isBlank(s)) {
         throw new RuntimeException(String.format("indicator %s not found",
             indicator.toString()));
       }
-      col++;
     }
+  }
+
+  // From: http://stackoverflow.com/a/2103608/701439
+  private double distance(java.awt.Color c1, java.awt.Color c2){
+    final double rmean = ( c1.getRed() + c2.getRed() )/2;
+    final int r = c1.getRed() - c2.getRed();
+    final int g = c1.getGreen() - c2.getGreen();
+    final int b = c1.getBlue() - c2.getBlue();
+    final double weightR = 2 + rmean/256;
+    final double weightG = 4.0;
+    final double weightB = 2 + (255-rmean)/256;
+    return Math.sqrt(weightR*r*r + weightG*g*g + weightB*b*b);
   }
 
 }

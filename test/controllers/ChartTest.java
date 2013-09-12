@@ -385,6 +385,18 @@ public class ChartTest {
         }
         // Progress
         {
+          final String[] condStr = new String[] {
+            null, "Very Good", "Good", "Moderate", "Poor", "Very Poor"
+          };
+          final int[][] expected = new int[][] {
+            new int[] { 3, 2, 3, 1, 3, 1, 2 },
+            new int[] { 1, 0, 2, 0, 4, 2, 0 },
+            new int[] { 3, 2, 3, 1, 4, 2, 3 },
+            new int[] { 2, 3, 3, 1, 4, 1, 2 },
+            new int[] { 1, 2, 1, 1, 2, 5, 1 },
+            new int[] { 3, 3, 4, 1, 4, 2, 3 },
+            new int[] { 3, 1, 3, 1, 3, 2, 5 }
+          };
           final FileStore.File f = createProgressTableChartFile(session);
           final Result result = callAction(
               controllers.routes.ref.Chart.chart("progress_table", "csv",
@@ -410,6 +422,12 @@ public class ChartTest {
             for (int i = 1; i < row.size(); i++) {
               if (row.get(i) != null) {
                 assertThat(row.get(i)).contains("%");
+              }
+              final String condition = condStr[expected[rowCount][i-1]];
+              if (condition == null) {
+                assertThat(row.get(i)).isNull();
+              } else {
+                assertThat(row.get(i)).startsWith(condition);
               }
             }
             rowCount++;

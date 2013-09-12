@@ -1,9 +1,12 @@
 package charts.builder.spreadsheet;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.ss.formula.eval.ErrorEval;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.Color;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
@@ -98,6 +101,21 @@ public abstract class SpreadsheetDataSource implements DataSource {
       }
     }
 
+    @Override
+    public java.awt.Color asColor() {
+      final Color c = cell.getCellStyle().getFillForegroundColorColor();
+      if (c instanceof HSSFColor) {
+        final short[] rgb = ((HSSFColor)c).getTriplet();
+        return new java.awt.Color(rgb[0], rgb[1], rgb[2]);
+      }
+      if (c instanceof XSSFColor) {
+        final byte[] rgb = ((XSSFColor)c).getRgb();
+        // Convert bytes to unsigned integers
+        return new java.awt.Color(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF);
+      }
+      return java.awt.Color.WHITE;
+    }
+
   }
 
   private static class EmptyCell implements Value {
@@ -120,6 +138,12 @@ public abstract class SpreadsheetDataSource implements DataSource {
     public Integer asInteger() {
       return null;
     }
+
+    @Override
+    public java.awt.Color asColor() {
+      return java.awt.Color.WHITE;
+    }
+
   }
 
   void init(Workbook workbook, FormulaEvaluator evaluator) {
