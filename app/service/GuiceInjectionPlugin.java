@@ -19,7 +19,7 @@ import play.Plugin;
 import play.api.libs.JNDI;
 import play.libs.F;
 import providers.CacheableUserProvider;
-import providers.DeadboltHandlerImpl;
+import providers.CacheableUserProviderImpl;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.EventManager;
 import service.filestore.FileStore;
@@ -96,7 +96,7 @@ public class GuiceInjectionPlugin extends Plugin {
           }
         });
         bind(CacheableUserProvider.class)
-          .to(DeadboltHandlerImpl.class)
+          .to(CacheableUserProviderImpl.class)
           .in(Singleton.class);
       }
     };

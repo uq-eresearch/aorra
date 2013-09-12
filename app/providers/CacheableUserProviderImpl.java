@@ -27,13 +27,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
-public class DeadboltHandlerImpl implements CacheableUserProvider {
+public class CacheableUserProviderImpl implements CacheableUserProvider {
 
   protected final JcrSessionFactory sessionFactory;
   protected final Jcrom jcrom;
 
   @Inject
-  public DeadboltHandlerImpl(final JcrSessionFactory sessionFactory,
+  public CacheableUserProviderImpl(final JcrSessionFactory sessionFactory,
       final Jcrom jcrom) {
     this.sessionFactory = sessionFactory;
     this.jcrom = jcrom;
