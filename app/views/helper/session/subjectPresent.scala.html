@@ -1,0 +1,9 @@
+@()(body: CacheableUser => Html)
+
+@import helpers.SessionHelper
+
+@defining(SessionHelper.currentUser) { currentUser =>
+  @if(currentUser != null) {
+    @body(currentUser)
+  }
+}

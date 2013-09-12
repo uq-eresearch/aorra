@@ -8,7 +8,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.CacheableUser;
-import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
@@ -18,15 +17,8 @@ import play.Logger;
 import play.cache.Cache;
 import play.libs.F;
 import play.mvc.Http;
-import play.mvc.Http.Context;
-import play.mvc.Result;
-import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
 import service.filestore.roles.Admin;
-import be.objectify.deadbolt.core.models.Role;
-import be.objectify.deadbolt.core.models.Subject;
-import be.objectify.deadbolt.java.AbstractDeadboltHandler;
-import be.objectify.deadbolt.java.DynamicResourceHandler;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.user.AuthUser;
@@ -35,7 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
-public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements CacheableUserProvider {
+public class DeadboltHandlerImpl implements CacheableUserProvider {
 
   protected final JcrSessionFactory sessionFactory;
   protected final Jcrom jcrom;
@@ -45,29 +37,6 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
       final Jcrom jcrom) {
     this.sessionFactory = sessionFactory;
     this.jcrom = jcrom;
-  }
-
-  @Override
-  public Result beforeAuthCheck(Context context) {
-    // Nothing should be required - we're using security annotations
-    return null;
-  }
-
-  @Override
-  public Subject getSubject(Context context) {
-    return getUser(context.session());
-  }
-
-  @Override
-  public Result onAuthFailure(Context context, String content) {
-    PlayAuthenticate.storeOriginalUrl(context);
-    return redirect(controllers.routes.Application.login());
-  }
-
-  @Override
-  public DynamicResourceHandler getDynamicResourceHandler(Context context) {
-    // None for now
-    return null;
   }
 
   @Override
@@ -93,7 +62,7 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
   }
 
   protected CacheableUser getUserFromJcr(final AuthUser authUser) {
-    final List<Role> roles = new LinkedList<Role>();
+    final List<String> roles = new LinkedList<String>();
     User user = sessionFactory.inSession(new F.Function<Session, User>() {
       @Override
       public User apply(Session session) throws RepositoryException {
@@ -103,7 +72,7 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
         User user = (new UserDAO(session, jcrom))
             .findByEmail(email);
         if (isAdmin(session, user))
-          roles.add(new SimpleRole("admin"));
+          roles.add("admin");
         return user;
       }
 
@@ -114,33 +83,6 @@ public class DeadboltHandlerImpl extends AbstractDeadboltHandler implements Cach
       }
     });
     return new CacheableUser(authUser.getProvider(), user, roles);
-  }
-
-  private class SimpleRole implements Role {
-
-    private final String name;
-
-    public SimpleRole(String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      if (other == null || !getClass().equals(other.getClass())) {
-        return false;
-      }
-      return getName().equals(((SimpleRole) other).getName());
-    }
-
-    @Override
-    public int hashCode() { return getName().hashCode(); }
-    @Override
-    public String toString() { return getName(); }
-
   }
 
 }

@@ -49,7 +49,6 @@ import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
-import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.google.inject.Inject;
 

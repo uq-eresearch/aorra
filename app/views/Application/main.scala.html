@@ -1,7 +1,6 @@
 @(title: String)(content: Html)
 
-@import be.objectify.deadbolt.java.views.html._
-@import be.objectify.deadbolt.core.utils.TemplateUtils._
+@import helper.session._
 @import helpers.SessionHelper
 
 <!DOCTYPE html>
@@ -86,7 +85,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        @subjectPresent() {
+        @subjectPresent() { currentUser =>
           <ul id="nav-back" class="nav navbar-nav pull-left">
             <li>
               <button type="button" title="Go back"
@@ -101,8 +100,7 @@
           AORRA
         </a>
         <ul class="nav navbar-nav pull-right hidden-xs">
-          @subjectPresent() {
-            @defining(SessionHelper.currentUser) { currentUser =>
+          @subjectPresent() { currentUser =>
               <li class="dropdown">
                 <a href="#" class="dropdown-toggle"
                   role="button"
@@ -127,19 +125,16 @@
                   <li><a href="/logout">Logout</a></li>
                 </ul>
               </li>
-            }
           }
         </ul>
-        @subjectPresent() {
-          @defining(SessionHelper.currentUser) { currentUser =>
+        @subjectPresent() { currentUser =>
           <ul id="notifications-nav" class="nav navbar-nav pull-right">
             <li id="notifications-nav-item"></li>
           </ul>
-          }
         }
         <div class="collapse navbar-collapse navbar-responsive-collapse">
           <ul class="nav navbar-nav">
-            @subjectPresent() {
+            @subjectPresent() { currentUser =>
               <li><a href="/invite">Invite New User</a></li>
               <li class="visible-xs">
                 <a href="/#change-password">Change Password</a>

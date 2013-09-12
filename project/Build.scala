@@ -99,10 +99,6 @@ object ApplicationBuild extends Build {
     resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
     resolvers += Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
   ).dependsOn(RootProject(uri(
-      "git://github.com/schaloner/deadbolt-2-core.git"))
-  ).dependsOn(RootProject(uri(
-      "git://github.com/schaloner/deadbolt-2-java.git"))
-  ).dependsOn(RootProject(uri(
       "git://github.com/sgougi/play21-jackrabbit-plugin.git#d63c594e6ff921e859810cd52237cd3a12ce730f"))
   ).dependsOn(RootProject(uri(
       "git://github.com/tjdett/play2-crash-plugin.git#41a02077133c51cf582320971b8d533c850f2a25")))

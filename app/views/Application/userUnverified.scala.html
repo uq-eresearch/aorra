@@ -2,8 +2,7 @@
   user: models.User
 )
 
-@import be.objectify.deadbolt.java.views.html._
-@import be.objectify.deadbolt.core.utils.TemplateUtils._
+@import helper.session._
 
 @main("User now awaiting verification") {
   
@@ -12,7 +11,7 @@
   <h1>Awaiting Verification</h1>
   </div>
   
-  @subjectPresent() {
+  @subjectPresent() { currentUser =>
     <p>The specified user now exists:</p>
     
     <address>

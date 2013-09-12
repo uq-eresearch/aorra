@@ -3,14 +3,11 @@ package models;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Collections;
 import java.util.UUID;
 
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-
-import be.objectify.deadbolt.core.models.Role;
+import com.google.common.collect.ImmutableList;
 
 public class CacheableUserTest {
 
@@ -26,12 +23,7 @@ public class CacheableUserTest {
       };
       user.setName("Tommy Atkins");
       user.setEmail("tommy@atkins.net");
-      final List<Role> roles = Lists.newLinkedList();
-      roles.add(new Role() {
-        public String getName() {
-          return "foobar";
-        }
-      });
+      final List<String> roles = ImmutableList.of("foobar");
       cacheableUser = new CacheableUser("test", user, roles);
     }
     assertThat(cacheableUser.getId()).isEqualTo(user.getId());
@@ -42,7 +34,6 @@ public class CacheableUserTest {
     assertThat(cacheableUser.getRoles()).hasSize(1);
     assertThat(cacheableUser.hasRole("admin")).isFalse();
     assertThat(cacheableUser.hasRole("foobar")).isTrue();
-    assertThat(cacheableUser.getPermissions()).isEmpty();
   }
 
 }

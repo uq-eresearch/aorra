@@ -19,7 +19,6 @@ import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
-import be.objectify.deadbolt.java.actions.SubjectPresent;
 import charts.ChartDescription;
 import charts.ChartType;
 import charts.builder.ChartBuilder;

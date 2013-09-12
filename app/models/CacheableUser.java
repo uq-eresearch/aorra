@@ -4,17 +4,12 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
-import be.objectify.deadbolt.core.models.Permission;
-import be.objectify.deadbolt.core.models.Role;
-import be.objectify.deadbolt.core.models.Subject;
-
 import com.feth.play.module.pa.user.AuthUser;
 import com.feth.play.module.pa.user.EmailIdentity;
 import com.feth.play.module.pa.user.NameIdentity;
 import com.google.common.collect.ImmutableList;
 
-public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
-    Serializable {
+public class CacheableUser implements NameIdentity, EmailIdentity, Serializable {
 
   private static final long serialVersionUID = 2956403030598144283L;
 
@@ -23,9 +18,9 @@ public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
   private final String email;
   private final String name;
   private final String jackrabbitUserId;
-  private final List<Role> roles;
+  private final List<String> roles;
 
-  public CacheableUser(String provider, User user, Iterable<Role> roles) {
+  public CacheableUser(String provider, User user, Iterable<String> roles) {
     this.id = user.getId();
     this.provider = provider;
     this.email = user.getEmail();
@@ -37,7 +32,6 @@ public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
   @Override
   public String getId() { return id; }
 
-  @Override
   public String getIdentifier() { return id; }
 
   @Override
@@ -57,21 +51,15 @@ public class CacheableUser implements Subject, NameIdentity, EmailIdentity,
   }
 
   public boolean hasRole(String name) {
-    for (Role role : roles) {
-      if (role.getName().equals(name))
+    for (String role : roles) {
+      if (role.equals(name))
         return true;
     }
     return false;
   }
 
-  @Override
-  public List<? extends Role> getRoles() {
+  public List<String> getRoles() {
     return roles;
-  }
-
-  @Override
-  public List<? extends Permission> getPermissions() {
-    return Collections.emptyList();
   }
 
 }

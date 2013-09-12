@@ -23,7 +23,6 @@ import service.JcrSessionFactory;
 import service.filestore.EventManager;
 import service.filestore.EventManager.Event;
 import service.filestore.JsonBuilder;
-import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.google.inject.Inject;
 

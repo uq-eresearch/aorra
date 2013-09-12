@@ -30,7 +30,6 @@ import play.mvc.With;
 import providers.CacheableUserProvider;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.JcrSessionFactory;
-import be.objectify.deadbolt.java.actions.SubjectPresent;
 
 import com.feth.play.module.pa.PlayAuthenticate;
 import com.feth.play.module.pa.providers.password.UsernamePasswordAuthProvider;
