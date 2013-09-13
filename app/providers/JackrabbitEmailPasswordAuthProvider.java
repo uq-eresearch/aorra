@@ -163,7 +163,7 @@ public class JackrabbitEmailPasswordAuthProvider
         try {
           URL url = new URL(Play.application()
               .configuration().getString("application.baseUrl"));
-          if (url.getDefaultPort() == url.getPort()) {
+          if (url.getPort() == -1 || url.getPort() == url.getDefaultPort()) {
             return url.getHost();
           } else {
             return url.getHost() + ":" + url.getPort();
