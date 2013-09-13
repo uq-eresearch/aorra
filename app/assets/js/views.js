@@ -688,9 +688,8 @@ define([
 
   var ChartElementView = Backbone.Marionette.ItemView.extend({
     initialize: function() {
-      var url = _.template('/charts/?path=<%=path%>&format=<%=format%>', {
-        format: Modernizr.svg ? 'svg' : 'png',
-        path: this.model.get('path')
+      var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
+        format: Modernizr.svg ? 'svg' : 'png'
       });
       var onSuccess = function(data) {
         this._charts = data.charts;

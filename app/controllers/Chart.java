@@ -13,6 +13,7 @@ import org.jcrom.Jcrom;
 
 import play.libs.F;
 import play.libs.Json;
+import play.mvc.Call;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
@@ -28,6 +29,7 @@ import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 import charts.representations.Representation;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -52,42 +54,12 @@ public class Chart extends SessionAwareController {
     this.chartBuilder = chartBuilder;
   }
 
-  private String buildUrl(charts.Chart chart, String format,
-      List<String> paths) throws UnsupportedEncodingException {
-    List<BasicNameValuePair> qparams = Lists.newArrayList();
-    if(chart.getDescription() != null && chart.getDescription().getRegion() != null) {
-        qparams.add(new BasicNameValuePair("region", chart.getDescription().getRegion().getName()));
-    }
-    return controllers.routes.Chart.chart(
-            chart.getDescription().getType().toString().toLowerCase(),
-            format, paths).url() + "&" + URLEncodedUtils.format(qparams, "UTF-8");
-  }
-
-  private List<DataSource> getDatasources(Session session, List<String> paths)
-      throws Exception {
-    List<DataSource> result = Lists.newArrayList();
-    final FileStore.Manager fm = fileStore.getManager(session);
-    for (String path : paths) {
-      FileStore.FileOrFolder fof = fm.getFileOrFolder(path);
-      if (fof instanceof FileStoreImpl.File) {
-        FileStoreImpl.File file = (FileStoreImpl.File) fof;
-        if(file.getMimeType().equals(XLS_MIME_TYPE)) {
-          result.add(new XlsDataSource(file.getData()));
-        } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
-          // Check this is an OpenXML document (no chance otherwise)
-          result.add(new XlsxDataSource(file.getData()));
-        }
-      }
-    }
-    return result;
-  }
-
   @SubjectPresent
-  public Result charts(final String format, final List<String> paths) {
+  public Result multipleFileCharts(final String format, final List<String> ids) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        List<DataSource> datasources = getDatasources(session, paths);
+        List<DataSource> datasources = getDatasourcesFromIDs(session, ids);
         final List<charts.Chart> charts =
             chartBuilder.getCharts(datasources, request().queryString());
         final ObjectNode json = Json.newObject();
@@ -98,7 +70,9 @@ public class Chart extends SessionAwareController {
           chartNode.put("type", desc.getType().getLabel());
           chartNode.put("region", desc.getRegion().getName());
           chartNode.put("url",
-              buildUrl(chart, format, paths));
+              ids.size() == 1
+              ? buildUrl(chart, format, ids.get(0))
+              : buildUrl(chart, format, ids));
           aNode.add(chartNode);
         }
         return ok(json).as("application/json; charset=utf-8");
@@ -107,16 +81,22 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result chart(final String chart, final String formatStr, final List<String> paths) {
+  public Result singleFileCharts(final String format, final String id) {
+    return multipleFileCharts(format, ImmutableList.of(id));
+  }
+
+  @SubjectPresent
+  public Result multipleFileChart(final String chartType,
+      final String formatStr, final List<String> ids) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        final List<DataSource> datasources = getDatasources(session, paths);
+        final List<DataSource> datasources = getDatasourcesFromIDs(session, ids);
         final ChartType type;
         try {
-          type = ChartType.getChartType(chart);
+          type = ChartType.getChartType(chartType);
         } catch (IllegalArgumentException e) {
-          return notFound("unknown chart type " + chart);
+          return notFound("unknown chart type " + chartType);
         }
         final Format format;
         try {
@@ -124,8 +104,8 @@ public class Chart extends SessionAwareController {
         } catch (IllegalArgumentException e) {
           return badRequest("unknown chart format: " + formatStr);
         }
-        final List<charts.Chart> charts = chartBuilder.getCharts(datasources, type,
-            request().queryString());
+        final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
+            type, request().queryString());
         for (charts.Chart chart : charts) {
           try {
             final Representation r = chart.outputAs(format);
@@ -137,6 +117,65 @@ public class Chart extends SessionAwareController {
         return notFound();
       }
     });
+  }
+
+  @SubjectPresent
+  public Result singleFileChart(final String chartType, final String formatStr,
+      final String id) {
+    return multipleFileChart(chartType, formatStr, ImmutableList.of(id));
+  }
+
+  private String buildUrl(charts.Chart chart, String format,
+      List<String> ids) throws UnsupportedEncodingException {
+    return buildUrl(controllers.routes.Chart.multipleFileChart(
+            chart.getDescription().getType().toString().toLowerCase(),
+            format, ids), chart);
+  }
+
+  private String buildUrl(charts.Chart chart, String format, String id)
+      throws UnsupportedEncodingException {
+    return buildUrl(controllers.routes.Chart.singleFileChart(
+            chart.getDescription().getType().toString().toLowerCase(),
+            format, id), chart);
+  }
+
+  private String buildUrl(Call call, charts.Chart chart)
+      throws UnsupportedEncodingException {
+    if (chart.getDescription() == null ||
+        chart.getDescription().getRegion() == null) {
+      return call.url();
+    }
+    return call.url() + (call.url().contains("?") ? "&" : "?") +
+        URLEncodedUtils.format(
+            ImmutableList.of(new BasicNameValuePair("region",
+                chart.getDescription().getRegion().getName())), "UTF-8");
+  }
+
+  private List<DataSource> getDatasourcesFromIDs(Session session,
+      List<String> ids) throws Exception {
+    List<FileStore.File> files = Lists.newLinkedList();
+    final FileStore.Manager fm = fileStore.getManager(session);
+    for (String id : ids) {
+      FileStore.FileOrFolder fof = fm.getByIdentifier(id);
+      if (fof instanceof FileStoreImpl.File) {
+        files.add((FileStore.File) fof);
+      }
+    }
+    return getDatasources(session, files);
+  }
+
+  private List<DataSource> getDatasources(Session session,
+      Iterable<FileStore.File> files) throws Exception {
+    List<DataSource> result = Lists.newLinkedList();
+    for (FileStore.File file : files) {
+      if(file.getMimeType().equals(XLS_MIME_TYPE)) {
+        result.add(new XlsDataSource(file.getData()));
+      } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
+        // Check this is an OpenXML document (no chance otherwise)
+        result.add(new XlsxDataSource(file.getData()));
+      }
+    }
+    return result;
   }
 
 }
