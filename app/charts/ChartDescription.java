@@ -1,27 +1,29 @@
 package charts;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ChartDescription {
 
-    private ChartType type;
+    private final ChartType type;
 
-    private Region region;
+    private final Region region;
 
     public ChartDescription(ChartType type) {
-        super();
-        this.type = type;
+      this.type = checkNotNull(type);
+      this.region = Region.GBR;
     }
 
     public ChartDescription(ChartType type, Region region) {
-        this(type);
-        this.region = region;
+      this.type = checkNotNull(type);
+      this.region = checkNotNull(region);
     }
 
     public ChartType getType() {
-        return type;
+      return type;
     }
 
     public Region getRegion() {
-        return region;
+      return region;
     }
 
 }

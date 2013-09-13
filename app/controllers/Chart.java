@@ -88,22 +88,23 @@ public class Chart extends SessionAwareController {
   @SubjectPresent
   public Result multipleFileChart(final String chartType,
       final String formatStr, final List<String> ids) {
+    final ChartType type;
+    final Format format;
+    try {
+      type = ChartType.getChartType(chartType);
+    } catch (IllegalArgumentException e) {
+      return notFound("unknown chart type " + chartType);
+    }
+    try {
+      format = Format.valueOf(formatStr.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      return notFound("unknown chart format: " + formatStr);
+    }
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        final List<DataSource> datasources = getDatasourcesFromIDs(session, ids);
-        final ChartType type;
-        try {
-          type = ChartType.getChartType(chartType);
-        } catch (IllegalArgumentException e) {
-          return notFound("unknown chart type " + chartType);
-        }
-        final Format format;
-        try {
-          format = Format.valueOf(formatStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-          return badRequest("unknown chart format: " + formatStr);
-        }
+        final List<DataSource> datasources =
+            getDatasourcesFromIDs(session, ids);
         final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
             type, request().queryString());
         for (charts.Chart chart : charts) {
@@ -141,10 +142,6 @@ public class Chart extends SessionAwareController {
 
   private String buildUrl(Call call, charts.Chart chart)
       throws UnsupportedEncodingException {
-    if (chart.getDescription() == null ||
-        chart.getDescription().getRegion() == null) {
-      return call.url();
-    }
     return call.url() + (call.url().contains("?") ? "&" : "?") +
         URLEncodedUtils.format(
             ImmutableList.of(new BasicNameValuePair("region",

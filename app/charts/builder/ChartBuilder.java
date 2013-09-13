@@ -23,7 +23,7 @@ import com.google.inject.Singleton;
 @Singleton
 public class ChartBuilder {
 
-  private List<ChartTypeBuilder> builders =
+  private final List<ChartTypeBuilder> builders =
     new ImmutableList.Builder<ChartTypeBuilder>()
       .add(new MarineBuilder())
       .add(new CotsOutbreakBuilder())
@@ -47,17 +47,9 @@ public class ChartBuilder {
     Collections.sort(result, new Comparator<Chart>() {
       @Override
       public int compare(Chart c1, Chart c2) {
-        if (getRegion(c1) == null) {
-          if (getRegion(c2) == null)
-            return 0;
-          return -1;
-        } else {
-          return getRegion(c1).compareTo(getRegion(c2));
-        }
+        return getRegion(c1).compareTo(getRegion(c2));
       }
       private Region getRegion(Chart c) {
-        if (c.getDescription() == null)
-          return null;
         return c.getDescription().getRegion();
       }
     });

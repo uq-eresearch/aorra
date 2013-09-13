@@ -144,6 +144,42 @@ public class ChartTest {
   }
 
   @Test
+  public void multiFileCharts() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.File f1 = createMarineChartFile(session);
+        final FileStore.File f2 = createCOTOutbreakChartFile(session);
+        final Result result = callAction(
+            controllers.routes.ref.Chart.multipleFileCharts("svg",
+                ImmutableList.<String>of(
+                    f1.getIdentifier(), f2.getIdentifier())),
+                newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
+        final JsonNode json = Json.parse(contentAsString(result));
+        assertThat(json.has("charts")).isTrue();
+        assertThat(json.get("charts").isArray()).isTrue();
+        assertThat(json.get("charts")).hasSize(8);
+        for (JsonNode chartJson : (ArrayNode) json.get("charts")) {
+          assertThat(chartJson.isObject()).as("chart is object").isTrue();
+          assertThat(chartJson.has("type")).as("has type").isTrue();
+          assertThat(chartJson.has("region")).as("has region").isTrue();
+          assertThat(chartJson.has("url")).as("has region").isTrue();
+          assertThat(chartJson.get("url").asText()).contains("svg");
+        }
+        return session;
+      }
+    });
+  }
+
+  @Test
   public void getNoCharts() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override
@@ -270,6 +306,34 @@ public class ChartTest {
             loggedInRequest(new FakeRequest("GET", "?"+qs), httpSession));
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/svg+xml");
+      }
+    });
+  }
+
+  @Test
+  public void unknownChartTypeOrFormat() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.File f = createMarineChartFile(session);
+        {
+          final Result result = callAction(
+              controllers.routes.ref.Chart.multipleFileChart("unknown", "svg",
+                  ImmutableList.<String>of(f.getIdentifier())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.Chart.multipleFileChart("marine",
+                  "unknown", ImmutableList.<String>of(f.getIdentifier())),
+              newRequest);
+          assertThat(status(result)).isEqualTo(404);
+        }
+        return session;
       }
     });
   }
