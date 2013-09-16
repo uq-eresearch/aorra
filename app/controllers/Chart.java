@@ -48,7 +48,8 @@ public class Chart extends SessionAwareController {
 
   @Inject
   public Chart(final JcrSessionFactory sessionFactory, final Jcrom jcrom,
-      final CacheableUserProvider sessionHandler, final FileStore fileStore, final ChartBuilder chartBuilder) {
+      final CacheableUserProvider sessionHandler, final FileStore fileStore,
+      final ChartBuilder chartBuilder) {
     super(sessionFactory, jcrom, sessionHandler);
     this.fileStore = fileStore;
     this.chartBuilder = chartBuilder;
