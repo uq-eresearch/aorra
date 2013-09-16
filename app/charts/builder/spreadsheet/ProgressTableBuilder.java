@@ -103,7 +103,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
       return new AbstractChart(query) {
         @Override
         public ChartDescription getDescription() {
-          return new ChartDescription(ChartType.PROGRESS_TABLE);
+          return new ChartDescription(ChartType.PROGRESS_TABLE, Region.GBR);
         }
 
         @Override

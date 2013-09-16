@@ -8,11 +8,6 @@ public class ChartDescription {
 
     private final Region region;
 
-    public ChartDescription(ChartType type) {
-      this.type = checkNotNull(type);
-      this.region = Region.GBR;
-    }
-
     public ChartDescription(ChartType type, Region region) {
       this.type = checkNotNull(type);
       this.region = checkNotNull(region);
