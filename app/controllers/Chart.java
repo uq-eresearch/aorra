@@ -196,18 +196,14 @@ public class Chart extends SessionAwareController {
   }
 
   protected static Dimension getQueryDimensions(Map<String, String[]> query) {
-    final Dimension queryDimensions = new Dimension(750, 500);
+    final Dimension queryDimensions = new Dimension();
     try {
       double w = Double.parseDouble(getFirst(getValues(query, "width"), ""));
-      if (w > 0.0) {
-        queryDimensions.setSize(w, queryDimensions.getHeight());
-      }
+      queryDimensions.setSize(w, queryDimensions.getHeight());
     } catch (Exception e) {}
     try {
       double h = Double.parseDouble(getFirst(getValues(query, "height"), ""));
-      if (h > 0.0) {
-        queryDimensions.setSize(queryDimensions.getWidth(), h);
-      }
+      queryDimensions.setSize(queryDimensions.getWidth(), h);
     } catch (Exception e) {}
     return queryDimensions;
   }

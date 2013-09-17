@@ -185,8 +185,12 @@ public abstract class AbstractChart implements Chart {
       // Set requested height / width
       final long h = Math.round(dimensions.getHeight());
       final long w = Math.round(dimensions.getWidth());
-      doc.getDocumentElement().setAttribute("width", w+"");
-      doc.getDocumentElement().setAttribute("height", h+"");
+      if (w > 0) {
+        doc.getDocumentElement().setAttribute("width", w+"");
+      }
+      if (h > 0) {
+        doc.getDocumentElement().setAttribute("height", h+"");
+      }
     }
     final StringWriter sw = new StringWriter();
     try {
