@@ -70,8 +70,12 @@ public class GuiceInjectionPlugin extends Plugin {
     registerRepoInJNDI(Jcr.getRepository());
     final JcrSessionFactory sessionFactory = new JcrSessionFactory() {
       @Override
-      public Session newAdminSession() throws RepositoryException {
-        return Jcr.getRepository().login(adminCredentials);
+      public Session newAdminSession() {
+        try {
+          return Jcr.getRepository().login(adminCredentials);
+        } catch (RepositoryException e) {
+          throw new RuntimeException();
+        }
       }
     };
     final Module sessionModule = new AbstractModule() {

@@ -1,8 +1,5 @@
 package service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.RepositoryException;
@@ -15,21 +12,11 @@ import play.libs.F.Function;
 
 public abstract class JcrSessionFactory {
 
-  private static final String ADMIN_USERNAME = "admin";
-
-  protected final ThreadLocal<Map<String, Session>> sessions =
-      new ThreadLocal<Map<String, Session>>() {
-    @Override
-    protected Map<String, Session> initialValue() {
-      return new HashMap<String, Session>();
-    }
-  };
-
   /**
    * Get a new admin session.
    * @returns a new admin session
    */
-  public abstract Session newAdminSession() throws RepositoryException;
+  public abstract Session newAdminSession();
 
   /**
    * Get a new session as the Jackrabbit user matching the given credentials.
@@ -37,48 +24,21 @@ public abstract class JcrSessionFactory {
    * @returns a new session as the provided user
    */
   public Session newUserSession(final Credentials credentials) {
-    return inSession(new Function<Session, Session>() {
-      @Override
-      public Session apply(final Session session) {
-        try {
-          return impersonate(session, credentials);
-        } catch (Throwable e) {
-          throw new RuntimeException(e);
-        }
-      }
-    });
+    try {
+      return impersonate(newAdminSession(), credentials);
+    } catch (RepositoryException e) {
+      throw new RuntimeException(e);
+    }
   }
-
-  public Session getCurrentAdminSession() {
-    return getCurrentSession(ADMIN_USERNAME);
-  }
-
-  public Session getCurrentSession(String userId) {
-    return sessions.get().get(userId);
-  }
-
-  protected void setCurrentSession(Session session) {
-    sessions.get().put(session.getUserID(), session);
-  }
-
-  protected void clearCurrentSession(Session session) {
-    sessions.get().remove(session.getUserID());
-  }
-
 
   /**
    * Perform the given function in an admin session.
    * @param a function to perform in the admin session
+   * @throws RepositoryException
    * @returns return value of the function
    */
   public <R> R inSession(Function<Session, R> func) {
-    Session session;
-    try {
-      session = newAdminSession();
-      return inSession(session, func);
-    } catch (RepositoryException e) {
-      throw new RuntimeException(e);
-    }
+    return inSession(newAdminSession(), func);
   }
 
   /**
@@ -93,7 +53,7 @@ public abstract class JcrSessionFactory {
    * @returns return value of the function
    */
   public <R> R inSession(String userId, Function<Session, R> func) {
-    return inSession(new SimpleCredentials(userId, "".toCharArray()), func);
+    return inSession(new SimpleCredentials(userId, new char[0]), func);
   }
 
   /**
@@ -120,17 +80,17 @@ public abstract class JcrSessionFactory {
    */
   protected <R> R inSession(Session session, Function<Session, R> func) {
     try {
-      setCurrentSession(session);
       R result = func.apply(session);
-      if (session.hasPendingChanges()) {
+      if (session.isLive() && session.hasPendingChanges()) {
         session.save();
       }
       return result;
     } catch (Throwable e) {
       throw new RuntimeException(e);
     } finally {
-      clearCurrentSession(session);
-      session.logout();
+      if (session.isLive()) {
+        session.logout();
+      }
     }
   }
 
@@ -143,7 +103,7 @@ public abstract class JcrSessionFactory {
     {
       if (creds instanceof CryptedSimpleCredentials) {
         usableCreds = new SimpleCredentials(
-            ((CryptedSimpleCredentials) creds).getUserID(), "".toCharArray());
+            ((CryptedSimpleCredentials) creds).getUserID(), new char[0]);
       } else if (creds instanceof SimpleCredentials) {
         usableCreds = creds;
       } else {

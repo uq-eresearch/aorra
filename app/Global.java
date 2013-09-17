@@ -94,13 +94,14 @@ public class Global extends GlobalSettings {
         return null;
       }
     });
-    sessionFactory().inSession(new Function<Session, String>() {
-        public String apply(Session session) throws UnsupportedRepositoryOperationException, RepositoryException {
-            final AccessControlManager acm = session.getAccessControlManager();
-            ((AorraAccessManager)acm).initStore(session);
-            return null;
-        }
-      });
+    sessionFactory().inSession(new Function<Session, Session>() {
+      @Override
+      public Session apply(Session session) throws RepositoryException {
+        final AccessControlManager acm = session.getAccessControlManager();
+        ((AorraAccessManager)acm).initStore(session);
+        return session;
+      }
+    });
   }
 
 }

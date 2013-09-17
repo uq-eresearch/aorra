@@ -28,6 +28,7 @@ server.pid
 
 # Local test repository
 repository
+/test/workspaces
 
 # Production-mode PID
 /RUNNING_PID
