@@ -1,12 +1,12 @@
 package charts;
 
+import java.awt.Dimension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 import net.hanjava.svg.SVG2EMF;
 
@@ -34,10 +34,10 @@ import charts.representations.Representation;
 
 public abstract class AbstractChart implements Chart {
 
-  private final Map<String, String[]> query;
+  private final Dimension queryDimensions;
 
-  public AbstractChart(Map<String, String[]> query) {
-    this.query = query;
+  public AbstractChart(Dimension queryDimensions) {
+    this.queryDimensions = queryDimensions;
   }
 
   @Override
@@ -68,9 +68,7 @@ public abstract class AbstractChart implements Chart {
           renderSVG(getChart()));
     case PNG:
       return format.createRepresentation(
-          renderPNG(getChart(),
-              getFloat(query.get("width")),
-              getFloat(query.get("height"))));
+          renderPNG(getChart(), queryDimensions));
     }
     throw new Chart.UnsupportedFormatException();
   }
@@ -142,16 +140,18 @@ public abstract class AbstractChart implements Chart {
     return os.toByteArray();
   }
 
-  protected byte[] renderPNG(Drawable d, Float width, Float height) {
+  protected byte[] renderPNG(Drawable d, Dimension dimensions) {
     try {
       Document doc = toDocument(renderSVG(d), false);
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       PNGTranscoder t = new PNGTranscoder();
-      if (width != null) {
-        t.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, width);
+      if (dimensions.getWidth() > 0.0) {
+        t.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH,
+            (float) dimensions.getWidth());
       }
-      if (height != null) {
-        t.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, height);
+      if (dimensions.getHeight() > 0.0) {
+        t.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT,
+            (float) dimensions.getHeight());
       }
       t.transcode(new TranscoderInput(doc), new TranscoderOutput(os));
       return os.toByteArray();

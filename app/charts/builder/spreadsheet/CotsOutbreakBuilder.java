@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DateFormat;
@@ -73,13 +74,13 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource datasource, ChartType type,
-      final Region region, final Map<String, String[]> query) {
+      final Region region, Dimension dimensions) {
     if (!region.equals(Region.GBR)) {
       return null;
     }
     final TimeSeriesCollection dataset = createDataset(datasource);
     final AbstractBuilder thisBuilder = this;
-    final Chart chart = new AbstractChart(query) {
+    final Chart chart = new AbstractChart(dimensions) {
       @Override
       public ChartDescription getDescription() {
         return new ChartDescription(ChartType.COTS_OUTBREAK, region);
@@ -88,7 +89,7 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       @Override
       public Drawable getChart() {
         return new CotsOutbreak().createChart(dataset,
-            getChartSize(query, 750, 500));
+            new Dimension(750, 500));
       }
 
       @SuppressWarnings("unchecked")

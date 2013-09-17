@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Dimension;
 import java.util.List;
 import java.util.Map;
 
@@ -53,9 +54,9 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
   @Override
   public Chart build(final SpreadsheetDataSource datasource,
       final ChartType type, final Region region,
-      final Map<String, String[]> query) {
+      final Dimension dimensions) {
     final AbstractBuilder thisBuilder = this;
-    return new AbstractChart(query) {
+    return new AbstractChart(dimensions) {
       @Override
       public ChartDescription getDescription() {
         return new ChartDescription(type, region);
@@ -66,7 +67,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
         return GrazingPracticeSystems.createChart(
             createDataset(datasource, region),
             TITLE + " - " + region.getProperName(),
-            getChartSize(query, 750, 500));
+            new Dimension(750, 500));
       }
 
       @Override

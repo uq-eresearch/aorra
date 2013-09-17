@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Dimension;
 import java.util.List;
 import java.util.Map;
 
@@ -22,9 +23,9 @@ import com.google.common.collect.Lists;
 public class LandPracticeSystemsBuilder extends AbstractBuilder {
 
     private static enum PS {
-        
+
         NUTRIENTS("Nutrients", 1), HERBICIDES("Herbicides", 5), SOIL("Soil", 9);
-        
+
         private String label;
         private int colstart;
 
@@ -79,8 +80,8 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
 
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Map<String, String[]> query) {
-        return new AbstractChart(query) {
+            final Region region, final Dimension dimensions) {
+        return new AbstractChart(dimensions) {
             @Override
             public ChartDescription getDescription() {
               return new ChartDescription(type, region);
@@ -91,7 +92,7 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
               return LandPracticeSystems.createChart(
                   createDataset(datasource, type, region),
                   type.getLabel() + " - " + region.getProperName(),
-                  getChartSize(query, 750, 500));
+                  new Dimension(750, 500));
             }
 
             @Override

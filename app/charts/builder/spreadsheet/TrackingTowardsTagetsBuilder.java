@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Dimension;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource ds, final ChartType type,
-      final Region region, final Map<String, String[]> query) {
+      final Region region, Dimension dimensions) {
     if (region == Region.GBR) {
       final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
       final double target;
@@ -102,7 +103,7 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
       } catch (MissingDataException e) {
         throw new RuntimeException(e);
       }
-      return new AbstractChart(query) {
+      return new AbstractChart(dimensions) {
 
         @Override
         public ChartDescription getDescription() {
@@ -112,7 +113,7 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
         @Override
         public Drawable getChart() {
           return new TrackingTowardsTargets().createChart(type, target,
-              targetBy, dataset, getChartSize(query, 750, 500));
+              targetBy, dataset, new Dimension(750, 500));
         }
 
         @Override

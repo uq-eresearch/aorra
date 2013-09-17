@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
@@ -80,13 +81,13 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource datasource, ChartType type,
-      final Region region, final Map<String, String[]> query) {
+      final Region region, Dimension dimensions) {
     if (!ROW.containsKey(region)) {
       return null;
     }
     final DefaultCategoryDataset dataset = createDataset(datasource, region);
     final AbstractBuilder thisBuilder = this;
-    final Chart chart = new AbstractChart(query) {
+    final Chart chart = new AbstractChart(dimensions) {
       @Override
       public ChartDescription getDescription() {
         return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
@@ -95,7 +96,7 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
       @Override
       public Drawable getChart() {
         return new AnnualRainfall().createChart(region.getName(), dataset,
-            getChartSize(query, 750, 500));
+            new Dimension(750, 500));
       }
 
       @Override

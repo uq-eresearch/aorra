@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Dimension;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -33,10 +34,10 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
     }
 
     @Override
-    public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Map<String, String[]> query) {
+    public Chart build(final SpreadsheetDataSource ds, final ChartType type,
+        final Region region, Dimension dimensions) {
         if(region == Region.GBR) {
-            return new AbstractChart(query) {
+            return new AbstractChart(dimensions) {
                 @Override
                 public ChartDescription getDescription() {
                     return new ChartDescription(type, region);
@@ -45,9 +46,9 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
                 @Override
                 public Drawable getChart() {
                     return TrendsSeagrassAbundance.createChart(
-                            createDataset(datasource),
-                            getTitle(datasource),
-                            getChartSize(query, 750, 500));
+                            createDataset(ds),
+                            getTitle(ds),
+                            new Dimension(750, 500));
                 }
 
                 @Override
@@ -76,7 +77,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
                 }
                 double mean = ds.select(1, i).asDouble();
                 double deviation = ds.select(2, i).asDouble();
-                
+
                 d.add(mean, deviation, row, sdf.format(date));
             }
         } catch(MissingDataException e) {

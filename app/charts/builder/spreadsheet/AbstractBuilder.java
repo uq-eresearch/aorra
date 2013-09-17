@@ -36,7 +36,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   public abstract boolean canHandle(SpreadsheetDataSource datasource);
 
   public abstract Chart build(SpreadsheetDataSource datasource, ChartType type,
-      Region region, Map<String, String[]> query);
+      Region region, Dimension queryDimensions);
 
   protected String getCommentary(SpreadsheetDataSource datasource,
       Region region) throws UnsupportedFormatException {
@@ -57,17 +57,17 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   }
 
   public List<Chart> buildAll(SpreadsheetDataSource datasource,
-      ChartType type, Region region, Map<String, String[]> query) {
+      ChartType type, Region region, Dimension queryDimensions) {
     List<Chart> charts = Lists.newArrayList();
     if (type == null) {
       for (ChartType t : types) {
-        Chart chart = build(datasource, t, region, query);
+        Chart chart = build(datasource, t, region, queryDimensions);
         if (chart != null) {
           charts.add(chart);
         }
       }
     } else {
-      Chart chart = build(datasource, type, region, query);
+      Chart chart = build(datasource, type, region, queryDimensions);
       if (chart != null) {
         charts.add(chart);
       }
@@ -90,12 +90,13 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
 
   @Override
   public List<Chart> build(List<DataSource> datasources, ChartType type,
-      Map<String, String[]> query) {
+      List<Region> regions, Dimension queryDimensions) {
     List<Chart> charts = Lists.newArrayList();
     for (DataSource datasource : datasources) {
       if (datasource instanceof SpreadsheetDataSource) {
         if (canHandle((SpreadsheetDataSource) datasource)) {
-          charts.addAll(build((SpreadsheetDataSource) datasource, type, query));
+          charts.addAll(build((SpreadsheetDataSource) datasource, type,
+              regions, queryDimensions));
         }
       }
     }
@@ -103,22 +104,21 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   }
 
   protected List<Chart> build(SpreadsheetDataSource datasource, ChartType type,
-      Map<String, String[]> query) {
+      List<Region> regions, Dimension queryDimensions) {
     List<Chart> charts = Lists.newArrayList();
-    List<Region> regions = getRegion(query);
-    if (regions != null && !regions.isEmpty()) {
+    if (!regions.isEmpty()) {
       for (Region region : regions) {
-        charts.addAll(buildAll(datasource, type, region, query));
+        charts.addAll(buildAll(datasource, type, region, queryDimensions));
       }
     } else {
       for (Region region : Region.values()) {
-        charts.addAll(buildAll(datasource, type, region, query));
+        charts.addAll(buildAll(datasource, type, region, queryDimensions));
       }
     }
     return charts;
   }
 
-  protected List<Region> getRegion(Map<String, String[]> query) {
+  public static List<Region> getRegions(Map<String, String[]> query) {
     return Lists.newArrayList(Region.getRegions(getValues(query, "region")));
   }
 
@@ -138,6 +138,21 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
 
   protected static Set<String> getValues(Map<String, String[]> m, String key) {
     return ImmutableSet.copyOf(firstNonNull(m.get(key), new String[0]));
+  }
+
+  public static Dimension getQueryDimensions(Map<String, String[]> query) {
+    final Dimension queryDimensions = new Dimension(750, 500);
+    try {
+      queryDimensions.setSize(
+          Double.parseDouble(getFirst(getValues(query, "height"),"")),
+          queryDimensions.getHeight());
+    } catch (Exception e) {}
+    try {
+      queryDimensions.setSize(
+          Double.parseDouble(getFirst(getValues(query, "width"),"")),
+          queryDimensions.getWidth());
+    } catch (Exception e) {}
+    return queryDimensions;
   }
 
 }

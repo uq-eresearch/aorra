@@ -8,6 +8,7 @@ import java.util.Map;
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
+import charts.builder.spreadsheet.AbstractBuilder;
 import charts.builder.spreadsheet.AnnualRainfallBuilder;
 import charts.builder.spreadsheet.CotsOutbreakBuilder;
 import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;
@@ -41,7 +42,9 @@ public class ChartBuilder {
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
       if (builder.canHandle(type, datasources)) {
-        result.addAll(builder.build(datasources, type, query));
+        result.addAll(builder.build(datasources, type,
+            AbstractBuilder.getRegions(query),
+            AbstractBuilder.getQueryDimensions(query)));
       }
     }
     // make sure charts are sorted by region
