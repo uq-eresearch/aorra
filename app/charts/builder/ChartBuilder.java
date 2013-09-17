@@ -15,6 +15,7 @@ import charts.builder.spreadsheet.LandPracticeSystemsBuilder;
 import charts.builder.spreadsheet.MarineBuilder;
 import charts.builder.spreadsheet.ProgressTableBuilder;
 import charts.builder.spreadsheet.TrackingTowardsTagetsBuilder;
+import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -32,6 +33,7 @@ public class ChartBuilder {
       .add(new TrackingTowardsTagetsBuilder())
       .add(new GrazingPracticeSystemsBuilder())
       .add(new LandPracticeSystemsBuilder())
+      .add(new TrendsSeagrassAbundanceBuilder())
       .build();
 
   public List<Chart> getCharts(List<DataSource> datasources,

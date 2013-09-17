@@ -1,5 +1,7 @@
 package charts.builder;
 
+import java.util.Date;
+
 public interface Value {
   String asString();
 
@@ -10,4 +12,6 @@ public interface Value {
   String getValue();
 
   java.awt.Color asColor();
+
+  Date asDate();
 }

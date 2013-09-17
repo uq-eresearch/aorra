@@ -1,8 +1,9 @@
 package charts.builder.spreadsheet;
 
+import java.util.Date;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
-import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.ss.formula.eval.ErrorEval;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellValue;
@@ -13,6 +14,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import charts.builder.DataSource;
 import charts.builder.Value;
@@ -116,6 +118,11 @@ public abstract class SpreadsheetDataSource implements DataSource {
       return java.awt.Color.WHITE;
     }
 
+    @Override
+    public Date asDate() {
+        return cell.getDateCellValue();
+    }
+
   }
 
   private static class EmptyCell implements Value {
@@ -142,6 +149,11 @@ public abstract class SpreadsheetDataSource implements DataSource {
     @Override
     public java.awt.Color asColor() {
       return java.awt.Color.WHITE;
+    }
+
+    @Override
+    public Date asDate() {
+        return null;
     }
 
   }
