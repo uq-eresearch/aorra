@@ -7,6 +7,12 @@ import java.io.CharArrayReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
+
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import net.hanjava.svg.SVG2EMF;
 
@@ -65,16 +71,12 @@ public abstract class AbstractChart implements Chart {
       return format.createRepresentation(getCommentary());
     case SVG:
       return format.createRepresentation(
-          renderSVG(getChart()));
+          renderSVG(getChart(), queryDimensions));
     case PNG:
       return format.createRepresentation(
           renderPNG(getChart(), queryDimensions));
     }
     throw new Chart.UnsupportedFormatException();
-  }
-
-  protected String renderSVG(Drawable d) {
-    return (new ChartRenderer(d)).render();
   }
 
   protected byte[] renderDOCX(Drawable d) {
@@ -130,7 +132,8 @@ public abstract class AbstractChart implements Chart {
   }
 
   protected byte[] renderEMF(Drawable d) {
-    final InputStream is = new ByteArrayInputStream(renderSVG(d).getBytes());
+    final String svgOutput = (new ChartRenderer(d)).render();
+    final InputStream is = new ByteArrayInputStream(svgOutput.getBytes());
     final ByteArrayOutputStream os = new ByteArrayOutputStream();
     try {
       SVG2EMF.convert("", is, os);
@@ -142,7 +145,8 @@ public abstract class AbstractChart implements Chart {
 
   protected byte[] renderPNG(Drawable d, Dimension dimensions) {
     try {
-      Document doc = toDocument(renderSVG(d), false);
+      final String svgOutput = (new ChartRenderer(d)).render();
+      Document doc = toDocument(svgOutput, false);
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       PNGTranscoder t = new PNGTranscoder();
       if (dimensions.getWidth() > 0.0) {
@@ -162,6 +166,38 @@ public abstract class AbstractChart implements Chart {
     }
   }
 
+  protected String renderSVG(Drawable d, Dimension dimensions) {
+    final String svg = (new ChartRenderer(d)).render();
+    final Document doc;
+    try {
+      doc = new SAXSVGDocumentFactory(
+          XMLResourceDescriptor.getXMLParserClassName())
+          .createDocument("file:///test.svg",
+              new CharArrayReader(svg.toCharArray()));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    {
+      doc.getDocumentElement().setAttributeNS(null, "viewBox",
+          String.format("0 0 %s %s",
+              doc.getDocumentElement().getAttribute("width"),
+              doc.getDocumentElement().getAttribute("height")));
+      // Set requested height / width
+      final long h = Math.round(dimensions.getHeight());
+      final long w = Math.round(dimensions.getWidth());
+      doc.getDocumentElement().setAttribute("width", w+"");
+      doc.getDocumentElement().setAttribute("height", h+"");
+    }
+    final StringWriter sw = new StringWriter();
+    try {
+      TransformerFactory.newInstance().newTransformer()
+        .transform(new DOMSource(doc), new StreamResult(sw));
+    } catch (TransformerException e) {
+      throw new RuntimeException(e);
+    }
+    return sw.toString();
+  }
+
   protected Float getFloat(String[] values) {
     try {
       return Float.parseFloat(values[0]);
@@ -171,7 +207,7 @@ public abstract class AbstractChart implements Chart {
   }
 
   private Document toDocument(String svg, boolean relativeDimensions)
-      throws IOException{
+      throws IOException {
     // Turn back into DOM
     String parserName = XMLResourceDescriptor.getXMLParserClassName();
     SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parserName);
@@ -179,11 +215,11 @@ public abstract class AbstractChart implements Chart {
         new CharArrayReader(svg.toCharArray()));
     String h = doc.getDocumentElement().getAttribute("height");
     String w = doc.getDocumentElement().getAttribute("width");
-    doc.getDocumentElement().setAttributeNS(null, "viewbox",
+    doc.getDocumentElement().setAttributeNS(null, "viewBox",
         String.format("0 0 %s %s", w, h));
-    if(relativeDimensions) {
-        doc.getDocumentElement().setAttribute("height", "100%");
-        doc.getDocumentElement().setAttribute("width", "100%");
+    if (relativeDimensions) {
+      doc.getDocumentElement().setAttribute("height", "100%");
+      doc.getDocumentElement().setAttribute("width", "100%");
     }
     return doc;
   }

@@ -144,13 +144,13 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     final Dimension queryDimensions = new Dimension(750, 500);
     try {
       queryDimensions.setSize(
-          Double.parseDouble(getFirst(getValues(query, "height"),"")),
+          Double.parseDouble(getFirst(getValues(query, "width"),"")),
           queryDimensions.getHeight());
     } catch (Exception e) {}
     try {
       queryDimensions.setSize(
-          Double.parseDouble(getFirst(getValues(query, "width"),"")),
-          queryDimensions.getWidth());
+          queryDimensions.getWidth(),
+          Double.parseDouble(getFirst(getValues(query, "height"),"")));
     } catch (Exception e) {}
     return queryDimensions;
   }

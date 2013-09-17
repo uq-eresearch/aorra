@@ -27,8 +27,12 @@ import javax.jcr.Session;
 
 import models.User;
 
+import org.apache.fop.fo.pagination.Root;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.junit.Test;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
@@ -298,7 +302,6 @@ public class ChartTest {
         for (String r : regions) {
           pairs.add("region="+r);
         }
-        pairs.add("chartwidth=100");
         final String qs = Joiner.on("&").join(pairs);
         final Result result = callAction(
             controllers.routes.ref.Chart.multipleFileChart(chartType, "svg",
@@ -306,6 +309,59 @@ public class ChartTest {
             loggedInRequest(new FakeRequest("GET", "?"+qs), httpSession));
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/svg+xml");
+      }
+    });
+  }
+
+  @Test
+  public void svgChartSize() {
+    asAdminUserSession(
+        new F.Function3<Session, User, Http.Session, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final Http.Session httpSession) throws Throwable {
+        final FileStore.File f = createMarineChartFile(session);
+        {
+          final List<String> pairs = Lists.newLinkedList();
+          pairs.add("width=1337");
+          Element svg = getSvgRoot(httpSession, f.getIdentifier(), pairs);
+          assertThat(svg.attr("width")).isEqualTo("1337");
+          assertThat(svg.attr("height")).isNotEqualTo("0");
+        }
+        {
+
+          final List<String> pairs = Lists.newLinkedList();
+          pairs.add("height=1337");
+          Element svg = getSvgRoot(httpSession, f.getIdentifier(), pairs);
+          assertThat(svg.attr("width")).isNotEqualTo("0");
+          assertThat(svg.attr("height")).isEqualTo("1337");
+        }
+        {
+
+          final List<String> pairs = Lists.newLinkedList();
+          pairs.add("width=9832");
+          pairs.add("height=1337");
+          Element svg = getSvgRoot(httpSession, f.getIdentifier(), pairs);
+          assertThat(svg.attr("width")).isEqualTo("9832");
+          assertThat(svg.attr("height")).isEqualTo("1337");
+        }
+        return session;
+      }
+      private Element getSvgRoot(
+          final Http.Session httpSession,
+          final String fileId,
+          final List<String> pairs) {
+        final String qs = Joiner.on("&").join(pairs);
+        final Result result = callAction(
+            controllers.routes.ref.Chart.singleFileChart("marine", "svg",
+                fileId),
+            loggedInRequest(new FakeRequest("GET", "?"+qs), httpSession));
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("image/svg+xml");
+        final Document doc = Jsoup.parse(contentAsString(result));
+        return doc.select("svg").get(0);
       }
     });
   }
