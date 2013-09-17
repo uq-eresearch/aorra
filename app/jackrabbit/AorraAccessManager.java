@@ -134,6 +134,7 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
         return p.isRead();
     }
 
+    @Deprecated
     @Override
     public void checkPermission(ItemId id, int permissions)
             throws AccessDeniedException, ItemNotFoundException,
@@ -186,6 +187,7 @@ public class AorraAccessManager implements AccessControlManager, AccessManager  
         out("workspace: "+ctx.getWorkspaceName());
     }
 
+    @Deprecated
     @Override
     public boolean isGranted(ItemId id, int permissions)
             throws ItemNotFoundException, RepositoryException {

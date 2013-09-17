@@ -45,6 +45,7 @@ import org.apache.jackrabbit.spi.commons.conversion.IdentifierResolver;
 import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
 import org.jcrom.Jcrom;
 import org.jcrom.dao.JcrDAO;
+import org.jcrom.util.NodeFilter;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
@@ -829,7 +830,7 @@ public class FileStoreImpl implements FileStore {
               getName(), newName, fof.getClass().getSimpleName()));
       }
       entity.setName(newName);
-      getDAO().update(entity, "none", 0);
+      getDAO().update(entity, new NodeFilter(0));
       // We cache the path, so it has to be updated
       updatePath();
     }

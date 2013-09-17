@@ -61,7 +61,8 @@ object ApplicationBuild extends Build {
     requireJs ++= Seq("models.js") ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
-    // Show feature warnings
+    // Show deprecation & feature warnings
+    javacOptions += "-Xlint:deprecation",
     scalacOptions += "-feature",
     // Play Framework can't do parallel testing
     parallelExecution in jacoco.Config := false,
