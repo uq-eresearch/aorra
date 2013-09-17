@@ -1,12 +1,7 @@
 package charts.builder.spreadsheet;
 
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.collect.Iterables.getFirst;
-
 import java.awt.Dimension;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.pegdown.PegDownProcessor;
 
@@ -18,7 +13,6 @@ import charts.builder.ChartTypeBuilder;
 import charts.builder.DataSource;
 import charts.builder.DataSource.MissingDataException;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
 public abstract class AbstractBuilder implements ChartTypeBuilder {
@@ -116,43 +110,6 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       }
     }
     return charts;
-  }
-
-  public static List<Region> getRegions(Map<String, String[]> query) {
-    return Lists.newArrayList(Region.getRegions(getValues(query, "region")));
-  }
-
-  protected Dimension getChartSize(Map<String, String[]> query, int width, int height) {
-    return new Dimension(getParam(query, "chartwidth", width),
-            getParam(query, "chartheight", height));
-  }
-
-  protected int getParam(Map<String, String[]> query, String name, int def) {
-    try {
-      // Note: In Java, empty string will not parse to 0 - it's an error
-      return Integer.parseInt(getFirst(getValues(query, name), ""));
-    } catch(Exception e) {
-      return def;
-    }
-  }
-
-  protected static Set<String> getValues(Map<String, String[]> m, String key) {
-    return ImmutableSet.copyOf(firstNonNull(m.get(key), new String[0]));
-  }
-
-  public static Dimension getQueryDimensions(Map<String, String[]> query) {
-    final Dimension queryDimensions = new Dimension(750, 500);
-    try {
-      queryDimensions.setSize(
-          Double.parseDouble(getFirst(getValues(query, "width"),"")),
-          queryDimensions.getHeight());
-    } catch (Exception e) {}
-    try {
-      queryDimensions.setSize(
-          queryDimensions.getWidth(),
-          Double.parseDouble(getFirst(getValues(query, "height"),"")));
-    } catch (Exception e) {}
-    return queryDimensions;
   }
 
 }

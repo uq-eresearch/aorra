@@ -1,14 +1,13 @@
 package charts.builder;
 
+import java.awt.Dimension;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
-import charts.builder.spreadsheet.AbstractBuilder;
 import charts.builder.spreadsheet.AnnualRainfallBuilder;
 import charts.builder.spreadsheet.CotsOutbreakBuilder;
 import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;
@@ -38,13 +37,13 @@ public class ChartBuilder {
       .build();
 
   public List<Chart> getCharts(List<DataSource> datasources,
-          ChartType type, Map<String, String[]> query) {
+          ChartType type,
+          List<Region> regions,
+          Dimension dimensions) {
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
       if (builder.canHandle(type, datasources)) {
-        result.addAll(builder.build(datasources, type,
-            AbstractBuilder.getRegions(query),
-            AbstractBuilder.getQueryDimensions(query)));
+        result.addAll(builder.build(datasources, type, regions, dimensions));
       }
     }
     // make sure charts are sorted by region
@@ -61,8 +60,10 @@ public class ChartBuilder {
     return result;
   }
 
-  public List<Chart> getCharts(List<DataSource> datasources, Map<String, String[]> query) {
-    return getCharts(datasources, null, query);
+  public List<Chart> getCharts(List<DataSource> datasources,
+      List<Region> regions,
+      Dimension dimensions) {
+    return getCharts(datasources, null, regions, dimensions);
   }
 
 }

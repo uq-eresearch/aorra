@@ -1,7 +1,13 @@
 package controllers;
 
+import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.collect.Iterables.getFirst;
+
+import java.awt.Dimension;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.jcr.Session;
 
@@ -22,6 +28,7 @@ import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import charts.ChartDescription;
 import charts.ChartType;
+import charts.Region;
 import charts.builder.ChartBuilder;
 import charts.builder.DataSource;
 import charts.builder.spreadsheet.XlsDataSource;
@@ -30,6 +37,7 @@ import charts.representations.Format;
 import charts.representations.Representation;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -62,7 +70,9 @@ public class Chart extends SessionAwareController {
       public final Result apply(Session session) throws Exception {
         List<DataSource> datasources = getDatasourcesFromIDs(session, ids);
         final List<charts.Chart> charts =
-            chartBuilder.getCharts(datasources, request().queryString());
+            chartBuilder.getCharts(datasources,
+                getRegions(request().queryString()),
+                getQueryDimensions(request().queryString()));
         final ObjectNode json = Json.newObject();
         final ArrayNode aNode = json.putArray("charts");
         for (charts.Chart chart : charts) {
@@ -107,7 +117,8 @@ public class Chart extends SessionAwareController {
         final List<DataSource> datasources =
             getDatasourcesFromIDs(session, ids);
         final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
-            type, request().queryString());
+            type, getRegions(request().queryString()),
+            getQueryDimensions(request().queryString()));
         for (charts.Chart chart : charts) {
           try {
             final Representation r = chart.outputAs(format);
@@ -174,6 +185,31 @@ public class Chart extends SessionAwareController {
       }
     }
     return result;
+  }
+
+  protected static Set<String> getValues(Map<String, String[]> m, String key) {
+    return ImmutableSet.copyOf(firstNonNull(m.get(key), new String[0]));
+  }
+
+  protected static List<Region> getRegions(Map<String, String[]> query) {
+    return Lists.newArrayList(Region.getRegions(getValues(query, "region")));
+  }
+
+  protected static Dimension getQueryDimensions(Map<String, String[]> query) {
+    final Dimension queryDimensions = new Dimension(750, 500);
+    try {
+      double w = Double.parseDouble(getFirst(getValues(query, "width"), ""));
+      if (w > 0.0) {
+        queryDimensions.setSize(w, queryDimensions.getHeight());
+      }
+    } catch (Exception e) {}
+    try {
+      double h = Double.parseDouble(getFirst(getValues(query, "height"), ""));
+      if (h > 0.0) {
+        queryDimensions.setSize(queryDimensions.getWidth(), h);
+      }
+    } catch (Exception e) {}
+    return queryDimensions;
   }
 
 }

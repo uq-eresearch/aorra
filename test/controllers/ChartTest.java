@@ -27,7 +27,6 @@ import javax.jcr.Session;
 
 import models.User;
 
-import org.apache.fop.fo.pagination.Root;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
 import org.jsoup.Jsoup;
