@@ -43,6 +43,8 @@ public abstract class AbstractChart implements Chart {
 
   private final Dimension queryDimensions;
 
+  private String svgDocument = null;
+
   public AbstractChart(Dimension queryDimensions) {
     this.queryDimensions = queryDimensions;
   }
@@ -133,8 +135,8 @@ public abstract class AbstractChart implements Chart {
   }
 
   protected byte[] renderEMF(Drawable d) {
-    final String svgOutput = (new ChartRenderer(d)).render();
-    final InputStream is = new ByteArrayInputStream(svgOutput.getBytes());
+    final InputStream is = new ByteArrayInputStream(
+        getDrawableDocument(d).getBytes());
     final ByteArrayOutputStream os = new ByteArrayOutputStream();
     try {
       SVG2EMF.convert("", is, os);
@@ -146,8 +148,7 @@ public abstract class AbstractChart implements Chart {
 
   protected byte[] renderPNG(Drawable d, Dimension dimensions) {
     try {
-      final String svgOutput = (new ChartRenderer(d)).render();
-      Document doc = toDocument(svgOutput, dimensions);
+      Document doc = toDocument(getDrawableDocument(d), dimensions);
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       PNGTranscoder t = new PNGTranscoder();
       if (dimensions.getWidth() > 0.0) {
@@ -168,13 +169,12 @@ public abstract class AbstractChart implements Chart {
   }
 
   protected String renderSVG(Drawable d, Dimension dimensions) {
-    final String svg = (new ChartRenderer(d)).render();
     final Document doc;
     try {
       doc = new SAXSVGDocumentFactory(
           XMLResourceDescriptor.getXMLParserClassName())
           .createDocument("file:///test.svg",
-              new CharArrayReader(svg.toCharArray()));
+              new CharArrayReader(getDrawableDocument(d).toCharArray()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -187,6 +187,13 @@ public abstract class AbstractChart implements Chart {
       throw new RuntimeException(e);
     }
     return sw.toString();
+  }
+
+  protected String getDrawableDocument(Drawable d) {
+    if (svgDocument == null) {
+      svgDocument = (new ChartRenderer(d)).render();
+    }
+    return svgDocument;
   }
 
   protected Float getFloat(String[] values) {

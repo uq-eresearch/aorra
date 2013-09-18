@@ -48,9 +48,9 @@ public class ChartBuilderTest {
 
   @Test
   public void svgAndPngChartSize() throws UnsupportedFormatException{
+    final List<Region> regions = asList(Region.GBR);
     for (final ChartType ct : ChartType.values()) {
       final List<DataSource> ds = asList(getDatasource(ct));
-      final List<Region> regions = asList(Region.GBR);
       {
         final charts.Chart chart = chartBuilder.getCharts(ds, regions,
             new Dimension(0, 0)).get(0);
@@ -62,19 +62,19 @@ public class ChartBuilderTest {
       }
       {
         final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(0, 1337)).get(0);
+            new Dimension(0, 127)).get(0);
         Element svg = getSvgRoot(chart);
         assertThat(svg.attr("width"))
           .as(ct+" unspecified width")
           .isNotEqualTo("0");
-        assertThat(svg.attr("height")).isEqualTo("1337");
+        assertThat(svg.attr("height")).isEqualTo("127");
         checkDimensionsMatch(ct, svg, getPngImage(chart));
       }
       {
         final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(983, 0)).get(0);
+            new Dimension(383, 0)).get(0);
         Element svg = getSvgRoot(chart);
-        assertThat(svg.attr("width")).isEqualTo("983");
+        assertThat(svg.attr("width")).isEqualTo("383");
         assertThat(svg.attr("height"))
           .as(ct+" unspecified height")
           .isNotEqualTo("0");
@@ -82,10 +82,10 @@ public class ChartBuilderTest {
       }
       {
         final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(983, 1337)).get(0);
+            new Dimension(383, 127)).get(0);
         Element svg = getSvgRoot(chart);
-        assertThat(svg.attr("width")).isEqualTo("983");
-        assertThat(svg.attr("height")).isEqualTo("1337");
+        assertThat(svg.attr("width")).isEqualTo("383");
+        assertThat(svg.attr("height")).isEqualTo("127");
         checkDimensionsMatch(ct, svg, getPngImage(chart));
       }
     }
