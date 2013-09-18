@@ -31,7 +31,23 @@ public class ChartBuilderTest {
   }
 
   @Test
-  public void svgChartSize() throws UnsupportedFormatException{
+  public void docxAndEmf() throws UnsupportedFormatException {
+    for (final ChartType ct : ChartType.values()) {
+      final List<DataSource> ds = asList(getDatasource(ct));
+      final List<Region> regions = asList(Region.GBR);
+      {
+        final charts.Chart chart = chartBuilder.getCharts(ds, regions,
+            new Dimension(0, 0)).get(0);
+        // Shouldn't trigger UnsupportedFormatException
+        chart.outputAs(Format.DOCX);
+        // Shouldn't trigger UnsupportedFormatException
+        chart.outputAs(Format.EMF);
+      }
+    }
+  }
+
+  @Test
+  public void svgAndPngChartSize() throws UnsupportedFormatException{
     for (final ChartType ct : ChartType.values()) {
       final List<DataSource> ds = asList(getDatasource(ct));
       final List<Region> regions = asList(Region.GBR);

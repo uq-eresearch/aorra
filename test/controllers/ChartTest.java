@@ -1,5 +1,6 @@
 package controllers;
 
+import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.api.test.Helpers.await;
 import static play.test.Helpers.callAction;
@@ -323,25 +324,28 @@ public class ChartTest {
           final Http.Session httpSession) throws Throwable {
         final FileStore.File f = createMarineChartFile(session);
         {
-          final List<String> pairs = Lists.newLinkedList();
-          pairs.add("width=1337");
+          final List<String> pairs = asList();
+          Element svg = getSvgRoot(httpSession, f.getIdentifier(), pairs);
+          String[] viewBox = svg.attr("viewBox").split(" ");
+          assertThat(svg.attr("width")).isEqualTo(viewBox[2]);
+          assertThat(svg.attr("height")).isEqualTo(viewBox[3]);
+        }
+        {
+          final List<String> pairs = asList("width=1337");
           Element svg = getSvgRoot(httpSession, f.getIdentifier(), pairs);
           assertThat(svg.attr("width")).isEqualTo("1337");
           assertThat(svg.attr("height")).isNotEqualTo("0");
         }
         {
 
-          final List<String> pairs = Lists.newLinkedList();
-          pairs.add("height=1337");
+          final List<String> pairs = asList("height=1337");
           Element svg = getSvgRoot(httpSession, f.getIdentifier(), pairs);
           assertThat(svg.attr("width")).isNotEqualTo("0");
           assertThat(svg.attr("height")).isEqualTo("1337");
         }
         {
 
-          final List<String> pairs = Lists.newLinkedList();
-          pairs.add("width=9832");
-          pairs.add("height=1337");
+          final List<String> pairs = asList("width=9832", "height=1337");
           Element svg = getSvgRoot(httpSession, f.getIdentifier(), pairs);
           assertThat(svg.attr("width")).isEqualTo("9832");
           assertThat(svg.attr("height")).isEqualTo("1337");
@@ -411,21 +415,6 @@ public class ChartTest {
             createMarineChartFile(session), newRequest);
         checkChart("marine",
             createMarineXlsChartFile(session), newRequest);
-        checkChart("annual_rainfall",
-            createAnnualRainfallChartFile(session), newRequest);
-        checkChart("cots_outbreak",
-            createCOTOutbreakChartFile(session), newRequest);
-        checkChart("progress_table",
-            createProgressTableChartFile(session), newRequest);
-        checkChart("grazing_ps",
-            createGrazingPracticeChartFile(session), newRequest);
-        for (String c : LAND_PS_CHARTS) {
-          checkChart(c, createLandPracticeChartFile(session, c), newRequest);
-        }
-        for (String c : TTT_CHARTS) {
-          checkChart(c, createTrackingTowardsTargetsChartFile(session, c),
-              newRequest);
-        }
         return session;
       }
       private void checkChart(
