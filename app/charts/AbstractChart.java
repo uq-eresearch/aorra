@@ -32,6 +32,7 @@ import org.docx4j.openpackaging.exceptions.InvalidFormatException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import play.api.libs.Files.TemporaryFile;
 import play.api.libs.Files.TemporaryFile$;
@@ -146,7 +147,7 @@ public abstract class AbstractChart implements Chart {
   protected byte[] renderPNG(Drawable d, Dimension dimensions) {
     try {
       final String svgOutput = (new ChartRenderer(d)).render();
-      Document doc = toDocument(svgOutput, false);
+      Document doc = toDocument(svgOutput, dimensions);
       ByteArrayOutputStream os = new ByteArrayOutputStream();
       PNGTranscoder t = new PNGTranscoder();
       if (dimensions.getWidth() > 0.0) {
@@ -177,21 +178,7 @@ public abstract class AbstractChart implements Chart {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    {
-      doc.getDocumentElement().setAttributeNS(null, "viewBox",
-          String.format("0 0 %s %s",
-              doc.getDocumentElement().getAttribute("width"),
-              doc.getDocumentElement().getAttribute("height")));
-      // Set requested height / width
-      final long h = Math.round(dimensions.getHeight());
-      final long w = Math.round(dimensions.getWidth());
-      if (w > 0) {
-        doc.getDocumentElement().setAttribute("width", w+"");
-      }
-      if (h > 0) {
-        doc.getDocumentElement().setAttribute("height", h+"");
-      }
-    }
+    scaleSvg(doc, dimensions);
     final StringWriter sw = new StringWriter();
     try {
       TransformerFactory.newInstance().newTransformer()
@@ -210,21 +197,66 @@ public abstract class AbstractChart implements Chart {
     }
   }
 
-  private Document toDocument(String svg, boolean relativeDimensions)
+  private Document scaleSvg(Document doc, Dimension dimensions) {
+    final Element root = doc.getDocumentElement();
+    final String h = root.getAttribute("height");
+    final String w = root.getAttribute("width");
+    root.setAttributeNS(null, "viewBox",
+        String.format("0 0 %s %s", w, h));
+    final Dimension scaledDimensions =
+        scaleDimensions(extractSvgDimensions(doc), dimensions);
+    // Set requested height / width
+    final long newH = Math.round(scaledDimensions.getHeight());
+    final long newW = Math.round(scaledDimensions.getWidth());
+    root.setAttribute("height", newH+"");
+    root.setAttribute("width", newW+"");
+    return doc;
+  }
+
+  private Dimension extractSvgDimensions(Document svg) {
+    final Element root = svg.getDocumentElement();
+    return new Dimension(
+        Integer.parseInt(root.getAttribute("width")),
+        Integer.parseInt(root.getAttribute("height")));
+  }
+
+  /**
+   * Sets missing dimensions to correct version for aspect ratio.
+   *
+   * @param dOrig Original image dimensions
+   * @param dNew Proposed new image dimensions
+   * @return Dimensions where neither height or width is 0
+   */
+  private Dimension scaleDimensions(Dimension dOrig, Dimension dNew) {
+    final Dimension dScaled = new Dimension();
+    if (dNew.getWidth() > 0) {
+      if (dNew.getHeight() > 0) {
+        return dNew; // Complete already
+      }
+      // Get new height in proportion
+      dScaled.setSize(
+          dNew.getWidth(),
+          dNew.getWidth() * (dOrig.getHeight() / dOrig.getWidth()));
+    } else {
+      if (dNew.getHeight() <= 0) {
+        return dOrig; // Blank new => use original
+      }
+      // Get new width in proportion
+      dScaled.setSize(
+          dNew.getHeight() * (dOrig.getWidth() / dOrig.getHeight()),
+          dNew.getHeight());
+    }
+    return dScaled;
+  }
+
+  private Document toDocument(String svg, Dimension dimensions)
       throws IOException {
     // Turn back into DOM
     String parserName = XMLResourceDescriptor.getXMLParserClassName();
     SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parserName);
     Document doc = f.createDocument("file:///test.svg",
         new CharArrayReader(svg.toCharArray()));
-    String h = doc.getDocumentElement().getAttribute("height");
-    String w = doc.getDocumentElement().getAttribute("width");
-    doc.getDocumentElement().setAttributeNS(null, "viewBox",
-        String.format("0 0 %s %s", w, h));
-    if (relativeDimensions) {
-      doc.getDocumentElement().setAttribute("height", "100%");
-      doc.getDocumentElement().setAttribute("width", "100%");
-    }
+    scaleSvg(doc, dimensions);
     return doc;
   }
 }
