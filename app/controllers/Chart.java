@@ -2,6 +2,7 @@ package controllers;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.collect.Iterables.getFirst;
+import helpers.FileStoreHelper;
 
 import java.awt.Dimension;
 import java.io.UnsupportedEncodingException;
@@ -44,12 +45,6 @@ import com.google.inject.Inject;
 @With(UncacheableAction.class)
 public class Chart extends SessionAwareController {
 
-  public static final String XLSX_MIME_TYPE =
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-  public static final String XLS_MIME_TYPE =
-      "application/vnd.ms-excel";
-
   private final FileStore fileStore;
 
   private final ChartBuilder chartBuilder;
@@ -71,6 +66,8 @@ public class Chart extends SessionAwareController {
         List<DataSource> datasources = getDatasourcesFromIDs(session, ids);
         final List<charts.Chart> charts =
             chartBuilder.getCharts(datasources,
+
+
                 getRegions(request().queryString()),
                 getQueryDimensions(request().queryString()));
         final ObjectNode json = Json.newObject();
@@ -170,21 +167,7 @@ public class Chart extends SessionAwareController {
         files.add((FileStore.File) fof);
       }
     }
-    return getDatasources(session, files);
-  }
-
-  private List<DataSource> getDatasources(Session session,
-      Iterable<FileStore.File> files) throws Exception {
-    List<DataSource> result = Lists.newLinkedList();
-    for (FileStore.File file : files) {
-      if(file.getMimeType().equals(XLS_MIME_TYPE)) {
-        result.add(new XlsDataSource(file.getData()));
-      } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
-        // Check this is an OpenXML document (no chance otherwise)
-        result.add(new XlsxDataSource(file.getData()));
-      }
-    }
-    return result;
+    return new FileStoreHelper(session).getDatasources(files);
   }
 
   protected static Set<String> getValues(Map<String, String[]> m, String key) {

@@ -12,6 +12,7 @@ import java.io.PrintWriter;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -27,14 +28,28 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.security.user.Authorizable;
 import org.apache.jackrabbit.api.security.user.Group;
 
+import charts.builder.DataSource;
+import charts.builder.spreadsheet.XlsDataSource;
+import charts.builder.spreadsheet.XlsxDataSource;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+
 import play.Play;
 import service.GuiceInjectionPlugin;
 import service.filestore.FileStore;
+import service.filestore.FileStore.Folder;
 import service.filestore.roles.Admin;
 import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil2;
 
 public class FileStoreHelper {
+
+  public static final String XLSX_MIME_TYPE =
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+  public static final String XLS_MIME_TYPE =
+      "application/vnd.ms-excel";
 
   public abstract static class FileOrFolderException extends Exception {
     private static final long serialVersionUID = 1L;
@@ -322,6 +337,20 @@ public class FileStoreHelper {
       }
   }
 
+  public List<DataSource> getDatasources(Iterable<FileStore.File> files)
+      throws Exception {
+    final ImmutableList.Builder<DataSource> b = ImmutableList.builder();
+    for (FileStore.File file : files) {
+      // Check this is a MS spreadsheet document (no chance otherwise)
+      if (file.getMimeType().equals(XLS_MIME_TYPE)) {
+        b.add(new XlsDataSource(file.getData()));
+      } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
+        b.add(new XlsxDataSource(file.getData()));
+      }
+    }
+    return b.build();
+  }
+
   private FileStore.File getFile(FileStore.Folder folder, String name) throws RepositoryException {
       for(FileStore.File file : folder.getFiles()) {
           if(file.getName().equals(name)) {
@@ -341,6 +370,16 @@ public class FileStoreHelper {
   protected FileStore fileStore() {
     return GuiceInjectionPlugin.getInjector(Play.application())
                                .getInstance(FileStore.class);
+  }
+
+  public List<FileStore.File> listFilesInFolder(FileStore.Folder folder)
+      throws RepositoryException {
+    final ImmutableList.Builder<FileStore.File> b = ImmutableList.builder();
+    b.addAll(folder.getFiles());
+    for (FileStore.Folder subfolder : folder.getFolders()) {
+      b.addAll(listFilesInFolder(subfolder));
+    }
+    return b.build();
   }
 
 
