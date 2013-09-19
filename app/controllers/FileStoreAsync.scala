@@ -30,6 +30,7 @@ import service.filestore.EventManager.EventReceiverMessage
 import service.filestore.EventManager.{Event => EmEvent}
 import play.api.libs.json.JsArray
 import service.filestore.OrderedEvent
+import models.CacheableUser
 
 /**
  *
@@ -60,17 +61,17 @@ class FileStoreAsync @Inject()(
     enumerator
   }
 
-  def events: EssentialAction = isAuthenticated { authUser => implicit request =>
+  def events: EssentialAction = isAuthenticated { user => implicit request =>
     val AcceptsEventStream = Accepting(MimeTypes.EVENT_STREAM)
     render {
-      case Accepts.Json() => pollingJsonResponse(authUser, request)
-      case AcceptsEventStream() => serverSentEvents(authUser, request)
+      case Accepts.Json() => pollingJsonResponse(request)
+      case AcceptsEventStream() => serverSentEvents(request)
     }
   }
 
-  def pollingJsonResponse(authUser: AuthUser, request: Request[AnyContent]) = {
+  def pollingJsonResponse(request: Request[AnyContent]) = {
     val eventId = lastIdInQuery(request)
-    val response =  JsArray(
+    val response = JsArray(
       filestore.getEventManager().getSince(eventId).map { case OrderedEvent(id, event) =>
         jsonMessage(id, event)
       }.toSeq
@@ -86,19 +87,19 @@ class FileStoreAsync @Inject()(
     }
   }
 
-  def serverSentEvents(authUser: AuthUser, request: Request[AnyContent]) = {
+  def serverSentEvents(request: Request[AnyContent]) = {
     val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
       lastIdInQuery(request)
     }
     Ok.feed(
         initialEventSourceSetup andThen
-        (fsEvents(authUser, lastEventId) &> eventSourceFormatter).interleave(
+        (fsEvents(lastEventId) &> eventSourceFormatter).interleave(
             pingEnumerator)
       ).as("text/event-stream; charset=utf-8")
        .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
   }
 
-  private def fsEvents(authUser: AuthUser, lastEventId: String) = {
+  private def fsEvents(lastEventId: String) = {
     val em = filestore.getEventManager
     var er: EventReceiver = null;
     Concurrent.unicast[OrderedEvent](

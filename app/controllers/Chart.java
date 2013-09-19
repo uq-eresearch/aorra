@@ -2,25 +2,16 @@ package controllers;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.collect.Iterables.getFirst;
-import static java.util.Arrays.asList;
 import helpers.FileStoreHelper;
 
 import java.awt.Dimension;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.jcr.Session;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.codehaus.jackson.node.ArrayNode;
@@ -35,7 +26,6 @@ import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
-import charts.Chart.UnsupportedFormatException;
 import charts.ChartDescription;
 import charts.ChartType;
 import charts.Region;
@@ -63,59 +53,6 @@ public class Chart extends SessionAwareController {
     super(sessionFactory, jcrom, sessionHandler);
     this.fileStore = fileStore;
     this.chartBuilder = chartBuilder;
-  }
-
-  @SubjectPresent
-  public Result chartArchive(final String id) throws IOException {
-    final File tempFile = File.createTempFile("zipfile", "");
-    final ZipOutputStream zos =
-        new ZipOutputStream(new FileOutputStream(tempFile));
-    zos.setMethod(ZipOutputStream.DEFLATED);
-    zos.setLevel(5);
-    inUserSession(new F.Function<Session, Session>() {
-      @Override
-      public Session apply(Session session) throws Throwable {
-        final Map<FileStore.File, DataSource> datasources =
-            getDatasourcesFromIDs(session, asList(id));
-        for (FileStore.File file : datasources.keySet()) {
-          final DataSource datasource = datasources.get(file);
-          final List<charts.Chart> charts = chartBuilder.getCharts(
-              asList(datasource), asList(Region.values()), new Dimension());
-          for (charts.Chart chart : charts) {
-            for (Format f : Format.values()) {
-              final String filepath = String.format("%s/%s-%s-%s.%s\n",
-                  id,
-                  chart.getDescription().getType(),
-                  chart.getDescription().getRegion(),
-                  file.getIdentifier(),
-                  f.name()).trim().toLowerCase();
-              final byte[] data;
-              try {
-                data = chart.outputAs(f).getContent();
-              } catch (UnsupportedFormatException e) {
-                continue; // Skip to next format
-              }
-              zos.putNextEntry(new ZipEntry(filepath));
-              IOUtils.write(data, zos);
-              zos.closeEntry();
-            }
-          }
-        }
-        return session;
-      }
-    });
-    zos.close();
-    ctx().response().setContentType("application/zip");
-    ctx().response().setHeader("Content-Disposition",
-        "attachment; filename="+id+".zip");
-    ctx().response().setHeader("Content-Length", tempFile.length()+"");
-    return ok(new FileInputStream(tempFile) {
-      @Override
-      public void close() throws IOException {
-        super.close();
-        tempFile.delete();
-      }
-    });
   }
 
   @SubjectPresent
@@ -216,8 +153,13 @@ public class Chart extends SessionAwareController {
                 chart.getDescription().getRegion().getName())), "UTF-8");
   }
 
-  private Map<FileStore.File, DataSource> getDatasourcesFromIDs(Session session,
-      List<String> ids) throws Exception {
+  private Map<FileStore.File, DataSource> getDatasourcesFromIDs(
+      Session session, List<String> ids) throws Exception {
+    return getDatasourcesFromIDs(fileStore, session, ids);
+  }
+
+  public static Map<FileStore.File, DataSource> getDatasourcesFromIDs(
+      FileStore fileStore, Session session, List<String> ids) throws Exception {
     final FileStoreHelper fsh = new FileStoreHelper(session);
     final List<FileStore.File> files = Lists.newLinkedList();
     final FileStore.Manager fm = fileStore.getManager(session);
