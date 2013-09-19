@@ -2,16 +2,25 @@ package controllers;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.collect.Iterables.getFirst;
+import static java.util.Arrays.asList;
 import helpers.FileStoreHelper;
 
 import java.awt.Dimension;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.jcr.Session;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.codehaus.jackson.node.ArrayNode;
@@ -26,14 +35,12 @@ import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
-import service.filestore.FileStoreImpl;
+import charts.Chart.UnsupportedFormatException;
 import charts.ChartDescription;
 import charts.ChartType;
 import charts.Region;
 import charts.builder.ChartBuilder;
 import charts.builder.DataSource;
-import charts.builder.spreadsheet.XlsDataSource;
-import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 import charts.representations.Representation;
 
@@ -59,15 +66,67 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
+  public Result chartArchive(final String id) throws IOException {
+    final File tempFile = File.createTempFile("zipfile", "");
+    final ZipOutputStream zos =
+        new ZipOutputStream(new FileOutputStream(tempFile));
+    zos.setMethod(ZipOutputStream.DEFLATED);
+    zos.setLevel(5);
+    inUserSession(new F.Function<Session, Session>() {
+      @Override
+      public Session apply(Session session) throws Throwable {
+        final Map<FileStore.File, DataSource> datasources =
+            getDatasourcesFromIDs(session, asList(id));
+        for (FileStore.File file : datasources.keySet()) {
+          final DataSource datasource = datasources.get(file);
+          final List<charts.Chart> charts = chartBuilder.getCharts(
+              asList(datasource), asList(Region.values()), new Dimension());
+          for (charts.Chart chart : charts) {
+            for (Format f : Format.values()) {
+              final String filepath = String.format("%s/%s-%s-%s.%s\n",
+                  id,
+                  chart.getDescription().getType(),
+                  chart.getDescription().getRegion(),
+                  file.getIdentifier(),
+                  f.name()).trim().toLowerCase();
+              final byte[] data;
+              try {
+                data = chart.outputAs(f).getContent();
+              } catch (UnsupportedFormatException e) {
+                continue; // Skip to next format
+              }
+              zos.putNextEntry(new ZipEntry(filepath));
+              IOUtils.write(data, zos);
+              zos.closeEntry();
+            }
+          }
+        }
+        return session;
+      }
+    });
+    zos.close();
+    ctx().response().setContentType("application/zip");
+    ctx().response().setHeader("Content-Disposition",
+        "attachment; filename="+id+".zip");
+    ctx().response().setHeader("Content-Length", tempFile.length()+"");
+    return ok(new FileInputStream(tempFile) {
+      @Override
+      public void close() throws IOException {
+        super.close();
+        tempFile.delete();
+      }
+    });
+  }
+
+  @SubjectPresent
   public Result multipleFileCharts(final String format, final List<String> ids) {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        List<DataSource> datasources = getDatasourcesFromIDs(session, ids);
+        final List<DataSource> datasources = Lists.newArrayList(
+            getDatasourcesFromIDs(session, ids).values());
         final List<charts.Chart> charts =
             chartBuilder.getCharts(datasources,
-
-
                 getRegions(request().queryString()),
                 getQueryDimensions(request().queryString()));
         final ObjectNode json = Json.newObject();
@@ -111,8 +170,8 @@ public class Chart extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        final List<DataSource> datasources =
-            getDatasourcesFromIDs(session, ids);
+        final List<DataSource> datasources = Lists.newArrayList(
+            getDatasourcesFromIDs(session, ids).values());
         final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
             type, getRegions(request().queryString()),
             getQueryDimensions(request().queryString()));
@@ -157,17 +216,20 @@ public class Chart extends SessionAwareController {
                 chart.getDescription().getRegion().getName())), "UTF-8");
   }
 
-  private List<DataSource> getDatasourcesFromIDs(Session session,
+  private Map<FileStore.File, DataSource> getDatasourcesFromIDs(Session session,
       List<String> ids) throws Exception {
-    List<FileStore.File> files = Lists.newLinkedList();
+    final FileStoreHelper fsh = new FileStoreHelper(session);
+    final List<FileStore.File> files = Lists.newLinkedList();
     final FileStore.Manager fm = fileStore.getManager(session);
     for (String id : ids) {
       FileStore.FileOrFolder fof = fm.getByIdentifier(id);
-      if (fof instanceof FileStoreImpl.File) {
+      if (fof instanceof FileStore.File) {
         files.add((FileStore.File) fof);
+      } else if (fof instanceof FileStore.Folder) {
+        files.addAll(fsh.listFilesInFolder((FileStore.Folder) fof));
       }
     }
-    return new FileStoreHelper(session).getDatasources(files);
+    return fsh.getDatasources(files);
   }
 
   protected static Set<String> getValues(Map<String, String[]> m, String key) {

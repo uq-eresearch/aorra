@@ -1,5 +1,7 @@
 package helpers;
 
+import static com.google.common.collect.Collections2.orderedPermutations;
+import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 import static play.test.Helpers.running;
@@ -7,9 +9,6 @@ import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
-import static java.util.Arrays.asList;
-import static com.google.common.collect.Collections2.orderedPermutations;
-import jackrabbit.AorraAccessManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -30,14 +29,12 @@ import org.apache.jackrabbit.api.security.user.Group;
 import org.eclipse.jetty.util.IO;
 import org.junit.Test;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
 import play.libs.F;
 import service.filestore.FileStore;
 import service.filestore.roles.Admin;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 
 public class FileStoreHelperTest {
 

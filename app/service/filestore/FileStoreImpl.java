@@ -379,7 +379,7 @@ public class FileStoreImpl implements FileStore {
     public Set<FileStore.Folder> getMutableFolderSet()
         throws RepositoryException {
       if (folders == null) {
-        final Set<FileStore.Folder> set = Sets.newLinkedHashSet();
+        final Set<FileStore.Folder> set = Sets.newHashSet();
         for (final Object child : entity.getFolders().values()) {
           set.add(filestoreManager.wrap((models.filestore.Folder) child, this));
         }

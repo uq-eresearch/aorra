@@ -59,5 +59,7 @@ GET     /authenticate/:provider/denied     @controllers.Application.oAuthDenied(
 
 GET    /charts                      @controllers.Chart.multipleFileCharts(format: String ?= "png", id: java.util.List[String])
 GET    /charts/:chart.:format       @controllers.Chart.multipleFileChart(chart, format, id: java.util.List[String])
+GET    /folder/:folderId/charts.zip @controllers.Chart.chartArchive(folderId: String)
+GET    /file/:fileId/charts.zip     @controllers.Chart.chartArchive(fileId: String)
 GET    /file/:fileId/charts         @controllers.Chart.singleFileCharts(format: String ?= "png", fileId)
 GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.singleFileChart(chart, format, fileId)
