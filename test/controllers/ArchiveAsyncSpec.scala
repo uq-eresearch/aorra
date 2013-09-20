@@ -40,7 +40,7 @@ class ArchiveAsyncSpec extends Specification {
 
   "chart archive download" should {
 
-    "requires login" in new FakeAorraApp {
+    "require login" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         val folder = filestore.getManager(session).getRoot()
 
@@ -52,7 +52,7 @@ class ArchiveAsyncSpec extends Specification {
       }
     }
 
-    "returns archive" in new FakeAorraApp {
+    "return archive" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         val folder = filestore.getManager(session).getRoot()
         folder.createFile("marine.xlsx", XLSX_MIME_TYPE,
