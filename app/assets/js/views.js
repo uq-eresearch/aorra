@@ -497,12 +497,13 @@ define([
     tagName: 'span',
     initialize: function(options) {
       this._url = options.url;
+      this._label = options.label || 'Download'
     },
     render: function() {
       var $link = $('<a class="btn btn-default" title="Download"/>');
       $link.attr('href', this._url);
       $link.append('<i class="icon-download-alt"></i>');
-      $link.append('<span class="hidden-phone">Download</span>');
+      $link.append('<span class="hidden-phone">'+this._label+'</span>');
       this.$el.html($link);
     }
   });
@@ -663,6 +664,8 @@ define([
             targetId: this.model.id
           }),
           new DownloadButtonView({ url: this.model.url()+"/archive" }),
+          new DownloadButtonView({ 
+            label: 'Charts', url: this.model.url()+"/charts.zip" }),
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
@@ -700,6 +703,7 @@ define([
     serializeData: function() {
       var showTypes = _.uniq(_.pluck(this._charts, 'type')).length > 1;
       return {
+        zip: this.model.url() + '/charts.zip',
         charts: _.map(this._charts, function(c, i) {
           return _(c).extend({
             first: i == 0,
