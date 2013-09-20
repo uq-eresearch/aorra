@@ -42,7 +42,8 @@ class ArchiveAsync @Inject()(
       }
       Ok.stream(enumerator >>> Enumerator.eof).withHeaders(
         "Content-Type" -> "application/zip",
-        "Content-Disposition" -> s"attachment; filename=${id}.zip"
+        "Content-Disposition" -> s"attachment; filename=${id}.zip",
+        "Cache-Control" -> "max-age=0, must-revalidate"
       )
     }
   }
