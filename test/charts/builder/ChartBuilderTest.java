@@ -146,6 +146,10 @@ public class ChartBuilderTest {
     case TTT_NITRO_AND_PEST:
     case TTT_SEDIMENT:
       return "test/tracking_towards_targets.xlsx";
+    case GROUNDCOVER:
+      return "test/groundcover.xlsx";
+    case GROUNDCOVER_BELOW_50:
+      return "test/groundcover_below_50.xlsx";
     default:
       throw new RuntimeException("Unknown chart type.");
     }

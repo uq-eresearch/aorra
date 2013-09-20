@@ -242,4 +242,17 @@ public abstract class SpreadsheetDataSource implements DataSource {
     return sheet;
   }
 
+  public boolean hasSheet(String name) {
+      return getSheet(name) != null;
+  }
+
+  public String getSheetname(int i) {
+      Sheet sheet = workbook.getSheetAt(i);
+      if(sheet != null) {
+          return sheet.getSheetName();
+      } else {
+          return null;
+      }
+  }
+
 }

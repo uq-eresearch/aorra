@@ -11,6 +11,7 @@ import charts.Region;
 import charts.builder.spreadsheet.AnnualRainfallBuilder;
 import charts.builder.spreadsheet.CotsOutbreakBuilder;
 import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;
+import charts.builder.spreadsheet.GroundcoverBuilder;
 import charts.builder.spreadsheet.LandPracticeSystemsBuilder;
 import charts.builder.spreadsheet.MarineBuilder;
 import charts.builder.spreadsheet.ProgressTableBuilder;
@@ -34,6 +35,7 @@ public class ChartBuilder {
       .add(new GrazingPracticeSystemsBuilder())
       .add(new LandPracticeSystemsBuilder())
       .add(new TrendsSeagrassAbundanceBuilder())
+      .add(new GroundcoverBuilder())
       .build();
 
   public List<Chart> getCharts(List<DataSource> datasources,
