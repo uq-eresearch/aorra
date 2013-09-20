@@ -1,5 +1,7 @@
 package helpers;
 
+import static com.google.common.collect.Collections2.orderedPermutations;
+import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 import static play.test.Helpers.running;
@@ -7,12 +9,13 @@ import static test.AorraTestUtils.fakeAorraApp;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
-import jackrabbit.AorraAccessManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
+import java.util.SortedSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -29,6 +32,9 @@ import org.junit.Test;
 import play.libs.F;
 import service.filestore.FileStore;
 import service.filestore.roles.Admin;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 
 public class FileStoreHelperTest {
 
@@ -411,6 +417,41 @@ public class FileStoreHelperTest {
         assertThat(IO.toString(((FileStore.File)
             fm.getFileOrFolder("/subfolder/foo/bar/test.txt")).getData()))
             .isEqualTo("Hello World!");
+        return session;
+      }
+    }, pwt.getPrintWriter());
+  }
+
+  @Test
+  public void listFilesInFolder() {
+    final PrintWriterTester pwt = new PrintWriterTester();
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        final Iterable<List<String>> folderParts = orderedPermutations(asList(
+                new String[] { "a", "b", "c", "d", "e" }));
+        final SortedSet<String> folderPaths = Sets.newTreeSet();
+        for (final List<String> parts : folderParts) {
+          folderPaths.add("/"+Joiner.on('/').join(parts));
+        }
+        int fileNo = 1;
+        for (final String absPath : folderPaths) {
+          final FileStore.Folder folder = fsh.mkdir(absPath, true);
+          for (int i = 0; i < 2; i++) {
+            folder.createFile(String.format("%03d.txt", fileNo), "text/plain",
+                new ByteArrayInputStream(
+                    String.format("This is file %d", fileNo).getBytes()));
+            fileNo++;
+          }
+        }
+        final List<FileStore.File> files = fsh.listFilesInFolder(fm.getRoot());
+        for (int i = 1; i < fileNo; i++) {
+          assertThat(files.get(i-1).getName()).isEqualTo(
+              String.format("%03d.txt", i));
+        }
         return session;
       }
     }, pwt.getPrintWriter());

@@ -412,7 +412,7 @@ public class FileStoreImpl implements FileStore {
     protected Set<FileStore.File> getMutableFileSet()
         throws RepositoryException {
       if (files == null) {
-        final Set<FileStore.File> set = Sets.newHashSet();
+        final Set<FileStore.File> set = Sets.newLinkedHashSet();
         for (final Object child : entity.getFiles().values()) {
           set.add(filestoreManager.wrap((models.filestore.File) child, this));
         }

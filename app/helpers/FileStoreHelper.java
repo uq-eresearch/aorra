@@ -9,9 +9,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -31,10 +35,24 @@ import play.Play;
 import service.GuiceInjectionPlugin;
 import service.filestore.FileStore;
 import service.filestore.roles.Admin;
+import charts.builder.DataSource;
+import charts.builder.spreadsheet.XlsDataSource;
+import charts.builder.spreadsheet.XlsxDataSource;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedSet;
+
 import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil2;
 
 public class FileStoreHelper {
+
+  public static final String XLSX_MIME_TYPE =
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+  public static final String XLS_MIME_TYPE =
+      "application/vnd.ms-excel";
 
   public abstract static class FileOrFolderException extends Exception {
     private static final long serialVersionUID = 1L;
@@ -128,7 +146,7 @@ public class FileStoreHelper {
    * @param folder Base folder to use
    * @return Prefix to strip from filestore paths
    */
-  protected String getZipPath(
+  public String getZipPath(
       final FileStore.FileOrFolder fof,
       final FileStore.Folder baseFolder) {
     if (baseFolder.getPath().equals("/")) {
@@ -149,14 +167,17 @@ public class FileStoreHelper {
       addFolderToZip(zos, subFolder, baseFolder);
     }
     for (final FileStore.File file : folder.getFiles()) {
-      zos.putNextEntry(new ZipEntry(getZipPath(file, baseFolder)));
-      InputStream data = file.getData();
-      IOUtils.copy(data, zos);
-      zos.closeEntry();
-      data.close();
+      addToZip(zos, getZipPath(file, baseFolder), file.getData());
     }
   }
 
+  protected void addToZip(final ZipOutputStream zos, String filename,
+      InputStream data) throws IOException {
+    zos.putNextEntry(new ZipEntry(filename));
+    IOUtils.copy(data, zos);
+    zos.closeEntry();
+    data.close();
+  }
 
   protected Iterable<String> getPathParts(final String absPath) {
     final Deque<String> q = new LinkedList<String>();
@@ -322,6 +343,21 @@ public class FileStoreHelper {
       }
   }
 
+  public Map<FileStore.File, DataSource> getDatasources(
+      final Iterable<FileStore.File> files) throws Exception {
+    final ImmutableMap.Builder<FileStore.File,DataSource> b =
+        ImmutableMap.builder();
+    for (FileStore.File file : files) {
+      // Check this is a MS spreadsheet document (no chance otherwise)
+      if (file.getMimeType().equals(XLS_MIME_TYPE)) {
+        b.put(file, new XlsDataSource(file.getData()));
+      } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
+        b.put(file, new XlsxDataSource(file.getData()));
+      }
+    }
+    return b.build();
+  }
+
   private FileStore.File getFile(FileStore.Folder folder, String name) throws RepositoryException {
       for(FileStore.File file : folder.getFiles()) {
           if(file.getName().equals(name)) {
@@ -341,6 +377,26 @@ public class FileStoreHelper {
   protected FileStore fileStore() {
     return GuiceInjectionPlugin.getInjector(Play.application())
                                .getInstance(FileStore.class);
+  }
+
+  public List<FileStore.File> listFilesInFolder(FileStore.Folder folder)
+      throws RepositoryException {
+    final ImmutableList.Builder<FileStore.File> b = ImmutableList.builder();
+    b.addAll(sortFof(folder.getFiles()));
+    for (FileStore.Folder subfolder : sortFof(folder.getFolders())) {
+      b.addAll(sortFof(listFilesInFolder(subfolder)));
+    }
+    return b.build();
+  }
+
+  private <T extends FileStore.FileOrFolder> SortedSet<T> sortFof(
+      final Iterable<T> files) {
+    return ImmutableSortedSet.<T> orderedBy(new Comparator<T>() {
+      @Override
+      public int compare(T o1, T o2) {
+        return o1.getName().compareTo(o2.getName());
+      }
+    }).addAll(files).build();
   }
 
 

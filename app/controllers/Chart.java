@@ -2,6 +2,7 @@ package controllers;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.collect.Iterables.getFirst;
+import helpers.FileStoreHelper;
 
 import java.awt.Dimension;
 import java.io.UnsupportedEncodingException;
@@ -25,14 +26,11 @@ import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
-import service.filestore.FileStoreImpl;
 import charts.ChartDescription;
 import charts.ChartType;
 import charts.Region;
 import charts.builder.ChartBuilder;
 import charts.builder.DataSource;
-import charts.builder.spreadsheet.XlsDataSource;
-import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 import charts.representations.Representation;
 
@@ -43,12 +41,6 @@ import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
 public class Chart extends SessionAwareController {
-
-  public static final String XLSX_MIME_TYPE =
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-  public static final String XLS_MIME_TYPE =
-      "application/vnd.ms-excel";
 
   private final FileStore fileStore;
 
@@ -68,7 +60,8 @@ public class Chart extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        List<DataSource> datasources = getDatasourcesFromIDs(session, ids);
+        final List<DataSource> datasources = Lists.newArrayList(
+            getDatasourcesFromIDs(session, ids).values());
         final List<charts.Chart> charts =
             chartBuilder.getCharts(datasources,
                 getRegions(request().queryString()),
@@ -114,8 +107,8 @@ public class Chart extends SessionAwareController {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
       public final Result apply(Session session) throws Exception {
-        final List<DataSource> datasources =
-            getDatasourcesFromIDs(session, ids);
+        final List<DataSource> datasources = Lists.newArrayList(
+            getDatasourcesFromIDs(session, ids).values());
         final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
             type, getRegions(request().queryString()),
             getQueryDimensions(request().queryString()));
@@ -160,31 +153,25 @@ public class Chart extends SessionAwareController {
                 chart.getDescription().getRegion().getName())), "UTF-8");
   }
 
-  private List<DataSource> getDatasourcesFromIDs(Session session,
-      List<String> ids) throws Exception {
-    List<FileStore.File> files = Lists.newLinkedList();
+  private Map<FileStore.File, DataSource> getDatasourcesFromIDs(
+      Session session, List<String> ids) throws Exception {
+    return getDatasourcesFromIDs(fileStore, session, ids);
+  }
+
+  public static Map<FileStore.File, DataSource> getDatasourcesFromIDs(
+      FileStore fileStore, Session session, List<String> ids) throws Exception {
+    final FileStoreHelper fsh = new FileStoreHelper(session);
+    final List<FileStore.File> files = Lists.newLinkedList();
     final FileStore.Manager fm = fileStore.getManager(session);
     for (String id : ids) {
       FileStore.FileOrFolder fof = fm.getByIdentifier(id);
-      if (fof instanceof FileStoreImpl.File) {
+      if (fof instanceof FileStore.File) {
         files.add((FileStore.File) fof);
+      } else if (fof instanceof FileStore.Folder) {
+        files.addAll(fsh.listFilesInFolder((FileStore.Folder) fof));
       }
     }
-    return getDatasources(session, files);
-  }
-
-  private List<DataSource> getDatasources(Session session,
-      Iterable<FileStore.File> files) throws Exception {
-    List<DataSource> result = Lists.newLinkedList();
-    for (FileStore.File file : files) {
-      if(file.getMimeType().equals(XLS_MIME_TYPE)) {
-        result.add(new XlsDataSource(file.getData()));
-      } else if (file.getMimeType().equals(XLSX_MIME_TYPE)) {
-        // Check this is an OpenXML document (no chance otherwise)
-        result.add(new XlsxDataSource(file.getData()));
-      }
-    }
-    return result;
+    return fsh.getDatasources(files);
   }
 
   protected static Set<String> getValues(Map<String, String[]> m, String key) {

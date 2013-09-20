@@ -13,6 +13,8 @@ import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.asAdminUserSession;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.loggedInRequest;
+import static helpers.FileStoreHelper.XLS_MIME_TYPE;
+import static helpers.FileStoreHelper.XLSX_MIME_TYPE;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -658,7 +660,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("marine.xlsx",
-        Chart.XLSX_MIME_TYPE,
+        XLSX_MIME_TYPE,
         new FileInputStream("test/marine.xlsx"));
   }
 
@@ -667,7 +669,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder  = fileStore().getManager(session).getRoot();
     return folder.createFile("marine.xls",
-        Chart.XLS_MIME_TYPE,
+        XLS_MIME_TYPE,
         new FileInputStream("test/marine.xls"));
   }
 
@@ -675,7 +677,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("cots_outbreak.xlsx",
-        Chart.XLSX_MIME_TYPE,
+        XLSX_MIME_TYPE,
         new FileInputStream("test/cots_outbreak.xlsx"));
   }
 
@@ -683,7 +685,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("annual_rainfall.xlsx",
-        Chart.XLSX_MIME_TYPE,
+        XLSX_MIME_TYPE,
         new FileInputStream("test/annual_rainfall.xlsx"));
   }
 
@@ -691,7 +693,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("progress_table.xlsx",
-        Chart.XLSX_MIME_TYPE,
+        XLSX_MIME_TYPE,
         new FileInputStream("test/progress_table.xlsx"));
   }
 
@@ -699,7 +701,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("grazing_practice_systems.xlsx",
-        Chart.XLSX_MIME_TYPE,
+        XLSX_MIME_TYPE,
         new FileInputStream("test/grazing_practice_systems.xlsx"));
   }
 
@@ -707,7 +709,7 @@ public class ChartTest {
       final String prefix)
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
-    return folder.createFile(prefix + ".xlsx", Chart.XLSX_MIME_TYPE,
+    return folder.createFile(prefix + ".xlsx", XLSX_MIME_TYPE,
         new FileInputStream("test/land_practice_systems.xlsx"));
   }
 
@@ -715,7 +717,7 @@ public class ChartTest {
       final Session session, final String prefix) throws RepositoryException,
       FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
-    return folder.createFile(prefix + ".xlsx", Chart.XLSX_MIME_TYPE,
+    return folder.createFile(prefix + ".xlsx", XLSX_MIME_TYPE,
         new FileInputStream("test/tracking_towards_targets.xlsx"));
   }
 
