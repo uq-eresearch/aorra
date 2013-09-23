@@ -19,11 +19,9 @@ import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
-import charts.Chart.UnsupportedFormatException;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
 import charts.graphics.ProgressTable;
-import charts.graphics.BeerCoaster.Condition;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -76,7 +74,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
           });
 
   public ProgressTableBuilder() {
-    super(ChartType.PROGRESS_TABLE);
+    super(Lists.newArrayList(ChartType.PROGRESS_TABLE, ChartType.PROGRESS_TABLE_REGION));
   }
 
   @Override
@@ -90,21 +88,20 @@ public class ProgressTableBuilder extends AbstractBuilder {
   }
 
   @Override
-  public Chart build(final SpreadsheetDataSource datasource, ChartType type,
+  public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
       final Region region, Dimension dimensions) {
     final ProgressTable.Dataset ds;
     try {
-      ds = getDataset(datasource);
+      ds = getDataset(datasource, type==ChartType.PROGRESS_TABLE_REGION?region:null);
     } catch (MissingDataException e) {
       // TODO: Handle this better
       throw new RuntimeException(e);
     }
-    if (region == Region.GBR) {
-      final AbstractBuilder thisBuilder = this;
+    if (region == Region.GBR || type == ChartType.PROGRESS_TABLE_REGION) {
       return new AbstractChart(dimensions) {
         @Override
         public ChartDescription getDescription() {
-          return new ChartDescription(ChartType.PROGRESS_TABLE, Region.GBR);
+          return new ChartDescription(type, region);
         }
 
         @Override
@@ -148,37 +145,42 @@ public class ProgressTableBuilder extends AbstractBuilder {
 
         @Override
         public String getCommentary() throws UnsupportedFormatException {
-          return thisBuilder.getCommentary(datasource, region);
+          return ProgressTableBuilder.this.getCommentary(datasource, region);
         }
       };
     }
     return null;
   }
 
-  private ProgressTable.Dataset getDataset(SpreadsheetDataSource datasource)
+  private ProgressTable.Dataset getDataset(SpreadsheetDataSource datasource, Region region)
       throws MissingDataException {
-    List<ProgressTable.Column> columns = getColumns(datasource);
-    List<ProgressTable.Row> rows = getRows(columns, datasource);
+    List<ProgressTable.Column> columns = getColumns(datasource, region);
+    List<ProgressTable.Row> rows = getRows(columns, datasource, region);
     return new ProgressTable.Dataset(columns, rows);
   }
 
-  private List<ProgressTable.Column> getColumns(SpreadsheetDataSource ds)
+  private List<ProgressTable.Column> getColumns(SpreadsheetDataSource ds, Region region)
       throws MissingDataException {
     List<ProgressTable.Column> columns = Lists.newArrayList();
     int col = 2;
     while (StringUtils.isNotBlank(ds.select(0, col).asString())) {
-      columns.add(new ProgressTable.Column(ds.select(0, col).asString(), ds
-          .select(1, col).asString(), ds.select(2, col).asString()));
+      String header = getIndicator(ds.select(0, col).asString(), region).toString();
+      columns.add(new ProgressTable.Column(header, ds.select(1, col).asString(),
+              ds.select(2, col).asString()));
       col++;
     }
     return columns;
   }
 
   private List<ProgressTable.Row> getRows(List<ProgressTable.Column> columns,
-      SpreadsheetDataSource datasource) throws MissingDataException {
+      SpreadsheetDataSource datasource, Region region) throws MissingDataException {
     List<ProgressTable.Row> rows = Lists.newArrayList();
-    for (Region region : Region.values()) {
-      rows.add(getRow(columns, datasource, region));
+    if(region == null) {
+        for (Region r : Region.values()) {
+            rows.add(getRow(columns, datasource, r));
+        }
+    } else {
+        rows.add(getRow(columns, datasource, region));
     }
     return rows;
   }

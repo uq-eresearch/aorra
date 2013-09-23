@@ -32,7 +32,7 @@
 @if(cell.condition != null) {
 <div class="@{lowerCase(cell.condition.name())} @{lowerCase(cell.indicator.name())} statusbox"></div>
 <div class="text-data">@cell.progress</div>
-@if(cell.indicator == charts.graphics.ProgressTable.Indicator.GRAIN) {
+@if((cell.indicator == charts.graphics.ProgressTable.Indicator.GRAIN) && (rows.size() > 1)) {
 <div style="font-family:LiberationSans;">(Grains)</div>
 }
 }

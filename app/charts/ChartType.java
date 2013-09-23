@@ -5,6 +5,7 @@ public enum ChartType {
     COTS_OUTBREAK ("Crown of Thorns Outbreak"),
     ANNUAL_RAINFALL ("Annual Rainfall"),
     PROGRESS_TABLE ("Progress Table"),
+    PROGRESS_TABLE_REGION ("Progress Table Region"),
     TTT_CANE_AND_HORT ("Tracking Towards Target - Cane and Horticulture"),
     TTT_GRAZING ("Tracking Towards Target - Grazing"),
     TTT_SEDIMENT ("Tracking Towards Target - Sediment"),
