@@ -25,6 +25,10 @@ public class ProgressTable implements Drawable {
   public static enum Indicator {
     GRAZING, SUGARCANE, GRAIN, HORTICULTURE,
     GROUNDCOVER, NITROGEN, SEDIMENT, PESTICIDES;
+
+    public String getLabel() {
+        return StringUtils.capitalize(StringUtils.lowerCase(name())); 
+    }
   }
 
   public static enum Condition {

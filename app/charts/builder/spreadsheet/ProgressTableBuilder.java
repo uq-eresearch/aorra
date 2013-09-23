@@ -164,7 +164,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
     List<ProgressTable.Column> columns = Lists.newArrayList();
     int col = 2;
     while (StringUtils.isNotBlank(ds.select(0, col).asString())) {
-      String header = getIndicator(ds.select(0, col).asString(), region).toString();
+      String header = getIndicator(ds.select(0, col).asString(), region).getLabel();
       columns.add(new ProgressTable.Column(header, ds.select(1, col).asString(),
               ds.select(2, col).asString()));
       col++;
