@@ -137,6 +137,7 @@ public class ChartBuilderTest {
       return "test/land_practice_systems.xlsx";
     case MARINE:
       return "test/marine.xlsx";
+    case PROGRESS_TABLE_REGION:
     case PROGRESS_TABLE:
       return "test/progress_table.xlsx";
     case TSA:
