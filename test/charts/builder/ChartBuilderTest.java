@@ -151,6 +151,8 @@ public class ChartBuilderTest {
       return "test/groundcover.xlsx";
     case GROUNDCOVER_BELOW_50:
       return "test/groundcover_below_50.xlsx";
+    case LOADS:
+      return "test/loads.xlsx";
     default:
       throw new RuntimeException("Unknown chart type.");
     }

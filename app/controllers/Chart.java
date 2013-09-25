@@ -37,6 +37,7 @@ import charts.representations.Representation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
@@ -73,6 +74,9 @@ public class Chart extends SessionAwareController {
           final ObjectNode chartNode = Json.newObject();
           chartNode.put("type", desc.getType().getLabel());
           chartNode.put("region", desc.getRegion().getName());
+          for(String pname : desc.getParameterNames()) {
+              chartNode.put(pname, desc.getParameter(pname));
+          }
           chartNode.put("url",
               ids.size() == 1
               ? buildUrl(chart, format, ids.get(0))
@@ -87,6 +91,18 @@ public class Chart extends SessionAwareController {
   @SubjectPresent
   public Result singleFileCharts(final String format, final String id) {
     return multipleFileCharts(format, ImmutableList.of(id));
+  }
+
+  private Map<String, String> getParameters(List<DataSource> datasources, ChartType type) {
+      Map<String, String> parameters = Maps.newHashMap();
+      Map<String, List<String>> supported = chartBuilder.getParameters(datasources, type);
+      for(String key : supported.keySet()) {
+          String values[] = request().queryString().get(key);
+          if(values != null && values.length > 0) {
+              parameters.put(key, values[0]);
+          }
+      }
+      return parameters;
   }
 
   @SubjectPresent
@@ -111,7 +127,7 @@ public class Chart extends SessionAwareController {
             getDatasourcesFromIDs(session, ids).values());
         final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
             type, getRegions(request().queryString()),
-            getQueryDimensions(request().queryString()));
+            getQueryDimensions(request().queryString()), getParameters(datasources, type));
         for (charts.Chart chart : charts) {
           try {
             final Representation r = chart.outputAs(format);
@@ -148,9 +164,16 @@ public class Chart extends SessionAwareController {
   private String buildUrl(Call call, charts.Chart chart)
       throws UnsupportedEncodingException {
     return call.url() + (call.url().contains("?") ? "&" : "?") +
-        URLEncodedUtils.format(
-            ImmutableList.of(new BasicNameValuePair("region",
-                chart.getDescription().getRegion().getName())), "UTF-8");
+        URLEncodedUtils.format(getParameters(chart), "UTF-8");
+  }
+
+  private List<BasicNameValuePair> getParameters(charts.Chart chart) {
+      List<BasicNameValuePair> l = Lists.newArrayList();
+      l.add(new BasicNameValuePair("region", chart.getDescription().getRegion().getName()));
+      for(String pname : chart.getDescription().getParameterNames()) {
+          l.add(new BasicNameValuePair(pname, chart.getDescription().getParameter(pname)));
+      }
+      return l;
   }
 
   private Map<FileStore.File, DataSource> getDatasourcesFromIDs(

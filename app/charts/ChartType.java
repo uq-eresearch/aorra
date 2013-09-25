@@ -16,7 +16,8 @@ public enum ChartType {
     GRAINS_PS ("Grains Practice Systems"),
     TSA("Trends in seagrass abundance"),
     GROUNDCOVER("Groundcover"),
-    GROUNDCOVER_BELOW_50("Groundcover below 50%");
+    GROUNDCOVER_BELOW_50("Groundcover below 50%"),
+    LOADS("Loads");
 
     private final String label;
 
