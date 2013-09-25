@@ -1,6 +1,7 @@
 package charts.builder.spreadsheet;
 
 import java.awt.Dimension;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,60 @@ import com.google.common.collect.Maps;
 
 public abstract class AbstractBuilder implements ChartTypeBuilder {
 
+  private static final String CHART_TYPE = "charttype";
+  private static final String REGIONS = "regions";
+
+  @SuppressWarnings("rawtypes")
+  private static class Permutations {
+
+      private boolean isSolution(Map<String, List> parameters) {
+          for(Map.Entry<String, List> me : parameters.entrySet()) {
+              if(me.getValue().size() > 1) {
+                  return false;
+              }
+          }
+          return true;
+      }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, ?> getSolution(Map<String, List> map) {
+          Map result = Maps.newHashMap();
+          for(Map.Entry<String, List> me : map.entrySet()) {
+              result.put(me.getKey(), me.getValue().get(0));
+          }
+          return result;
+      }
+
+      private void permutate(List<Map<String, ?>> result, Map<String, List> map) {
+          if(isSolution(map)) {
+              result.add(getSolution(map));
+          } else {
+              for(Map.Entry<String, List> me : map.entrySet()) {
+                  if(me.getValue().size() > 1) {
+                      for(Object o : me.getValue()) {
+                          Map<String, List> m = Maps.newHashMap(map);
+                          m.put(me.getKey(), Lists.newArrayList(o));
+                          permutate(result, m);
+                      }
+                      break;
+                  }
+              }
+          }
+      }
+
+      public List<Map<String, ?>> permutate(Map<String, List> map) {
+          for(Map.Entry<String, List> me : map.entrySet()) {
+              if(me.getValue().isEmpty()) {
+                  throw new IllegalArgumentException(String.format(
+                          "list for map entry %s is empty", me.getKey()));
+              }
+          }
+          List<Map<String, ?>> result = Lists.newArrayList();
+          permutate(result, map);
+          return result;
+      }
+  }
+
   private final List<ChartType> types;
 
   public AbstractBuilder(ChartType type) {
@@ -35,8 +90,12 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       Region region, Dimension queryDimensions);
 
   public Chart build(SpreadsheetDataSource datasource, ChartType type,
-          Region region, Dimension queryDimensions, Map<String, String> parameters) {
-      return build(datasource, type, region, queryDimensions);
+          Region region, Dimension queryDimensions, Map<String, ?> parameters) {
+      if(parameters.isEmpty()) {
+          return build(datasource, type, region, queryDimensions);
+      } else {
+          throw new RuntimeException("override me");
+      }
   }
 
   protected String getCommentary(SpreadsheetDataSource datasource,
@@ -69,83 +128,6 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       return result;
   }
 
-  protected List<Chart> buildAllWithParameters(SpreadsheetDataSource datasource,
-          ChartType type, Region region, Dimension queryDimensions, Map<String, String> parameters) {
-    List<Chart> charts = Lists.newArrayList();
-    if (type == null) {
-        for (ChartType t : types) {
-          Chart chart = build(datasource, t, region, queryDimensions, parameters);
-          if (chart != null) {
-            charts.add(chart);
-          }
-        }
-      } else {
-        Chart chart = build(datasource, type, region, queryDimensions, parameters);
-        if (chart != null) {
-          charts.add(chart);
-        }
-      }
-      return charts;
-  }
-
-  private static boolean isSolution(Map<String, List<String>> parameters) {
-      for(Map.Entry<String, List<String>> me : parameters.entrySet()) {
-          if(me.getValue().size() > 1) {
-              return false;
-          }
-      }
-      return true;
-  }
-
-  private static Map<String, String> getSolution(Map<String, List<String>> parameters) {
-      Map<String, String> result = Maps.newHashMap();
-      for(Map.Entry<String, List<String>> me : parameters.entrySet()) {
-          result.put(me.getKey(), me.getValue().get(0));
-      }
-      return result;
-  }
-
-  private static void permutate(List<Map<String, String>> result, Map<String, List<String>> parameters) {
-      if(isSolution(parameters)) {
-          result.add(getSolution(parameters));
-      } else {
-          for(Map.Entry<String, List<String>> me : parameters.entrySet()) {
-              if(me.getValue().size() > 1) {
-                  for(String s : me.getValue()) {
-                      Map<String, List<String>> map = Maps.newHashMap(parameters);
-                      map.put(me.getKey(), Lists.newArrayList(s));
-                      permutate(result, map);
-                  }
-                  break;
-              }
-          }
-      }
-  }
-
-  private static List<Map<String, String>> permutate(Map<String, List<String>> parameters) {
-      List<Map<String, String>> result = Lists.newArrayList();
-      permutate(result, parameters);
-      return result;
-  }
-
-  protected List<Chart> buildAll(SpreadsheetDataSource datasource,
-      ChartType type, Region region, Dimension queryDimensions, Map<String, String> parameters) {
-    List<Chart> charts = Lists.newArrayList();
-    Map<String, List<String>> supportedParameters = getParameters(datasource, type);
-    Map<String, List<String>> preparedParameters = Maps.newHashMap();
-    for(String key : supportedParameters.keySet()) {
-        if((parameters != null) && parameters.containsKey(key)) {
-            preparedParameters.put(key, Lists.newArrayList(parameters.get(key)));
-        } else {
-            preparedParameters.put(key, supportedParameters.get(key));
-        }
-    }
-    for(Map<String, String> p : permutate(preparedParameters)) {
-        charts.addAll(buildAllWithParameters(datasource, type, region, queryDimensions, p));
-    }
-    return charts;
-  }
-
   @Override
   public boolean canHandle(ChartType type, List<DataSource> datasources) {
     if (type == null || types.contains(type)) {
@@ -174,19 +156,42 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     return charts;
   }
 
-  protected List<Chart> build(SpreadsheetDataSource datasource, ChartType type,
+  private List<Chart> build(SpreadsheetDataSource datasource, ChartType type,
       List<Region> regions, Dimension queryDimensions, Map<String, String> parameters) {
     List<Chart> charts = Lists.newArrayList();
-    if (!regions.isEmpty()) {
-      for (Region region : regions) {
-        charts.addAll(buildAll(datasource, type, region, queryDimensions, parameters));
-      }
+    @SuppressWarnings("rawtypes")
+    Map<String, List> m = Maps.newHashMap();
+    Map<String, List<String>> supportedParameters = getParameters(datasource, type);
+    for(String key : supportedParameters.keySet()) {
+        if((parameters != null) && parameters.containsKey(key)) {
+            m.put(key, Lists.newArrayList(parameters.get(key)));
+        } else {
+            m.put(key, supportedParameters.get(key));
+        }
+    }
+    if(type == null) {
+        m.put(CHART_TYPE, types);
     } else {
-      for (Region region : Region.values()) {
-        charts.addAll(buildAll(datasource, type, region, queryDimensions, parameters));
-      }
+        m.put(CHART_TYPE, Arrays.asList(type));
+    }
+    if((regions == null) || regions.isEmpty()) {
+        m.put(REGIONS, Arrays.asList(Region.values()));
+    } else {
+        m.put(REGIONS, regions);
+    }
+    for(Map<String, ?> p : new Permutations().permutate(m)) {
+        Chart chart = build(datasource, p, queryDimensions);
+        if(chart != null) {
+            charts.add(chart);
+        }
     }
     return charts;
+  }
+
+  private Chart build(SpreadsheetDataSource ds, Map<String, ?> map, Dimension queryDimensions) {
+      ChartType type = (ChartType)map.remove(CHART_TYPE);
+      Region region = (Region)map.remove(REGIONS);
+      return build(ds, type, region, queryDimensions, map);
   }
 
 }

@@ -13,14 +13,14 @@ public class ChartDescription {
 
     private final Region region;
 
-    private Map<String, String> parameters = Maps.newHashMap();
+    private Map<String, ?> parameters = Maps.newHashMap();
 
     public ChartDescription(ChartType type, Region region) {
       this.type = checkNotNull(type);
       this.region = checkNotNull(region);
     }
 
-    public ChartDescription(ChartType type, Region region, Map<String, String> parameters) {
+    public ChartDescription(ChartType type, Region region, Map<String, ?> parameters) {
         this(type, region);
         this.parameters = parameters;
     }
@@ -33,7 +33,7 @@ public class ChartDescription {
       return region;
     }
 
-    public String getParameter(String name) {
+    public Object getParameter(String name) {
         return parameters.get(name);
     }
 

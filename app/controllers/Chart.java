@@ -75,7 +75,7 @@ public class Chart extends SessionAwareController {
           chartNode.put("type", desc.getType().getLabel());
           chartNode.put("region", desc.getRegion().getName());
           for(String pname : desc.getParameterNames()) {
-              chartNode.put(pname, desc.getParameter(pname));
+              chartNode.put(pname, desc.getParameter(pname).toString());
           }
           chartNode.put("url",
               ids.size() == 1
@@ -171,7 +171,7 @@ public class Chart extends SessionAwareController {
       List<BasicNameValuePair> l = Lists.newArrayList();
       l.add(new BasicNameValuePair("region", chart.getDescription().getRegion().getName()));
       for(String pname : chart.getDescription().getParameterNames()) {
-          l.add(new BasicNameValuePair(pname, chart.getDescription().getParameter(pname)));
+          l.add(new BasicNameValuePair(pname, chart.getDescription().getParameter(pname).toString()));
       }
       return l;
   }
