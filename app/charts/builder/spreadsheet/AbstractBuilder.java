@@ -180,18 +180,14 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
         m.put(REGIONS, regions);
     }
     for(Map<String, ?> p : new Permutations().permutate(m)) {
-        Chart chart = build(datasource, p, queryDimensions);
+        ChartType t = (ChartType)p.remove(CHART_TYPE);
+        Region r = (Region)p.remove(REGIONS);
+        Chart chart = build(datasource, t, r, queryDimensions, p);
         if(chart != null) {
             charts.add(chart);
         }
     }
     return charts;
-  }
-
-  private Chart build(SpreadsheetDataSource ds, Map<String, ?> map, Dimension queryDimensions) {
-      ChartType type = (ChartType)map.remove(CHART_TYPE);
-      Region region = (Region)map.remove(REGIONS);
-      return build(ds, type, region, queryDimensions, map);
   }
 
 }

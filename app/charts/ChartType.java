@@ -17,7 +17,11 @@ public enum ChartType {
     TSA("Trends in seagrass abundance"),
     GROUNDCOVER("Groundcover"),
     GROUNDCOVER_BELOW_50("Groundcover below 50%"),
-    LOADS("Loads");
+    LOADS("Loads"),
+    CORAL_HCC("Hard coral cover"),
+    CORAL_SCC("Soft coral cover"),
+    CORAL_MA("Macroalgae"),
+    CORAL_JUV("Juvenile density");
 
     private final String label;
 

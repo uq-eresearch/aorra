@@ -1,7 +1,7 @@
 package charts.builder;
 
-import static org.fest.assertions.Assertions.assertThat;
 import static java.util.Arrays.asList;
+import static org.fest.assertions.Assertions.assertThat;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -19,6 +19,7 @@ import org.junit.Test;
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
 import charts.Region;
+import charts.builder.spreadsheet.XlsDataSource;
 import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 
@@ -117,7 +118,12 @@ public class ChartBuilderTest {
 
   private DataSource getDatasource(ChartType t) {
     try {
-      return new XlsxDataSource(new FileInputStream(getChartTypeFile(t)));
+        String filename = getChartTypeFile(t);
+        if(filename.endsWith("xlsx")) {
+            return new XlsxDataSource(new FileInputStream(getChartTypeFile(t)));
+        } else {
+            return new XlsDataSource(new FileInputStream(getChartTypeFile(t)));
+        }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -153,6 +159,11 @@ public class ChartBuilderTest {
       return "test/groundcover_below_50.xlsx";
     case LOADS:
       return "test/loads.xlsx";
+    case CORAL_HCC:
+    case CORAL_SCC:
+    case CORAL_MA:
+    case CORAL_JUV:
+      return "test/coral.xls";
     default:
       throw new RuntimeException("Unknown chart type.");
     }

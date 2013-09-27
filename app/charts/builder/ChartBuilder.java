@@ -10,6 +10,7 @@ import charts.Chart;
 import charts.ChartType;
 import charts.Region;
 import charts.builder.spreadsheet.AnnualRainfallBuilder;
+import charts.builder.spreadsheet.CoralCoverBuilder;
 import charts.builder.spreadsheet.CotsOutbreakBuilder;
 import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;
 import charts.builder.spreadsheet.GroundcoverBuilder;
@@ -40,6 +41,7 @@ public class ChartBuilder {
       .add(new TrendsSeagrassAbundanceBuilder())
       .add(new GroundcoverBuilder())
       .add(new LoadsBuilder())
+      .add(new CoralCoverBuilder())
       .build();
 
   public List<Chart> getCharts(List<DataSource> datasources,
