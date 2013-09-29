@@ -44,17 +44,21 @@ public class TrendsSeagrassAbundance {
         chart.setBackgroundPaint(Color.white);
         StatisticalLineAndShapeRenderer renderer = new StatisticalLineAndShapeRenderer();
         renderer.setErrorIndicatorPaint(new Color(147,112,45));
+        renderer.setDrawOutlines(true);
+        renderer.setUseOutlinePaint(true);
+        renderer.setBaseOutlinePaint(Color.black);
         CategoryPlot plot = (CategoryPlot)chart.getPlot();
         plot.setRenderer(renderer);
         plot.setRangeGridlinePaint(Color.lightGray);
         plot.setRangeGridlineStroke(new BasicStroke(1.0f));
         plot.setDomainGridlinesVisible(false);
         plot.setBackgroundPaint(Color.white);
-        renderer.setSeriesPaint(0, Color.blue);
+        renderer.setSeriesPaint(0, new Color(30, 172, 226));
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickUnit(new NumberTickUnit(0.05, percentFormatter()));
         rangeAxis.setTickMarksVisible(false);
         CategoryAxis cAxis = new CategoryAxis() {
+            @SuppressWarnings("rawtypes")
             @Override
             protected TextBlock createLabel(Comparable category, float width,
                     RectangleEdge edge, Graphics2D g2) {
@@ -64,7 +68,6 @@ public class TrendsSeagrassAbundance {
                 }
                 return TextUtilities.createTextBlock(label,
                         getTickLabelFont(category), getTickLabelPaint(category));
-
             }
         };
         cAxis.setLabel("Year");
