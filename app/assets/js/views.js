@@ -710,7 +710,12 @@ define([
             title: showTypes
               ? c.type + " - " + c.region
               : c.region,
-            slug: _.str.slugify(c.type)+"-"+_.str.slugify(c.region),
+            slug: _.template("<%=v.type%>-<%=v.region%>-<%=v.uniqueId%>",
+              {
+                type: _.str.slugify(c.type),
+                region: _.str.slugify(c.region),
+                uniqueId: i
+              }, { variable: 'v' }),
             csv: c.url.replace(/\.(png|svg)\?/, ".csv?"),
             docx: c.url.replace(/\.(png|svg)\?/, ".docx?"),
             html: c.url.replace(/\.(png|svg)\?/, ".html?")
