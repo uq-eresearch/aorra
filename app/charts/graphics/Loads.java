@@ -20,10 +20,11 @@ import charts.Drawable;
 
 public class Loads {
 
-    public static Drawable createChart(String title,CategoryDataset dataset, Dimension dimension) {
+    public static Drawable createChart(String title, String cAxisTitle, 
+            CategoryDataset dataset, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createBarChart(
             title,       // chart title
-            "Pollutants",               // domain axis label
+            cAxisTitle,               // domain axis label
             "% Load reduction",                  // range axis label
             dataset,                  // data
             PlotOrientation.VERTICAL, // orientation
@@ -59,12 +60,11 @@ public class Loads {
         for(int i = 0;i<dataset.getColumnCount();i++) {
             max = Math.max(max, dataset.getValue(0, i).doubleValue());
         }
-        if(max < 20.0) {
-            return 20.0;
-        } else if(max < 100.0) {
+        double result = ((int)(max / 10.0)+1)*10;
+        if(result > 100.0 && max < 100.0) {
             return 100.0;
         } else {
-            return max + 10.0;
+            return result;
         }
     }
 

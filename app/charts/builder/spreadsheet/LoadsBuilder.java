@@ -1,5 +1,11 @@
 package charts.builder.spreadsheet;
 
+import static charts.ChartType.LOADS;
+import static charts.ChartType.LOADS_DIN;
+import static charts.ChartType.LOADS_PSII;
+import static charts.ChartType.LOADS_TN;
+import static charts.ChartType.LOADS_TSS;
+
 import java.awt.Dimension;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +31,8 @@ public class LoadsBuilder extends AbstractBuilder {
     private static final String SHEETNAME = "Summary Table RRC 2_3";
 
     private static final String PERIOD = "period";
+
+    private static final String TOTAL = "Total";
 
     private static enum Indicator {
         TSS("Total suspended solids", true),
@@ -70,8 +78,16 @@ public class LoadsBuilder extends AbstractBuilder {
               .put(Region.GBR, 12)
               .build();
 
+    private static final ImmutableMap<ChartType, Indicator> INDICATORS =
+            new ImmutableMap.Builder<ChartType, Indicator>()
+              .put(LOADS_DIN, Indicator.DIN)
+              .put(LOADS_TN, Indicator.TN)
+              .put(LOADS_PSII, Indicator.PSII)
+              .put(LOADS_TSS, Indicator.TSS)
+              .build();
+
     public LoadsBuilder() {
-        super(ChartType.LOADS);
+        super(Lists.newArrayList(LOADS, LOADS_DIN, LOADS_TN, LOADS_PSII, LOADS_TSS));
     }
 
     @Override
@@ -88,7 +104,7 @@ public class LoadsBuilder extends AbstractBuilder {
     @Override
     protected Map<String, List<String>> getParameters(SpreadsheetDataSource datasource, ChartType type) {
         return new ImmutableMap.Builder<String, List<String>>()
-                .put(PERIOD, Lists.newArrayList(getPeriods(datasource)))
+                .put(PERIOD, Lists.newArrayList(TOTAL))
                 .build();
     }
 
@@ -109,7 +125,54 @@ public class LoadsBuilder extends AbstractBuilder {
         }
     }
 
+    @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
+            final Region region, Dimension queryDimensions, final Map<String, ?> parameters) {
+        if(type == LOADS) {
+            return buildLoads(datasource, type, region, queryDimensions, parameters);
+        } else if(region == Region.GBR) {
+            return buildLoadRegions(datasource, type, region, queryDimensions, parameters);
+        } else {
+            return null;
+        }
+    }
+
+    public Chart buildLoadRegions(final SpreadsheetDataSource datasource, final ChartType type,
+            final Region region, final Dimension queryDimensions, final Map<String, ?> parameters ) {
+        final String period = (String)parameters.get(PERIOD);
+        if(StringUtils.isBlank(period)) {
+            return null;
+        }
+        final Indicator indicator = INDICATORS.get(type);
+        if(indicator == null) {
+            throw new RuntimeException(String.format("chart type %s not implemented", type.name()));
+        }
+        final CategoryDataset dataset = getRegionsDataset(datasource, indicator, period);
+        return new AbstractChart(queryDimensions) {
+
+            @Override
+            public ChartDescription getDescription() {
+                return new ChartDescription(type, region, parameters);
+            }
+
+            @Override
+            public Drawable getChart() {
+                return Loads.createChart(getTitle(datasource, indicator, period),
+                        "Region", dataset, new Dimension(750, 500));
+            }
+
+            @Override
+            public String getCSV() throws UnsupportedFormatException {
+                throw new UnsupportedFormatException();
+            }
+
+            @Override
+            public String getCommentary() throws UnsupportedFormatException {
+                throw new UnsupportedFormatException();
+            }}; 
+    }
+
+    private Chart buildLoads(final SpreadsheetDataSource datasource, final ChartType type,
             final Region region, Dimension queryDimensions, final Map<String, ?> parameters) {
         final String period = (String)parameters.get(PERIOD);
         if(StringUtils.isBlank(period)) {
@@ -126,7 +189,7 @@ public class LoadsBuilder extends AbstractBuilder {
             @Override
             public Drawable getChart() {
                 return Loads.createChart(getTitle(datasource, region, period),
-                        dataset, new Dimension(750, 500));
+                        "Pollutants", dataset, new Dimension(750, 500));
             }
 
             @Override
@@ -138,6 +201,24 @@ public class LoadsBuilder extends AbstractBuilder {
             public String getCommentary() throws UnsupportedFormatException {
                 throw new UnsupportedFormatException();
             }};
+    }
+
+    private CategoryDataset getRegionsDataset(SpreadsheetDataSource ds,
+            Indicator indicator, String period) {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        for(Region region : Region.values()) {
+            Integer row = ROWS.get(region);
+            if(row == null) {
+                throw new RuntimeException(String.format("region %s not configured", region.getName()));
+            }
+            try {
+                double val = selectAsDouble(ds, region, indicator, period);
+                dataset.addValue(val, indicator.getLabel(), region.getProperName());
+            } catch(Exception e) {
+                throw new RuntimeException("region "+region.getName(), e);
+            }
+        }
+        return dataset;
     }
 
     private CategoryDataset getDataset(SpreadsheetDataSource ds, Region region, String period) {
@@ -168,10 +249,19 @@ public class LoadsBuilder extends AbstractBuilder {
         return ds.select(SHEETNAME, row, col).asDouble();
     }
 
+    private String getTitle(SpreadsheetDataSource ds, Indicator indicator, String period) {
+        return getTitle(ds, indicator.getLabel() + " load reductions from\n", period);
+    }
+
     private String getTitle(SpreadsheetDataSource ds, Region region, String period) {
         String title = region.getProperName() + " total load reductions from\n";
+        return getTitle(ds, title, period);
+    }
+
+    private String getTitle(SpreadsheetDataSource ds, String prefix, String period) {
+        String title = prefix;
         List<String> periods = getPeriods(ds);
-        if(StringUtils.equalsIgnoreCase(period, "total")) {
+        if(StringUtils.equalsIgnoreCase(period, TOTAL)) {
             title += formatPeriods(periods, -1, periods.size()-2);
         } else {
             int start = periods.indexOf(period);
