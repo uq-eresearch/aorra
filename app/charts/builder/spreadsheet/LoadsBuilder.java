@@ -28,8 +28,6 @@ import com.google.common.collect.Lists;
 
 public class LoadsBuilder extends AbstractBuilder {
 
-    private static final String SHEETNAME = "Summary Table RRC 2_3";
-
     private static final String PERIOD = "period";
 
     private static final String TOTAL = "Total";
@@ -92,7 +90,22 @@ public class LoadsBuilder extends AbstractBuilder {
 
     @Override
     public boolean canHandle(SpreadsheetDataSource datasource) {
-        return datasource.hasSheet(SHEETNAME);
+        return sheet(datasource) != -1;
+    }
+
+    private int sheet(SpreadsheetDataSource ds) {
+        for(int i=0;i<ds.sheets();i++) {
+            try {
+                String name = ds.getSheetname(i);
+                if(name != null) {
+                    if(StringUtils.equalsIgnoreCase("Region", ds.select(name, "C3").asString()) && 
+                        StringUtils.equalsIgnoreCase("Total Change (%)", ds.select(name, "C12").asString())) {
+                        return i;
+                    }
+                }
+            } catch(Exception e) {}
+        }
+        return -1;
     }
 
     @Override
@@ -113,7 +126,7 @@ public class LoadsBuilder extends AbstractBuilder {
             List<String> periods = Lists.newArrayList();
             int row = 2;
             for(int col = 3;true;col++) {
-                String s = ds.select(SHEETNAME, row, col).asString();
+                String s = ds.select(row, col).asString();
                 if(StringUtils.isBlank(s) || periods.contains(s)) {
                     return periods;
                 } else {
@@ -128,6 +141,12 @@ public class LoadsBuilder extends AbstractBuilder {
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
             final Region region, Dimension queryDimensions, final Map<String, ?> parameters) {
+        int sheet = sheet(datasource);
+        if(sheet == -1) {
+            return null;
+        } else {
+            datasource.setDefaultSheet(sheet);
+        }
         if(type == LOADS) {
             return buildLoads(datasource, type, region, queryDimensions, parameters);
         } else if(region == Region.GBR) {
@@ -246,7 +265,7 @@ public class LoadsBuilder extends AbstractBuilder {
         List<String> periods = getPeriods(ds);
         int row = ROWS.get(region) - 1;
         int col = indicator.ordinal() * periods.size() + periods.indexOf(period) + 3;
-        return ds.select(SHEETNAME, row, col).asDouble();
+        return ds.select(row, col).asDouble();
     }
 
     private String getTitle(SpreadsheetDataSource ds, Indicator indicator, String period) {

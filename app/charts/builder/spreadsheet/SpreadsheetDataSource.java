@@ -24,6 +24,8 @@ public abstract class SpreadsheetDataSource implements DataSource {
   private Workbook workbook;
 
   private FormulaEvaluator evaluator;
+  
+  private int defaultSheet = 0;
 
   private static class SpreadsheetCellValue implements Value {
 
@@ -185,6 +187,10 @@ public abstract class SpreadsheetDataSource implements DataSource {
     return select(cellref);
   }
 
+  public Value select(String sheetname, String selector) throws MissingDataException {
+      return select(sheetname+"!"+selector);
+  }
+
   @Override
   public Value select(String selector) throws MissingDataException {
     // currently only CellReference selectors are supported like
@@ -201,7 +207,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
             "Sheet '%s' does not exist in workbook", sheetName));
       }
     } else {
-      sheet = workbook.getSheetAt(0);
+      sheet = workbook.getSheetAt(defaultSheet);
       if (sheet == null) {
         throw new MissingDataException(
             String.format("Sheet does not exist in workbook"));
@@ -253,6 +259,14 @@ public abstract class SpreadsheetDataSource implements DataSource {
       } else {
           return null;
       }
+  }
+
+  public int sheets() {
+      return workbook.getNumberOfSheets();
+  }
+
+  public void setDefaultSheet(int sheet) {
+      defaultSheet = sheet;
   }
 
 }
