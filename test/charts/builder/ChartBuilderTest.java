@@ -158,6 +158,10 @@ public class ChartBuilderTest {
     case GROUNDCOVER_BELOW_50:
       return "test/groundcover_below_50.xlsx";
     case LOADS:
+    case LOADS_DIN:
+    case LOADS_PSII:
+    case LOADS_TN:
+    case LOADS_TSS:
       return "test/loads.xlsx";
     case CORAL_HCC:
     case CORAL_SCC:
