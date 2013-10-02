@@ -70,34 +70,30 @@ class FileStoreAsync @Inject()(
   }
 
   def pollingJsonResponse(request: Request[AnyContent]) = {
-    val eventId = lastIdInQuery(request)
     val response = JsArray(
-      filestore.getEventManager().getSince(eventId).map { case OrderedEvent(id, event) =>
-        jsonMessage(id, event)
+      filestore.getEventManager().getSince(lastId(request)).map {
+        case OrderedEvent(id, event) => jsonMessage(id, event)
       }.toSeq
     )
     Ok(response).as(JSON)
       .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
   }
 
-  private def lastIdInQuery(request: Request[AnyContent]) = {
-    request.queryString.get("from") match {
-      case Some(Seq(a, _*)) => a.toString
-      case None => null
+  private def lastId(request: Request[AnyContent]) =
+    request.headers.get("Last-Event-ID").getOrElse {
+      request.queryString.get("from") match {
+        case Some(Seq(a, _*)) => a.toString
+        case None => null
+      }
     }
-  }
 
-  def serverSentEvents(request: Request[AnyContent]) = {
-    val lastEventId = request.headers.get("Last-Event-ID").getOrElse {
-      lastIdInQuery(request)
-    }
+  def serverSentEvents(request: Request[AnyContent]) =
     Ok.feed(
         initialEventSourceSetup andThen
-        (fsEvents(lastEventId) &> eventSourceFormatter).interleave(
+        (fsEvents(lastId(request)) &> eventSourceFormatter).interleave(
             pingEnumerator)
       ).as("text/event-stream; charset=utf-8")
        .withHeaders("Cache-Control" -> "max-age=0, must-revalidate")
-  }
 
   private def fsEvents(lastEventId: String) = {
     val em = filestore.getEventManager
@@ -122,11 +118,9 @@ class FileStoreAsync @Inject()(
 
   private def pingEnumerator(): Enumerator[String] = ssePingBroadcast
 
-  private def initialEventSourceSetup(): Enumerator[String] = {
-    Enumerator("retry: 2000\n\n")
-  }
+  private def initialEventSourceSetup = Enumerator("retry: 2000\n\n")
 
-  private def eventSourceFormatter() = {
+  private def eventSourceFormatter = {
     // Play Framework uses structural types to implement the Enumeratee
     import scala.language.reflectiveCalls
     Enumeratee.map[OrderedEvent] {
@@ -135,12 +129,10 @@ class FileStoreAsync @Inject()(
   }
 
   private case class ChannelEventReceiver(val c: Channel[OrderedEvent])
-    extends EventReceiver {
-
+      extends EventReceiver {
     def push(oe: OrderedEvent) = c.push(oe)
-    def end() = c.end
+    def end = c.end
     def end(e: Throwable) = c.end(e)
-
   }
 
 }

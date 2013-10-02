@@ -41,7 +41,7 @@ class ArchiveAsync @Inject() (
     }
   }
 
-  protected def zipEnumerator(f: (ZipOutputStream) => Unit) = {
+  protected def zipEnumerator(f: (ZipOutputStream) => Unit) =
     Enumerator.outputStream { os =>
       val zip = new ZipOutputStream(os);
       zip.setMethod(ZipOutputStream.DEFLATED);
@@ -49,7 +49,6 @@ class ArchiveAsync @Inject() (
       f(zip)
       zip.close()
     }
-  }
 
   protected def addChartFilesToArchive(
     user: CacheableUser, id: String)(zos: ZipOutputStream) {
@@ -76,10 +75,9 @@ class ArchiveAsync @Inject() (
     }
   }
 
-  protected def inSession[A](user: CacheableUser)(f: Session => A): A = {
+  protected def inSession[A](user: CacheableUser)(f: Session => A): A =
     sessionFactory.inSession(user.getJackrabbitUserId(),
       new F.Function[Session, A] {
         override def apply(session: Session) = f(session)
       })
-  }
 }
