@@ -86,8 +86,10 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
 
   public abstract boolean canHandle(SpreadsheetDataSource datasource);
 
-  public abstract Chart build(SpreadsheetDataSource datasource, ChartType type,
-      Region region, Dimension queryDimensions);
+  public Chart build(SpreadsheetDataSource datasource, ChartType type,
+      Region region, Dimension queryDimensions) {
+      throw new RuntimeException("override me");
+  }
 
   public Chart build(SpreadsheetDataSource datasource, ChartType type,
           Region region, Dimension queryDimensions, Map<String, ?> parameters) {

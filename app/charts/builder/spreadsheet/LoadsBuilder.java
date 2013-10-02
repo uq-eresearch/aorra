@@ -109,12 +109,6 @@ public class LoadsBuilder extends AbstractBuilder {
     }
 
     @Override
-    public Chart build(SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Dimension queryDimensions) {
-        throw new RuntimeException("parameters missing");
-    }
-
-    @Override
     protected Map<String, List<String>> getParameters(SpreadsheetDataSource datasource, ChartType type) {
         return new ImmutableMap.Builder<String, List<String>>()
                 .put(PERIOD, Lists.newArrayList(TOTAL))

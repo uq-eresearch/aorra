@@ -147,7 +147,7 @@ public class ChartBuilderTest {
     case PROGRESS_TABLE:
       return "test/progress_table.xlsx";
     case TSA:
-      return "test/trends_in_seagrass_abundance.xlsx";
+      return "test/seagrass_cover.xls";
     case TTT_CANE_AND_HORT:
     case TTT_GRAZING:
     case TTT_NITRO_AND_PEST:

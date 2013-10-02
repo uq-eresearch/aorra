@@ -4,12 +4,12 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.text.NumberFormat;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.CategoryPlot;
@@ -23,12 +23,6 @@ import org.jfree.ui.RectangleEdge;
 import charts.Drawable;
 
 public class TrendsSeagrassAbundance {
-
-    private static NumberFormat percentFormatter() {
-        NumberFormat percentFormat = NumberFormat.getPercentInstance();
-        percentFormat.setMaximumFractionDigits(0);
-        return percentFormat;
-    }
 
     public static Drawable createChart(final CategoryDataset dataset, String title, Dimension dimension) {
         JFreeChart chart = ChartFactory.createLineChart(
@@ -55,15 +49,19 @@ public class TrendsSeagrassAbundance {
         plot.setBackgroundPaint(Color.white);
         renderer.setSeriesPaint(0, new Color(30, 172, 226));
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-        rangeAxis.setTickUnit(new NumberTickUnit(0.05, percentFormatter()));
+        rangeAxis.setTickUnit(new NumberTickUnit(5));
+        rangeAxis.setRange(0.0, upperRange(dataset));
         rangeAxis.setTickMarksVisible(false);
+        chart.getTitle().setFont(rangeAxis.getLabelFont());
         CategoryAxis cAxis = new CategoryAxis() {
             @SuppressWarnings("rawtypes")
             @Override
             protected TextBlock createLabel(Comparable category, float width,
                     RectangleEdge edge, Graphics2D g2) {
+                int mod = dataset.getColumnCount() / 25 + 1;
+                int col = dataset.getColumnIndex(category);
                 String label = "";
-                if(StringUtils.contains(category.toString(), "July")) {
+                if(col % mod == 0) {
                     label = category.toString();
                 }
                 return TextUtilities.createTextBlock(label,
@@ -72,9 +70,22 @@ public class TrendsSeagrassAbundance {
         };
         cAxis.setLabel("Year");
         cAxis.setLabelFont(rangeAxis.getLabelFont());
-        chart.getTitle().setFont(rangeAxis.getLabelFont());
+        cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         plot.setDomainAxis(cAxis);
         return new JFreeChartDrawable(chart, dimension);
+    }
+
+    private static double upperRange(CategoryDataset dataset) {
+        double max = 0.0;
+        for(int i = 0;i<dataset.getColumnCount();i++) {
+            max = Math.max(max, dataset.getValue(0, i).doubleValue());
+        }
+        double result = ((int)(max / 10.0)+1)*10;
+        if(result > 100.0 && max < 100.0) {
+            return 100.0;
+        } else {
+            return result;
+        }
     }
 
 }
