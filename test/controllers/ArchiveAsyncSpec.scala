@@ -64,27 +64,27 @@ class ArchiveAsyncSpec extends Specification {
         folder.createFile("marine.xlsx", XLSX_MIME_TYPE,
             new FileInputStream("test/marine.xlsx"))
 
-        val Some(result: Future[SimpleResult]) = route(FakeRequest(GET,
+        val Some(futureResult: Future[SimpleResult]) = route(FakeRequest(GET,
             routes.ArchiveAsync.chartArchive(folder.getIdentifier).toString,
             rh, AnyContentAsEmpty))
 
-        status(result) must equalTo(OK);
-        contentType(result) must beSome("application/zip")
-        header("Cache-Control", result) must
+        status(futureResult) must equalTo(OK);
+        contentType(futureResult) must beSome("application/zip")
+        header("Cache-Control", futureResult) must
           beSome("max-age=0, must-revalidate");
 
-        val chunkedResult = Await.result(result, Duration(30, TimeUnit.SECONDS))
+        // Need to work with actual result
+        val result = Await.result(futureResult, Duration(30, TimeUnit.SECONDS))
 
-        var zipBytes: Array[Byte] = Array.emptyByteArray
-        val byteCollector = Iteratee.fold[Array[Byte], Unit](zipBytes) {
-          (_, chunkedBytes) => zipBytes = zipBytes ++ chunkedBytes
-        }
+        // Take "Transfer-Encoding: chunked" bytes, dechunk and collect
+        val futureZipBytes = result.body.through(Results.dechunk)
+            .run(Iteratee.consume[Array[Byte]]())
 
-        val futureResult = chunkedResult.body.through(Results.dechunk)
-            .run(byteCollector)
+        // Wait for 30 seconds for all bytes to be collected
+        val zipBytes: Array[Byte] =
+          Await.result(futureZipBytes, Duration(30, TimeUnit.SECONDS))
 
-        Await.result(futureResult, Duration(30, TimeUnit.SECONDS))
-
+        // Check magic number of sent file
         zipBytes.slice(0, 2) must equalTo("PK".getBytes)
 
         val filepaths: Set[String] = {
