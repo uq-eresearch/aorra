@@ -14,7 +14,6 @@ import play.api.test.FakeHeaders
 import play.api.test.FakeRequest
 import play.api.test.Helpers.GET
 import play.api.test.Helpers.OK
-import play.api.test.Helpers.await
 import play.api.test.Helpers.charset
 import play.api.test.Helpers.contentAsString
 import play.api.test.Helpers.contentType
@@ -28,9 +27,14 @@ import test.AorraScalaHelper.filestore
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.TimeUnit
 import play.api.libs.iteratee.{Enumeratee, Iteratee}
+import scala.concurrent.Await
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import akka.util.Timeout
 
 class FileStoreAsyncSpec extends Specification {
+
+  implicit val timeout = Timeout(30000)
 
   type RT = AnyContentAsEmpty.type
 
@@ -72,19 +76,15 @@ class FileStoreAsyncSpec extends Specification {
           header("Cache-Control", result) must
             beSome("max-age=0, must-revalidate");
 
-          result match {
-            case AsyncResult(_) => // all good
-            case _ => failure("Should have an asynchronous result.")
-          }
+          val simpleResult = Await.result(result,
+              Duration(30, TimeUnit.SECONDS))
 
-          val simpleResult = await(result.asInstanceOf[AsyncResult].result,
-                30, TimeUnit.SECONDS).asInstanceOf[SimpleResult[String]]
-
-          val consume = Iteratee.getChunks[String]
-          val takeN: Enumeratee[String, String] = Enumeratee.take(3)
-          val eventualResult: List[String] = await(
-            Iteratee.flatten(simpleResult.body through takeN apply consume).run
-          )
+          val consume = Iteratee.getChunks[Array[Byte]]
+          val takeN = Enumeratee.take[Array[Byte]](3)
+          val eventualResult: List[String] = Await.result(
+            Iteratee.flatten(simpleResult.body through takeN apply consume).run,
+            Duration(30, TimeUnit.SECONDS)
+          ).map(new String(_))
 
           eventualResult must contain("retry: 2000\n\n")
           val outOfDateMsg = eventualResult find ( _.contains("outofdate") )
@@ -109,22 +109,18 @@ class FileStoreAsyncSpec extends Specification {
           header("Cache-Control", result) must
             beSome("max-age=0, must-revalidate");
 
-          result match {
-            case AsyncResult(_) => // all good
-            case _ => failure("Should have an asynchronous result.")
-          }
-
           val folder = filestore.getManager(session).getRoot()
               .createFolder("Test Folder")
 
-          val simpleResult = await(result.asInstanceOf[AsyncResult].result,
-                30, TimeUnit.SECONDS).asInstanceOf[SimpleResult[String]]
+          val simpleResult = Await.result(result,
+              Duration(30, TimeUnit.SECONDS))
 
-          val consume = Iteratee.getChunks[String]
-          val takeN: Enumeratee[String, String] = Enumeratee.take(2)
-          val eventualResult: List[String] = await(
-            Iteratee.flatten(simpleResult.body through takeN apply consume).run
-          )
+          val consume = Iteratee.getChunks[Array[Byte]]
+          val takeN = Enumeratee.take[Array[Byte]](2)
+          val eventualResult: List[String] = Await.result(
+            Iteratee.flatten(simpleResult.body through takeN apply consume).run,
+            Duration(30, TimeUnit.SECONDS)
+          ).map(new String(_))
 
           eventualResult must contain("retry: 2000\n\n")
           val createMsg = eventualResult find ( _.contains("folder:create") )
