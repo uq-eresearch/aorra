@@ -14,6 +14,7 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     javaCore,
+    cache,
     "javax.jcr" % "jcr" % "2.0",
     "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.2",
     "com.h2database" % "h2" % "1.3.170",
@@ -26,7 +27,8 @@ object ApplicationBuild extends Build {
     "org.crsh" % "crsh.shell.telnet" % crshVersion,
     "org.crsh" % "crsh.jcr.jackrabbit" % crshVersion,
     "tyrex" % "tyrex" % "1.0.1", // JNDI provider for CRSH Jackrabbit access
-    //"com.feth" %% "play-authenticate" % "0.3.3-SNAPSHOT",
+    "com.feth" %% "play-authenticate" % "0.5.0-SNAPSHOT",
+    "com.typesafe" %% "play-plugins-mailer" % "2.1-RC2",
     "eu.medsea.mimeutil" % "mime-util" % "2.1.3"
       exclude("org.slf4j", "slf4j-log4j12"),
     "org.apache.tika" % "tika-parsers" % "1.3",
@@ -98,14 +100,13 @@ object ApplicationBuild extends Build {
       // Specify central explicitly, so we don't try joscha.github.io unnecessarily
       "Maven central" at "http://repo1.maven.org/maven2/",
       // SVG2EMF
-      "SVG2EMF" at "http://svg2emf.googlecode.com/svn/m2/releases/"
+      "SVG2EMF" at "http://svg2emf.googlecode.com/svn/m2/releases/",
+      // Play Authenticate
+      Resolver.url("play-easymail (release)", url("http://joscha.github.com/play-easymail/repo/releases/"))(Resolver.ivyStylePatterns),
+      Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
+      Resolver.url("play-authenticate (release)", url("http://joscha.github.com/play-authenticate/repo/releases/"))(Resolver.ivyStylePatterns),
+      Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
     )
-  ).dependsOn(RootProject(file("../play-easymail/code"))
-  ).dependsOn(RootProject(file("../play-authenticate/code"))
-  //).dependsOn(RootProject(uri(
-  //    "git://github.com/joscha/play-easymail.git#c2ae99c9cd86fd5f050bfa535a7fd8b0a7c26be7"))
-  //).dependsOn(RootProject(uri(
-  //    "git://github.com/joscha/play-authenticate.git#b7a49f8d2ca7f062a4ddb8d84897c340e7faba9c"))
   ).dependsOn(RootProject(uri(
       "git://github.com/sgougi/play21-jackrabbit-plugin.git#94d3d7f2bca50815b0c96d90a0f34d40440bda0f"))
   ).dependsOn(RootProject(uri(
