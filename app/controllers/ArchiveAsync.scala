@@ -62,10 +62,9 @@ class ArchiveAsync @Inject() (
         f <- Format.values;
         data <- Try(chart.outputAs(f).getContent()) // skip if unsupported
       ) {
-        val filepath = "%s/%s-%s-%s.%s".format(
+        val filepath = "%s/%s-%s.%s".format(
           id,
-          chart.getDescription().getType(),
-          chart.getDescription().getRegion(),
+          chart.getDescription(),
           file.getIdentifier(),
           f.name()).toLowerCase()
         zos.putNextEntry(new ZipEntry(filepath))

@@ -34,11 +34,25 @@ public class ChartDescription {
     }
 
     public Object getParameter(String name) {
-        return parameters.get(name);
+      return parameters.get(name);
     }
 
     public Set<String> getParameterNames() {
-        return parameters.keySet();
+      return parameters.keySet();
+    }
+
+    @Override
+    public String toString() {
+      final StringBuffer sb = new StringBuffer();
+      sb.append(type+"-"+region);
+      if (!parameters.isEmpty()) {
+        sb.append("-");
+        for (final Map.Entry<String, ?> e : parameters.entrySet()) {
+          sb.append(String.format("[%s-%s]",
+              e.getKey(), e.getValue().toString()));
+        }
+      }
+      return sb.toString();
     }
 
 }
