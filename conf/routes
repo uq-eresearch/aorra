@@ -23,6 +23,7 @@ POST    /user/:email/verify/:token  @controllers.Application.postVerify(email: S
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /favicon.ico                controllers.Assets.at(path="/public", file="images/favicon.ico")
 
 GET     /filestore                  @controllers.FileStoreController.filestoreJson()
 

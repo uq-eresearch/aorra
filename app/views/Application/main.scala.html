@@ -47,7 +47,11 @@
       core = routes.Assets.at("javascripts/require.js").url, 
       module = routes.Assets.at("js/main.js").url,
       folder = "/js")
-    <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")"/>
+    <!-- Route exists for /favicon.ico => /assets/images/favicon.ico for IE -->
+    <link rel="icon" type="image/png" sizes="196x196" href="@routes.Assets.at("images/icon196.png")"/>
+    <link rel="icon" type="image/png" sizes="128x128" href="@routes.Assets.at("images/icon128.png")"/>
+    <link rel="icon" type="image/png" sizes="32x32" href="@routes.Assets.at("images/icon32.png")"/>
+    <link rel="icon" type="image/png" sizes="16x16" href="@routes.Assets.at("images/icon16.png")"/>
     @defining(play.Play.application.configuration.getString("ga.key")) { analyticsKey =>
       @analyticsKey match {
         case null => { <!-- No analytics key --> }
