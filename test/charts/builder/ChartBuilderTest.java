@@ -168,6 +168,8 @@ public class ChartBuilderTest {
     case CORAL_MA:
     case CORAL_JUV:
       return "test/coral.xls";
+    case PSII_TRENDS:
+        return "test/pesticides.xlsx";
     default:
       throw new RuntimeException("Unknown chart type.");
     }

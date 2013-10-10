@@ -25,7 +25,8 @@ public enum ChartType {
     CORAL_HCC("Hard coral cover"),
     CORAL_SCC("Soft coral cover"),
     CORAL_MA("Macroalgae"),
-    CORAL_JUV("Juvenile density");
+    CORAL_JUV("Juvenile density"),
+    PSII_TRENDS("PSII Trends");
 
     private final String label;
 

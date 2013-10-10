@@ -17,6 +17,7 @@ import charts.builder.spreadsheet.GroundcoverBuilder;
 import charts.builder.spreadsheet.LandPracticeSystemsBuilder;
 import charts.builder.spreadsheet.LoadsBuilder;
 import charts.builder.spreadsheet.MarineBuilder;
+import charts.builder.spreadsheet.PSIITrendsBuilder;
 import charts.builder.spreadsheet.ProgressTableBuilder;
 import charts.builder.spreadsheet.TrackingTowardsTagetsBuilder;
 import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder;
@@ -42,6 +43,7 @@ public class ChartBuilder {
       .add(new GroundcoverBuilder())
       .add(new LoadsBuilder())
       .add(new CoralCoverBuilder())
+      .add(new PSIITrendsBuilder())
       .build();
 
   public List<Chart> getCharts(List<DataSource> datasources,
