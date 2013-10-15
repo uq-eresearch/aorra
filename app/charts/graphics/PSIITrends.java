@@ -252,7 +252,7 @@ public class PSIITrends {
         PartitionedNumberAxis vAxis = new PartitionedNumberAxis(RANGE_AXIS_LABEL);
         CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, vAxis, new Renderer());
         plot.setOrientation(PlotOrientation.VERTICAL);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, false);
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, true);
         new StandardChartTheme("JFree").apply(chart);
         return chart;
     }

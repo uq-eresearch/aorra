@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Shape;
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
@@ -18,6 +19,7 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.TextAnchor;
 
 import com.google.common.collect.Lists;
+import com.google.common.math.DoubleMath;
 
 public class PartitionedNumberAxis extends ValueAxis {
 
@@ -123,7 +125,7 @@ public class PartitionedNumberAxis extends ValueAxis {
         for(Partition p : partitions) {
             size += p.getSize();
         }
-        if(size != 1) {
+        if(!DoubleMath.fuzzyEquals(size, 1.0, 0.001)) {
             throw new RuntimeException(String.format(
                     "sum of partitions size must be 1 dude! (%s)", size));
         }
@@ -150,6 +152,29 @@ public class PartitionedNumberAxis extends ValueAxis {
         return state;
     }
 
+    
+
+    @Override
+    protected void drawAxisLine(Graphics2D g2, double cursor,
+            Rectangle2D dataArea, RectangleEdge edge) {
+        g2.setPaint(getAxisLinePaint());
+        g2.setStroke(getAxisLineStroke());
+        double start = dataArea.getMaxY();
+        double x = cursor;
+        for(Double boundary : getPartitionBoundaries(dataArea)) {
+            double end = boundary+BOUNDARY_SIZE_PX;
+            g2.draw(new Line2D.Double(x, start, x, end));
+            drawAxisPartitionMark(g2, x, end);
+            start = boundary;
+            drawAxisPartitionMark(g2, x, start);
+        }
+        g2.draw(new Line2D.Double(x, start, x, dataArea.getY()));
+    }
+
+    private void drawAxisPartitionMark(Graphics2D g2, double x, double y) {
+        g2.draw(new Line2D.Double(x-2, y, x+2, y));
+    }
+
     private int gaps() {
         return partitions.size()-1;
     }
@@ -159,7 +184,6 @@ public class PartitionedNumberAxis extends ValueAxis {
     }
 
     private void drawPartitions(Graphics2D g2, Rectangle2D dataArea) {
-        
         for(Double boundary : getPartitionBoundaries(dataArea)) {
             Rectangle2D.Double r = new Rectangle2D.Double(dataArea.getX(), boundary, dataArea.getWidth(), BOUNDARY_SIZE_PX);
             g2.setPaint(BOUNDARY_PAINT);
