@@ -6,6 +6,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Stroke;
+import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -460,8 +461,8 @@ public class AutoSubCategoryAxis extends CategoryAxis {
         }
     }
 
-    private void line(Graphics2D g2, double x0, double y0, double x1, double y1) {
-        g2.drawLine((int)x0, (int)y0, (int)x1, (int)y1);
+    private void line(Graphics2D g2, double x1, double y1, double x2, double y2) {
+        g2.draw(new Line2D.Double(x1, y1, x2, y2));
     }
 
     private double getMiddleX(Rectangle2D area, int index1, int index2) {

@@ -14,6 +14,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -119,6 +120,11 @@ public class GraphUtils {
         fillCircle((int)center.getX(), (int)center.getY(), radius);
     }
 
+    public void fillCircle(double x, double y, double radius) {
+        Rectangle2D r = getBoundingBoxCircle(x,y,radius);
+        g.fill(new Ellipse2D.Double(r.getX(), r.getY(), r.getWidth(), r.getHeight()));
+    }
+
     public void fillCircle(int x, int y, float radius) {
         Rectangle r = getBoundingBoxCircle(x, y, radius);
         g.fillOval(r.x, r.y, r.width, r.height);
@@ -147,6 +153,14 @@ public class GraphUtils {
         r.height = diameter;
         r.width = diameter;
         return r;
+    }
+
+    public Rectangle2D getBoundingBoxCircle(double x, double y, double radius) {
+        double rx = x-radius;
+        double ry = y-radius;
+        double w = 2*radius;
+        double h = 2*radius;
+        return new Rectangle2D.Double(rx, ry, w, h);
     }
 
     public static double toRadians(double degrees) {
