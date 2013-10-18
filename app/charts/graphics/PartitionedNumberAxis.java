@@ -1,5 +1,7 @@
 package charts.graphics;
 
+import graphics.GraphUtils;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -8,7 +10,10 @@ import java.awt.Shape;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.jfree.chart.axis.AxisState;
 import org.jfree.chart.axis.NumberTick;
@@ -19,6 +24,7 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.TextAnchor;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.math.DoubleMath;
 
 public class PartitionedNumberAxis extends ValueAxis {
@@ -207,18 +213,101 @@ public class PartitionedNumberAxis extends ValueAxis {
     @Override
     public List<NumberTick> refreshTicks(Graphics2D g2, AxisState state,
             Rectangle2D dataArea, RectangleEdge edge) {
+        return createTicks(g2, dataArea);
+    }
+
+    private List<NumberTick> createTicks(Graphics2D g2, Rectangle2D dataArea) {
         List<NumberTick> ticks = Lists.newArrayList();
-        // TODO generate them automatically
-        ticks.add(new NumberTick(0, "0", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(10, "10", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(20, "20", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(30, "30", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(40, "40", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(50, "50", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(100, "100", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(400, "400", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
-        ticks.add(new NumberTick(500, "500", TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0));
+        for(Partition p : partitions) {
+            ticks.addAll(createTicks(p, g2, dataArea));
+        }
         return ticks;
+    }
+
+    private List<NumberTick> createTicks(Partition p, Graphics2D g2, Rectangle2D dataArea) {
+        List<NumberTick> ticks = Lists.newArrayList();
+        double space = this.axisLength(dataArea) * p.getSize();
+        Range r = p.getRange();
+        double l = r.getLength();
+        double tickUnitMultiplier = 10.0;
+        Set<Double> seen = Sets.newHashSet();
+        if(DoubleMath.fuzzyEquals(l, 0.0, 0.001)) {
+            ticks.add(tick(r.getLowerBound()));
+        } else {
+            Range numberOfTicks = getNumberOfTicks(g2, space);
+            double tickUnit = getTickUnit(Math.abs(l)/ numberOfTicks.getUpperBound());
+            List<Double> result = Lists.newArrayList();
+            // TODO this gives bizarre tick units
+            while(true) {
+                if(Double.isInfinite(tickUnit) || Double.isNaN(tickUnit)) {
+                    break;
+                }
+                seen.add(tickUnit);
+                double count = l / tickUnit;
+                if(numberOfTicks.contains(count)) {
+                    result.add(tickUnit);
+                    if(seen.contains(tickUnit/tickUnitMultiplier)) {
+                        tickUnitMultiplier /= 2;
+                    }
+                    tickUnit /= tickUnitMultiplier;
+                } else if(count > numberOfTicks.getCentralValue()) {
+                    if(seen.contains(tickUnit*tickUnitMultiplier)) {
+                        tickUnitMultiplier /= 2;
+                    }
+                    tickUnit *= tickUnitMultiplier;
+                } else {
+                    if(seen.contains(tickUnit/tickUnitMultiplier)) {
+                        tickUnitMultiplier /= 2;
+                    }
+                    tickUnit /= tickUnitMultiplier;
+                }
+                if(tickUnitMultiplier<1) {
+                    break;
+                }
+            }
+            if(result.isEmpty()) {
+                throw new RuntimeException("trouble calculating tick unit");
+            }
+            Collections.sort(result);
+            tickUnit = result.get(0);
+            // make range a bit smaller to remove ticks that are close to the partition border
+            Range smaller = shrinkNotZero(r,0.01);
+            double current = Math.round(smaller.getLowerBound()/tickUnit)*tickUnit;
+            while(current <= smaller.getUpperBound()) {
+                if(smaller.contains(current)) {
+                    ticks.add(tick(current));
+                }
+                current += tickUnit;
+            }
+        }
+        return ticks;
+    }
+
+    private Range shrinkNotZero(Range r, double factor) {
+        double l = Math.abs(r.getLength());
+        if(DoubleMath.fuzzyEquals(l, 0.0, 0.00001)) {
+            return r;
+        }
+        double shrink = l * factor;
+        if(r.getLowerBound() == 0.0) {
+            return new Range(r.getLowerBound(), r.getUpperBound()-shrink);
+        } else if(r.getUpperBound() == 0.0) {
+            return new Range(r.getLowerBound()+shrink, r.getUpperBound());
+        } else {
+            return new Range(r.getLowerBound()+shrink/2, r.getUpperBound()-shrink/2);
+        }
+    }
+
+    private NumberTick tick(double value) {
+        return new NumberTick(value, new DecimalFormat("#.######").format(value),
+                TextAnchor.CENTER_RIGHT, TextAnchor.CENTER_RIGHT, 0);
+    }
+
+    private Range getNumberOfTicks(Graphics2D g2, double space) {
+        GraphUtils g = new GraphUtils(g2);
+        double tickLabelSize = g.getTextHeight(this.getTickLabelFont(), "0");
+        double margin = getTickLabelInsets().getTop()+getTickLabelInsets().getBottom();
+        return new Range(1, space/(tickLabelSize+margin));
     }
 
     @Override
@@ -280,6 +369,27 @@ public class PartitionedNumberAxis extends ValueAxis {
 
     private boolean crossesBoundary(double boundary, Range r) {
         return (r.getLowerBound() < boundary) && (r.getUpperBound() > boundary);
+    }
+
+    public static double getTickUnit(double value) {
+        double v = Math.abs(value);
+        int exp = 0;
+        if(DoubleMath.fuzzyEquals(v, 0.0, 0.000000001)) {
+            return 0.0;
+        } else if(v >= 1.0) {
+            while(v >= 1.0) {
+                v /= 10.0;
+                exp++;
+            }
+            exp--;
+        } else {
+            while( v < 1.0) {
+                v *= 10.0;
+                exp--;
+            }
+        }
+        double t = Math.pow(10.0, exp);
+        return t;
     }
 
 }

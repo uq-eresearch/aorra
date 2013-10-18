@@ -42,7 +42,7 @@ object ApplicationBuild extends Build {
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "test",
     "com.kitfox.svg" % "svg-salamander" % "1.0",
     "net.sf.supercsv" % "super-csv" % "2.1.0",
-    "org.apache.commons" % "commons-math3" % "3.2" % "test",
+    "org.apache.commons" % "commons-math3" % "3.2",
     "org.pegdown" % "pegdown" % "1.1.0",
     "hanjava.net" % "svg2emf" % "0.0.2",
     "org.freehep" % "freehep-graphicsio-emf" % "2.2.1",

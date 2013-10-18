@@ -236,6 +236,14 @@ public class GraphUtils {
         return rec.getHeight();
     }
 
+    public double getTextHeight(Font font, String text) {
+        FontRenderContext frc = g.getFontRenderContext();
+        GlyphVector gv = font.createGlyphVector(frc, text);
+        Shape glyph = gv.getGlyphOutline(0);
+        Rectangle2D rec = glyph.getBounds2D();
+        return rec.getHeight();
+    }
+
     private double getCircleTextLengthInRadians(String st, double radius) {
         double theta = 0;
         char ch[] = st.toCharArray();

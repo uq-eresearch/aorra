@@ -96,6 +96,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
                     throw new RuntimeException("no site");
                 }
                 String key = region + PSIITrends.SEPARATOR + site + PSIITrends.SEPARATOR + date;
+
                 for(int i = 3;i<10;i++) {
                     Double val = ds.select(row, i).asDouble();
                     String name = ds.select(1, i).asString();

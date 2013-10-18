@@ -216,10 +216,7 @@ public class PSIITrends {
         {
             if(plot.getRangeAxis() instanceof PartitionedNumberAxis) {
                 PartitionedNumberAxis vAxis = (PartitionedNumberAxis)plot.getRangeAxis();
-                // TODO create partitions from dataset
-                vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(0,55), 0.75));
-                vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(95, 105), 0.125));
-                vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(375, 550), 0.125));
+                new PartitionAxisConfigurator(true).configurePartitions(dataset, vAxis);
             }
         }
         {
@@ -227,7 +224,7 @@ public class PSIITrends {
             for(int i=0;i<SERIES_PAINT.length;i++) {
                 renderer.setSeriesPaint(i, SERIES_PAINT[i]);
             }
-            renderer.setBarPainter(new GradientBarPainter(0.5,0.1,0.4));
+            renderer.setBarPainter(new GradientBarPainter(0.0,0.0,0.5));
         }
         {
             Font f = plot.getRangeAxis().getTickLabelFont();
@@ -256,5 +253,4 @@ public class PSIITrends {
         new StandardChartTheme("JFree").apply(chart);
         return chart;
     }
-
 }
