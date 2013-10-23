@@ -13,7 +13,6 @@ import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.jfree.chart.axis.AxisState;
 import org.jfree.chart.axis.NumberTick;
@@ -24,7 +23,6 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.TextAnchor;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.math.DoubleMath;
 
 public class PartitionedNumberAxis extends ValueAxis {
@@ -226,50 +224,36 @@ public class PartitionedNumberAxis extends ValueAxis {
 
     private List<NumberTick> createTicks(Partition p, Graphics2D g2, Rectangle2D dataArea) {
         List<NumberTick> ticks = Lists.newArrayList();
-        double space = this.axisLength(dataArea) * p.getSize();
         Range r = p.getRange();
         double l = r.getLength();
-        double tickUnitMultiplier = 10.0;
-        Set<Double> seen = Sets.newHashSet();
         if(DoubleMath.fuzzyEquals(l, 0.0, 0.001)) {
             ticks.add(tick(r.getLowerBound()));
         } else {
+            double[] tf = {1.0, 0.5, 0.25};
+            double space = this.axisLength(dataArea) * p.getSize();
             Range numberOfTicks = getNumberOfTicks(g2, space);
-            double tickUnit = getTickUnit(Math.abs(l)/ numberOfTicks.getUpperBound());
             List<Double> result = Lists.newArrayList();
-            // TODO this gives bizarre tick units
-            while(true) {
-                if(Double.isInfinite(tickUnit) || Double.isNaN(tickUnit)) {
-                    break;
+            for(int exp = 0;exp < 20;exp++) {
+                for(int i = 0;i<tf.length;i++) {
+                    double tickUnit = tf[i] * Math.pow(10.0, exp);
+                    if(numberOfTicks.contains(l/tickUnit)) {
+                        result.add(tickUnit);
+                    }
                 }
-                seen.add(tickUnit);
-                double count = l / tickUnit;
-                if(numberOfTicks.contains(count)) {
-                    result.add(tickUnit);
-                    if(seen.contains(tickUnit/tickUnitMultiplier)) {
-                        tickUnitMultiplier /= 2;
+                if(exp > 0) {
+                    for(int i = 0;i<tf.length;i++) {
+                        double tickUnit = tf[i] * Math.pow(10.0, -exp);
+                        if(numberOfTicks.contains(l/tickUnit)) {
+                            result.add(tickUnit);
+                        }
                     }
-                    tickUnit /= tickUnitMultiplier;
-                } else if(count > numberOfTicks.getCentralValue()) {
-                    if(seen.contains(tickUnit*tickUnitMultiplier)) {
-                        tickUnitMultiplier /= 2;
-                    }
-                    tickUnit *= tickUnitMultiplier;
-                } else {
-                    if(seen.contains(tickUnit/tickUnitMultiplier)) {
-                        tickUnitMultiplier /= 2;
-                    }
-                    tickUnit /= tickUnitMultiplier;
-                }
-                if(tickUnitMultiplier<1) {
-                    break;
                 }
             }
             if(result.isEmpty()) {
                 throw new RuntimeException("trouble calculating tick unit");
             }
             Collections.sort(result);
-            tickUnit = result.get(0);
+            double tickUnit = result.get(0);
             // make range a bit smaller to remove ticks that are close to the partition border
             Range smaller = shrinkNotZero(r,0.01);
             double current = Math.round(smaller.getLowerBound()/tickUnit)*tickUnit;
@@ -315,14 +299,8 @@ public class PartitionedNumberAxis extends ValueAxis {
         if(partitions.isEmpty()) {
             throw new RuntimeException("no partitions");
         }
-        double lower = partitions.get(0).range.getLowerBound();
-        double upper = partitions.get(0).range.getUpperBound();
-        for(int i=1;i<partitions.size();i++) {
-            Partition p = partitions.get(i);
-            lower = Math.min(lower, p.range.getLowerBound());
-            upper = Math.max(upper, p.range.getUpperBound());
-        }
-        return new Range(lower, upper);
+        return new Range(partitions.get(0).range.getLowerBound(),
+                partitions.get(partitions.size()-1).range.getUpperBound());
     }
 
     public void drawPatitionBoundaries(Graphics2D g2, Range r,
@@ -368,28 +346,6 @@ public class PartitionedNumberAxis extends ValueAxis {
     }
 
     private boolean crossesBoundary(double boundary, Range r) {
-        return (r.getLowerBound() < boundary) && (r.getUpperBound() > boundary);
+        return (r.getLowerBound() <= boundary) && (r.getUpperBound() > boundary);
     }
-
-    public static double getTickUnit(double value) {
-        double v = Math.abs(value);
-        int exp = 0;
-        if(DoubleMath.fuzzyEquals(v, 0.0, 0.000000001)) {
-            return 0.0;
-        } else if(v >= 1.0) {
-            while(v >= 1.0) {
-                v /= 10.0;
-                exp++;
-            }
-            exp--;
-        } else {
-            while( v < 1.0) {
-                v *= 10.0;
-                exp--;
-            }
-        }
-        double t = Math.pow(10.0, exp);
-        return t;
-    }
-
 }

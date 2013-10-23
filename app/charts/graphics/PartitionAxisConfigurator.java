@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.StatUtils;
 import org.jfree.data.Range;
@@ -44,7 +43,7 @@ public class PartitionAxisConfigurator {
     private List<Double> getSizes(CategoryDataset dataset, List<Range> ranges) {
         double[][] distribution = { {1}, {0.75, 0.25},{0.75, 0.125, 0.125},
                 {0.5, 0.25, 0.125, 0.125}, {0.5, 0.125, 0.125, 0.125, 0.125}};
-        double[] values = getValues(dataset);
+        List<Double> values = getValues(dataset);
         int[] size = new int[ranges.size()];
         for(double d : values) {
             for(int i = 0;i<ranges.size();i++) {
@@ -72,8 +71,16 @@ public class PartitionAxisConfigurator {
         return Arrays.asList(result);
     }
 
+    private double[] toArray(List<Double> list) {
+        double[] result = new double[list.size()];
+        for(int i=0;i<list.size();i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
     private List<List<Double>> split(CategoryDataset dataset) {
-        double[] population = getValues(dataset);
+        double[] population = toArray(getValues(dataset));
         double mean = StatUtils.mean(population);
         double variance = StatUtils.populationVariance(population, mean);
         double deviation = Math.sqrt(variance);
@@ -197,7 +204,7 @@ public class PartitionAxisConfigurator {
         return new Range(min,max);
     }
 
-    private double[] getValues(CategoryDataset dataset) {
+    private List<Double> getValues(CategoryDataset dataset) {
         if(this.stackValues) {
             return getStackedValues(dataset);
         } else {
@@ -205,7 +212,7 @@ public class PartitionAxisConfigurator {
         }
     }
 
-    private double[] getStackedValues(CategoryDataset dataset) {
+    private List<Double> getStackedValues(CategoryDataset dataset) {
         List<Double> values = Lists.newArrayList();
         for(int col=0;col < dataset.getColumnCount();col++) {
             double stacked = 0.0;
@@ -220,10 +227,10 @@ public class PartitionAxisConfigurator {
                 }
             }
         }
-        return ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
+        return values;
     }
 
-    private double[] getValuesRegular(CategoryDataset dataset) {
+    private List<Double> getValuesRegular(CategoryDataset dataset) {
         List<Double> values = Lists.newArrayList();
         for(int col=0;col < dataset.getColumnCount();col++) {
             for(int row=0;row<dataset.getRowCount();row++) {
@@ -233,7 +240,7 @@ public class PartitionAxisConfigurator {
                 }
             }
         }
-        return ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
+        return values;
     }
 
 }
