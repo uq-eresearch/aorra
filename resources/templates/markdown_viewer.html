@@ -1,0 +1,25 @@
+<div class="tabbable">
+  <ul class="nav nav-tabs">
+    <li class="active">
+      <a href="#markdown-html" data-toggle="tab">HTML</a>
+    </li>
+    <li>
+      <a href="#markdown-source" data-toggle="tab">Markdown</a>
+    </li>
+  </ul>
+  <div class="tab-content">
+    <div class="tab-pane active" id="markdown-html">
+      <div class="html-pane">{{{html}}}</div>
+    </div>
+    <div class="tab-pane" id="markdown-source">
+      <textarea class="source-pane"
+        {{^editable}}readonly{{/editable}}>{{{source}}}</textarea>
+    </div>
+  </div>
+  {{#editable}}
+  <div class="pull-right">
+    <br/>
+    <button class="btn btn-default save">Save</button>
+  </div>
+  {{/editable}}
+</div>

@@ -126,6 +126,9 @@ define(['backbone'], function(Backbone) {
 
   var File = FileOrFolder.extend({
     urlRoot: '/file',
+    downloadUrl: function() {
+      return this.url()+'/version/latest';
+    },
     uploadUrl: function() {
       return this.url()+'/version/new';
     },
