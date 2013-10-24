@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Paint;
+import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
@@ -20,9 +21,11 @@ import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.PlotRenderingInfo;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.text.TextUtilities;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.text.TextBlock;
+import org.jfree.text.TextBlockAnchor;
+import org.jfree.text.TextLine;
 import org.jfree.ui.RectangleEdge;
-import org.jfree.ui.TextAnchor;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -46,9 +49,11 @@ public class AutoSubCategoryAxis extends CategoryAxis {
         private Border border;
         private Paint borderPaint; 
         private Stroke borderStroke;
+        private Map<String, String> labels;
 
         public CategoryLabelConfig(CategoryLabelPositions position, Font font, Paint fontPaint,
-                double marginTop, double marginBottom, Border border, Paint borderPaint, Stroke borderStroke) {
+                double marginTop, double marginBottom, Border border, Paint borderPaint,
+                Stroke borderStroke, Map<String, String> labels) {
             super();
             this.position = position;
             this.font = font;
@@ -58,23 +63,30 @@ public class AutoSubCategoryAxis extends CategoryAxis {
             this.border = border;
             this.borderPaint = borderPaint;
             this.borderStroke = borderStroke;
+            this.labels = labels;
         }
 
         public CategoryLabelConfig(CategoryLabelPositions position, Font font, Paint fontPaint,
                 double marginTop, double marginBottom) {
             this(position, font, fontPaint, marginTop, marginBottom,
-                    Border.NONE, null, null);
+                    Border.NONE, null, null, null);
         }
 
         public CategoryLabelConfig(Font font, double marginTop, double marginBottom) {
             this(CategoryLabelPositions.STANDARD, font, Color.black, marginTop, marginBottom,
-                    Border.NONE, null, null);
+                    Border.NONE, null, null, null);
         }
 
         public CategoryLabelConfig(Font font, double marginTop, double marginBottom,
                 Border border, Paint borderPaint) {
             this(CategoryLabelPositions.STANDARD, font, Color.black, marginTop, marginBottom,
-                    border, borderPaint, new BasicStroke(1));
+                    border, borderPaint, new BasicStroke(1), null);
+        }
+
+        public CategoryLabelConfig(Font font, double marginTop, double marginBottom,
+                Border border, Paint borderPaint, Map<String, String> labels) {
+            this(CategoryLabelPositions.STANDARD, font, Color.black, marginTop, marginBottom,
+                    border, borderPaint, new BasicStroke(1), labels);
         }
 
         public CategoryLabelPositions getPosition() {
@@ -107,6 +119,10 @@ public class AutoSubCategoryAxis extends CategoryAxis {
 
         public Stroke getBorderStroke() {
             return borderStroke;
+        }
+
+        public Map<String, String> labels() {
+            return labels;
         }
 
     }
@@ -227,6 +243,16 @@ public class AutoSubCategoryAxis extends CategoryAxis {
                 }
             }
             return l;
+        }
+
+        public String getPath() {
+            List<String> path = Lists.newArrayList();
+            SubCategory current = this;
+            while(current.name != null) {
+                path.add(current.name);
+                current = current.parent;
+            }
+            return StringUtils.join(Lists.reverse(path), AutoSubCategoryAxis.this.separator);
         }
 
         public String toString(String indent) {
@@ -378,6 +404,24 @@ public class AutoSubCategoryAxis extends CategoryAxis {
         return drawCategoryLabels(g2, plotArea, dataArea, edge, state, plotState, true);
     }
 
+    private TextBlock fromName(String name, CategoryLabelConfig config) {
+        String label = null;
+        if(config.labels() != null) {
+            label = config.labels().get(name);
+        }
+        if(StringUtils.isBlank(label)) {
+            label = name;
+        }
+        Font f = config.getFont();
+        Paint p = config.getFontPaint();
+        TextBlock block = new TextBlock();
+        for(String s : StringUtils.split(label, '\n')) {
+            TextLine line = new TextLine(s, f, p);
+            block.addLine(line);
+        }
+        return block;
+    }
+
     private AxisState drawCategoryLabels(Graphics2D g2, Rectangle2D plotArea,
             Rectangle2D dataArea, RectangleEdge edge, AxisState state,
             PlotRenderingInfo plotState, boolean render) {
@@ -393,28 +437,37 @@ public class AutoSubCategoryAxis extends CategoryAxis {
             float maxHeight = 0.0f;
             for(SubCategory c : l) {
                 double angle = 0;
-                TextAnchor labelAnchor = TextAnchor.CENTER;
-                TextAnchor rotAnchor = TextAnchor.CENTER;
                 if(config.position.equals(CategoryLabelPositions.UP_90)) {
                     angle = -Math.PI/2;
                 }
-                String label = c.getName();
-                int categoryStartIndex = getCategoryStartIndex(c);
-                int categoryEndIndex = getCategoryEndIndex(c);
-                double start = getCategoryStart(categoryStartIndex, dataset.getColumnCount(), dataArea, edge);
-                double end = getCategoryEnd(categoryEndIndex, dataset.getColumnCount(), dataArea, edge);
-                double middle = start + (end-start)/2;
-                g2.setFont(config.getFont());
-                g2.setPaint(config.getFontPaint());
-                Rectangle2D bounds = TextUtilities.calculateRotatedStringBounds(label, g2,
-                        (float)middle, (float)state.getCursor(), labelAnchor,
-                        angle, rotAnchor).getBounds2D();
-                float height = (float)(bounds.getMaxY() - bounds.getMinY());
-                maxHeight = Math.max(height, maxHeight);
-                if(render) {
-                    TextUtilities.drawRotatedString(label, g2, (float)middle,
-                            (float)state.getCursor()+height/2, labelAnchor, angle, rotAnchor);
-                }
+                // TODO add the auto wrap here
+                //List<TextBlock> blocks = textBlocks(c.getName(), config);
+                //Iterator<TextBlock> iter = blocks.iterator();
+                //while(iter.hasNext()) {
+                  //  TextBlock block = iter.next();
+                    TextBlock block = fromName(c.getName(), config);
+                    int categoryStartIndex = getCategoryStartIndex(c);
+                    int categoryEndIndex = getCategoryEndIndex(c);
+                    double start = getCategoryStart(categoryStartIndex, dataset.getColumnCount(), dataArea, edge);
+                    double end = getCategoryEnd(categoryEndIndex, dataset.getColumnCount(), dataArea, edge);
+                    double middle = start + (end-start)/2;
+//                    double maxWidth = end-start;
+                    g2.setFont(config.getFont());
+                    g2.setPaint(config.getFontPaint());
+                    Shape b = block.calculateBounds(g2, (float)middle, (float)state.getCursor(),
+                            TextBlockAnchor.CENTER, (float)middle, (float)state.getCursor(), angle);
+                    Rectangle2D bounds = b.getBounds2D();
+//                    if(bounds.getWidth() > maxWidth && config.wrap() && iter.hasNext()) {
+//                        continue;
+//                    }
+                    float height = (float)(bounds.getMaxY() - bounds.getMinY());
+                    maxHeight = Math.max(height, maxHeight);
+                    if(render) {
+                        block.draw(g2, (float)middle, (float)state.getCursor()+height/2,
+                            TextBlockAnchor.CENTER, (float)middle, (float)state.getCursor()+height/2, angle);
+                    }
+//                    break;
+//                }
             }
             state.cursorDown(maxHeight);
             state.cursorDown(config.getMarginBottom());
@@ -495,9 +548,30 @@ public class AutoSubCategoryAxis extends CategoryAxis {
     @Override
     public AxisSpace reserveSpace(Graphics2D g2, Plot plot,
             Rectangle2D plotArea, RectangleEdge edge, AxisSpace space) {
-        AxisState axisState = drawCategoryLabels(g2, plotArea, null, null, new AxisState(), null, false);
+        AxisState axisState = drawCategoryLabels(g2, plotArea, space.shrink(plotArea, null), edge, new AxisState(), null, false);
         space.add(axisState.getCursor(), RectangleEdge.BOTTOM);
         return space;
+    }
+
+    // rearrange dataset so that the order of leafs
+    // matches the order of columns
+    public CategoryDataset getFixedDataset() {
+        DefaultCategoryDataset fixed = new DefaultCategoryDataset();
+        List<SubCategory> leafs = root.getLeafs();
+        for(SubCategory leaf : leafs) {
+            String path = leaf.getPath();
+            int col = dataset.getColumnIndex(path);
+            if(col == -1) {
+                throw new RuntimeException(String.format("column '%s' not found in dataset", path));
+            }
+            for(int row=0;row<dataset.getRowCount();row++) {
+                Comparable<?> rc = dataset.getRowKey(row);
+                if(rc != null) {
+                    fixed.addValue(dataset.getValue(row, col), rc, path);
+                }
+            }
+        }
+        return fixed;
     }
 
 }

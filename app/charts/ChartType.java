@@ -26,7 +26,8 @@ public enum ChartType {
     CORAL_SCC("Soft coral cover"),
     CORAL_MA("Macroalgae"),
     CORAL_JUV("Juvenile density"),
-    PSII_TRENDS("PSII Trends");
+    PSII_TRENDS("PSII Trends"),
+    PSII_MAX_HEQ("Maximum PSII Herbicide Equivalent Concentrations");
 
     private final String label;
 
