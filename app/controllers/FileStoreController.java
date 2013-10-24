@@ -35,6 +35,8 @@ import org.jcrom.util.PathUtils;
 import play.Logger;
 import play.api.http.MediaRange;
 import play.api.libs.MimeTypes;
+import play.api.mvc.AnyContentAsRaw;
+import play.api.mvc.AnyContentAsText;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
@@ -524,7 +526,11 @@ public final class FileStoreController extends SessionAwareController {
     final MultipartFormData body = request().body().asMultipartFormData();
     if (body == null || body.getFiles().size() != 1) {
       if (request().headers().containsKey("Content-Type")) {
-        return updateToFile(fileID, request().body().asRaw().asBytes());
+        if (request().body().asRaw() != null) {
+          return updateToFile(fileID, request().body().asRaw().asBytes());
+        } else if (request().body().asText() != null) {
+          return updateToFile(fileID, request().body().asText().getBytes());
+        }
       }
       return badRequest("Request must contain a single file to upload.")
           .as("text/plain");

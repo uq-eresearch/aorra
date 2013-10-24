@@ -37,6 +37,7 @@ import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.junit.Test;
 
+import play.api.mvc.AnyContentAsText;
 import play.api.mvc.Call;
 import play.libs.F;
 import play.libs.Json;
@@ -765,7 +766,7 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(400);
         }
         {
-          // Updating with correct body
+          // Updating with multipart form body
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.updateFile(
                   file.getIdentifier()),
@@ -785,6 +786,28 @@ public class FileStoreControllerTest {
           final FileStore.File updatedFile = files.iterator().next();
           assertThat(IOUtils.toString(updatedFile.getData()))
               .isEqualTo("New content.");
+          assertThat(contentAsString(result)).isEqualTo(
+              (new JsonBuilder()).toJsonShallow(updatedFile).toString());
+        }
+        {
+          // Updating with simple body
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.updateFile(
+                  file.getIdentifier()),
+              newRequest.withHeader("Accept", "application/json")
+                .withHeader("Content-Type", "text/plain")
+                .withBody(new AnyContentAsText("Newer content.")));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+              .isEqualTo("max-age=0, must-revalidate");
+          fm.getRoot().reload();
+          final Set<FileStore.File> files = fm.getRoot().getFiles();
+          assertThat(files).hasSize(1);
+          final FileStore.File updatedFile = files.iterator().next();
+          assertThat(IOUtils.toString(updatedFile.getData()))
+              .isEqualTo("Newer content.");
           assertThat(contentAsString(result)).isEqualTo(
               (new JsonBuilder()).toJsonShallow(updatedFile).toString());
         }
