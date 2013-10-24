@@ -7,6 +7,7 @@ import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileOrFolderException;
 import jackrabbit.AorraAccessManager;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,6 +35,8 @@ import org.jcrom.util.PathUtils;
 import play.Logger;
 import play.api.http.MediaRange;
 import play.api.libs.MimeTypes;
+import play.api.mvc.AnyContentAsRaw;
+import play.api.mvc.AnyContentAsText;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
@@ -520,16 +523,53 @@ public final class FileStoreController extends SessionAwareController {
 
   @SubjectPresent
   public Result updateFile(final String fileID) {
+    final MultipartFormData body = request().body().asMultipartFormData();
+    if (body == null || body.getFiles().size() != 1) {
+      if (request().headers().containsKey("Content-Type")) {
+        if (request().body().asRaw() != null) {
+          return updateToFile(fileID, request().body().asRaw().asBytes());
+        } else if (request().body().asText() != null) {
+          return updateToFile(fileID, request().body().asText().getBytes());
+        }
+      }
+      return badRequest("Request must contain a single file to upload.")
+          .as("text/plain");
+    } else {
+      return uploadToFile(fileID, body.getFiles().get(0));
+    }
+  }
+
+  protected Result updateToFile(final String fileID, final byte[] buf) {
     return fileBasedResult(fileID, new FileOp() {
       @Override
       public final Result apply(Session session, FileStore.File f)
           throws RepositoryException, FileNotFoundException {
-        final MultipartFormData body = request().body().asMultipartFormData();
-        if (body == null || body.getFiles().size() != 1) {
-          return badRequest("Request must contain a single file to upload.")
-              .as("text/plain");
+        try {
+          final String mimeType = request().headers().get("Content-Type")[0];
+          final JsonBuilder jb = new JsonBuilder();
+          f.update(mimeType, new ByteArrayInputStream(buf));
+          session.save();
+          Logger.info(String.format(
+            "file %s content type %s uploaded to %s by %s",
+            f.getName(), mimeType,
+            f.getPath(), getUser()));
+          return ok(jb.toJsonShallow(f)).as("application/json; charset=utf-8");
+        } catch (ItemExistsException iee) {
+          return forbidden(iee.getMessage());
+        } catch (AccessDeniedException ade) {
+          return forbidden(
+              "Insufficient permissions to upload files to folder.");
         }
-        final MultipartFormData.FilePart filePart = body.getFiles().get(0);
+      }
+    });
+  }
+
+  protected Result uploadToFile(final String fileID,
+      final MultipartFormData.FilePart filePart) {
+    return fileBasedResult(fileID, new FileOp() {
+      @Override
+      public final Result apply(Session session, FileStore.File f)
+          throws RepositoryException, FileNotFoundException {
         try {
           final JsonBuilder jb = new JsonBuilder();
           f.update(getMimeType(filePart),

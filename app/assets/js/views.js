@@ -6,8 +6,9 @@ define([
         'glyphtree',
         'jquery.bootstrap',
         'marionette',
+        'marked',
         'FileAPI'
-        ], function(models, templates, moment, diff_match_patch, glyphtree, $, Backbone) {
+        ], function(models, templates, moment, diff_match_patch, glyphtree, $, Backbone, marked) {
   'use strict';
 
   var formatTimestamp = function($n) {
@@ -844,6 +845,83 @@ define([
     }
   });
 
+  var OnlineEditorView = {
+    create: function(model) {
+      if (/\.(markdown|md)$/.test(model.get('name'))) {
+        if (model.get('accessLevel') == 'RW') {
+          return new MarkdownEditor({ model: model });
+        } else {
+          return new MarkdownViewer({ model: model });
+        }
+      }
+      return new NoEditorView();
+    }
+  };
+
+  var MarkdownViewer = Backbone.Marionette.ItemView.extend({
+    modelEvents: {
+      "sync": "fetchData"
+    },
+    ui: {
+      html: '.html-pane',
+      source: '.source-pane',
+      save: 'button.save'
+    },
+    initialize: function(options) {
+      this._content = '';
+      this.fetchData();
+    },
+    fetchData: function() {
+      $.get(this.model.downloadUrl(), _.bind(function(data) {
+        this._content = data;
+      }, this)).done(_.bind(this.render, this))
+    },
+    serializeData: function() {
+      return {
+        content: this._content,
+        editable: this.editable()
+      };
+    },
+    editable: function() { return false; },
+    template: function(obj) {
+      return templates.renderSync('markdown_viewer', {
+        html: marked(obj.content),
+        source: obj.content,
+        editable: obj.editable
+      });
+    }
+  });
+  
+  var MarkdownEditor = MarkdownViewer.extend({
+    editable: function() { return true; },
+    onRender: function() {
+      var toggleSave = _.bind(function(content) {
+        this.ui.save.prop("disabled", this._content == content);
+      }, this);
+      var save = _.bind(function() {
+        $.ajax(this.model.uploadUrl(), {
+          type: 'POST',
+          contentType: 'text/x-markdown',
+          data: this.ui.source.val()
+        });
+      }, this);
+      this.ui.source
+        .on('keyup', _.bind(function(e) {
+          var content = $(e.target).val();
+          this.ui.html.html(marked(content));
+          toggleSave(content);
+        }, this));
+      this.ui.save.on('click', save);
+      toggleSave(this._content);
+    }
+  });
+
+  var NoEditorView = Backbone.Marionette.ItemView.extend({
+    template: function() {
+      return "";
+    }
+  });
+
   var FileView = FileOrFolderView.extend({
     modelEvents: {
       "sync": "render"
@@ -867,6 +945,7 @@ define([
       breadcrumbs: '.region-breadcrumbs',
       buttons: '.region-buttons',
       display: '.region-display',
+      editor: '.region-editor',
       info:   '.region-info',
       upload: '.region-upload'
     },
@@ -905,6 +984,7 @@ define([
         model: this.model.info(),
         users: this._users
       }));
+      this.editor.show(OnlineEditorView.create(this.model));
       if (this.model.get('accessLevel') == 'RW') {
         this.upload.show(new FileUploadView({
           type: 'file',

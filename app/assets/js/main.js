@@ -14,12 +14,16 @@ requirejs.config({
       'jquery.bootstrap': 'lib/bootstrap',
       'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
+      'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min'
     },
     shim: {
       'backbone': {
         deps: ['jquery'],
         exports: 'Backbone'
+      },
+      'marked': {
+        exports: 'marked'
       },
       'marionette': {
         deps: ['backbone'],
