@@ -895,6 +895,9 @@ define([
   var MarkdownEditor = MarkdownViewer.extend({
     editable: function() { return true; },
     onRender: function() {
+      var toggleSave = _.bind(function(content) {
+        this.ui.save.prop("disabled", this._content == content);
+      }, this);
       var save = _.bind(function() {
         $.ajax(this.model.uploadUrl(), {
           type: 'POST',
@@ -904,9 +907,12 @@ define([
       }, this);
       this.ui.source
         .on('keyup', _.bind(function(e) {
-          this.html(marked($(e.target).val()));
-        }, this.ui.html));
+          var content = $(e.target).val();
+          this.ui.html.html(marked(content));
+          toggleSave(content);
+        }, this));
       this.ui.save.on('click', save);
+      toggleSave(this._content);
     }
   });
 
