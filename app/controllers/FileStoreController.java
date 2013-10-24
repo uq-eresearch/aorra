@@ -1,5 +1,6 @@
 package controllers;
 
+import static org.apache.commons.httpclient.util.URIUtil.encodeQuery;
 import static service.filestore.roles.Admin.isAdmin;
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
@@ -340,7 +341,7 @@ public final class FileStoreController extends SessionAwareController {
         final java.io.File zipFile = fh.createZipFile(folder);
         ctx().response().setContentType("application/zip");
         ctx().response().setHeader("Content-Disposition",
-            "attachment; filename="+folder.getName()+".zip");
+            "attachment; filename="+encodeQuery(folder.getName())+".zip");
         ctx().response().setHeader("Content-Length", zipFile.length()+"");
         return ok(new FileInputStream(zipFile) {
           @Override
@@ -372,7 +373,7 @@ public final class FileStoreController extends SessionAwareController {
             "(\\.?[^\\.]+$)", versionStamp + "$1" );
         ctx().response().setContentType(version.getMimeType());
         ctx().response().setHeader("Content-Disposition",
-            "attachment; filename="+filename);
+            "attachment; filename="+encodeQuery(filename));
         return ok(version.getData());
       }
     });

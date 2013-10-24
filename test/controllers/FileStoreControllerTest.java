@@ -1003,7 +1003,7 @@ public class FileStoreControllerTest {
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
         final FileStore.File file =
-            fm.getRoot().createFile("test.txt", "text/plain",
+            fm.getRoot().createFile("test file.txt", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
         for (String versionString : new String[] {"1.0", "latest"}) {
           final Result result = callAction(
@@ -1015,7 +1015,7 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
           assertThat(header("Content-Disposition", result))
-            .startsWith("attachment; filename=");
+            .startsWith("attachment; filename=test%20file");
           // File result is async
           assertThat(result.getWrappedResult()).isInstanceOf(
               play.api.mvc.AsyncResult.class);
@@ -1034,18 +1034,20 @@ public class FileStoreControllerTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
-        fm.getRoot().createFile("test.txt", "text/plain",
+        final FileStore.Folder folder =
+            fm.getRoot().createFolder("Test Folder");
+        folder.createFile("test.txt", "text/plain",
             new ByteArrayInputStream("Some content.".getBytes()));
         {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.downloadFolder(
-                  fm.getRoot().getIdentifier()),
+                  folder.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
           assertThat(header("Content-Disposition", result))
-            .startsWith("attachment; filename=");
+            .isEqualTo("attachment; filename=Test%20Folder.zip");
           // File result is async
           assertThat(result.getWrappedResult()).isInstanceOf(
               play.api.mvc.AsyncResult.class);
