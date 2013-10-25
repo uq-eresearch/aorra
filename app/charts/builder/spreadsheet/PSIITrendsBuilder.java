@@ -2,8 +2,12 @@ package charts.builder.spreadsheet;
 
 import static charts.ChartType.PSII_TRENDS;
 import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 import java.awt.Dimension;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
@@ -18,9 +22,13 @@ import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.PSIITrends;
 
+import com.google.common.collect.Lists;
+
 public class PSIITrendsBuilder extends AbstractBuilder {
 
-    private static final String TITLE = "Trends in maximum PSII herbicide equivalent concentrations";
+    private static final String TITLE = "Maximum concentration of individual PSII herbicides";
+
+    private static final Pattern YEAR_PATTERN = Pattern.compile(".*?(\\d+-\\d+).*?");
 
     public PSIITrendsBuilder() {
         super(PSII_TRENDS);
@@ -29,7 +37,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
     @Override
     public boolean canHandle(SpreadsheetDataSource datasource) {
         try {
-            return StringUtils.equalsIgnoreCase(datasource.select("A1").asString(), TITLE);
+            return StringUtils.startsWithIgnoreCase(datasource.select("A2").asString(), TITLE);
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
         }
@@ -40,7 +48,6 @@ public class PSIITrendsBuilder extends AbstractBuilder {
             final Region region, Dimension queryDimensions) {
         if(region == Region.GBR) {
             final CategoryDataset dataset = getDataset(datasource);
-            final String title = getTitle(datasource);
             return new AbstractChart(queryDimensions) {
 
                 @Override
@@ -50,7 +57,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
 
                 @Override
                 public Drawable getChart() {
-                    return PSIITrends.createChart(dataset, title, new Dimension(1500, 750));
+                    return PSIITrends.createChart(dataset, TITLE, new Dimension(1000, 500));
                 }
 
                 @Override
@@ -67,77 +74,72 @@ public class PSIITrendsBuilder extends AbstractBuilder {
         }
     }
 
+    private String getYear(String s) {
+        Matcher m = YEAR_PATTERN.matcher(s);
+        if(m.matches()) {
+            String year = m.group(1);
+            String[] y = StringUtils.split(year, '-');
+            if(y.length == 2 && y[0].length() == 4 && y[1].length() == 4) {
+                return y[0].substring(2)+"-"+y[1].substring(2);
+            } else {
+                return year;
+            }
+        } else {
+            throw new RuntimeException("trouble extracting year from "+s);
+        }
+    }
+
+    private boolean eof(SpreadsheetDataSource ds, int row) throws MissingDataException {
+        for(int i=0;i<3;i++) {
+            if(isNotBlank(ds.select(row+i, 1).asString())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private CategoryDataset getDataset(SpreadsheetDataSource ds) {
         try {
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             String cRegion = null;
-            String cSite = null;
-            for(int row = 2;true;row++) {
-                String region = ds.select(row, 0).asString();
-                String site = ds.select(row, 1).asString();
-                String date = ds.select(row, 2).asString();
-                if(isBlank(date)) {
-                    break;
-                }
-                if(isBlank(region)) {
-                    region = cRegion;
-                } else {
-                    cRegion = region;
-                }
-                if(isBlank(region)) {
-                    throw new RuntimeException("no region");
-                }
-                if(isBlank(site)) {
-                    site = cSite;
-                } else {
-                    cSite = site;
-                }
-                if(isBlank(site)) {
-                    throw new RuntimeException("no site");
-                }
-                String key = region + PSIITrends.SEPARATOR + site + PSIITrends.SEPARATOR + date;
-
-                for(int i = 3;i<10;i++) {
-                    Double val = ds.select(row, i).asDouble();
-                    String name = ds.select(1, i).asString();
-                    if(val != null && name != null) {
-                        dataset.addValue(val, name, key);
+            String year = null;
+            List<String> pesticides = Lists.newArrayList();
+            for(int row = 1;!eof(ds, row);row++) {
+                String col1 = ds.select(row, 0).asString();
+                if(StringUtils.startsWithIgnoreCase(col1, TITLE)) {
+                    year = getYear(col1);
+                    continue;
+                } else if(StringUtils.equalsIgnoreCase("region", col1)) {
+                    pesticides = Lists.newArrayList();
+                    for(int col=2;true;col++) {
+                        String p = ds.select(row, col).asString();
+                        if(isBlank(p)) {
+                            break;
+                        } else {
+                            pesticides.add(p);
+                        }
                     }
+                    continue;
+                }
+                if(isNotBlank(col1)) {
+                    cRegion = col1;
+                }
+                String site = ds.select(row, 1).asString();
+                if(isBlank(site)) {
+                    continue;
+                }
+                for(int i=0;i<pesticides.size();i++) {
+                    String p = pesticides.get(i);
+                    Double val = ds.select(row, i+2).asDouble();
+                    double v = val!=null?val:0.0;
+                    String key = StringUtils.join(
+                            Lists.newArrayList(cRegion, site, year), PSIITrends.SEPARATOR);
+                    dataset.addValue(v, p, key);
                 }
             }
             return dataset;
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private String getTitle(SpreadsheetDataSource ds) {
-        try {
-            int startYear = Integer.MAX_VALUE;
-            int endYear = Integer.MIN_VALUE;
-            for(int row = 2;true;row++) {
-                String date = ds.select(row, 2).asString();
-                if(isBlank(date)) {
-                    break;
-                }
-                String[] s = StringUtils.split(date, '-');
-                if((s.length == 2) && isInt(s[0]) && isInt(s[1])) {
-                    startYear = Math.min(startYear, Integer.parseInt(s[0]));
-                    endYear = Math.max(endYear, Integer.parseInt(s[1]));
-                }
-            }
-            return String.format(TITLE+" at all sites monitored from %s to %s", startYear, endYear);
-        } catch(MissingDataException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private boolean isInt(String s) {
-        try {
-            Integer.parseInt(s);
-            return true;
-        } catch(Exception e) {
-            return false;
         }
     }
 }

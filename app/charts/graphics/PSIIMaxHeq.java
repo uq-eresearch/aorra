@@ -133,6 +133,7 @@ public class PSIIMaxHeq {
             plot.setRangeGridlineStroke(new BasicStroke(1.0f));
         }
         {
+            // TODO the partition range should be determined automatically!
             if(plot.getRangeAxis() instanceof PartitionedNumberAxis) {
                 PartitionedNumberAxis vAxis = (PartitionedNumberAxis)plot.getRangeAxis();
                 vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(0,55.0),0.5));

@@ -8,11 +8,16 @@ import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.geom.Rectangle2D;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.LegendItem;
+import org.jfree.chart.LegendItemCollection;
+import org.jfree.chart.LegendItemSource;
 import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.block.GridArrangement;
 import org.jfree.chart.entity.EntityCollection;
 import org.jfree.chart.labels.CategoryItemLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
@@ -20,31 +25,54 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.CategoryItemRendererState;
 import org.jfree.chart.renderer.category.GradientBarPainter;
 import org.jfree.chart.renderer.category.StackedBarRenderer;
+import org.jfree.chart.title.LegendTitle;
 import org.jfree.data.DataUtilities;
 import org.jfree.data.Range;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.ui.RectangleEdge;
+import org.jfree.ui.RectangleInsets;
 
 import charts.Drawable;
 import charts.graphics.AutoSubCategoryAxis.Border;
 
+import com.google.common.collect.ImmutableMap;
+
 public class PSIITrends {
 
-    private static final String RANGE_AXIS_LABEL =
-            "Maxium photosystem II herbicide equivalent concentrations ng/L";
+    private static final String RANGE_AXIS_LABEL = "Concentraction in water (ng/L)";
 
     public static final String SEPARATOR = AutoSubCategoryAxis.DEFAULT_SEPARATOR;
 
-    private static final Color BLUE = new Color(30, 172, 226);
-    private static final Color GREEN = new Color(51,151,79);
-    private static final Color GRAY = new Color(137,137,137);
-    private static final Color BROWN = new Color(146, 116, 80);
-    private static final Color VIOLET = new Color(50, 52, 109);
-    private static final Color YELLOW = new Color(246, 219, 68);
-    private static final Color RED = new Color(187, 34, 51);
+    private static Color fromHex(String s) {
+        String c = StringUtils.strip(StringUtils.strip(s), "#");
+        if(c.length()>=6) {
+            int r = Integer.parseInt(StringUtils.substring(c, 0, 2), 16);
+            int g = Integer.parseInt(StringUtils.substring(c, 2, 4), 16);
+            int b = Integer.parseInt(StringUtils.substring(c, 4, 6), 16);
+            int a = 255;
+            if(c.length()>=8) {
+                a = Integer.parseInt(StringUtils.substring(c, 6, 8), 16);
+            }
+            return new Color(r,g,b,a);
+        } else {
+            throw new IllegalArgumentException("unknown color code "+s);
+        }
+    }
 
+    private static final Color PURPLE = fromHex("#D6117E");
+    private static final Color LIGHT_BROWN = fromHex("#BAAF93");
+    private static final Color VIOLET = fromHex("#2B3077");
+    private static final Color PINK = fromHex("#802A7D");
+    private static final Color YELLOW = fromHex("#FDF117");
+    private static final Color BROWN = fromHex("#907F71");
+    private static final Color ORANGE = fromHex("#EB8C28");
+    private static final Color LIGHT_BLUE = fromHex("#00A4DC");
+    private static final Color GREEN = fromHex("#009A4E");
+    private static final Color RED = fromHex("#D92129");
+    private static final Color GRAY = fromHex("#898C8B");
+    
     private static final Paint[] SERIES_PAINT = new Paint[] {
-        BLUE, GREEN, GRAY, BROWN, VIOLET, YELLOW, RED };
+        PURPLE, LIGHT_BROWN, VIOLET, PINK, YELLOW, BROWN, ORANGE, LIGHT_BLUE, GREEN, RED, GRAY };
 
     private static class Renderer extends StackedBarRenderer {
 
@@ -214,9 +242,11 @@ public class PSIITrends {
             plot.setRangeGridlineStroke(new BasicStroke(1.0f));
         }
         {
+            // TODO the partition range should be determined automatically!
             if(plot.getRangeAxis() instanceof PartitionedNumberAxis) {
                 PartitionedNumberAxis vAxis = (PartitionedNumberAxis)plot.getRangeAxis();
-                new PartitionAxisConfigurator(true).configurePartitions(dataset, vAxis);
+                vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(0,110.0),1.0/3.0*2.0));
+                vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(120.0,750.0),1.0/3.0));
             }
         }
         {
@@ -234,22 +264,55 @@ public class PSIITrends {
             cAxis.setItemMargin(0, 1.0);
             cAxis.setItemMargin(1, 1.0);
             cAxis.setItemMargin(2, 0.10);
+            // TODO would be nice if the AutoSubCategoryAxis could do the wrapping automatically
+            ImmutableMap<String, String> labels = new ImmutableMap.Builder<String, String>()
+                .put("Low Isles", "Low\nIsles")
+                .put("Green Island", "Green\nIsland")
+                .put("Fitzroy Island", "Fitzroy\nIsland")
+                .put("Normanby Island", "Normanby\nIsland")
+                .put("Dunk Island", "Dunk\nIsland")
+                .put("Orpheus Island", "Orpheus\nIsland")
+                .put("Magnetic Island", "Magnetic\nIsland")
+                .put("Cape Cleveland", "Cape\nCleveland")
+                .put("Pioneer Bay", "Pioneer\nBay")
+                .put("Outer Whitsunday", "Outer\nWhitsunday")
+                .put("Sarina Inlet", "Sarina\nInlet")
+                .put("North Keppel Island", "North\nKeppel Is")
+                .build();
             cAxis.setCategoryLabelConfig(0, new AutoSubCategoryAxis.CategoryLabelConfig(
                     f,2,2, Border.ALL, Color.black));
             cAxis.setCategoryLabelConfig(1, new AutoSubCategoryAxis.CategoryLabelConfig(
-                    f,2,2, Border.BETWEEN, Color.lightGray));
+                    f,2,2, Border.BETWEEN, Color.lightGray, labels));
             cAxis.setCategoryLabelConfig(2, new AutoSubCategoryAxis.CategoryLabelConfig(
                     CategoryLabelPositions.UP_90,f, Color.black,2.0,2.0));
+        }
+        {
+            final LegendItemCollection items = new LegendItemCollection();
+            int i = 0;
+            for(Object p : dataset.getRowKeys()) {
+                items.add(new LegendItem(p.toString(), null, null, null,
+                        new Rectangle2D.Double(-6.0, -6.0, 10.0,10.0),
+                        plot.getRenderer().getSeriesPaint(i++)));
+            }
+            LegendTitle legend = new LegendTitle(new LegendItemSource() {
+                @Override
+                public LegendItemCollection getLegendItems() {
+                    return items;
+                }}, new GridArrangement(dataset.getRowCount()/6+1,6), null);
+            legend.setMargin(new RectangleInsets(1.0, 50.0, 1.0, 1.0));
+            legend.setBackgroundPaint(Color.white);
+            legend.setPosition(RectangleEdge.BOTTOM);
+            chart.addLegend(legend);
         }
         return new JFreeChartDrawable(chart, dimension);
     }
 
     private static JFreeChart createStackBarChart(CategoryDataset dataset,String title) {
-        CategoryAxis categoryAxis = new AutoSubCategoryAxis(dataset);
+        AutoSubCategoryAxis dAxis = new AutoSubCategoryAxis(dataset);
         PartitionedNumberAxis vAxis = new PartitionedNumberAxis(RANGE_AXIS_LABEL);
-        CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, vAxis, new Renderer());
+        CategoryPlot plot = new CategoryPlot(dAxis.getFixedDataset(), dAxis, vAxis, new Renderer());
         plot.setOrientation(PlotOrientation.VERTICAL);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, true);
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, false);
         new StandardChartTheme("JFree").apply(chart);
         return chart;
     }
