@@ -29,6 +29,42 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
 
     private static final String SUBREGION = "subregion";
 
+    private static enum Subregion {
+        
+        AP(Region.CAPE_YORK, "Archer Point"),
+        YP(Region.WET_TROPICS, "Yule Point"),
+        LB(Region.WET_TROPICS, "Lugger Bay"),
+        GI(Region.WET_TROPICS, "Green Island"),
+        DI(Region.WET_TROPICS, "Dunk Island"),
+        TSV(Region.BURDEKIN, "Bushland and Shelly Beaches"),
+        MI(Region.BURDEKIN, "Magnetic Island"),
+        SI(Region.MACKAY_WHITSUNDAY, "Sarina Inlet"),
+        PI(Region.MACKAY_WHITSUNDAY, "Pioneer Bay"),
+        HM(Region.MACKAY_WHITSUNDAY, "Hamilton Island"),
+        GH(Region.FITZROY, "Gladstone Harbour"),
+        GK(Region.FITZROY, "Great Keppel Island"),
+        SWB(Region.FITZROY, "Shoalwater Bay"),
+        UG(Region.BURNETT_MARY, "Urangan"),
+        RD(Region.BURNETT_MARY, "Rodds Bay"),
+        ;
+        
+        private Region region;
+        private String label;
+
+        private Subregion(Region region, String label) {
+            this.region = region;
+            this.label = label;
+        }
+
+        public Region getRegion() {
+            return region;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+    }
+
     public TrendsSeagrassAbundanceBuilder() {
         super(ChartType.TSA);
     }
@@ -75,7 +111,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
                         continue;
                     }
                 }
-                if(!subregions.contains(s)) {
+                if(Subregion.valueOf(s.toUpperCase()) != null && !subregions.contains(s)) {
                     subregions.add(s);
                 }
             } catch(MissingDataException e ) {}
@@ -83,7 +119,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         return subregions;
     }
 
-    private String getSubregion(final SpreadsheetDataSource ds, Map<String, ?> parameters) {
+    private Subregion getSubregion(final SpreadsheetDataSource ds, Map<String, ?> parameters) {
         String subregion = (String)parameters.get(SUBREGION);
         if(isBlank(subregion)) {
             return null;
@@ -91,21 +127,21 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         if(!getSubregions(ds).contains(subregion)) {
             return null;
         }
-        return subregion;
+        return Subregion.valueOf(subregion.toUpperCase());
     }
 
     @Override
     public Chart build(final SpreadsheetDataSource ds, final ChartType type,
         final Region region, Dimension dimensions, final Map<String, ?> parameters) {
-        if(region == Region.GBR) {
+        Subregion subregion = getSubregion(ds, parameters);
+        if(subregion == null) {
+            return null;
+        }
+        if(subregion.getRegion() == region) {
             int sheet = getSheet(ds);
             if(sheet != -1) {
                 ds.setDefaultSheet(sheet);
             } else {
-                return null;
-            }
-            String subregion = getSubregion(ds, parameters);
-            if(subregion == null) {
                 return null;
             }
             final CategoryDataset dataset = createDataset(ds, subregion);
@@ -132,11 +168,12 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
                     throw new UnsupportedFormatException();
                 }
             };
+        } else {
+            return null;
         }
-        return null;
     }
 
-    private int getSubregionRowStart(SpreadsheetDataSource ds, String subregion) {
+    private int getSubregionRowStart(SpreadsheetDataSource ds, Subregion subregion) {
         for(int row = 1; true; row++) {
             try {
                 String s = strip(ds.select(row, 0).asString());
@@ -147,7 +184,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
                         continue;
                     }
                 }
-                if(equalsIgnoreCase(s, subregion)) {
+                if(equalsIgnoreCase(s, subregion.name())) {
                     return row;
                 }
             } catch(MissingDataException e ) {}
@@ -155,7 +192,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         return -1;
     }
 
-    private CategoryDataset createDataset(SpreadsheetDataSource ds, String subregion) {
+    private CategoryDataset createDataset(SpreadsheetDataSource ds, Subregion subregion) {
         DefaultStatisticalCategoryDataset d = new DefaultStatisticalCategoryDataset();
         SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
         try {
@@ -165,7 +202,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
             }
             for(;true;row++) {
                 String subr = strip(ds.select(row, 0).asString());
-                if(!equalsIgnoreCase(subr, subregion)) {
+                if(!equalsIgnoreCase(subr, subregion.name())) {
                     break;
                 }
                 Date date = ds.select(row, 1).asDate();
@@ -181,8 +218,8 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         return d;
     }
 
-    private String getTitle(String subregion) {
-        return String.format("Trends in seagrass abundance (mean) at %s", subregion);
+    private String getTitle(Subregion subregion) {
+        return String.format("Trends in seagrass abundance (mean) at %s", subregion.getLabel());
     }
 
 }
