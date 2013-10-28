@@ -134,7 +134,7 @@ public class LoadsBuilder extends AbstractBuilder {
 
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension queryDimensions, final Map<String, ?> parameters) {
+            final Region region, Dimension queryDimensions, final Map<String, String> parameters) {
         int sheet = sheet(datasource);
         if(sheet == -1) {
             return null;

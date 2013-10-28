@@ -30,7 +30,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
     public static final String SUBREGION = "subregion";
 
     public static enum Subregion {
-        
+
         AP(Region.CAPE_YORK, "Archer Point"),
         YP(Region.WET_TROPICS, "Yule Point"),
         LB(Region.WET_TROPICS, "Lugger Bay"),
@@ -47,7 +47,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         UG(Region.BURNETT_MARY, "Urangan"),
         RD(Region.BURNETT_MARY, "Rodds Bay"),
         ;
-        
+
         private Region region;
         private String label;
 
@@ -83,7 +83,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         for(int i=0;i<ds.sheets();i++) {
             try {
                 String sheet = ds.getSheetname(i);
-                if(stripEqualsIgnoreCase(ds, "site", sheet, "A1") && 
+                if(stripEqualsIgnoreCase(ds, "site", sheet, "A1") &&
                    stripEqualsIgnoreCase(ds, "date", sheet, "B1") &&
                    stripEqualsIgnoreCase(ds, "mean", sheet, "C1") &&
                    stripEqualsIgnoreCase(ds, "se", sheet, "D1")) {
@@ -132,7 +132,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
 
     @Override
     public Chart build(final SpreadsheetDataSource ds, final ChartType type,
-        final Region region, Dimension dimensions, final Map<String, ?> parameters) {
+        final Region region, Dimension dimensions, final Map<String, String> parameters) {
         Subregion subregion = getSubregion(ds, parameters);
         if(subregion == null) {
             return null;
