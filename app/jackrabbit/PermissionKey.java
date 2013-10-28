@@ -2,10 +2,11 @@ package jackrabbit;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import jackrabbit.PermissionKey;
 
-public final class PermissionKey {
+public final class PermissionKey implements Comparable<PermissionKey> {
 
     private final String workspace;
     private final String principal;
@@ -54,5 +55,14 @@ public final class PermissionKey {
     @Override
     public String toString() {
       return String.format("workspace %s, principal %s, itemid %s", workspace, principal, id);
+    }
+
+    @Override
+    public int compareTo(PermissionKey o) {
+      return new CompareToBuilder()
+        .append(getWorkspace(), o.getWorkspace())
+        .append(getPrincipal(), o.getPrincipal())
+        .append(getId(), o.getId())
+        .build();
     }
 }

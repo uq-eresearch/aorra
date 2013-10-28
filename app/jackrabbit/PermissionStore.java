@@ -18,7 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Maps;
 
 public class PermissionStore {
-    
+
     private static final String PSTORE = "pstore";
     private static final String PSTORE_PATH = "/"+PSTORE;
 
@@ -30,8 +30,7 @@ public class PermissionStore {
 
     private static PermissionStore INSTANCE;
 
-    private Map<PermissionKey, Permission> permissions = Maps.newHashMap();
-
+    private final Map<PermissionKey, Permission> permissions = Maps.newTreeMap();
     private String getProperty(Node n, String property) throws PathNotFoundException, RepositoryException {
         Property p = n.getProperty(property);
         if(p != null) {
@@ -83,7 +82,7 @@ public class PermissionStore {
             return permissions;
         }
 
-        
+
     }
 
     public static synchronized PermissionStore getInstance() {
@@ -97,7 +96,7 @@ public class PermissionStore {
         return Maps.newHashMap(permissions);
     }
 
-    public synchronized void grant(Session session, 
+    public synchronized void grant(Session session,
             String workspace, String principal, String id, Permission permission) throws RepositoryException {
         checkPermission(session);
         try {
@@ -143,7 +142,7 @@ public class PermissionStore {
                         permissions.put(new PermissionKey(workspace, principal, id), p);
                     }
                 } catch(PathNotFoundException e) {
-                    
+
                 }
             }
         } catch(Exception e) {
