@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -16,9 +17,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.junit.Test;
 
+import com.google.common.collect.Maps;
+
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
 import charts.Region;
+import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder;
 import charts.builder.spreadsheet.XlsDataSource;
 import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
@@ -49,21 +53,32 @@ public class ChartBuilderTest {
 
   @Test
   public void svgAndPngChartSize() throws UnsupportedFormatException{
-    final List<Region> regions = asList(Region.GBR);
     for (final ChartType ct : ChartType.values()) {
+        List<Region> regions = asList(Region.GBR);
+        Map<String, String> parameters = Maps.newHashMap(); 
       final List<DataSource> ds = asList(getDatasource(ct));
-      {
-        final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(0, 0)).get(0);
-        Element svg = getSvgRoot(chart);
-        String[] viewBox = svg.attr("viewBox").split(" ");
-        assertThat(svg.attr("width")).isEqualTo(viewBox[2]);
-        assertThat(svg.attr("height")).isEqualTo(viewBox[3]);
-        checkDimensionsMatch(ct, svg, getPngImage(chart));
+      if(ct == ChartType.TSA) {
+        regions = asList(Region.CAPE_YORK);
+        parameters.put(TrendsSeagrassAbundanceBuilder.SUBREGION,
+          TrendsSeagrassAbundanceBuilder.Subregion.AP.name());
       }
       {
-        final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(0, 127)).get(0);
+        try {
+          final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
+                new Dimension(0, 0), parameters).get(0);
+            Element svg = getSvgRoot(chart);
+            String[] viewBox = svg.attr("viewBox").split(" ");
+            assertThat(svg.attr("width")).isEqualTo(viewBox[2]);
+            assertThat(svg.attr("height")).isEqualTo(viewBox[3]);
+            checkDimensionsMatch(ct, svg, getPngImage(chart));
+        } catch(IndexOutOfBoundsException e) {
+          throw new RuntimeException(String.format(
+            "caught exception while testing chart type %s", ct), e);
+        }
+      }
+      {
+        final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
+            new Dimension(0, 127), parameters).get(0);
         Element svg = getSvgRoot(chart);
         assertThat(svg.attr("width"))
           .as(ct+" unspecified width")
@@ -72,8 +87,8 @@ public class ChartBuilderTest {
         checkDimensionsMatch(ct, svg, getPngImage(chart));
       }
       {
-        final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(383, 0)).get(0);
+        final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
+            new Dimension(383, 0), parameters).get(0);
         Element svg = getSvgRoot(chart);
         assertThat(svg.attr("width")).isEqualTo("383");
         assertThat(svg.attr("height"))
@@ -82,8 +97,8 @@ public class ChartBuilderTest {
         checkDimensionsMatch(ct, svg, getPngImage(chart));
       }
       {
-        final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(383, 127)).get(0);
+        final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
+            new Dimension(383, 127), parameters).get(0);
         Element svg = getSvgRoot(chart);
         assertThat(svg.attr("width")).isEqualTo("383");
         assertThat(svg.attr("height")).isEqualTo("127");
@@ -169,8 +184,9 @@ public class ChartBuilderTest {
     case CORAL_JUV:
       return "test/coral.xls";
     case PSII_MAX_HEQ:
+      return "test/PSII.xlsx";
     case PSII_TRENDS:
-        return "test/pesticides.xlsx";
+      return "test/Max conc.xlsx";
     default:
       throw new RuntimeException("Unknown chart type: "+t);
     }

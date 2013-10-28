@@ -27,9 +27,9 @@ import com.google.common.collect.Lists;
 
 public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
 
-    private static final String SUBREGION = "subregion";
+    public static final String SUBREGION = "subregion";
 
-    private static enum Subregion {
+    public static enum Subregion {
         
         AP(Region.CAPE_YORK, "Archer Point"),
         YP(Region.WET_TROPICS, "Yule Point"),
