@@ -10,9 +10,9 @@ import models.NotificationDAO;
 import models.User;
 import models.UserDAO;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.jcrom.Jcrom;
 
 import play.libs.F;

@@ -24,8 +24,8 @@ import models.Notification;
 import models.User;
 import models.UserDAO;
 
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.junit.Test;
 
 import play.api.mvc.Call;

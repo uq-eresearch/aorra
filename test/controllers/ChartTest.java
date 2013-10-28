@@ -2,7 +2,6 @@ package controllers;
 
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
-import static play.api.test.Helpers.await;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
@@ -30,8 +29,9 @@ import javax.jcr.Session;
 
 import models.User;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.ArrayNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -40,16 +40,19 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 
-import play.api.mvc.AsyncResult;
 import play.api.mvc.Call;
 import play.mvc.HandlerRef;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.mvc.SimpleResult;
 import play.test.FakeRequest;
 import service.filestore.FileStore;
 import charts.representations.Format;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.duration.Duration;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -429,7 +432,7 @@ public class ChartTest {
                   format.name(),
                   ImmutableList.<String>of(f.getIdentifier())),
               newRequest);
-          assertThat(status(waitForReady(result, 120))).isEqualTo(200);
+          assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo(format.getMimeType());
         }
       }
@@ -719,12 +722,6 @@ public class ChartTest {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile(prefix + ".xlsx", XLSX_MIME_TYPE,
         new FileInputStream("test/tracking_towards_targets.xlsx"));
-  }
-
-  private Result waitForReady(Result result, int seconds) {
-    await(((AsyncResult)result.getWrappedResult()).result(),
-        seconds, TimeUnit.SECONDS);
-    return result;
   }
 
 }

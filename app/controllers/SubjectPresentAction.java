@@ -1,7 +1,11 @@
 package controllers;
 
+import static play.libs.F.Promise.pure;
+
 import models.CacheableUser;
 import play.Play;
+import play.mvc.SimpleResult;
+import play.libs.F.Promise;
 import play.mvc.Action;
 import play.mvc.Http.Context;
 import play.mvc.Result;
@@ -13,9 +17,9 @@ import com.feth.play.module.pa.PlayAuthenticate;
 public class SubjectPresentAction extends Action.Simple {
 
   @Override
-  public Result call(final Context ctx) throws Throwable {
+  public Promise<SimpleResult> call(final Context ctx) throws Throwable {
     if (getUser(ctx) == null) {
-      return redirect(PlayAuthenticate.getResolver().login());
+      return pure(redirect(PlayAuthenticate.getResolver().login()));
     }
     return delegate.call(ctx);
   }

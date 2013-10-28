@@ -5,17 +5,19 @@ import scala.collection.JavaConversions.iterableAsScalaIterable
 import org.specs2.mutable.Specification
 import javax.jcr.Session
 import models.User
+import scala.concurrent.Await
 import scala.concurrent.Promise
+import scala.concurrent.duration.Duration
 import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.AsyncResult
 import play.api.mvc.ChunkedResult
+import play.api.mvc.Results
 import play.api.mvc.SimpleResult
 import play.api.mvc.Results.EmptyContent
 import play.api.test.FakeHeaders
 import play.api.test.FakeRequest
 import play.api.test.Helpers.GET
 import play.api.test.Helpers.OK
-import play.api.test.Helpers.await
 import play.api.test.Helpers.charset
 import play.api.test.Helpers.contentAsString
 import play.api.test.Helpers.contentType
@@ -34,8 +36,11 @@ import java.util.zip.{ZipInputStream, ZipEntry}
 import helpers.FileStoreHelper.{XLS_MIME_TYPE, XLSX_MIME_TYPE}
 import java.io.FileInputStream
 import scala.collection.immutable.StringOps
+import akka.util.Timeout
 
 class ArchiveAsyncSpec extends Specification {
+
+  implicit val timeout = Timeout(30000)
 
   "chart archive download" should {
 
@@ -53,37 +58,33 @@ class ArchiveAsyncSpec extends Specification {
 
     "return archive" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
+        import scala.concurrent.ExecutionContext.Implicits.global
+
         val folder = filestore.getManager(session).getRoot()
         folder.createFile("marine.xlsx", XLSX_MIME_TYPE,
             new FileInputStream("test/marine.xlsx"))
 
-        val Some(result) = route(FakeRequest(GET,
+        val Some(futureResult: Future[SimpleResult]) = route(FakeRequest(GET,
             routes.ArchiveAsync.chartArchive(folder.getIdentifier).toString,
             rh, AnyContentAsEmpty))
 
-        status(result) must equalTo(OK);
-        contentType(result) must beSome("application/zip")
-        header("Cache-Control", result) must
+        status(futureResult) must equalTo(OK);
+        contentType(futureResult) must beSome("application/zip")
+        header("Cache-Control", futureResult) must
           beSome("max-age=0, must-revalidate");
 
-        result match {
-          case AsyncResult(_) => // all good
-          case _ => failure("Should have an asynchronous result.")
-        }
+        // Need to work with actual result
+        val result = Await.result(futureResult, Duration(30, TimeUnit.SECONDS))
 
-        val chunkedResult = await(result.asInstanceOf[AsyncResult].result,
-                30, TimeUnit.SECONDS).asInstanceOf[ChunkedResult[Array[Byte]]]
+        // Take "Transfer-Encoding: chunked" bytes, dechunk and collect
+        val futureZipBytes = result.body.through(Results.dechunk)
+            .run(Iteratee.consume[Array[Byte]]())
 
-        var zipBytes: Array[Byte] = Array.emptyByteArray
-        val byteCollector = Iteratee.fold[Array[Byte], Unit](zipBytes) {
-          (_, chunkedBytes) => zipBytes = zipBytes ++ chunkedBytes
-        }
+        // Wait for 30 seconds for all bytes to be collected
+        val zipBytes: Array[Byte] =
+          Await.result(futureZipBytes, Duration(30, TimeUnit.SECONDS))
 
-        val promisedIteratee = chunkedResult.chunks(byteCollector)
-            .asInstanceOf[Promise[Iteratee[Array[Byte], Unit]]]
-
-        await(promisedIteratee.future, 30, TimeUnit.SECONDS)
-
+        // Check magic number of sent file
         zipBytes.slice(0, 2) must equalTo("PK".getBytes)
 
         val filepaths: Set[String] = {
@@ -118,33 +119,27 @@ class ArchiveAsyncSpec extends Specification {
         folder.createFile("seagrass_cover.xls", XLS_MIME_TYPE,
             new FileInputStream("test/seagrass_cover.xls"))
 
-        val Some(result) = route(FakeRequest(GET,
+        val Some(futureResult: Future[SimpleResult]) = route(FakeRequest(GET,
             routes.ArchiveAsync.chartArchive(folder.getIdentifier).toString,
             rh, AnyContentAsEmpty))
 
-        status(result) must equalTo(OK);
-        contentType(result) must beSome("application/zip")
-        header("Cache-Control", result) must
+        status(futureResult) must equalTo(OK);
+        contentType(futureResult) must beSome("application/zip")
+        header("Cache-Control", futureResult) must
           beSome("max-age=0, must-revalidate");
 
-        result match {
-          case AsyncResult(_) => // all good
-          case _ => failure("Should have an asynchronous result.")
-        }
+        // Need to work with actual result
+        val result = Await.result(futureResult, Duration(30, TimeUnit.SECONDS))
 
-        val chunkedResult = await(result.asInstanceOf[AsyncResult].result,
-                30, TimeUnit.SECONDS).asInstanceOf[ChunkedResult[Array[Byte]]]
+        // Take "Transfer-Encoding: chunked" bytes, dechunk and collect
+        val futureZipBytes = result.body.through(Results.dechunk)
+            .run(Iteratee.consume[Array[Byte]]())
 
-        var zipBytes: Array[Byte] = Array.emptyByteArray
-        val byteCollector = Iteratee.fold[Array[Byte], Unit](zipBytes) {
-          (_, chunkedBytes) => zipBytes = zipBytes ++ chunkedBytes
-        }
+        // Wait for 30 seconds for all bytes to be collected
+        val zipBytes: Array[Byte] =
+          Await.result(futureZipBytes, Duration(30, TimeUnit.SECONDS))
 
-        val promisedIteratee = chunkedResult.chunks(byteCollector)
-            .asInstanceOf[Promise[Iteratee[Array[Byte], Unit]]]
-
-        await(promisedIteratee.future, 30, TimeUnit.SECONDS)
-
+        // Check magic number of sent file
         zipBytes.slice(0, 2) must equalTo("PK".getBytes)
 
         val filepaths: Set[String] = {

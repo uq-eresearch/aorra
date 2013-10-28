@@ -21,6 +21,7 @@ import controllers.Chart.getDatasourcesFromIDs
 import javax.jcr.Session
 import models.CacheableUser
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import play.api.mvc.EssentialAction
 import play.libs.F
@@ -34,7 +35,7 @@ class ArchiveAsync @Inject() (
   def chartArchive(id: String): EssentialAction = isAuthenticated { user =>
     implicit request => {
       val enumerator = zipEnumerator(addChartFilesToArchive(user, id))
-      Ok.stream(enumerator >>> Enumerator.eof).withHeaders(
+      Ok.chunked(enumerator).withHeaders(
         "Content-Type" -> "application/zip",
         "Content-Disposition" -> s"attachment; filename=${id}.zip",
         "Cache-Control" -> "max-age=0, must-revalidate")

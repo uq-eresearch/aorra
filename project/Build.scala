@@ -14,6 +14,7 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     javaCore,
+    cache,
     "javax.jcr" % "jcr" % "2.0",
     "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.2",
     "com.h2database" % "h2" % "1.3.170",
@@ -26,7 +27,8 @@ object ApplicationBuild extends Build {
     "org.crsh" % "crsh.shell.telnet" % crshVersion,
     "org.crsh" % "crsh.jcr.jackrabbit" % crshVersion,
     "tyrex" % "tyrex" % "1.0.1", // JNDI provider for CRSH Jackrabbit access
-    "com.feth" %% "play-authenticate" % "0.3.3-SNAPSHOT",
+    "com.feth" %% "play-authenticate" % "0.5.0-SNAPSHOT",
+    "com.typesafe" %% "play-plugins-mailer" % "2.1-RC2",
     "eu.medsea.mimeutil" % "mime-util" % "2.1.3"
       exclude("org.slf4j", "slf4j-log4j12"),
     "org.apache.tika" % "tika-parsers" % "1.3",
@@ -55,7 +57,8 @@ object ApplicationBuild extends Build {
 
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
 
-  lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*)
+  lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*) ++
+    play.Project.playJavaSettings
 
   val main = play.Project(appName, appVersion, appDependencies, settings = s).settings(
     unmanagedResourceDirectories in Compile += file("resources"),
@@ -87,7 +90,8 @@ object ApplicationBuild extends Build {
       "-Dxr.util-logging.java.util.logging.ConsoleHandler.level=OFF"
     ),
     // Allows mock Http.Contexts to be built for play-authenticate
-    libraryDependencies += "play" %% "play-test" % play.core.PlayVersion.current,
+    libraryDependencies += 
+      "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current,
     // Debug tests
     //Keys.fork in (Test) := true,
     //javaOptions in (Test) += "-Xdebug",
@@ -96,13 +100,16 @@ object ApplicationBuild extends Build {
       // Specify central explicitly, so we don't try joscha.github.io unnecessarily
       "Maven central" at "http://repo1.maven.org/maven2/",
       // SVG2EMF
-      "SVG2EMF" at "http://svg2emf.googlecode.com/svn/m2/releases/"
-    ),
-    resolvers += Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
-    resolvers += Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
+      "SVG2EMF" at "http://svg2emf.googlecode.com/svn/m2/releases/",
+      // Play Authenticate
+      Resolver.url("play-easymail (release)", url("http://joscha.github.com/play-easymail/repo/releases/"))(Resolver.ivyStylePatterns),
+      Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
+      Resolver.url("play-authenticate (release)", url("http://joscha.github.com/play-authenticate/repo/releases/"))(Resolver.ivyStylePatterns),
+      Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
+    )
   ).dependsOn(RootProject(uri(
-      "git://github.com/sgougi/play21-jackrabbit-plugin.git#996d969c088e4e2ca5d8b834aea0016fd3dd83b5"))
+      "git://github.com/sgougi/play21-jackrabbit-plugin.git#94d3d7f2bca50815b0c96d90a0f34d40440bda0f"))
   ).dependsOn(RootProject(uri(
-      "git://github.com/tjdett/play2-crash-plugin.git#41a02077133c51cf582320971b8d533c850f2a25")))
+      "git://github.com/tjdett/play2-crash-plugin.git#d32c3a74dac8cad120d1574f5e12b58f5ab6b074")))
 
 }
