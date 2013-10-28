@@ -2,8 +2,6 @@ package charts.builder.spreadsheet;
 
 import java.awt.Dimension;
 import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.pegdown.PegDownProcessor;
@@ -21,7 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
+public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
 
   private static enum Series {
     CANE("Cane"), HORTICULTURE("Horticulture"), GRAZING("Grazing"), SEDIMENT(
@@ -49,7 +47,7 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
       .put(Series.PESTICIDES, 6)
       .build();
 
-  public TrackingTowardsTagetsBuilder() {
+  public TrackingTowardsTargetsBuilder() {
     super(Lists.newArrayList(ChartType.TTT_CANE_AND_HORT,
         ChartType.TTT_GRAZING, ChartType.TTT_NITRO_AND_PEST,
         ChartType.TTT_SEDIMENT));
@@ -96,6 +94,7 @@ public class TrackingTowardsTagetsBuilder extends AbstractBuilder {
           target = getTarget(ds, Series.SEDIMENT);
           targetBy = getTargetBy(ds, Series.SEDIMENT);
           break;
+          //$CASES-OMITTED$
         default:
           throw new RuntimeException("chart type not supported "
               + type.toString());
