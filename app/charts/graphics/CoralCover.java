@@ -24,6 +24,7 @@ import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.AbstractRenderer;
 import org.jfree.chart.renderer.category.StatisticalLineAndShapeRenderer;
+import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.jfree.text.TextBlock;
 import org.jfree.text.TextUtilities;
@@ -35,16 +36,44 @@ import boxrenderer.TableBox;
 import boxrenderer.TableCellBox;
 import boxrenderer.TableRowBox;
 import boxrenderer.TextBox;
+import charts.ChartType;
 import charts.Drawable;
+import charts.Region;
 
 public class CoralCover {
 
-    public static Drawable createChart(final DefaultStatisticalCategoryDataset dataset, String title, Dimension dimension) {
+    private static final String COVER = "Cover (%)";
+    private static final String JUVENILE = "Juveniles/m\u00b2";
+
+    public static Drawable createChart(final DefaultStatisticalCategoryDataset dataset,
+            ChartType type, Region region, Dimension dimension) {
+        String title = String.format("%s (mean)", type.getLabel());
+        String rangeAxisLabel = (type == ChartType.CORAL_JUV)?JUVENILE:COVER;
+        JFreeChart chart;
+        if(region == Region.GBR) {
+            chart = createChart(rearrange(dataset), title, rangeAxisLabel);
+            CategoryPlot plot = (CategoryPlot)chart.getPlot();
+            CategoryAxis cAxis = getSubCategoryAxis(dataset);
+            cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
+            cAxis.setLabel("Region");
+            cAxis.setLabelFont(plot.getRangeAxis().getLabelFont());
+            cAxis.setTickLabelFont(plot.getRangeAxis().getTickLabelFont());
+            cAxis.setTickMarksVisible(false);
+            plot.setDomainAxis(cAxis);
+        } else {
+            title = String.format(title + " in the %s region", region.getProperName());
+            chart = createChart(dataset, title, rangeAxisLabel);
+        }
+        return new JFreeChartDrawable(chart, dimension);
+    }
+
+    public static JFreeChart createChart(final CategoryDataset dataset, String title,
+            String rangeAxisLabel) {
         JFreeChart chart = ChartFactory.createLineChart(
                 title,  // title
-                "Region",             // x-axis label
-                "Cover (%)",   // y-axis label
-                rearrange(dataset),            // data
+                "",             // x-axis label
+                rangeAxisLabel,   // y-axis label
+                dataset,            // data
                 PlotOrientation.VERTICAL,
                 false,               // create legend?
                 false,               // generate tooltips?
@@ -96,7 +125,33 @@ public class CoralCover {
         renderer.setBaseOutlinePaint(Color.black);
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
-        CategoryAxis cAxis = new CategoryAxis() {
+        chart.getTitle().setFont(rangeAxis.getLabelFont());
+        return chart;
+    }
+
+    
+    // rearrange the dataset so, that the lines are drawn next to each other
+    // (and not on top of each other)
+    private static DefaultStatisticalCategoryDataset rearrange(DefaultStatisticalCategoryDataset d) {
+        DefaultStatisticalCategoryDataset ds = new DefaultStatisticalCategoryDataset();
+        int space = 0;
+        for(int r = 0;r<d.getRowCount();r++) {
+            for(int c = 0;c<d.getColumnCount();c++) {
+                Comparable<?> row = d.getRowKey(r);
+                Comparable<?> col = d.getColumnKey(c);
+                Number mean = d.getMeanValue(row, col);
+                Number stddev = d.getStdDevValue(row, col);
+                ds.add(mean, stddev, row, String.format("%s %s", col.toString(), row.toString()));
+            }
+            if((r+1) < d.getRowCount()) {
+                ds.add(null, null, d.getRowKey(r), "space"+space++);
+            }
+        }
+        return ds;
+    }
+
+    private static CategoryAxis getSubCategoryAxis(final DefaultStatisticalCategoryDataset dataset) {
+        return new CategoryAxis() {
             @SuppressWarnings("rawtypes")
             @Override
             protected TextBlock createLabel(Comparable category, float width,
@@ -170,35 +225,6 @@ public class CoralCover {
                 return b;
             }
         };
-        cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
-        cAxis.setLabel("Region");
-        cAxis.setLabelFont(rangeAxis.getLabelFont());
-        cAxis.setTickLabelFont(rangeAxis.getTickLabelFont());
-        cAxis.setTickMarksVisible(false);
-        chart.getTitle().setFont(rangeAxis.getLabelFont());
-        plot.setDomainAxis(cAxis);
-        
-        return new JFreeChartDrawable(chart, dimension);
-    }
-    
-    // rearrange the dataset so, that the lines are drawn next to each other
-    // (and not on top of each other)
-    private static DefaultStatisticalCategoryDataset rearrange(DefaultStatisticalCategoryDataset d) {
-        DefaultStatisticalCategoryDataset ds = new DefaultStatisticalCategoryDataset();
-        int space = 0;
-        for(int r = 0;r<d.getRowCount();r++) {
-            for(int c = 0;c<d.getColumnCount();c++) {
-                Comparable<?> row = d.getRowKey(r);
-                Comparable<?> col = d.getColumnKey(c);
-                Number mean = d.getMeanValue(row, col);
-                Number stddev = d.getStdDevValue(row, col);
-                ds.add(mean, stddev, row, String.format("%s %s", col.toString(), row.toString()));
-            }
-            if((r+1) < d.getRowCount()) {
-                ds.add(null, null, d.getRowKey(r), "space"+space++);
-            }
-        }
-        return ds;
     }
 
 }
