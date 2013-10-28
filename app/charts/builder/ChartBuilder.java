@@ -1,27 +1,18 @@
 package charts.builder;
 
 import java.awt.Dimension;
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import org.reflections.Reflections;
+
+import play.Logger;
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
-import charts.builder.spreadsheet.AnnualRainfallBuilder;
-import charts.builder.spreadsheet.CoralCoverBuilder;
-import charts.builder.spreadsheet.CotsOutbreakBuilder;
-import charts.builder.spreadsheet.GrazingPracticeSystemsBuilder;
-import charts.builder.spreadsheet.GroundcoverBuilder;
-import charts.builder.spreadsheet.LandPracticeSystemsBuilder;
-import charts.builder.spreadsheet.LoadsBuilder;
-import charts.builder.spreadsheet.MarineBuilder;
-import charts.builder.spreadsheet.PSIIMaxHeqBuilder;
-import charts.builder.spreadsheet.PSIITrendsBuilder;
-import charts.builder.spreadsheet.ProgressTableBuilder;
-import charts.builder.spreadsheet.TrackingTowardsTagetsBuilder;
-import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -31,22 +22,7 @@ import com.google.inject.Singleton;
 @Singleton
 public class ChartBuilder {
 
-  private final List<ChartTypeBuilder> builders =
-    new ImmutableList.Builder<ChartTypeBuilder>()
-      .add(new MarineBuilder())
-      .add(new CotsOutbreakBuilder())
-      .add(new AnnualRainfallBuilder())
-      .add(new ProgressTableBuilder())
-      .add(new TrackingTowardsTagetsBuilder())
-      .add(new GrazingPracticeSystemsBuilder())
-      .add(new LandPracticeSystemsBuilder())
-      .add(new TrendsSeagrassAbundanceBuilder())
-      .add(new GroundcoverBuilder())
-      .add(new LoadsBuilder())
-      .add(new CoralCoverBuilder())
-      .add(new PSIITrendsBuilder())
-      .add(new PSIIMaxHeqBuilder())
-      .build();
+  private final List<ChartTypeBuilder> builders = detectBuilders();
 
   public List<Chart> getCharts(List<DataSource> datasources,
           ChartType type,
@@ -87,6 +63,27 @@ public class ChartBuilder {
           }
       }
       return result;
+  }
+
+  private static List<ChartTypeBuilder> detectBuilders() {
+    final ImmutableList.Builder<ChartTypeBuilder> b =
+        new ImmutableList.Builder<ChartTypeBuilder>();
+    for (Class<? extends ChartTypeBuilder> builderClass : new Reflections(
+        "charts.builder").getSubTypesOf(ChartTypeBuilder.class)) {
+      if (builderClass.isInterface())
+        continue;
+      if (Modifier.isAbstract(builderClass.getModifiers()))
+        continue;
+      try {
+        Logger.debug("Found chart builder: "+builderClass.getCanonicalName());
+        b.add(builderClass.newInstance());
+      } catch (InstantiationException e) {
+        throw new RuntimeException(e);
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return b.build();
   }
 
 }

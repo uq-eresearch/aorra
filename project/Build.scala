@@ -47,7 +47,8 @@ object ApplicationBuild extends Build {
     "hanjava.net" % "svg2emf" % "0.0.2",
     "org.freehep" % "freehep-graphicsio-emf" % "2.2.1",
     ("org.docx4j" % "docx4j" % "2.8.1" % "compile").intransitive(),
-    "org.docx4j" % "xhtmlrenderer" % "1.0.0"
+    "org.docx4j" % "xhtmlrenderer" % "1.0.0",
+    "org.reflections" % "reflections" % "0.9.9-RC1"
   )
 
   val isTravisCI = System.getenv("TRAVIS_SCALA_VERSION") != null
