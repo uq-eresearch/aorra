@@ -39,10 +39,12 @@ public class ChartBuilderTest {
   public void docxAndEmf() throws UnsupportedFormatException {
     for (final ChartType ct : ChartType.values()) {
       final List<DataSource> ds = asList(getDatasource(ct));
-      final List<Region> regions = asList(Region.GBR);
       {
-        final charts.Chart chart = chartBuilder.getCharts(ds, regions,
-            new Dimension(0, 0)).get(0);
+        final List<charts.Chart> charts = chartBuilder.getCharts(ds,
+            asList(getDefaultTestingRegion(ct)),
+            new Dimension(0, 0));
+        assertThat(charts).as("No chart generated for "+ct).isNotEmpty();
+        final charts.Chart chart = charts.get(0);
         // Shouldn't trigger UnsupportedFormatException
         chart.outputAs(Format.DOCX);
         // Shouldn't trigger UnsupportedFormatException
@@ -54,8 +56,8 @@ public class ChartBuilderTest {
   @Test
   public void svgAndPngChartSize() throws UnsupportedFormatException{
     for (final ChartType ct : ChartType.values()) {
-        List<Region> regions = asList(Region.GBR);
-        Map<String, String> parameters = Maps.newHashMap(); 
+      List<Region> regions = asList(getDefaultTestingRegion(ct));
+      Map<String, String> parameters = Maps.newHashMap();
       final List<DataSource> ds = asList(getDatasource(ct));
       if(ct == ChartType.TSA) {
         regions = asList(Region.CAPE_YORK);
@@ -141,6 +143,16 @@ public class ChartBuilderTest {
         }
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private Region getDefaultTestingRegion(ChartType t) {
+    switch (t) {
+    case TSA:
+      return Region.BURDEKIN;
+      //$CASES-OMITTED$
+    default:
+      return Region.GBR;
     }
   }
 
