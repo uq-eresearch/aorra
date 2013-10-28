@@ -2,6 +2,7 @@ package charts.builder;
 
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -15,6 +16,7 @@ import javax.imageio.ImageIO;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
@@ -49,6 +51,26 @@ public class ChartBuilderTest {
         chart.outputAs(Format.DOCX);
         // Shouldn't trigger UnsupportedFormatException
         chart.outputAs(Format.EMF);
+      }
+    }
+  }
+
+  @Ignore
+  @Test
+  public void csv() throws UnsupportedFormatException {
+    for (final ChartType ct : ChartType.values()) {
+      final List<DataSource> ds = asList(getDatasource(ct));
+      {
+        final List<charts.Chart> charts = chartBuilder.getCharts(ds,
+            asList(getDefaultTestingRegion(ct)),
+            new Dimension(0, 0));
+        assertThat(charts).as("No chart generated for "+ct).isNotEmpty();
+        final charts.Chart chart = charts.get(0);
+        try {
+          chart.outputAs(Format.CSV);
+        } catch (UnsupportedFormatException ufe) {
+          fail(ct+" should support CSV output.");
+        }
       }
     }
   }
