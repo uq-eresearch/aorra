@@ -93,7 +93,7 @@ public class GroundcoverBuilder extends AbstractBuilder {
                     .add(format("%s %s", region, type))
                     .addAll(columnKeys)
                     .build();
-                csv.write(heading); // Heading, 2008-2009, 2009-2010
+                csv.write(heading);
                 for (String row : rowKeys) {
                   List<String> line = newLinkedList();
                   line.add(row);

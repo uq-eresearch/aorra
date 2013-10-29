@@ -90,7 +90,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
               .add(region+" grazing practices")
               .addAll(rowKeys)
               .build();
-          csv.write(heading); // Heading, 2008-2009, 2009-2010
+          csv.write(heading);
           for (String col : columnKeys) {
             List<String> line = newLinkedList();
             line.add(col);

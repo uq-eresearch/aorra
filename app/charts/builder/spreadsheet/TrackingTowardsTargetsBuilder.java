@@ -113,7 +113,7 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
                     getTargetBy(ds, getTargetSeries(type))))
                 .addAll(columnKeys)
                 .build();
-            csv.write(heading); // Heading, 2008-2009, 2009-2010
+            csv.write(heading);
             final double target = getTarget(ds, getTargetSeries(type));
             for (String row : rowKeys) {
               List<String> line = newLinkedList();
