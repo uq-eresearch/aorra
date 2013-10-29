@@ -1,10 +1,15 @@
 package charts.builder.spreadsheet;
 
 import static charts.ChartType.PSII_TRENDS;
+import static com.google.common.collect.Lists.newLinkedList;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 import java.awt.Dimension;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,6 +17,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -22,6 +29,7 @@ import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.PSIITrends;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class PSIITrendsBuilder extends AbstractBuilder {
@@ -43,36 +51,68 @@ public class PSIITrendsBuilder extends AbstractBuilder {
         }
     }
 
-    @Override
-    public Chart build(SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension queryDimensions) {
-        if(region == Region.GBR) {
-            final CategoryDataset dataset = getDataset(datasource);
-            return new AbstractChart(queryDimensions) {
+  @Override
+  public Chart build(final SpreadsheetDataSource datasource,
+      final ChartType type, final Region region, Dimension queryDimensions) {
+    if (region == Region.GBR) {
+      return new AbstractChart(queryDimensions) {
 
-                @Override
-                public ChartDescription getDescription() {
-                    return new ChartDescription(type, region);
-                }
-
-                @Override
-                public Drawable getChart() {
-                    return PSIITrends.createChart(dataset, TITLE, new Dimension(1000, 500));
-                }
-
-                @Override
-                public String getCSV() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }
-
-                @Override
-                public String getCommentary() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }};
-        } else {
-            return null;
+        @Override
+        public ChartDescription getDescription() {
+          return new ChartDescription(type, region);
         }
+
+        @Override
+        public Drawable getChart() {
+          return PSIITrends.createChart(getDataset(datasource), TITLE,
+              new Dimension(1000, 500));
+        }
+
+        @Override
+        public String getCSV() throws UnsupportedFormatException {
+          final StringWriter sw = new StringWriter();
+          try {
+            final CategoryDataset dataset = getDataset(datasource);
+            final CsvListWriter csv = new CsvListWriter(sw,
+                CsvPreference.STANDARD_PREFERENCE);
+            @SuppressWarnings("unchecked")
+            List<String> columnKeys = dataset.getColumnKeys();
+            @SuppressWarnings("unchecked")
+            List<String> rowKeys = dataset.getRowKeys();
+            final List<String> heading = ImmutableList.<String>builder()
+                .add(format("%s %s", region, type.getLabel()))
+                .add("Region")
+                .add("Subregion")
+                .add("Period")
+                .addAll(rowKeys)
+                .build();
+            csv.write(heading);
+            for (String col : columnKeys) {
+              List<String> line = newLinkedList();
+              line.addAll(asList(col.split("\\_\\|\\|\\_")));
+              for (String row : rowKeys) {
+                line.add(format("%.1f",
+                    dataset.getValue(row, col).doubleValue()));
+              }
+              csv.write(line);
+            }
+            csv.close();
+          } catch (IOException e) {
+            // How on earth would you get an IOException with a StringWriter?
+            throw new RuntimeException(e);
+          }
+          return sw.toString();
+        }
+
+        @Override
+        public String getCommentary() throws UnsupportedFormatException {
+          throw new UnsupportedFormatException();
+        }
+      };
+    } else {
+      return null;
     }
+  }
 
     private String getYear(String s) {
         Matcher m = YEAR_PATTERN.matcher(s);
