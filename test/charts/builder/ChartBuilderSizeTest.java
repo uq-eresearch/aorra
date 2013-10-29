@@ -31,7 +31,6 @@ import charts.representations.Format;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 @RunWith(Parameterized.class)
 public class ChartBuilderSizeTest {

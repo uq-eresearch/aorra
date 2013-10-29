@@ -1,12 +1,18 @@
 package charts.builder.spreadsheet;
 
+import static com.google.common.collect.Lists.newLinkedList;
 import static java.lang.String.format;
+
 import java.awt.Dimension;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -17,6 +23,7 @@ import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.Groundcover;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
@@ -72,7 +79,36 @@ public class GroundcoverBuilder extends AbstractBuilder {
 
             @Override
             public String getCSV() throws UnsupportedFormatException {
-                throw new UnsupportedFormatException();
+              final StringWriter sw = new StringWriter();
+              try {
+                final CategoryDataset dataset =
+                    createDataset(datasource, type, region);
+                final CsvListWriter csv = new CsvListWriter(sw,
+                    CsvPreference.STANDARD_PREFERENCE);
+                @SuppressWarnings("unchecked")
+                List<String> columnKeys = dataset.getColumnKeys();
+                @SuppressWarnings("unchecked")
+                List<String> rowKeys = dataset.getRowKeys();
+                final List<String> heading = ImmutableList.<String>builder()
+                    .add(format("%s %s", region, type))
+                    .addAll(columnKeys)
+                    .build();
+                csv.write(heading); // Heading, 2008-2009, 2009-2010
+                for (String row : rowKeys) {
+                  List<String> line = newLinkedList();
+                  line.add(row);
+                  for (String col : columnKeys) {
+                    line.add(format("%.1f",
+                        dataset.getValue(row, col).doubleValue()));
+                  }
+                  csv.write(line);
+                }
+                csv.close();
+              } catch (IOException e) {
+                // How on earth would you get an IOException with a StringWriter?
+                throw new RuntimeException(e);
+              }
+              return sw.toString();
             }
 
             @Override
