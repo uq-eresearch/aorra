@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import java.awt.Dimension;
 import java.io.FileInputStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
@@ -50,10 +51,13 @@ public class ChartBuilderTest {
   public void format() {
     final List<charts.Chart> charts = chartBuilder.getCharts(
         asList(getDatasource(chartType)),
+        chartType,
         asList(getDefaultTestingRegion(chartType)),
-        new Dimension(0, 0));
+        new Dimension(0, 0),
+        Collections.<String, String>emptyMap());
     assertThat(charts).as("No chart generated for "+chartType).isNotEmpty();
     final charts.Chart chart = charts.get(0);
+    assertThat(chart.getDescription().getType()).isEqualTo(chartType);
     try {
       chart.outputAs(format);
     } catch (UnsupportedFormatException ufe) {

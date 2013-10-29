@@ -76,7 +76,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
       }
 
       @Override
-      public String getCSV() throws UnsupportedFormatException {
+      public String getCSV() {
         final StringWriter sw = new StringWriter();
         try {
           final CategoryDataset dataset = createDataset(datasource, region);
