@@ -229,7 +229,6 @@ public class LoadsBuilder extends AbstractBuilder {
         if(StringUtils.isBlank(period)) {
             return null;
         }
-        final CategoryDataset dataset = getDataset(datasource, region, period);
         return new AbstractChart(queryDimensions) {
 
             @Override
@@ -240,12 +239,42 @@ public class LoadsBuilder extends AbstractBuilder {
             @Override
             public Drawable getChart() {
                 return Loads.createChart(getTitle(datasource, region, period),
-                        "Pollutants", dataset, new Dimension(750, 500));
+                        "Pollutants", getDataset(datasource, region, period),
+                        new Dimension(750, 500));
             }
 
             @Override
             public String getCSV() throws UnsupportedFormatException {
-                throw new UnsupportedFormatException();
+              final StringWriter sw = new StringWriter();
+              try {
+                final CategoryDataset dataset =
+                    getDataset(datasource, region, period);
+                final CsvListWriter csv = new CsvListWriter(sw,
+                    CsvPreference.STANDARD_PREFERENCE);
+                @SuppressWarnings("unchecked")
+                List<String> columnKeys = dataset.getColumnKeys();
+                @SuppressWarnings("unchecked")
+                List<String> rowKeys = dataset.getRowKeys();
+                final List<String> heading = ImmutableList.<String>builder()
+                    .add(format("%s %s load reductions", region, period))
+                    .addAll(rowKeys)
+                    .build();
+                csv.write(heading);
+                for (String col : columnKeys) {
+                  List<String> line = newLinkedList();
+                  line.add(col);
+                  for (String row : rowKeys) {
+                    line.add(format("%.1f",
+                        dataset.getValue(row, col).doubleValue()));
+                  }
+                  csv.write(line);
+                }
+                csv.close();
+              } catch (IOException e) {
+                // How on earth would you get an IOException with a StringWriter?
+                throw new RuntimeException(e);
+              }
+              return sw.toString();
             }
 
             @Override
