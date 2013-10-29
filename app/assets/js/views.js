@@ -41,7 +41,7 @@ define([
     tagName: "div",
     initialize: function() {
       this._hint$el =
-        $('<p><i class="icon-arrow-up"></i> Click to Expand</p>')
+        $('<p><i class="fa fa-arrow-up"></i> Click to Expand</p>')
           .addClass('alert alert-info');
     },
     render: function() {
@@ -503,7 +503,7 @@ define([
     render: function() {
       var $link = $('<a class="btn btn-default" title="Download"/>');
       $link.attr('href', this._url);
-      $link.append('<i class="icon-download-alt"></i>');
+      $link.append('<i class="fa fa-download"></i>');
       $link.append('<span class="hidden-phone">'+this._label+'</span>');
       this.$el.html($link);
     }
@@ -826,7 +826,7 @@ define([
   var EditingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
       return {
-        icon: this.isSet() ? 'flag' : 'flag-alt',
+        icon: this.isSet() ? 'flag' : 'flag-o',
         flagType: 'edit',
         title: 'Edit',
         tooltip: 'Let other users know you are making edits to this file.'
@@ -837,7 +837,7 @@ define([
   var WatchingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
       return {
-        icon: this.isSet() ? 'eye-open' : 'eye-close',
+        icon: this.isSet() ? 'eye' : 'eye-slash',
         flagType: 'watch',
         title: 'Watch',
         tooltip: 'Receive notifications when new versions are uploaded.'
@@ -1084,10 +1084,10 @@ define([
             .click(scrollToFunc('#'+v[2]))
             .attr('data-content', v[1]);
           if (v[0] == 1) {
-            $icon.addClass('icon-plus-sign-alt green-text');
+            $icon.addClass('fa fa-plus-square green-text');
             $icon.attr('title', 'Added text');
           } else {
-            $icon.addClass('icon-minus-sign-alt red-text');
+            $icon.addClass('fa fa-minus-square red-text');
             $icon.attr('title', 'Deleted text');
           }
           $icon.popover({ placement: 'bottom', trigger: 'hover'});

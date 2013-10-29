@@ -7,7 +7,7 @@
 <div class="login-field @(if (field.errors.length > 0) {"has-error"})">
   <div class="input-group">
     <span class="input-group-addon" title="@(field.name)">
-      <i class="icon-@(icon)"></i>
+      <i class="fa fa-@(icon)"></i>
     </span>
     <input class="form-control" type="@inputType" id="@(field.id)"
       name="@(field.name)" value="@(field.value)" placeholder="@placeholder"/>
@@ -52,7 +52,7 @@
     @inlineInput(form("email"), "email", "envelope", "your email address")
     @inlineInput(form("password"), "password", "asterisk", "your password")
     <button class="btn btn-primary" type="submit">
-      <i class="icon-signin"></i> Login
+      <i class="fa fa-sign-in"></i> Login
     </button>
   }
   
@@ -77,7 +77,7 @@
   
   <p class="attribution">
     <a href="#attribution-modal" data-toggle="modal" role="button">
-      <i class="icon-info-sign"></i> Background
+      <i class="fa fa-info-circle"></i> Background
     </a>
   </p>
   <div id="attribution-modal" class="modal fade">
@@ -86,7 +86,7 @@
     <div class="modal-header">
       <a class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
       <h4 class="modal-title">
-        <i class="icon-info-sign"></i>
+        <i class="fa fa-info-sign"></i>
         Background Attribution
       </h4>
     </div>
