@@ -1,16 +1,13 @@
 package charts.builder;
 
-import static java.util.Arrays.asList;
-import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.fail;
-import static charts.builder.ChartBuilderTest.getChartTypeFile;
 import static charts.builder.ChartBuilderTest.getDatasource;
 import static charts.builder.ChartBuilderTest.getDefaultTestingRegion;
+import static java.util.Arrays.asList;
+import static org.fest.assertions.Assertions.assertThat;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,25 +18,20 @@ import javax.imageio.ImageIO;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
 import charts.Region;
 import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder;
-import charts.builder.spreadsheet.XlsDataSource;
-import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 @RunWith(Parameterized.class)
 public class ChartBuilderSizeTest {
