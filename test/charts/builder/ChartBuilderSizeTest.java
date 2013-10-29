@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,9 @@ import charts.builder.spreadsheet.XlsDataSource;
 import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+
 @RunWith(Parameterized.class)
 public class ChartBuilderSizeTest {
 
@@ -58,13 +62,19 @@ public class ChartBuilderSizeTest {
 
   @Test
   public void svgAndPngChartSize() throws UnsupportedFormatException{
-    List<Region> regions = asList(getDefaultTestingRegion(chartType));
-    Map<String, String> parameters = Maps.newHashMap();
+    final List<Region> regions;
+    final Map<String, String> parameters;
     final List<DataSource> ds = asList(getDatasource(chartType));
-    if (chartType == ChartType.TSA) {
+    switch (chartType) {
+    case TSA:
       regions = asList(Region.CAPE_YORK);
-      parameters.put(TrendsSeagrassAbundanceBuilder.SUBREGION,
+      parameters = ImmutableMap.of(TrendsSeagrassAbundanceBuilder.SUBREGION,
         TrendsSeagrassAbundanceBuilder.Subregion.AP.name());
+      break;
+      //$CASES-OMITTED$
+    default:
+      regions = asList(getDefaultTestingRegion(chartType));
+      parameters = Collections.<String, String>emptyMap();
     }
     {
       try {
