@@ -4,14 +4,21 @@ import static charts.ChartType.CORAL_HCC;
 import static charts.ChartType.CORAL_JUV;
 import static charts.ChartType.CORAL_MA;
 import static charts.ChartType.CORAL_SCC;
+import static com.google.common.collect.Lists.newLinkedList;
+import static java.lang.String.format;
 
 import java.awt.Dimension;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -20,14 +27,18 @@ import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder.Subregion;
 import charts.graphics.CoralCover;
 
+import com.google.common.base.Function;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 public class CoralCoverBuilder extends AbstractBuilder {
-    
+
     private static final String HC_MEAN = "HC mean";
     private static final String HC_SE = "HC se";
 
@@ -52,43 +63,85 @@ public class CoralCoverBuilder extends AbstractBuilder {
     @Override
     public boolean canHandle(SpreadsheetDataSource ds) {
         try {
-            return StringUtils.equalsIgnoreCase(ds.select(0, 2).asString(), HC_MEAN) && 
+            return StringUtils.equalsIgnoreCase(ds.select(0, 2).asString(), HC_MEAN) &&
                     StringUtils.equalsIgnoreCase(ds.select(0, 3).asString(), HC_SE);
         } catch(MissingDataException e) {
             return false;
         }
     }
 
-    @Override
-    public Chart build(SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension queryDimensions) {
-        if((region == Region.GBR) || containsRegion(datasource, region)) {
-            final DefaultStatisticalCategoryDataset dataset = getDataset(datasource, type, region);
-            return new AbstractChart(queryDimensions) {
+  @Override
+  public Chart build(final SpreadsheetDataSource datasource,
+      final ChartType type, final Region region, Dimension queryDimensions) {
+    if ((region == Region.GBR) || containsRegion(datasource, region)) {
+      return new AbstractChart(queryDimensions) {
 
-                @Override
-                public ChartDescription getDescription() {
-                    return new ChartDescription(type, region);
-                }
-
-                @Override
-                public Drawable getChart() {
-                    return CoralCover.createChart(dataset, type, region, new Dimension(750, 500));
-                }
-
-                @Override
-                public String getCSV() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }
-
-                @Override
-                public String getCommentary() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }};
-        } else {
-            return null;
+        @Override
+        public ChartDescription getDescription() {
+          return new ChartDescription(type, region);
         }
+
+        @Override
+        public Drawable getChart() {
+          return CoralCover.createChart(getDataset(datasource, type, region),
+              type, region, new Dimension(750, 500));
+        }
+
+        @Override
+        public String getCSV() throws UnsupportedFormatException {
+          final StringWriter sw = new StringWriter();
+          try {
+            final DefaultStatisticalCategoryDataset dataset = getDataset(
+                datasource, type, region);
+            final CsvListWriter csv = new CsvListWriter(sw,
+                CsvPreference.STANDARD_PREFERENCE);
+            @SuppressWarnings("unchecked")
+            List<String> columnKeys = dataset.getColumnKeys();
+            @SuppressWarnings("unchecked")
+            List<String> rowKeys = dataset.getRowKeys();
+            final List<String> heading = ImmutableList
+                .<String> builder()
+                .add(format("%s %s", type.getLabel(), region))
+                .addAll(columnKeys)
+                .build();
+            csv.write(heading);
+            for (String row : rowKeys) {
+              {
+                List<String> line = newLinkedList();
+                line.add(row + " (Mean)");
+                for (String col : columnKeys) {
+                  line.add(format("%.3f",
+                      dataset.getMeanValue(row, col).doubleValue()));
+                }
+                csv.write(line);
+              }
+              {
+                List<String> line = newLinkedList();
+                line.add(row + " (Std Dev)");
+                for (String col : columnKeys) {
+                  line.add(format("%.3f",
+                      dataset.getStdDevValue(row, col).doubleValue()));
+                }
+                csv.write(line);
+              }
+            }
+            csv.close();
+          } catch (IOException e) {
+            // How on earth would you get an IOException with a StringWriter?
+            throw new RuntimeException(e);
+          }
+          return sw.toString();
+        }
+
+        @Override
+        public String getCommentary() throws UnsupportedFormatException {
+          throw new UnsupportedFormatException();
+        }
+      };
+    } else {
+      return null;
     }
+  }
 
     private boolean eof(SpreadsheetDataSource ds, int row) throws MissingDataException {
         if(StringUtils.isBlank(ds.select(row, 0).asString()) &&
