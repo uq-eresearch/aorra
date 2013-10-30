@@ -1,5 +1,17 @@
 package charts.graphics;
 
+import static charts.graphics.Colors.BROWN;
+import static charts.graphics.Colors.GRAY;
+import static charts.graphics.Colors.GREEN;
+import static charts.graphics.Colors.LIGHT_BLUE;
+import static charts.graphics.Colors.LIGHT_BROWN;
+import static charts.graphics.Colors.ORANGE;
+import static charts.graphics.Colors.PINK;
+import static charts.graphics.Colors.PURPLE;
+import static charts.graphics.Colors.RED;
+import static charts.graphics.Colors.VIOLET;
+import static charts.graphics.Colors.YELLOW;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -8,7 +20,6 @@ import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.geom.Rectangle2D;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.LegendItem;
 import org.jfree.chart.LegendItemCollection;
@@ -43,34 +54,6 @@ public class PSIITrends {
 
     public static final String SEPARATOR = AutoSubCategoryAxis.DEFAULT_SEPARATOR;
 
-    private static Color fromHex(String s) {
-        String c = StringUtils.strip(StringUtils.strip(s), "#");
-        if(c.length()>=6) {
-            int r = Integer.parseInt(StringUtils.substring(c, 0, 2), 16);
-            int g = Integer.parseInt(StringUtils.substring(c, 2, 4), 16);
-            int b = Integer.parseInt(StringUtils.substring(c, 4, 6), 16);
-            int a = 255;
-            if(c.length()>=8) {
-                a = Integer.parseInt(StringUtils.substring(c, 6, 8), 16);
-            }
-            return new Color(r,g,b,a);
-        } else {
-            throw new IllegalArgumentException("unknown color code "+s);
-        }
-    }
-
-    private static final Color PURPLE = fromHex("#D6117E");
-    private static final Color LIGHT_BROWN = fromHex("#BAAF93");
-    private static final Color VIOLET = fromHex("#2B3077");
-    private static final Color PINK = fromHex("#802A7D");
-    private static final Color YELLOW = fromHex("#FDF117");
-    private static final Color BROWN = fromHex("#907F71");
-    private static final Color ORANGE = fromHex("#EB8C28");
-    private static final Color LIGHT_BLUE = fromHex("#00A4DC");
-    private static final Color GREEN = fromHex("#009A4E");
-    private static final Color RED = fromHex("#D92129");
-    private static final Color GRAY = fromHex("#898C8B");
-    
     private static final Paint[] SERIES_PAINT = new Paint[] {
         PURPLE, LIGHT_BROWN, VIOLET, PINK, YELLOW, BROWN, ORANGE, LIGHT_BLUE, GREEN, RED, GRAY };
 

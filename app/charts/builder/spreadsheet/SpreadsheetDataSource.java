@@ -269,4 +269,11 @@ public abstract class SpreadsheetDataSource implements DataSource {
       defaultSheet = sheet;
   }
 
+  public void setDefaultSheet(String sheetname) {
+      Sheet s = getSheet(sheetname);
+      if(s!= null) {
+          defaultSheet = workbook.getSheetIndex(s);
+      }
+  }
+
 }
