@@ -1,10 +1,14 @@
 package charts.builder.spreadsheet;
 
+import static com.google.common.collect.Lists.newLinkedList;
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.strip;
 
 import java.awt.Dimension;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -13,6 +17,9 @@ import java.util.Map;
 
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
+import org.jfree.data.statistics.StatisticalCategoryDataset;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -23,6 +30,7 @@ import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.TrendsSeagrassAbundance;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
@@ -131,95 +139,131 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
     }
 
     @Override
-    public Chart build(final SpreadsheetDataSource ds, final ChartType type,
-        final Region region, Dimension dimensions, final Map<String, String> parameters) {
-        Subregion subregion = getSubregion(ds, parameters);
-        if(subregion == null) {
-            return null;
-        }
-        if(subregion.getRegion() == region) {
-            int sheet = getSheet(ds);
-            if(sheet != -1) {
-                ds.setDefaultSheet(sheet);
-            } else {
-                return null;
-            }
-            final CategoryDataset dataset = createDataset(ds, subregion);
-            final String title = getTitle(subregion);
-            return new AbstractChart(dimensions) {
-                @Override
-                public ChartDescription getDescription() {
-                    return new ChartDescription(type, region, parameters);
-                }
-
-                @Override
-                public Drawable getChart() {
-                    return TrendsSeagrassAbundance.createChart(
-                            dataset, title, new Dimension(750, 500));
-                }
-
-                @Override
-                public String getCSV() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }
-
-                @Override
-                public String getCommentary() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }
-            };
-        } else {
-            return null;
-        }
+  public Chart build(final SpreadsheetDataSource ds, final ChartType type,
+      final Region region, Dimension dimensions,
+      final Map<String, String> parameters) {
+    final Subregion subregion = getSubregion(ds, parameters);
+    if (subregion == null) {
+      return null;
     }
-
-    private int getSubregionRowStart(SpreadsheetDataSource ds, Subregion subregion) {
-        for(int row = 1; true; row++) {
-            try {
-                String s = strip(ds.select(row, 0).asString());
-                if(isBlank(s)) {
-                    if(isBlank(strip(ds.select(row+1, 0).asString()))) {
-                        break;
-                    } else {
-                        continue;
-                    }
-                }
-                if(equalsIgnoreCase(s, subregion.name())) {
-                    return row;
-                }
-            } catch(MissingDataException e ) {}
+    if (subregion.getRegion() == region) {
+      int sheet = getSheet(ds);
+      if (sheet != -1) {
+        ds.setDefaultSheet(sheet);
+      } else {
+        return null;
+      }
+      final CategoryDataset dataset = createDataset(ds, subregion);
+      final String title = getTitle(subregion);
+      return new AbstractChart(dimensions) {
+        @Override
+        public ChartDescription getDescription() {
+          return new ChartDescription(type, region, parameters);
         }
-        return -1;
+
+        @Override
+        public Drawable getChart() {
+          return TrendsSeagrassAbundance.createChart(dataset, title,
+              new Dimension(750, 500));
+        }
+
+        @Override
+        public String getCSV() throws UnsupportedFormatException {
+          final StringWriter sw = new StringWriter();
+          try {
+            final StatisticalCategoryDataset dataset =
+                createDataset(ds, subregion);
+            final CsvListWriter csv = new CsvListWriter(sw,
+                CsvPreference.STANDARD_PREFERENCE);
+            @SuppressWarnings("unchecked")
+            List<String> columnKeys = dataset.getColumnKeys();
+            @SuppressWarnings("unchecked")
+            List<Subregion> rowKeys = dataset.getRowKeys();
+            final List<String> heading = ImmutableList.<String> builder()
+                .add(format("%s %s %s", type, region,
+                    rowKeys.get(0).getLabel()))
+                .add("Mean")
+                .add("Std Dev")
+                .build();
+            csv.write(heading);
+            for (String col : columnKeys) {
+              List<String> line = newLinkedList();
+              line.add(col);
+              line.add(format("%.3f",
+                  dataset.getMeanValue(rowKeys.get(0), col).doubleValue()));
+              line.add(format("%.3f",
+                  dataset.getStdDevValue(rowKeys.get(0), col).doubleValue()));
+              csv.write(line);
+            }
+            csv.close();
+          } catch (IOException e) {
+            // How on earth would you get an IOException with a StringWriter?
+            throw new RuntimeException(e);
+          }
+          return sw.toString();
+        }
+
+        @Override
+        public String getCommentary() throws UnsupportedFormatException {
+          throw new UnsupportedFormatException();
+        }
+      };
+    } else {
+      return null;
     }
+  }
 
-    private CategoryDataset createDataset(SpreadsheetDataSource ds, Subregion subregion) {
-        DefaultStatisticalCategoryDataset d = new DefaultStatisticalCategoryDataset();
-        SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
-        try {
-            int row = getSubregionRowStart(ds, subregion);
-            if(row == -1) {
-                return d;
-            }
-            for(;true;row++) {
-                String subr = strip(ds.select(row, 0).asString());
-                if(!equalsIgnoreCase(subr, subregion.name())) {
-                    break;
-                }
-                Date date = ds.select(row, 1).asDate();
-                Double mean = ds.select(row, 2).asDouble();
-                Double deviation = ds.select(row, 3).asDouble();
-                if(mean != null && deviation != null) {
-                    d.add(mean, deviation, subregion, sdf.format(date));
-                }
-            }
-        } catch(MissingDataException e) {
-            e.printStackTrace();
+  private int
+      getSubregionRowStart(SpreadsheetDataSource ds, Subregion subregion) {
+    for (int row = 1; true; row++) {
+      try {
+        String s = strip(ds.select(row, 0).asString());
+        if (isBlank(s)) {
+          if (isBlank(strip(ds.select(row + 1, 0).asString()))) {
+            break;
+          } else {
+            continue;
+          }
         }
+        if (equalsIgnoreCase(s, subregion.name())) {
+          return row;
+        }
+      } catch (MissingDataException e) {
+      }
+    }
+    return -1;
+  }
+
+  private DefaultStatisticalCategoryDataset createDataset(
+      SpreadsheetDataSource ds, Subregion subregion) {
+    final DefaultStatisticalCategoryDataset d = new DefaultStatisticalCategoryDataset();
+    SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
+    try {
+      int row = getSubregionRowStart(ds, subregion);
+      if (row == -1) {
         return d;
+      }
+      for (; true; row++) {
+        String subr = strip(ds.select(row, 0).asString());
+        if (!equalsIgnoreCase(subr, subregion.name())) {
+          break;
+        }
+        Date date = ds.select(row, 1).asDate();
+        Double mean = ds.select(row, 2).asDouble();
+        Double deviation = ds.select(row, 3).asDouble();
+        if (mean != null && deviation != null) {
+          d.add(mean, deviation, subregion, sdf.format(date));
+        }
+      }
+    } catch (MissingDataException e) {
+      e.printStackTrace();
     }
+    return d;
+  }
 
-    private String getTitle(Subregion subregion) {
-        return String.format("Trends in seagrass abundance (mean) at %s", subregion.getLabel());
-    }
+  private String getTitle(Subregion subregion) {
+    return String.format("Trends in seagrass abundance (mean) at %s",
+        subregion.getLabel());
+  }
 
 }

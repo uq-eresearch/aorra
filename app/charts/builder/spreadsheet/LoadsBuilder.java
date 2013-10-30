@@ -5,14 +5,20 @@ import static charts.ChartType.LOADS_DIN;
 import static charts.ChartType.LOADS_PSII;
 import static charts.ChartType.LOADS_TN;
 import static charts.ChartType.LOADS_TSS;
+import static com.google.common.collect.Lists.newLinkedList;
+import static java.lang.String.format;
 
 import java.awt.Dimension;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -23,6 +29,7 @@ import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.Loads;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
@@ -98,7 +105,7 @@ public class LoadsBuilder extends AbstractBuilder {
             try {
                 String name = ds.getSheetname(i);
                 if(name != null) {
-                    if(StringUtils.equalsIgnoreCase("Region", ds.select(name, "C3").asString()) && 
+                    if(StringUtils.equalsIgnoreCase("Region", ds.select(name, "C3").asString()) &&
                         StringUtils.equalsIgnoreCase("Total Change (%)", ds.select(name, "C12").asString())) {
                         return i;
                     }
@@ -160,7 +167,6 @@ public class LoadsBuilder extends AbstractBuilder {
         if(indicator == null) {
             throw new RuntimeException(String.format("chart type %s not implemented", type.name()));
         }
-        final CategoryDataset dataset = getRegionsDataset(datasource, indicator, period);
         return new AbstractChart(queryDimensions) {
 
             @Override
@@ -171,18 +177,50 @@ public class LoadsBuilder extends AbstractBuilder {
             @Override
             public Drawable getChart() {
                 return Loads.createChart(getTitle(datasource, indicator, period),
-                        "Region", dataset, new Dimension(750, 500));
+                        "Region",
+                        getRegionsDataset(datasource, indicator, period),
+                        new Dimension(750, 500));
             }
 
             @Override
             public String getCSV() throws UnsupportedFormatException {
-                throw new UnsupportedFormatException();
+              final StringWriter sw = new StringWriter();
+              try {
+                final CategoryDataset dataset =
+                    getRegionsDataset(datasource, indicator, period);
+                final CsvListWriter csv = new CsvListWriter(sw,
+                    CsvPreference.STANDARD_PREFERENCE);
+                @SuppressWarnings("unchecked")
+                List<String> columnKeys = dataset.getColumnKeys();
+                @SuppressWarnings("unchecked")
+                List<String> rowKeys = dataset.getRowKeys();
+                final List<String> heading = ImmutableList.<String>builder()
+                    .add(format("%s %s %s load reductions",
+                        region, indicator, period))
+                    .addAll(rowKeys)
+                    .build();
+                csv.write(heading);
+                for (String col : columnKeys) {
+                  List<String> line = newLinkedList();
+                  line.add(col);
+                  for (String row : rowKeys) {
+                    line.add(format("%.1f",
+                        dataset.getValue(row, col).doubleValue()));
+                  }
+                  csv.write(line);
+                }
+                csv.close();
+              } catch (IOException e) {
+                // How on earth would you get an IOException with a StringWriter?
+                throw new RuntimeException(e);
+              }
+              return sw.toString();
             }
 
             @Override
             public String getCommentary() throws UnsupportedFormatException {
                 throw new UnsupportedFormatException();
-            }}; 
+            }};
     }
 
     private Chart buildLoads(final SpreadsheetDataSource datasource, final ChartType type,
@@ -191,7 +229,6 @@ public class LoadsBuilder extends AbstractBuilder {
         if(StringUtils.isBlank(period)) {
             return null;
         }
-        final CategoryDataset dataset = getDataset(datasource, region, period);
         return new AbstractChart(queryDimensions) {
 
             @Override
@@ -202,12 +239,42 @@ public class LoadsBuilder extends AbstractBuilder {
             @Override
             public Drawable getChart() {
                 return Loads.createChart(getTitle(datasource, region, period),
-                        "Pollutants", dataset, new Dimension(750, 500));
+                        "Pollutants", getDataset(datasource, region, period),
+                        new Dimension(750, 500));
             }
 
             @Override
             public String getCSV() throws UnsupportedFormatException {
-                throw new UnsupportedFormatException();
+              final StringWriter sw = new StringWriter();
+              try {
+                final CategoryDataset dataset =
+                    getDataset(datasource, region, period);
+                final CsvListWriter csv = new CsvListWriter(sw,
+                    CsvPreference.STANDARD_PREFERENCE);
+                @SuppressWarnings("unchecked")
+                List<String> columnKeys = dataset.getColumnKeys();
+                @SuppressWarnings("unchecked")
+                List<String> rowKeys = dataset.getRowKeys();
+                final List<String> heading = ImmutableList.<String>builder()
+                    .add(format("%s %s load reductions", region, period))
+                    .addAll(rowKeys)
+                    .build();
+                csv.write(heading);
+                for (String col : columnKeys) {
+                  List<String> line = newLinkedList();
+                  line.add(col);
+                  for (String row : rowKeys) {
+                    line.add(format("%.1f",
+                        dataset.getValue(row, col).doubleValue()));
+                  }
+                  csv.write(line);
+                }
+                csv.close();
+              } catch (IOException e) {
+                // How on earth would you get an IOException with a StringWriter?
+                throw new RuntimeException(e);
+              }
+              return sw.toString();
             }
 
             @Override

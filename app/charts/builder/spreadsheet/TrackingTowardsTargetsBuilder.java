@@ -1,10 +1,19 @@
 package charts.builder.spreadsheet;
 
+import static com.google.common.collect.Lists.newLinkedList;
+import static java.lang.String.format;
+
 import java.awt.Dimension;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
+import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.pegdown.PegDownProcessor;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -67,41 +76,6 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   public Chart build(final SpreadsheetDataSource ds, final ChartType type,
       final Region region, Dimension dimensions) {
     if (region == Region.GBR) {
-      final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-      final double target;
-      final String targetBy;
-      try {
-        switch (type) {
-        case TTT_CANE_AND_HORT:
-          addSeries(ds, dataset, Series.CANE);
-          addSeries(ds, dataset, Series.HORTICULTURE);
-          target = getTarget(ds, Series.CANE);
-          targetBy = getTargetBy(ds, Series.CANE);
-          break;
-        case TTT_GRAZING:
-          addSeries(ds, dataset, Series.GRAZING);
-          target = getTarget(ds, Series.GRAZING);
-          targetBy = getTargetBy(ds, Series.GRAZING);
-          break;
-        case TTT_NITRO_AND_PEST:
-          addSeries(ds, dataset, Series.TOTAL_NITROGEN);
-          addSeries(ds, dataset, Series.PESTICIDES);
-          target = getTarget(ds, Series.TOTAL_NITROGEN);
-          targetBy = getTargetBy(ds, Series.TOTAL_NITROGEN);
-          break;
-        case TTT_SEDIMENT:
-          addSeries(ds, dataset, Series.SEDIMENT);
-          target = getTarget(ds, Series.SEDIMENT);
-          targetBy = getTargetBy(ds, Series.SEDIMENT);
-          break;
-          //$CASES-OMITTED$
-        default:
-          throw new RuntimeException("chart type not supported "
-              + type.toString());
-        }
-      } catch (MissingDataException e) {
-        throw new RuntimeException(e);
-      }
       return new AbstractChart(dimensions) {
 
         @Override
@@ -111,13 +85,54 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
 
         @Override
         public Drawable getChart() {
-          return new TrackingTowardsTargets().createChart(type, target,
-              targetBy, dataset, new Dimension(750, 500));
+          try {
+            final double target = getTarget(ds, getTargetSeries(type));
+            final String targetBy = getTargetBy(ds, getTargetSeries(type));
+            return new TrackingTowardsTargets().createChart(type, target,
+                targetBy, createDataset(ds, type), new Dimension(750, 500));
+          } catch (MissingDataException e) {
+            throw new RuntimeException(e);
+          }
         }
 
         @Override
         public String getCSV() throws UnsupportedFormatException {
-          throw new Chart.UnsupportedFormatException();
+          final StringWriter sw = new StringWriter();
+          try {
+            final CategoryDataset dataset =
+                createDataset(ds, type);
+            final CsvListWriter csv = new CsvListWriter(sw,
+                CsvPreference.STANDARD_PREFERENCE);
+            @SuppressWarnings("unchecked")
+            List<String> columnKeys = dataset.getColumnKeys();
+            @SuppressWarnings("unchecked")
+            List<String> rowKeys = dataset.getRowKeys();
+            final List<String> heading = ImmutableList.<String>builder()
+                .add(format("%s %s", region, type))
+                .add(format("%% Target by " +
+                    getTargetBy(ds, getTargetSeries(type))))
+                .addAll(columnKeys)
+                .build();
+            csv.write(heading);
+            final double target = getTarget(ds, getTargetSeries(type));
+            for (String row : rowKeys) {
+              List<String> line = newLinkedList();
+              line.add(row);
+              line.add(format("%.0f", target * 100));
+              for (String col : columnKeys) {
+                Number n = dataset.getValue(row, col);
+                line.add(n == null ? "" : format("%.0f", n.doubleValue()*100));
+              }
+              csv.write(line);
+            }
+            csv.close();
+          } catch (IOException e) {
+            // How on earth would you get an IOException with a StringWriter?
+            throw new RuntimeException(e);
+          } catch (MissingDataException e) {
+            throw new RuntimeException(e);
+          }
+          return sw.toString();
         }
 
         @Override
@@ -146,6 +161,52 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
       };
     }
     return null;
+  }
+
+  protected CategoryDataset createDataset(SpreadsheetDataSource ds,
+      ChartType type) {
+    final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+    try {
+      switch (type) {
+      case TTT_CANE_AND_HORT:
+        addSeries(ds, dataset, Series.CANE);
+        addSeries(ds, dataset, Series.HORTICULTURE);
+        break;
+      case TTT_GRAZING:
+        addSeries(ds, dataset, Series.GRAZING);
+        break;
+      case TTT_NITRO_AND_PEST:
+        addSeries(ds, dataset, Series.TOTAL_NITROGEN);
+        addSeries(ds, dataset, Series.PESTICIDES);
+        break;
+      case TTT_SEDIMENT:
+        addSeries(ds, dataset, Series.SEDIMENT);
+        break;
+        //$CASES-OMITTED$
+      default:
+        throw new RuntimeException("chart type not supported "
+            + type.toString());
+      }
+    } catch (MissingDataException e) {
+      throw new RuntimeException(e);
+    }
+    return dataset;
+  }
+
+  protected Series getTargetSeries(ChartType chartType) {
+    switch (chartType) {
+    case TTT_CANE_AND_HORT:
+      return Series.CANE;
+    case TTT_GRAZING:
+      return Series.GRAZING;
+    case TTT_NITRO_AND_PEST:
+      return Series.TOTAL_NITROGEN;
+    case TTT_SEDIMENT:
+      return Series.SEDIMENT;
+      //$CASES-OMITTED$
+    default:
+      throw new RuntimeException("chart type not supported "+chartType);
+    }
   }
 
   private void addSeries(SpreadsheetDataSource ds,

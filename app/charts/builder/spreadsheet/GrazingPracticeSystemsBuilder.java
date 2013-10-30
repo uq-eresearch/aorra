@@ -1,24 +1,29 @@
 package charts.builder.spreadsheet;
 
+import static com.google.common.collect.Lists.newLinkedList;
+import static java.lang.String.format;
+
 import java.awt.Dimension;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
-import play.api.templates.Html;
 import charts.AbstractChart;
 import charts.Chart;
 import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
-import charts.Chart.UnsupportedFormatException;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.GrazingPracticeSystems;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
@@ -71,8 +76,36 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
       }
 
       @Override
-      public String getCSV() throws UnsupportedFormatException {
-        throw new UnsupportedFormatException();
+      public String getCSV() {
+        final StringWriter sw = new StringWriter();
+        try {
+          final CategoryDataset dataset = createDataset(datasource, region);
+          final CsvListWriter csv = new CsvListWriter(sw,
+              CsvPreference.STANDARD_PREFERENCE);
+          @SuppressWarnings("unchecked")
+          List<String> columnKeys = dataset.getColumnKeys();
+          @SuppressWarnings("unchecked")
+          List<String> rowKeys = dataset.getRowKeys();
+          final List<String> heading = ImmutableList.<String>builder()
+              .add(region+" grazing practices")
+              .addAll(rowKeys)
+              .build();
+          csv.write(heading);
+          for (String col : columnKeys) {
+            List<String> line = newLinkedList();
+            line.add(col);
+            for (String row : rowKeys) {
+              line.add(format("%.1f",
+                  dataset.getValue(row, col).doubleValue() * 100));
+            }
+            csv.write(line);
+          }
+          csv.close();
+        } catch (IOException e) {
+          // How on earth would you get an IOException with a StringWriter?
+          throw new RuntimeException(e);
+        }
+        return sw.toString();
       }
 
       @Override

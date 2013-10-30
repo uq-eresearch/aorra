@@ -1,5 +1,7 @@
 package charts.builder;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.awt.Dimension;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -29,6 +31,7 @@ public class ChartBuilder {
           List<Region> regions,
           Dimension dimensions,
           Map<String, String> parameters) {
+    checkNotNull(parameters);
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
       if (builder.canHandle(type, datasources)) {
@@ -52,17 +55,19 @@ public class ChartBuilder {
   public List<Chart> getCharts(List<DataSource> datasources,
       List<Region> regions,
       Dimension dimensions) {
-    return getCharts(datasources, null, regions, dimensions, null);
+    return getCharts(datasources, null, regions, dimensions,
+        Collections.<String,String>emptyMap());
   }
 
-  public Map<String, List<String>> getParameters(List<DataSource> datasources, ChartType type) {
-      Map<String, List<String>> result = Maps.newHashMap();
-      for(ChartTypeBuilder builder : builders) {
-          if(builder.canHandle(type, datasources)) {
-              result.putAll(builder.getParameters(datasources, type));
-          }
+  public Map<String, List<String>> getParameters(List<DataSource> datasources,
+      ChartType type) {
+    Map<String, List<String>> result = Maps.newHashMap();
+    for (ChartTypeBuilder builder : builders) {
+      if (builder.canHandle(type, datasources)) {
+        result.putAll(builder.getParameters(datasources, type));
       }
-      return result;
+    }
+    return result;
   }
 
   private static List<ChartTypeBuilder> detectBuilders() {

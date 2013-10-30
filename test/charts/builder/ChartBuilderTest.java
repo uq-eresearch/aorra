@@ -5,170 +5,80 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 import java.awt.Dimension;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
-import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import javax.imageio.ImageIO;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import com.google.common.collect.Maps;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
 import charts.Region;
-import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder;
 import charts.builder.spreadsheet.XlsDataSource;
 import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 
+import com.google.common.collect.Lists;
+
+@RunWith(Parameterized.class)
 public class ChartBuilderTest {
 
-  private final ChartBuilder chartBuilder;
+  private final static ChartBuilder chartBuilder = new ChartBuilder();
+  private final ChartType chartType;
+  private final Format format;
 
-  public ChartBuilderTest() {
-    this.chartBuilder = new ChartBuilder();
+  public ChartBuilderTest(ChartType ct, Format f) {
+    this.chartType = ct;
+    this.format = f;
+  }
+
+  @Parameters(name = "{1} - {0}")
+  public static Collection<Object[]> data() {
+    final List<Object[]> l = Lists.newLinkedList();
+    for (final ChartType ct : ChartType.values()) {
+      l.add(new Object[] { ct,  Format.CSV});
+      l.add(new Object[] { ct,  Format.DOCX});
+      l.add(new Object[] { ct,  Format.EMF});
+    }
+    return l;
   }
 
   @Test
-  public void docxAndEmf() throws UnsupportedFormatException {
-    for (final ChartType ct : ChartType.values()) {
-      final List<DataSource> ds = asList(getDatasource(ct));
-      {
-        final List<charts.Chart> charts = chartBuilder.getCharts(ds,
-            asList(getDefaultTestingRegion(ct)),
-            new Dimension(0, 0));
-        assertThat(charts).as("No chart generated for "+ct).isNotEmpty();
-        final charts.Chart chart = charts.get(0);
-        // Shouldn't trigger UnsupportedFormatException
-        chart.outputAs(Format.DOCX);
-        // Shouldn't trigger UnsupportedFormatException
-        chart.outputAs(Format.EMF);
-      }
-    }
-  }
-
-  @Ignore
-  @Test
-  public void csv() throws UnsupportedFormatException {
-    for (final ChartType ct : ChartType.values()) {
-      final List<DataSource> ds = asList(getDatasource(ct));
-      {
-        final List<charts.Chart> charts = chartBuilder.getCharts(ds,
-            asList(getDefaultTestingRegion(ct)),
-            new Dimension(0, 0));
-        assertThat(charts).as("No chart generated for "+ct).isNotEmpty();
-        final charts.Chart chart = charts.get(0);
-        try {
-          chart.outputAs(Format.CSV);
-        } catch (UnsupportedFormatException ufe) {
-          fail(ct+" should support CSV output.");
-        }
-      }
-    }
-  }
-
-  @Test
-  public void svgAndPngChartSize() throws UnsupportedFormatException{
-    for (final ChartType ct : ChartType.values()) {
-      List<Region> regions = asList(getDefaultTestingRegion(ct));
-      Map<String, String> parameters = Maps.newHashMap();
-      final List<DataSource> ds = asList(getDatasource(ct));
-      if(ct == ChartType.TSA) {
-        regions = asList(Region.CAPE_YORK);
-        parameters.put(TrendsSeagrassAbundanceBuilder.SUBREGION,
-          TrendsSeagrassAbundanceBuilder.Subregion.AP.name());
-      }
-      {
-        try {
-          final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
-                new Dimension(0, 0), parameters).get(0);
-            Element svg = getSvgRoot(chart);
-            String[] viewBox = svg.attr("viewBox").split(" ");
-            assertThat(svg.attr("width")).isEqualTo(viewBox[2]);
-            assertThat(svg.attr("height")).isEqualTo(viewBox[3]);
-            checkDimensionsMatch(ct, svg, getPngImage(chart));
-        } catch(IndexOutOfBoundsException e) {
-          throw new RuntimeException(String.format(
-            "caught exception while testing chart type %s", ct), e);
-        }
-      }
-      {
-        final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
-            new Dimension(0, 127), parameters).get(0);
-        Element svg = getSvgRoot(chart);
-        assertThat(svg.attr("width"))
-          .as(ct+" unspecified width")
-          .isNotEqualTo("0");
-        assertThat(svg.attr("height")).isEqualTo("127");
-        checkDimensionsMatch(ct, svg, getPngImage(chart));
-      }
-      {
-        final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
-            new Dimension(383, 0), parameters).get(0);
-        Element svg = getSvgRoot(chart);
-        assertThat(svg.attr("width")).isEqualTo("383");
-        assertThat(svg.attr("height"))
-          .as(ct+" unspecified height")
-          .isNotEqualTo("0");
-        checkDimensionsMatch(ct, svg, getPngImage(chart));
-      }
-      {
-        final charts.Chart chart = chartBuilder.getCharts(ds, ct, regions,
-            new Dimension(383, 127), parameters).get(0);
-        Element svg = getSvgRoot(chart);
-        assertThat(svg.attr("width")).isEqualTo("383");
-        assertThat(svg.attr("height")).isEqualTo("127");
-        checkDimensionsMatch(ct, svg, getPngImage(chart));
-      }
-    }
-  }
-
-  private void checkDimensionsMatch(
-      ChartType ct, Element svg, BufferedImage png) {
-    String svgDimensions = svg.attr("width") + " x " + svg.attr("height");
-    String pngDimensions = png.getWidth() + " x " + png.getHeight();
-    assertThat(pngDimensions).as(ct+" PNG dimensions match SVG")
-      .isEqualTo(svgDimensions);
-  }
-
-  private Element getSvgRoot(charts.Chart chart)
-      throws UnsupportedFormatException {
-    return Jsoup.parse(new String(chart.outputAs(Format.SVG).getContent()))
-        .select("svg").get(0);
-  }
-
-  private BufferedImage getPngImage(charts.Chart chart)
-      throws UnsupportedFormatException {
+  public void format() {
+    final List<charts.Chart> charts = chartBuilder.getCharts(
+        asList(getDatasource(chartType)),
+        chartType,
+        asList(getDefaultTestingRegion(chartType)),
+        new Dimension(0, 0),
+        Collections.<String, String>emptyMap());
+    assertThat(charts).as("No chart generated for "+chartType).isNotEmpty();
+    final charts.Chart chart = charts.get(0);
+    assertThat(chart.getDescription().getType()).isEqualTo(chartType);
     try {
-      return ImageIO.read(new ByteArrayInputStream(chart.outputAs(Format.PNG)
-          .getContent()));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      chart.outputAs(format);
+    } catch (UnsupportedFormatException ufe) {
+      fail(chartType+" should support "+format+" output.");
     }
   }
 
-  private DataSource getDatasource(ChartType t) {
+  public static DataSource getDatasource(ChartType t) {
     try {
-        String filename = getChartTypeFile(t);
-        if(filename.endsWith("xlsx")) {
-            return new XlsxDataSource(new FileInputStream(getChartTypeFile(t)));
-        } else {
-            return new XlsDataSource(new FileInputStream(getChartTypeFile(t)));
-        }
+      String filename = getChartTypeFile(t);
+      if(filename.endsWith(".xlsx")) {
+          return new XlsxDataSource(new FileInputStream(getChartTypeFile(t)));
+      } else {
+          return new XlsDataSource(new FileInputStream(getChartTypeFile(t)));
+      }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private Region getDefaultTestingRegion(ChartType t) {
+  public static Region getDefaultTestingRegion(ChartType t) {
     switch (t) {
     case TSA:
       return Region.BURDEKIN;
@@ -178,7 +88,7 @@ public class ChartBuilderTest {
     }
   }
 
-  private String getChartTypeFile(ChartType t) {
+  public static String getChartTypeFile(ChartType t) {
     switch (t) {
     case COTS_OUTBREAK:
       return "test/cots_outbreak.xlsx";
