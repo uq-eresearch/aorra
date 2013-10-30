@@ -191,7 +191,10 @@ public class ChartBuilderTest {
     case SUGARCANE_PS:
       return "test/land_practice_systems.xlsx";
     case MARINE:
-      return "test/marine.xlsx";
+    case MARINE_CT:
+    case MARINE_ST:
+    case MARINE_WQT:
+      return "test/marine.xls";
     case PROGRESS_TABLE_REGION:
     case PROGRESS_TABLE:
       return "test/progress_table.xlsx";
