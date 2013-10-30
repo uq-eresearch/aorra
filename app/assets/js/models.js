@@ -1,16 +1,7 @@
+/*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
+/*global _: false, $: false, Backbone: false, define: false, window: false */
 define(['backbone'], function(Backbone) {
   'use strict';
-
-  var FileStore = Backbone.Collection.extend({
-    url: '/filestore',
-    model: function(attrs, options) {
-      if (attrs.type == 'folder') {
-        return new Folder(attrs, options);
-      } else {
-        return new File(attrs, options);
-      }
-    }
-  });
 
   var FileOrFolder = Backbone.Model.extend({
     displayUrl: function() {
@@ -92,8 +83,8 @@ define(['backbone'], function(Backbone) {
     },
     // Reverse sort by time
     comparator: function(a,b) {
-      if (a.get('timestamp') < b.get('timestamp')) return 1;
-      if (a.get('timestamp') > b.get('timestamp')) return -1;
+      if (a.get('timestamp') < b.get('timestamp')) { return 1; }
+      if (a.get('timestamp') > b.get('timestamp')) { return -1; }
       return 0;
     },
     model: VersionInfo,
@@ -140,6 +131,16 @@ define(['backbone'], function(Backbone) {
     }
   });
 
+  var FileStore = Backbone.Collection.extend({
+    url: '/filestore',
+    model: function(attrs, options) {
+      if (attrs.type == 'folder') {
+        return new Folder(attrs, options);
+      }
+      return new File(attrs, options);
+    }
+  });
+
   var Flag = Backbone.Model.extend({});
 
   var EditFlags = Backbone.Collection.extend({
@@ -160,8 +161,9 @@ define(['backbone'], function(Backbone) {
     // Reverse sort
     comparator: function(v1, v2) {
       var d1 = v1.get('timestamp'), d2 = v2.get('timestamp');
-      if (d1 == d2)
+      if (d1 == d2) {
         return 0;
+      }
       return d1 > d2 ? -1 : 1;
     }
   });
@@ -188,7 +190,7 @@ define(['backbone'], function(Backbone) {
     flags: function() {
       return this._flags;
     }
-  })
+  });
 
   return {
     File: File,
@@ -201,4 +203,4 @@ define(['backbone'], function(Backbone) {
     VersionList: VersionList,
     Users: Users
   };
-})
+});
