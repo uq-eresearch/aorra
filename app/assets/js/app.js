@@ -1,11 +1,13 @@
+/*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true */
+/*global _: false, $: false, Backbone: false, EventSource: false, window: false */
 require(['models', 'views'], function(models, views) {
   'use strict';
   var EventFeed = function(config) {
-    var obj = _.extend({}, config)
+    var obj = _.extend({}, config);
     _.extend(obj, Backbone.Events);
     _.extend(obj, {
       url: function() {
-        return '/events?from='+obj.lastEventId
+        return '/events?from='+obj.lastEventId;
       },
       updateLastId: function(id) {
         obj.lastEventId = id;
@@ -27,11 +29,10 @@ require(['models', 'views'], function(models, views) {
                   if (v.type == 'outofdate') {
                     trigger('outofdate', v.id);
                     return false;
-                  } else {
-                    updateLastId(v.id);
-                    trigger(v.type, v.data);
-                    return true;
                   }
+                  updateLastId(v.id);
+                  trigger(v.type, v.data);
+                  return true;
                 });
                 if (canContinue) {
                   callback();
@@ -67,7 +68,7 @@ require(['models', 'views'], function(models, views) {
                   }, 100);
                 });
               });
-            })
+            });
             this.es = es;
           });
         }
@@ -98,20 +99,20 @@ require(['models', 'views'], function(models, views) {
       });
     eventFeed.on("file:create",
       function(id) {
-        var file = new models.File({ id: id })
+        var file = new models.File({ id: id });
         file.fetch().done(function() {
           fs.add([file.toJSON()]);
         });
       });
     eventFeed.on("folder:update file:update", function(id) {
-      var fof = fs.get(id)
-      if (fof) fof.fetch();
+      var fof = fs.get(id);
+      if (fof) { fof.fetch(); }
     });
     // Rather brute-force, but the flag will turn up
     eventFeed.on("flag:create",
       function(id) {
         _.each(users.flags(), function(c) {
-          if (c.get(id)) return; // Already exists
+          if (c.get(id)) { return; } // Already exists
           c.add({ id: id });
           c.get(id).fetch().error(function() {
             c.remove(id);
@@ -127,17 +128,17 @@ require(['models', 'views'], function(models, views) {
       function(id) {
         fs.remove(fs.get(id));
       });
-    
+
     // Update notifications based on events
     eventFeed.on("notification:create",
-      function(id) {
+      function() {
         // TODO: Make this more efficient
         notifications.fetch();
       });
     eventFeed.on("notification:update",
       function(id) {
         var n = notifications.get(id);
-        if (n) n.fetch();
+        if (n) { n.fetch(); }
       });
     eventFeed.on("notification:delete",
       function(id) {
@@ -187,7 +188,7 @@ require(['models', 'views'], function(models, views) {
     fs.on('remove', function(m) {
       fileTree.tree().remove(m.get('id'));
       // Handle being on the deleted page already
-      if (_.isUndefined(layout.main.currentView.model)) return;
+      if (_.isUndefined(layout.main.currentView.model)) { return; }
       // If the current path has been deleted, then hide it.
       if (m.id == layout.main.currentView.model.id) {
         layout.showDeleted(m);
@@ -259,7 +260,7 @@ require(['models', 'views'], function(models, views) {
         layout.main.$el.removeClass('active');
         $('#nav-back').addClass('hidden');
       }
-    })
+    });
 
     var router = new Router();
 
@@ -273,24 +274,22 @@ require(['models', 'views'], function(models, views) {
     var initFilestore = function() {
       if (_.isUndefined(window.filestoreJSON)) {
         return fs.fetch();
-      } else {
-        fs.reset(window.filestoreJSON);
-        return $.Deferred().resolve();
       }
-    }
+      fs.reset(window.filestoreJSON);
+      return $.Deferred().resolve();
+    };
 
     // Users collection
     var initUsers = function() {
       if (_.isUndefined(window.usersJSON)) {
         return users.fetch();
-      } else {
-        users.reset(window.usersJSON);
-        return $.Deferred().resolve();
       }
+      users.reset(window.usersJSON);
+      return $.Deferred().resolve();
     };
 
     // Wait to start routing
-    $.when.apply($, [initFilestore(), initUsers()]).done(function() {
+    $.when(initFilestore(), initUsers()).done(function() {
       startRouting();
     });
 
