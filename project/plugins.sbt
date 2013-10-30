@@ -7,4 +7,4 @@ libraryDependencies += "net.liftweb" %% "lift-json" % "2.+"
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.0")
 
 // Test coverage reporting
-addSbtPlugin("de.johoop" % "jacoco4sbt" % "2.1.1")
+addSbtPlugin("de.johoop" % "jacoco4sbt" % "2.1.2")
