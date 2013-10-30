@@ -1,3 +1,5 @@
+/*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
+/*global _: false, define: false */
 define(['jquery', 'hogan'], function($, hogan) {
   'use strict';
 
@@ -8,7 +10,7 @@ define(['jquery', 'hogan'], function($, hogan) {
       var templateName = $(e).attr('id').replace(/^tmpl-/,"");
       var tmpl = e.innerHTML;
       templates[templateName] = hogan.compile(tmpl);
-    })
+    });
   });
 
   return {
