@@ -1,4 +1,5 @@
 import sbt._
+import sbtrelease.ReleasePlugin._
 import Keys._
 import play.Project._
 import de.johoop.jacoco4sbt._
@@ -7,7 +8,6 @@ import JacocoPlugin._
 object ApplicationBuild extends Build {
 
   val appName         = "aorra"
-  val appVersion      = "1.0-SNAPSHOT"
 
   def crshVersion = "1.2.7"
   val BatikVersion = "1.7"
@@ -57,10 +57,12 @@ object ApplicationBuild extends Build {
 
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
 
-  lazy val s = Defaults.defaultSettings ++ Seq(jacoco.settings:_*) ++
-    play.Project.playJavaSettings
+  lazy val s = Defaults.defaultSettings ++ releaseSettings ++
+    Seq(jacoco.settings:_*) ++ play.Project.playJavaSettings
 
-  val main = play.Project(appName, appVersion, appDependencies, settings = s).settings(
+  val main = play.Project(appName, 
+      dependencies = appDependencies, settings = s).settings(
+    version <<= version in ThisBuild,
     unmanagedResourceDirectories in Compile += file("resources"),
     requireJs ++= Seq("models.js") ,
     requireJsShim += "main.js",

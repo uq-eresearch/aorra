@@ -8,3 +8,6 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.0")
 
 // Test coverage reporting
 addSbtPlugin("de.johoop" % "jacoco4sbt" % "2.1.2")
+
+// Release management
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8")
