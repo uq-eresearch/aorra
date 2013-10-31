@@ -1,9 +1,14 @@
 import sbt._
+import sbtrelease.{ReleaseStep, releaseTask}
 import sbtrelease.ReleasePlugin._
+import sbtrelease.ReleasePlugin.ReleaseKeys.releaseProcess
+import sbtrelease.ReleaseStateTransformations._
 import Keys._
 import play.Project._
 import de.johoop.jacoco4sbt._
 import JacocoPlugin._
+import com.typesafe.sbt.SbtNativePackager.Universal
+import com.typesafe.sbt.packager.universal.Keys.packageZipTarball
 
 object ApplicationBuild extends Build {
 
@@ -58,9 +63,18 @@ object ApplicationBuild extends Build {
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
 
   lazy val s = Defaults.defaultSettings ++ releaseSettings ++
-    Seq(jacoco.settings:_*) ++ play.Project.playJavaSettings
+      Seq(jacoco.settings:_*) ++ play.Project.playJavaSettings
+      
+  val buildTarball: ReleaseStep =
+    ReleaseStep(
+      action = { st: State =>
+        val extracted = Project.extract(st)
+        val ref = extracted.get(thisProjectRef)
+        extracted.runAggregated(packageZipTarball in Universal in ref, st)
+      }
+    )
 
-  val main = play.Project(appName, 
+  val main = play.Project(appName,
       dependencies = appDependencies, settings = s).settings(
     version <<= version in ThisBuild,
     unmanagedResourceDirectories in Compile += file("resources"),
@@ -108,6 +122,18 @@ object ApplicationBuild extends Build {
       Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
       Resolver.url("play-authenticate (release)", url("http://joscha.github.com/play-authenticate/repo/releases/"))(Resolver.ivyStylePatterns),
       Resolver.url("play-authenticate (snapshot)", url("http://joscha.github.com/play-authenticate/repo/snapshots/"))(Resolver.ivyStylePatterns)
+    ),
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runClean,
+      runTest,
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      buildTarball,
+      setNextVersion,
+      commitNextVersion
     )
   ).dependsOn(RootProject(uri(
       "git://github.com/sgougi/play21-jackrabbit-plugin.git#94d3d7f2bca50815b0c96d90a0f34d40440bda0f"))
