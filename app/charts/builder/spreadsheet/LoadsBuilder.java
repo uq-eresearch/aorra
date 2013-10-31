@@ -96,23 +96,14 @@ public class LoadsBuilder extends AbstractBuilder {
     }
 
     @Override
-    public boolean canHandle(SpreadsheetDataSource datasource) {
-        return sheet(datasource) != -1;
-    }
-
-    private int sheet(SpreadsheetDataSource ds) {
-        for(int i=0;i<ds.sheets();i++) {
-            try {
-                String name = ds.getSheetname(i);
-                if(name != null) {
-                    if(StringUtils.equalsIgnoreCase("Region", ds.select(name, "C3").asString()) &&
-                        StringUtils.equalsIgnoreCase("Total Change (%)", ds.select(name, "C12").asString())) {
-                        return i;
-                    }
-                }
-            } catch(Exception e) {}
-        }
-        return -1;
+    public boolean canHandle(SpreadsheetDataSource ds) {
+        try {
+            if(StringUtils.equalsIgnoreCase("Region", ds.select("C3").asString()) &&
+                    StringUtils.equalsIgnoreCase("Total Change (%)", ds.select("C12").asString())) {
+                return true;
+            }
+        } catch(MissingDataException e) {}
+        return false;
     }
 
     @Override
@@ -142,12 +133,6 @@ public class LoadsBuilder extends AbstractBuilder {
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
             final Region region, Dimension queryDimensions, final Map<String, String> parameters) {
-        int sheet = sheet(datasource);
-        if(sheet == -1) {
-            return null;
-        } else {
-            datasource.setDefaultSheet(sheet);
-        }
         if(type == LOADS) {
             return buildLoads(datasource, type, region, queryDimensions, parameters);
         } else if(region == Region.GBR) {

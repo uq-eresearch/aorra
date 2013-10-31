@@ -71,6 +71,14 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         public String getLabel() {
             return label;
         }
+
+        public static Subregion fromName(String name) {
+            try {
+                return valueOf(name);
+            } catch(IllegalArgumentException e) {
+                return null;
+            }
+        }
     }
 
     public TrendsSeagrassAbundanceBuilder() {
@@ -79,27 +87,20 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
 
     @Override
     public boolean canHandle(SpreadsheetDataSource ds) {
-        return getSheet(ds) != -1;
+        try {
+            if(stripEqualsIgnoreCase(ds, "site", "A1") &&
+                    stripEqualsIgnoreCase(ds, "date", "B1") &&
+                    stripEqualsIgnoreCase(ds, "mean", "C1") &&
+                    stripEqualsIgnoreCase(ds, "se", "D1")) {
+                return true;
+            }
+        } catch(MissingDataException e) {}
+        return false;
     }
 
     private boolean stripEqualsIgnoreCase(SpreadsheetDataSource ds, String s,
-            String sheet, String cellref) throws MissingDataException {
-        return equalsIgnoreCase(s, strip(ds.select(sheet, cellref).asString()));
-    }
-
-    private int getSheet(SpreadsheetDataSource ds) {
-        for(int i=0;i<ds.sheets();i++) {
-            try {
-                String sheet = ds.getSheetname(i);
-                if(stripEqualsIgnoreCase(ds, "site", sheet, "A1") &&
-                   stripEqualsIgnoreCase(ds, "date", sheet, "B1") &&
-                   stripEqualsIgnoreCase(ds, "mean", sheet, "C1") &&
-                   stripEqualsIgnoreCase(ds, "se", sheet, "D1")) {
-                    return i;
-                }
-            } catch(MissingDataException e) {}
-        }
-        return -1;
+            String cellref) throws MissingDataException {
+        return equalsIgnoreCase(s, strip(ds.select(cellref).asString()));
     }
 
     @Override
@@ -119,7 +120,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
                         continue;
                     }
                 }
-                if(Subregion.valueOf(s.toUpperCase()) != null && !subregions.contains(s)) {
+                if(Subregion.fromName(s.toUpperCase()) != null && !subregions.contains(s)) {
                     subregions.add(s);
                 }
             } catch(MissingDataException e ) {}
@@ -147,12 +148,6 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
       return null;
     }
     if (subregion.getRegion() == region) {
-      int sheet = getSheet(ds);
-      if (sheet != -1) {
-        ds.setDefaultSheet(sheet);
-      } else {
-        return null;
-      }
       final CategoryDataset dataset = createDataset(ds, subregion);
       final String title = getTitle(subregion);
       return new AbstractChart(dimensions) {

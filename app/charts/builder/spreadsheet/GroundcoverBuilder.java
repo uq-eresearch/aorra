@@ -21,6 +21,7 @@ import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.Value;
 import charts.graphics.Groundcover;
 
 import com.google.common.collect.ImmutableList;
@@ -48,8 +49,18 @@ public class GroundcoverBuilder extends AbstractBuilder {
 
     @Override
     public boolean canHandle(SpreadsheetDataSource datasource) {
-        return datasource.hasSheet(GC_SHEETNAME) ||
-                datasource.hasSheet(GCB50_SHEETNAME);
+        try {
+            if(datasource.hasSheet(GC_SHEETNAME) || datasource.hasSheet(GCB50_SHEETNAME)) {
+                List<Value> row0 = datasource.selectRow(0);
+                List<Value> col1 = datasource.selectColumn(1);
+                return SpreadsheetDataSource.containsString(row0, "Region") &&
+                        SpreadsheetDataSource.containsString(row0, "Type") &&
+                        SpreadsheetDataSource.containsString(row0, "AllYearMean") && 
+                        SpreadsheetDataSource.containsString(col1, "Catchment") &&
+                        SpreadsheetDataSource.containsString(col1, "Region");
+            }
+        } catch (MissingDataException e) {}
+        return false;
     }
 
     @Override
@@ -58,7 +69,12 @@ public class GroundcoverBuilder extends AbstractBuilder {
         if(!ROWS.containsKey(region)) {
             return null;
         }
-        if(!datasource.hasSheet(sheetname(type))) {
+        if(type == ChartType.GROUNDCOVER &&
+                !StringUtils.equalsIgnoreCase(datasource.getDefaultSheet(), GC_SHEETNAME)) {
+            return null;
+        }
+        if(type == ChartType.GROUNDCOVER_BELOW_50 &&
+                !StringUtils.equalsIgnoreCase(datasource.getDefaultSheet(), GCB50_SHEETNAME)) {
             return null;
         }
         Chart chart = new AbstractChart(dimension) {
@@ -118,16 +134,6 @@ public class GroundcoverBuilder extends AbstractBuilder {
         return chart;
     }
 
-    private String sheetname(ChartType type) {
-        if(type == ChartType.GROUNDCOVER) {
-            return GC_SHEETNAME;
-        } else if(type == ChartType.GROUNDCOVER_BELOW_50) {
-            return GCB50_SHEETNAME;
-        } else {
-            return null;
-        }
-    }
-
     private String valueAxisLabel(ChartType type) {
         if(type == ChartType.GROUNDCOVER) {
             return "Groundcover (%)";
@@ -140,9 +146,8 @@ public class GroundcoverBuilder extends AbstractBuilder {
 
     private String getTitle(SpreadsheetDataSource ds, ChartType type, Region region) {
         try {
-            String sheetname = sheetname(type);
-            String start = getStartYear(ds, sheetname);
-            String last = getLastYear(ds,sheetname);
+            String start = getStartYear(ds);
+            String last = getLastYear(ds);
             if(type == ChartType.GROUNDCOVER) {
                 if(region == Region.GBR) {
                     return format("Mean late dry season groundcover in the Great Barrier Reef" +
@@ -172,17 +177,16 @@ public class GroundcoverBuilder extends AbstractBuilder {
             throw new RuntimeException("no rows configured for region " + region.getProperName());
         }
         try {
-            String sheetname = sheetname(type);
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             for(Integer row : rows) {
                 row--;
-                String rowName = ds.select(sheetname, row, 0).toString();
-                for(int column = 2;column<=getLastColumn(ds, sheetname);column++) {
-                    String series = ds.select(sheetname, 0, column).asInteger().toString();
-                    if(ds.select(sheetname, row, column).getValue() == null) {
+                String rowName = ds.select(row, 0).toString();
+                for(int column = 2;column<=getLastColumn(ds);column++) {
+                    String series = ds.select(0, column).asInteger().toString();
+                    if(ds.select(row, column).getValue() == null) {
                         dataset.addValue(null, rowName, series);
                     } else {
-                        dataset.addValue(ds.select(sheetname, row, column).asDouble(), rowName, series);
+                        dataset.addValue(ds.select(row, column).asDouble(), rowName, series);
                     }
                 }
             }
@@ -192,22 +196,22 @@ public class GroundcoverBuilder extends AbstractBuilder {
         }
     }
 
-    public String getStartYear(SpreadsheetDataSource ds, String sheetname) throws MissingDataException {
-        return ds.select(sheetname, 0, 2).asInteger().toString();
+    public String getStartYear(SpreadsheetDataSource ds) throws MissingDataException {
+        return ds.select(0, 2).asInteger().toString();
     }
 
-    public String getLastYear(SpreadsheetDataSource ds, String sheetname) throws MissingDataException {
-        return ds.select(sheetname, 0, getLastColumn(ds, sheetname)).asInteger().toString();
+    public String getLastYear(SpreadsheetDataSource ds) throws MissingDataException {
+        return ds.select(0, getLastColumn(ds)).asInteger().toString();
     }
 
-    public int getLastColumn(SpreadsheetDataSource ds, String sheetname) throws MissingDataException {
+    public int getLastColumn(SpreadsheetDataSource ds) throws MissingDataException {
         for(int col=2;true;col++) {
-            String s = ds.select(sheetname, 0, col).asString();
+            String s = ds.select(0, col).asString();
             if(StringUtils.isBlank(s)) {
                 return col -1;
             }
             try {
-                ds.select(sheetname, 0, col).asInteger();
+                ds.select(0, col).asInteger();
             } catch(Exception e) {
                 return col -1;
             }

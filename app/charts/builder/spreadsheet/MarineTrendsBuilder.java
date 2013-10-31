@@ -33,7 +33,7 @@ import com.google.common.collect.Lists;
 
 public class MarineTrendsBuilder extends AbstractBuilder {
 
-    private static final String TIME_SERIES = "Time Series";
+//    private static final String TIME_SERIES = "Time Series";
     private static final String WATER_QUALITY = "Water Quality";
     private static final String SEAGRASS = "Seagrass";
     private static final String CORAL = "Coral";
@@ -96,10 +96,9 @@ public class MarineTrendsBuilder extends AbstractBuilder {
     @Override
     public boolean canHandle(SpreadsheetDataSource datasource) {
         try {
-            return datasource.hasSheet(TIME_SERIES) &&
-              equalsIgnoreCase(datasource.select(TIME_SERIES, "B2").asString(), WATER_QUALITY) &&
-              equalsIgnoreCase(datasource.select(TIME_SERIES, "B14").asString(), SEAGRASS) &&
-              equalsIgnoreCase(datasource.select(TIME_SERIES, "B26").asString(), CORAL);
+              return equalsIgnoreCase(datasource.select("B2").asString(), WATER_QUALITY) &&
+              equalsIgnoreCase(datasource.select("B14").asString(), SEAGRASS) &&
+              equalsIgnoreCase(datasource.select("B26").asString(), CORAL);
         } catch(MissingDataException e) {}
         return false;
     }
@@ -222,7 +221,7 @@ public class MarineTrendsBuilder extends AbstractBuilder {
 
     private CategoryDataset getDataset(SpreadsheetDataSource ds, ChartType type, Region region) {
         try {
-            ds.setDefaultSheet(TIME_SERIES);
+//            ds.setDefaultSheet(TIME_SERIES);
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             int row = getRow(ds, type, region);
             for(Indicator i : Indicator.forType(type)) {

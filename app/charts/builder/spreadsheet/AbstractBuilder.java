@@ -9,7 +9,6 @@ import java.util.Map;
 
 import org.pegdown.PegDownProcessor;
 
-import ch.qos.logback.classic.pattern.EnsureExceptionHandling;
 import charts.Chart;
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
@@ -75,7 +74,9 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   public Map<String, List<String>> getParameters(List<DataSource> datasources, ChartType type) {
       Map<String, List<String>> result = Maps.newHashMap();
       for(DataSource ds : datasources) {
-          result.putAll(getParameters((SpreadsheetDataSource)ds, type));
+          if(setupDataSource((SpreadsheetDataSource)ds)) {
+              result.putAll(getParameters((SpreadsheetDataSource)ds, type));
+          }
       }
       return result;
   }
@@ -85,7 +86,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     if (type == null || types.contains(type)) {
       for (DataSource ds : datasources) {
         if ((ds instanceof SpreadsheetDataSource)
-            && canHandle((SpreadsheetDataSource) ds)) {
+            && setupDataSource((SpreadsheetDataSource) ds)) {
           return true;
         }
       }
@@ -99,7 +100,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     List<Chart> charts = Lists.newArrayList();
     for (DataSource datasource : datasources) {
       if (datasource instanceof SpreadsheetDataSource) {
-        if (canHandle((SpreadsheetDataSource) datasource)) {
+        if (setupDataSource((SpreadsheetDataSource) datasource)) {
           charts.addAll(build((SpreadsheetDataSource) datasource, type,
               regions, queryDimensions, parameters));
         }
@@ -133,6 +134,16 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       }
     }
     return charts;
+  }
+
+  private boolean setupDataSource(SpreadsheetDataSource datasource) {
+      for(int i=0;i<datasource.sheets();i++) {
+          datasource.setDefaultSheet(i);
+          if(canHandle(datasource)) {
+              return true;
+          }
+      }
+      return false;
   }
 
 }

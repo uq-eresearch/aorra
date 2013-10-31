@@ -1,6 +1,7 @@
 package charts.builder.spreadsheet;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
@@ -15,6 +16,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+
+import com.google.common.collect.Lists;
 
 import charts.builder.DataSource;
 import charts.builder.Value;
@@ -276,6 +279,10 @@ public abstract class SpreadsheetDataSource implements DataSource {
       }
   }
 
+  public String getDefaultSheet() {
+      return workbook.getSheetName(defaultSheet);
+  }
+
   public Integer getColumnCount(int row) {
       return getColumnCount(defaultSheet, row);
   }
@@ -289,6 +296,36 @@ public abstract class SpreadsheetDataSource implements DataSource {
           }
       }
       return null;
+  }
+
+  public List<Value> selectRow(int row) throws MissingDataException {
+      List<Value> result = Lists.newArrayList();
+      Integer max = getColumnCount(row);
+      if(max == null) {
+          return result;
+      } 
+      for(int col = 0;col <= max;col++) {
+          result.add(select(row, col));
+      }
+      return result;
+  }
+
+  public List<Value> selectColumn(int column) throws MissingDataException {
+      List<Value> result = Lists.newArrayList();
+      Sheet sheet = workbook.getSheetAt(defaultSheet);
+      for(int row = 0; row <= sheet.getLastRowNum();row++) {
+          result.add(select(row, column));
+      }
+      return result;
+  }
+
+  public static boolean containsString(List<Value> values, String s) {
+      for(Value v : values) {
+          if(StringUtils.equals(v.asString(),s)) {
+              return true;
+          }
+      }
+      return false;
   }
 
 }
