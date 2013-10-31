@@ -1,3 +1,5 @@
+/*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
+/*global _: false, FileAPI: false, Modernizr: false, define: false, window: false */
 define([
         'models',
         'templates',
@@ -8,7 +10,7 @@ define([
         'marionette',
         'marked',
         'FileAPI'
-        ], function(models, templates, moment, diff_match_patch, glyphtree, $, Backbone, marked) {
+        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked) {
   'use strict';
 
   var formatTimestamp = function($n) {
@@ -21,9 +23,9 @@ define([
     var mimeTypePatterns = [
       { pattern: /^image/, type: 'image' },
       { pattern: /^text/, type: 'document' },
-      { pattern: /wordprocessingml.document$/, type: 'document' },
-      { pattern: /spreadsheetml.sheet$/, type: 'spreadsheet' },
-      { pattern: /vnd.ms-excel$/, type: 'spreadsheet' }
+      { pattern: /wordprocessingml\.document$/, type: 'document' },
+      { pattern: /spreadsheetml\.sheet$/, type: 'spreadsheet' },
+      { pattern: /vnd\.ms-excel$/, type: 'spreadsheet' }
     ];
     if (!mimeType) {
       return 'folder';
@@ -60,14 +62,13 @@ define([
         n = n.parent();
       }
       _.each(nodes.reverse(), function(n) {
-        if (!n.isLeaf()) n.expand();
+        if (!n.isLeaf()) { n.expand(); }
       });
       this._hint$el.hide();
     },
     _buildTree: function() {
       var tree = glyphtree($('<div/>'), this.options);
       var selectHandler = _.bind(function(event, node) {
-        var m = _.defaults({}, node.attributes);
         // Emit select event
         if (node.type == 'folder') {
           this.trigger("folder:select", node.id);
@@ -87,7 +88,7 @@ define([
         $hint.toggle(_.all(tree.nodes(), isClosed));
       };
       var createTooltip = function(e, node) {
-        if (node.isLeaf()) return;
+        if (node.isLeaf()) { return; }
         $(e.currentTarget).tooltip({
           placement: 'bottom',
           trigger: 'manual',
@@ -116,8 +117,8 @@ define([
         if (struct.type == 'folder') {
           return 'folder';
         }
-        if (struct['attributes']) {
-          var mimeType = struct['attributes']['mimeType'];
+        if (struct.attributes) {
+          var mimeType = struct.attributes.mimeType;
           if (mimeType) {
             return typeFromMimeType(mimeType);
           }
@@ -125,20 +126,13 @@ define([
         return 'file';
       },
       nodeComparator: function(a, b) {
-        var getTypeIndex = function(n) { return n.type == 'folder' ? 0 : 1 };
+        var getTypeIndex = function(n) { return n.type == 'folder' ? 0 : 1; };
         if (getTypeIndex(a) == getTypeIndex(b)) {
-          if (a.name < b.name)
-            return -1;
-          else if (a.name > b.name)
-            return 1;
-          else
-            return 0;
-        } else {
-          if (getTypeIndex(a) < getTypeIndex(b))
-            return -1;
-          else
-            return 1;
+          if (a.name < b.name) { return -1; }
+          if (a.name > b.name) { return 1; }
+          return 0;
         }
+        return getTypeIndex(a) < getTypeIndex(b) ? -1 : 1;
       },
       types: {
         folder: {
@@ -213,7 +207,7 @@ define([
       };
     },
     template: function(data) {
-      return templates.renderSync('file_upload', data);
+      return templates.render('file_upload', data);
     },
     onRender: function() {
       var $jsWrapper = this.$('.js-fileapi-wrapper');
@@ -245,7 +239,7 @@ define([
       // Replace any existing data
       this._progress = progress;
       var $alerts = this.ui.alerts;
-      var xhr = FileAPI.upload({
+      FileAPI.upload({
         url: this.model.uploadUrl(),
         data: {},
         //headers: { 'x-header': '...' },
@@ -256,12 +250,11 @@ define([
         chunkSize: 0, // or chunk size in bytes, eg: FileAPI.MB*.5 (html5)
         chunkUploadRetry: 0, // number of retries during upload chunks (html5)
 
-        prepare: function(file, options) {},
-        upload: function(xhr, options) {},
-        fileupload: function(xhr, options) {},
+        //prepare: function(file, options) {},
+        //upload: function(xhr, options) {},
+        //fileupload: function(xhr, options) {},
         fileprogress: function(evt) {
           // progress file uploading
-          var filePercent = evt.loaded/evt.total*100;
           progress.file.loaded = evt.loaded;
           progress.file.total = evt.total;
           triggerMethod('progress:update');
@@ -269,7 +262,7 @@ define([
         filecomplete: function(err, xhr, file) {
           var $alert = $('<div/>');
           var render = function(type, name, msg) {
-            $alert.html(templates.renderSync('alert_box', {
+            $alert.html(templates.render('alert_box', {
               type: type,
               message: _.template(
                   "<strong><%= f.name %></strong>: <%= f.msg %>",
@@ -281,8 +274,8 @@ define([
             render('error', file.name, xhr.responseText || 
                 "Error uploading. Does the file already exist?");
           } else {
-            var response = xhr.responseText;1
-            var file = JSON.parse(response);
+            var response = xhr.responseText;
+            file = JSON.parse(response);
             // Update file in its collection
             var existingFile = collection.get(file.id);
             if (existingFile) {
@@ -303,12 +296,8 @@ define([
             progress.file.total = 0;
           }
           triggerMethod('progress:update');
-        },
-        complete: function(err, xhr) {
-          if (!err){
-            // Congratulations, the uploading was successful!
-          }
         }
+        //complete: function(err, xhr) {}
       });
     },
     onProgressUpdate: function() {
@@ -317,6 +306,117 @@ define([
       var inprogress = 100.0 * p.file.loaded / p.all.total;
       this.ui.progress.find('.upload-done').css('width', done+'%');
       this.ui.progress.find('.upload-progress').css('width', inprogress+'%');
+    }
+  });
+
+  var FlagButtonView = Backbone.Marionette.ItemView.extend({
+    tagName: 'span',
+    className: 'view',
+    ui: {
+      button: '.btn',
+      popover: '[data-toggle="popover"]',
+      content: '.counter-button-content'
+    },
+    initialize: function(options) {
+      this.targetId = options.targetId;
+      this._uid = this.collection.currentId();
+      this._flags = this.collection.flags()[this.dataDefaults().flagType];
+      // Re-render when flags change (which will happen when we toggle)
+      this.listenTo(this._flags, 'add sync remove', 
+        _.bind(this.render, this));
+    },
+    serializeData: function() {
+      var data = this.dataDefaults();
+      // Filter to target ID
+      var users = _(this._flags.where({ targetId: this.targetId })).chain()
+        // Get associated user ID
+        .invoke('get', 'userId')
+        // Grab matching user object from user collection
+        .map(_.bind(function(v) {
+          var obj = this.collection.get(v);
+          return obj != null ? obj.toJSON() : null;
+        }, this))
+        // Filter out the missing users
+        .compact()
+        // Return the value
+        .value();
+      return _.extend(data, {
+        isSet: this.isSet(),
+        contentTitle: function() { return data.title+"ing"; },
+        users: users,
+        count: users.length
+      });
+    },
+    template: function(serialized_model) {
+      return templates.render('flag_button', serialized_model);
+    },
+    templateHelpers: {
+      activeClass: function() {
+        return this.isSet ? 'btn-info' : 'btn-default';
+      }
+    },
+    _getFlagTemplate: function(uid) {
+      return {
+        userId: uid,
+        targetId: this.targetId
+      };
+    },
+    _getFlag: function() {
+      if (_.isUndefined(this._flags)) {
+        return null;
+      }
+      return this._flags.findWhere(this._getFlagTemplate(this._uid));
+    },
+    isSet: function() {
+      return this._getFlag() != null;
+    },
+    _toggleSet: function() {
+      var isSet = this.isSet();
+      if (this.isSet()) {
+        this._getFlag().destroy();
+      } else {
+        this._flags.create(this._getFlagTemplate(this._uid));
+      }
+      return !isSet;
+    },
+    onToggleButton: function() {
+      this._toggleSet();
+    },
+    onRender: function() {
+      var content = this.ui.content.html();
+      this.ui.button.click(_.bind(function() {
+        return this.triggerMethod('toggle:button', {
+          collection: this.collection,
+          model: this.model,
+          view: this
+        });
+      }, this));
+      this.ui.popover.popover({
+        html: true,
+        content: content
+      });
+    }
+  });
+
+  var EditingButtonView = FlagButtonView.extend({
+    dataDefaults: function() {
+      return {
+        icon: this.isSet() ? 'flag' : 'flag-o',
+        flagType: 'edit',
+        title: 'Edit',
+        tooltip: 'Let other users know you are making edits to this file.'
+      };
+    }
+  });
+
+  var WatchingButtonView = FlagButtonView.extend({
+    dataDefaults: function() {
+      return {
+        icon: this.isSet() ? 'eye' : 'eye-slash',
+        flagType: 'watch',
+        title: 'Watch',
+        tooltip: 'Receive notifications when new versions are uploaded.'
+      };
     }
   });
 
@@ -330,12 +430,11 @@ define([
       };
     },
     template: function(serialized_model) {
-      return templates.renderSync('create_folder', serialized_model);
+      return templates.render('create_folder', serialized_model);
     },
     onFormSubmit: function() {
       var fs = this.model.collection;
       var $form = this.$el.find('form');
-      var path = $form.find('input').val();
       $.ajax({
         method: $form.attr('method'),
         url: $form.attr('action')+"?"+$form.serialize(),
@@ -343,7 +442,7 @@ define([
           // Add each returned folder
           _.each(folders, function(data) {
             fs.add(data);
-            var $alert = $(templates.renderSync('alert_box', {
+            var $alert = $(templates.render('alert_box', {
               type: 'info',
               message: _.template(
                 '<a href="/#folder/<%=f.id%>"><strong><%=f.name%></strong></a>' +
@@ -385,7 +484,7 @@ define([
       return data;
     },
     template: function(serialized_model) {
-      return templates.renderSync('version_row', serialized_model);
+      return templates.render('version_row', serialized_model);
     },
     onRender: function($e) {
       formatTimestamp(this.ui.timestamp);
@@ -416,7 +515,7 @@ define([
       }
     }),
     template: function(serialized_model) {
-      return templates.renderSync('version_table', serialized_model);
+      return templates.render('version_table', serialized_model);
     }
   });
 
@@ -436,7 +535,7 @@ define([
       });
     },
     template: function(serialized_model) {
-      return templates.renderSync('permission_row', serialized_model);
+      return templates.render('permission_row', serialized_model);
     },
     updateModel: function() {
       var newAccess = this.$el.find('select').val();
@@ -454,7 +553,7 @@ define([
     itemView: GroupPermissionView,
     itemViewContainer: 'tbody',
     template: function(serialized_model) {
-      return templates.renderSync('permission_table', serialized_model);
+      return templates.render('permission_table', serialized_model);
     }
   });
 
@@ -471,7 +570,7 @@ define([
       return { action: this.model.url() };
     },
     template: function(serialized_model) {
-      return templates.renderSync('delete_button', serialized_model);
+      return templates.render('delete_button', serialized_model);
     },
     onRender: function() {
       this.ui.popup.modal({ show: false });
@@ -498,7 +597,7 @@ define([
     tagName: 'span',
     initialize: function(options) {
       this._url = options.url;
-      this._label = options.label || 'Download'
+      this._label = options.label || 'Download';
     },
     render: function() {
       var $link = $('<a class="btn btn-default" title="Download"/>');
@@ -532,10 +631,10 @@ define([
       };
     },
     template: function(serialized_model) {
-      return templates.renderSync('breadcrumbs', serialized_model);
+      return templates.render('breadcrumbs', serialized_model);
     },
     onRender: function() {
-      var content = templates.renderSync('link_popup', {
+      var content = templates.render('link_popup', {
         url: window.location.protocol+"//"+window.location.host+this.model.url()
       });
       this.ui.share.popover({
@@ -607,8 +706,8 @@ define([
     template: function(serialized_model) {
       _(serialized_model).extend({
         hasWrite: serialized_model.accessLevel == 'RW'
-      })
-      return templates.renderSync('folder_view', serialized_model);
+      });
+      return templates.render('folder_view', serialized_model);
     },
     regions: {
       breadcrumbs: '.region-breadcrumbs',
@@ -631,9 +730,10 @@ define([
         this.ui.nameField.show();
         this.ui.nameField.keyup(function(event) {
           // on Enter key
-          if (event.which == 13)
+          if (event.which == 13) {
             $(event.target).blur();
-        })
+          }
+        });
         this.ui.nameField.focus();
       }
     },
@@ -725,7 +825,7 @@ define([
       };
     },
     template: function(serialized_model) {
-      return templates.renderSync('charts', serialized_model);
+      return templates.render('charts', serialized_model);
     },
     onRender: function() {
       this.$el.find('.commentary').each(function(i, e) {
@@ -734,129 +834,6 @@ define([
       });
     }
   });
-
-  var FlagButtonView = Backbone.Marionette.ItemView.extend({
-    tagName: 'span',
-    className: 'view',
-    ui: {
-      button: '.btn',
-      popover: '[data-toggle="popover"]',
-      content: '.counter-button-content'
-    },
-    initialize: function(options) {
-      this.targetId = options.targetId;
-      this._uid = this.collection.currentId();
-      this._flags = this.collection.flags()[this.dataDefaults().flagType];
-      // Re-render when flags change (which will happen when we toggle)
-      this.listenTo(this._flags, 'add sync remove', 
-        _.bind(this.render, this));
-    },
-    serializeData: function() {
-      var data = this.dataDefaults();
-      // Filter to target ID
-      var users = _(this._flags.where({ targetId: this.targetId })).chain()
-        // Get associated user ID
-        .invoke('get', 'userId')
-        // Grab matching user object from user collection
-        .map(_.bind(function(v) {
-          var obj = this.collection.get(v);
-          return obj != null ? obj.toJSON() : null;
-        }, this))
-        // Filter out the missing users
-        .compact()
-        // Return the value
-        .value();
-      return _.extend(data, {
-        isSet: this.isSet(),
-        contentTitle: function() { return data.title+"ing"; },
-        users: users,
-        count: users.length
-      });
-    },
-    template: function(serialized_model) {
-      return templates.renderSync('flag_button', serialized_model);
-    },
-    templateHelpers: {
-      activeClass: function() {
-        return this.isSet ? 'btn-info' : 'btn-default';
-      }
-    },
-    _getFlagTemplate: function(uid) {
-      return {
-        userId: uid,
-        targetId: this.targetId
-      };
-    },
-    _getFlag: function() {
-      if (_.isUndefined(this._flags))
-        return null;
-      return this._flags.findWhere(this._getFlagTemplate(this._uid));
-    },
-    isSet: function() {
-      return this._getFlag() != null;
-    },
-    _toggleSet: function() {
-      var isSet = this.isSet();
-      if (this.isSet()) {
-        this._getFlag().destroy();
-      } else {
-        this._flags.create(this._getFlagTemplate(this._uid));
-      }
-      return !isSet;
-    },
-    onToggleButton: function() {
-      this._toggleSet();
-    },
-    onRender: function() {
-      var content = this.ui.content.html();
-      this.ui.button.click(_.bind(function() {
-        return this.triggerMethod('toggle:button', {
-          collection: this.collection,
-          model: this.model,
-          view: this
-        });
-      }, this));
-      this.ui.popover.popover({
-        html: true,
-        content: content
-      });
-    }
-  });
-
-  var EditingButtonView = FlagButtonView.extend({
-    dataDefaults: function() {
-      return {
-        icon: this.isSet() ? 'flag' : 'flag-o',
-        flagType: 'edit',
-        title: 'Edit',
-        tooltip: 'Let other users know you are making edits to this file.'
-      };
-    }
-  });
-
-  var WatchingButtonView = FlagButtonView.extend({
-    dataDefaults: function() {
-      return {
-        icon: this.isSet() ? 'eye' : 'eye-slash',
-        flagType: 'watch',
-        title: 'Watch',
-        tooltip: 'Receive notifications when new versions are uploaded.'
-      };
-    }
-  });
-
-  var OnlineEditorView = {
-    create: function(model) {
-      if (/\.(markdown|md)$/.test(model.get('name'))) {
-        if (model.get('accessLevel') == 'RW') {
-          return new MarkdownEditor({ model: model });
-        } else {
-          return new MarkdownViewer({ model: model });
-        }
-      }
-      return new NoEditorView();
-    }
-  };
 
   var MarkdownViewer = Backbone.Marionette.ItemView.extend({
     modelEvents: {
@@ -874,7 +851,7 @@ define([
     fetchData: function() {
       $.get(this.model.downloadUrl(), _.bind(function(data) {
         this._content = data;
-      }, this)).done(_.bind(this.render, this))
+      }, this)).done(_.bind(this.render, this));
     },
     serializeData: function() {
       return {
@@ -884,7 +861,7 @@ define([
     },
     editable: function() { return false; },
     template: function(obj) {
-      return templates.renderSync('markdown_viewer', {
+      return templates.render('markdown_viewer', {
         html: marked(obj.content),
         source: obj.content,
         editable: obj.editable
@@ -922,6 +899,17 @@ define([
     }
   });
 
+  var OnlineEditorView = {
+    create: function(model) {
+      if (/\.(markdown|md)$/.test(model.get('name'))) {
+        if (model.get('accessLevel') == 'RW') {
+          return new MarkdownEditor({ model: model });
+        }
+        return new MarkdownViewer({ model: model });
+      }
+      return new NoEditorView();
+    }
+  };
   var FileView = FileOrFolderView.extend({
     modelEvents: {
       "sync": "render"
@@ -939,7 +927,7 @@ define([
       _(serialized_model).extend({
         hasWrite: serialized_model.accessLevel == 'RW'
       });
-      return templates.renderSync('file_view', serialized_model);
+      return templates.render('file_view', serialized_model);
     },
     regions: {
       breadcrumbs: '.region-breadcrumbs',
@@ -963,9 +951,10 @@ define([
         this.ui.nameField.show();
         this.ui.nameField.keyup(function(event) {
           // on Enter key
-          if (event.which == 13)
+          if (event.which == 13) {
             $(event.target).blur();
-        })
+          }
+        });
         this.ui.nameField.focus();
       }
     },
@@ -1042,7 +1031,7 @@ define([
       };
       $.when(version1.textSummary(), version2.textSummary()).done(
           function(text1, text2) {
-        var dmp = new diff_match_patch;
+        var dmp = new DiffMatchPatch();
         // Perform diff calculation and cleanup
         var diff = dmp.diff_main(text1, text2);
         dmp.diff_cleanupSemantic(diff);
@@ -1058,11 +1047,11 @@ define([
             $el.click(scrollToFunc($summary));
             break;
           case 1:
-            $el = $('<ins class="clickable green-text"/>')
+            $el = $('<ins class="clickable green-text"/>');
             $el.click(scrollToFunc($summary));
             break;
           default:
-            $el = $('<span/>')
+            $el = $('<span/>');
           }
           $el.attr('id', v[2]);
           $el.text(v[1]);
@@ -1071,8 +1060,8 @@ define([
         var stats = _.reduce(diff,
             function(h, v) {
               switch (v[0]) {
-                case 1:  h['additions']++; break;
-                case -1: h['deletions']++; break;
+                case 1:  h.additions += 1; break;
+                case -1: h.deletions += 1; break;
               }
               return h;
             },
@@ -1146,17 +1135,17 @@ define([
       };
     },
     template: function(serialized_model) {
-      if (_.isObject(serialized_model.version))
-        return templates.renderSync('filediff_view', serialized_model);
-      else
-        return templates.renderSync('loading_page', {});
+      if (_.isObject(serialized_model.version)) {
+        return templates.render('filediff_view', serialized_model);
+      }
+      return templates.render('loading_page', {});
     },
     regions: {
       breadcrumbs: '.region-breadcrumbs',
       diff: '.region-diff'
     },
     onRender: function() {
-      if (!_.isObject(this.version)) return;
+      if (!_.isObject(this.version)) { return; }
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       var onSelectChange = _.bind(function(e) {
         var versionList = this.model.info().versionList();
@@ -1171,25 +1160,25 @@ define([
 
   var DeletedView = Backbone.Marionette.ItemView.extend({
     template: function() {
-      return templates.renderSync('deleted_page', {});
+      return templates.render('deleted_page', {});
     }
   });
 
   var LoadingView = Backbone.Marionette.ItemView.extend({
     template: function() {
-      return templates.renderSync('loading_page', {});
+      return templates.render('loading_page', {});
     }
   });
 
   var StartView = Backbone.Marionette.ItemView.extend({
     template: function() {
-      return templates.renderSync('start_page', {});
+      return templates.render('start_page', {});
     }
   });
 
   var UserMenu = Backbone.Marionette.ItemView.extend({
     template: function() {
-      return templates.renderSync('user_menu', {});
+      return templates.render('user_menu', {});
     },
     onRender: function() {
       this.$el.find("[href='"+Backbone.history.location.hash+"']")
@@ -1204,17 +1193,17 @@ define([
       'click button[type="submit"]': 'submitForm'
     },
     template: function() {
-      return templates.renderSync('change_password', {});
+      return templates.render('change_password', {});
     },
     typePassword: function() {
       var minlength = 8;
       var $submit = this.$el.find('form button[type="submit"]');
       var $passwords = this.$el.find('#newPassword, #repeatPassword');
       var valid = (function() {
-        var values = $.map($passwords, function(v) { return $(v).val() });
-        return _.any(values, function(v) { return v.length >= minlength }) &&
+        var values = $.map($passwords, function(v) { return $(v).val(); });
+        return _.any(values, function(v) { return v.length >= minlength; }) &&
           _.uniq(values).length == 1;
-      })();
+      }());
       $passwords.parents('.form-group')
         .removeClass('has-success has-error')
         .addClass( valid ? 'has-success' : 'has-error' );
@@ -1223,8 +1212,8 @@ define([
     submitForm: function() {
       var $form = this.$el.find('form');
       var showAlert = function(data) {
-        $form.find('.outcome').html(templates.renderSync('alert_box', data));
-      }
+        $form.find('.outcome').html(templates.render('alert_box', data));
+      };
       $.ajax({
         url: $form.attr('action'),
         type: $form.attr('method'),
@@ -1256,7 +1245,7 @@ define([
       'click .delete': 'notification:delete'
     },
     template: function(data) {
-      return templates.renderSync('notification_message', data);
+      return templates.render('notification_message', data);
     },
     onRender: function($e) {
       formatTimestamp(this.$('.timestamp'));
@@ -1284,7 +1273,7 @@ define([
     }),
     itemViewContainer: '.notifications',
     template: function(data) {
-      return templates.renderSync('notifications_view', data);
+      return templates.render('notifications_view', data);
     }
   });
 
@@ -1307,7 +1296,7 @@ define([
       };
     },
     template: function(data) {
-      return templates.renderSync('notifications_nav_item', data);
+      return templates.render('notifications_nav_item', data);
     },
     onRender: function() {
       this.$el.tooltip();
@@ -1341,7 +1330,7 @@ define([
     },
     changePassword: function() {
       this.sidebar.show(new UserMenu());
-      this.main.show(new ChangePasswordView())
+      this.main.show(new ChangePasswordView());
     },
     showNotifications: function() {
       this.sidebar.show(new UserMenu());

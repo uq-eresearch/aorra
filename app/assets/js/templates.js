@@ -14,7 +14,7 @@ define(['jquery', 'hogan'], function($, hogan) {
   });
 
   return {
-    renderSync: function(templateName, context) {
+    render: function(templateName, context) {
       return templates[templateName].render(context);
     }
   };
