@@ -276,4 +276,19 @@ public abstract class SpreadsheetDataSource implements DataSource {
       }
   }
 
+  public Integer getColumnCount(int row) {
+      return getColumnCount(defaultSheet, row);
+  }
+
+  public Integer getColumnCount(int i, int row) {
+      Sheet sheet = workbook.getSheetAt(i);
+      if(sheet != null) {
+          Row r = sheet.getRow(row);
+          if(r != null) {
+              return Integer.valueOf(r.getLastCellNum());
+          }
+      }
+      return null;
+  }
+
 }

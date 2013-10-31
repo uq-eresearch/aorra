@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jfree.data.category.CategoryDataset;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
@@ -27,11 +27,8 @@ import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
-import charts.builder.spreadsheet.TrendsSeagrassAbundanceBuilder.Subregion;
 import charts.graphics.CoralCover;
 
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -41,14 +38,18 @@ public class CoralCoverBuilder extends AbstractBuilder {
 
     private static final String HC_MEAN = "HC mean";
     private static final String HC_SE = "HC se";
+    private static final String SC_MEAN = "SC mean";
+    private static final String SC_SE = "SC se";
+    private static final String MA_MEAN = "MA mean";
+    private static final String MA_SE = "MA se";
+    private static final String JUV_DEN = "Juv density";
+    private static final String JUV_DEN_SE = "Juv Den (se)";
 
-    private static final ImmutableMap<ChartType, Integer> COLUMNS =
-            new ImmutableMap.Builder<ChartType, Integer>()
-              .put(CORAL_HCC, 2)
-              .put(CORAL_SCC, 4)
-              .put(CORAL_MA, 6)
-              .put(CORAL_JUV, 8)
-              .build();
+    private static final ImmutableMap<ChartType, Pair<String, String>> COLUMNS =
+            ImmutableMap.of(CORAL_HCC, Pair.of(HC_MEAN, HC_SE),
+                    CORAL_SCC, Pair.of(SC_MEAN, SC_SE),
+                    CORAL_MA, Pair.of(MA_MEAN, MA_SE),
+                    CORAL_JUV, Pair.of(JUV_DEN, JUV_DEN_SE));
 
     private static final  ImmutableMap<String, Region> REGIONS = ImmutableMap.of(
              "Wet Tropics", Region.WET_TROPICS,
@@ -73,7 +74,8 @@ public class CoralCoverBuilder extends AbstractBuilder {
   @Override
   public Chart build(final SpreadsheetDataSource datasource,
       final ChartType type, final Region region, Dimension queryDimensions) {
-    if ((region == Region.GBR) || containsRegion(datasource, region)) {
+    if (((region == Region.GBR) || containsRegion(datasource, region)) &&
+            containsChart(datasource, type)) {
       return new AbstractChart(queryDimensions) {
 
         @Override
@@ -170,11 +172,17 @@ public class CoralCoverBuilder extends AbstractBuilder {
         return regions(ds).contains(region);
     }
 
+    private boolean containsChart(SpreadsheetDataSource ds, ChartType type) {
+        return getColumn(ds, COLUMNS.get(type).getLeft()) != null &&
+                getColumn(ds, COLUMNS.get(type).getRight()) != null;
+    }
+
     private DefaultStatisticalCategoryDataset getDataset(SpreadsheetDataSource ds,
             ChartType type, Region region) {
-        Integer col = COLUMNS.get(type);
-        if(col == null) {
-            throw new RuntimeException(String.format("ChartType %s not implemented", type.name()));
+        Integer meanColumn = getColumn(ds, COLUMNS.get(type).getLeft());
+        Integer deviationColumn = getColumn(ds, COLUMNS.get(type).getRight());
+        if(meanColumn == null || deviationColumn == null) {
+            throw new RuntimeException(String.format("data not found for ChartType %s", type.name()));
         }
         List<Region> regions;
         if(region == Region.GBR) {
@@ -192,8 +200,8 @@ public class CoralCoverBuilder extends AbstractBuilder {
             for(Region r : regions) {
                 for(int row = getRegionStart(ds, r);
                         StringUtils.isNotBlank(ds.select(row, 0).asString());row++) {
-                    double mean = ds.select(row, col).asDouble();
-                    double deviation = ds.select(row, col+1).asDouble();
+                    double mean = ds.select(row, meanColumn).asDouble();
+                    double deviation = ds.select(row, deviationColumn).asDouble();
                     String series = ds.select(row, 0).asString();
                     String year = ds.select(row, 1).asInteger().toString();
                     d.add(mean, deviation, series, year);
@@ -212,6 +220,20 @@ public class CoralCoverBuilder extends AbstractBuilder {
             }
         }
         throw new RuntimeException(String.format("region %s not found", region.getProperName()));
+    }
+
+    private Integer getColumn(SpreadsheetDataSource ds, String heading) {
+        Integer cols = ds.getColumnCount(0);
+        if(cols != null) {
+            for(int c=0;c<cols;c++) {
+                try {
+                    if(StringUtils.equalsIgnoreCase(ds.select(0, c).asString(), heading)) {
+                        return c;
+                    }
+                } catch (MissingDataException e) {}
+            }
+        }
+        return null;
     }
 
 }
