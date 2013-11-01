@@ -14,19 +14,19 @@ object ApplicationBuild extends Build {
 
   val appName         = "aorra"
 
-  def crshVersion = "1.2.7"
+  def crshVersion = "1.2.8"
+  val PoiVersion = "3.9"
   val BatikVersion = "1.7"
 
   val appDependencies = Seq(
     javaCore,
     cache,
     "javax.jcr" % "jcr" % "2.0",
-    "org.apache.jackrabbit" % "jackrabbit-core" % "2.6.2",
-    "com.h2database" % "h2" % "1.3.170",
-    "org.jcrom" % "jcrom" % "2.1.0"
-      from "http://jcrom.googlecode.com/files/jcrom-2.1.0.jar",
+    "org.apache.jackrabbit" % "jackrabbit-core" % "2.7.1",
+    "com.h2database" % "h2" % "1.3.174",
+    "org.jcrom" % "jcrom" % "2.1.0",
     "com.fasterxml.uuid" % "java-uuid-generator" % "3.1.3",
-    "com.google.guava" % "guava" % "14.0.1",
+    "com.google.guava" % "guava" % "15.0",
     "com.google.inject" % "guice" % "3.0",
     "org.crsh" % "crsh.shell.core" % crshVersion,
     "org.crsh" % "crsh.shell.telnet" % crshVersion,
@@ -39,14 +39,14 @@ object ApplicationBuild extends Build {
     "org.apache.tika" % "tika-parsers" % "1.3",
     "org.jsoup" % "jsoup" % "1.7.2" % "test",
     "com.icegreen" % "greenmail" % "1.3.1b" % "test",
-    "org.jfree" % "jfreechart" % "1.0.14",
+    "org.jfree" % "jfreechart" % "1.0.15",
     "org.apache.xmlgraphics" % "batik-codec" % BatikVersion,
     "org.apache.xmlgraphics" % "batik-rasterizer" % BatikVersion,
     "org.apache.xmlgraphics" % "batik-svggen" % BatikVersion,
     "org.apache.xmlgraphics" % "fop" % "1.0",
-    "org.apache.poi" % "poi" % "3.8",
-    "org.apache.poi" % "poi-ooxml" % "3.8",
-    "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "test",
+    "org.apache.poi" % "poi" % PoiVersion,
+    "org.apache.poi" % "poi-ooxml" % PoiVersion,
+    "org.eclipse.jetty" % "jetty-webapp" % "8.1.13.v20130916" % "test",
     "com.kitfox.svg" % "svg-salamander" % "1.0",
     "net.sf.supercsv" % "super-csv" % "2.1.0",
     "org.apache.commons" % "commons-math3" % "3.2",
