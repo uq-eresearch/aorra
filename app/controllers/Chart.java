@@ -58,34 +58,33 @@ public class Chart extends SessionAwareController {
 
   @SubjectPresent
   public Result multipleFileCharts(final String format, final List<String> ids) {
-    return inUserSession(new F.Function<Session, Result>() {
-      @Override
-      public final Result apply(Session session) throws Exception {
-        final List<DataSource> datasources = Lists.newArrayList(
-            getDatasourcesFromIDs(session, ids).values());
-        final List<charts.Chart> charts =
-            chartBuilder.getCharts(datasources,
-                getRegions(request().queryString()),
-                getQueryDimensions(request().queryString()));
-        final ObjectNode json = Json.newObject();
-        final ArrayNode aNode = json.putArray("charts");
-        for (charts.Chart chart : charts) {
-          ChartDescription desc = chart.getDescription();
-          final ObjectNode chartNode = Json.newObject();
-          chartNode.put("type", desc.getType().getLabel());
-          chartNode.put("region", desc.getRegion().getName());
-          for(String pname : desc.getParameterNames()) {
-              chartNode.put(pname, desc.getParameter(pname).toString());
-          }
-          chartNode.put("url",
-              ids.size() == 1
-              ? buildUrl(chart, format, ids.get(0))
-              : buildUrl(chart, format, ids));
-          aNode.add(chartNode);
-        }
-        return ok(json).as("application/json; charset=utf-8");
+    final List<DataSource> datasources = getDatasourcesFromIDs(ids);
+    final List<charts.Chart> charts =
+        chartBuilder.getCharts(datasources,
+            getRegions(request().queryString()),
+            getQueryDimensions(request().queryString()));
+    final ObjectNode json = Json.newObject();
+    final ArrayNode aNode = json.putArray("charts");
+    for (charts.Chart chart : charts) {
+      ChartDescription desc = chart.getDescription();
+      final ObjectNode chartNode = Json.newObject();
+      chartNode.put("type", desc.getType().getLabel());
+      chartNode.put("region", desc.getRegion().getName());
+      for(String pname : desc.getParameterNames()) {
+          chartNode.put(pname, desc.getParameter(pname).toString());
       }
-    });
+      try {
+        chartNode.put("url",
+            ids.size() == 1
+            ? buildUrl(chart, format, ids.get(0))
+            : buildUrl(chart, format, ids));
+      } catch (UnsupportedEncodingException e) {
+        // Not going to happen
+        throw new RuntimeException(e);
+      }
+      aNode.add(chartNode);
+    }
+    return ok(json).as("application/json; charset=utf-8");
   }
 
   @SubjectPresent
@@ -120,25 +119,19 @@ public class Chart extends SessionAwareController {
     } catch (IllegalArgumentException e) {
       return notFound("unknown chart format: " + formatStr);
     }
-    return inUserSession(new F.Function<Session, Result>() {
-      @Override
-      public final Result apply(Session session) throws Exception {
-        final List<DataSource> datasources = Lists.newArrayList(
-            getDatasourcesFromIDs(session, ids).values());
-        final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
-            type, getRegions(request().queryString()),
-            getQueryDimensions(request().queryString()), getParameters(datasources, type));
-        for (charts.Chart chart : charts) {
-          try {
-            final Representation r = chart.outputAs(format);
-            return ok(r.getContent()).as(r.getContentType());
-          } catch (charts.Chart.UnsupportedFormatException e) {
-            continue;
-          }
-        }
-        return notFound();
+    final List<DataSource> datasources = getDatasourcesFromIDs(ids);
+    final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
+        type, getRegions(request().queryString()),
+        getQueryDimensions(request().queryString()), getParameters(datasources, type));
+    for (charts.Chart chart : charts) {
+      try {
+        final Representation r = chart.outputAs(format);
+        return ok(r.getContent()).as(r.getContentType());
+      } catch (charts.Chart.UnsupportedFormatException e) {
+        continue;
       }
-    });
+    }
+    return notFound();
   }
 
   @SubjectPresent
@@ -176,9 +169,16 @@ public class Chart extends SessionAwareController {
       return l;
   }
 
-  private Map<FileStore.File, DataSource> getDatasourcesFromIDs(
-      Session session, List<String> ids) throws Exception {
-    return getDatasourcesFromIDs(fileStore, session, ids);
+  private List<DataSource> getDatasourcesFromIDs(
+      final List<String> ids) {
+    return inUserSession(new F.Function<Session, List<DataSource>>() {
+      @Override
+      public final List<DataSource> apply(Session session) throws Exception {
+        final List<DataSource> datasources = Lists.newArrayList(
+            getDatasourcesFromIDs(fileStore, session, ids).values());
+        return datasources;
+      }
+    });
   }
 
   public static Map<FileStore.File, DataSource> getDatasourcesFromIDs(
