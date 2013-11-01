@@ -4,6 +4,7 @@ import static charts.builder.ChartBuilderTest.getDatasource;
 import static charts.builder.ChartBuilderTest.getDefaultTestingRegion;
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -32,27 +33,22 @@ import charts.representations.Format;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-@RunWith(Parameterized.class)
 public class ChartBuilderSizeTest {
 
   private final static ChartBuilder chartBuilder = new ChartBuilder();
-  private final ChartType chartType;
-
-  public ChartBuilderSizeTest(ChartType ct) {
-    this.chartType = ct;
-  }
-
-  @Parameters(name = "{0}")
-  public static Collection<Object[]> data() {
-    final List<Object[]> l = Lists.newLinkedList();
-    for (final ChartType ct : ChartType.values()) {
-      l.add(new Object[] { ct });
-    }
-    return l;
-  }
 
   @Test
-  public void svgAndPngChartSize() throws UnsupportedFormatException{
+  public void svgAndPngChartSize() {
+    for (final ChartType ct : ChartType.values()) {
+      try {
+        svgAndPngChartSize(ct);
+      } catch (UnsupportedFormatException e) {
+        fail(e.getMessage());
+      }
+    }
+  }
+
+  public void svgAndPngChartSize(ChartType chartType) throws UnsupportedFormatException {
     final List<Region> regions;
     final Map<String, String> parameters;
     final List<DataSource> ds = asList(getDatasource(chartType));

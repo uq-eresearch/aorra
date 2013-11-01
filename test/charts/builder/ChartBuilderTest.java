@@ -6,14 +6,10 @@ import static org.junit.Assert.fail;
 
 import java.awt.Dimension;
 import java.io.FileInputStream;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
@@ -22,33 +18,20 @@ import charts.builder.spreadsheet.XlsDataSource;
 import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 
-import com.google.common.collect.Lists;
-
-@RunWith(Parameterized.class)
 public class ChartBuilderTest {
 
   private final static ChartBuilder chartBuilder = new ChartBuilder();
-  private final ChartType chartType;
-  private final Format format;
-
-  public ChartBuilderTest(ChartType ct, Format f) {
-    this.chartType = ct;
-    this.format = f;
-  }
-
-  @Parameters(name = "{1} - {0}")
-  public static Collection<Object[]> data() {
-    final List<Object[]> l = Lists.newLinkedList();
-    for (final ChartType ct : ChartType.values()) {
-      l.add(new Object[] { ct,  Format.CSV});
-      l.add(new Object[] { ct,  Format.DOCX});
-      l.add(new Object[] { ct,  Format.EMF});
-    }
-    return l;
-  }
 
   @Test
   public void format() {
+    for (final ChartType ct : ChartType.values()) {
+      for (final Format f : new Format[]{Format.CSV, Format.DOCX, Format.EMF}) {
+        format(ct, f);
+      }
+    }
+  }
+
+  public void format(ChartType chartType, Format format) {
     final List<charts.Chart> charts = chartBuilder.getCharts(
         asList(getDatasource(chartType)),
         chartType,
