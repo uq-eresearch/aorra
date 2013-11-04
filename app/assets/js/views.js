@@ -842,6 +842,7 @@ define([
       "sync": "fetchData"
     },
     ui: {
+      toolbar: '.html-toolbar',
       html: '.html-pane',
       source: '.source-pane',
       save: 'button.save'
@@ -911,12 +912,13 @@ define([
             this.ui.html.html(marked(content));
             toggleSave(content);
           }, this));
-        this.ui.html
-          .on('keyup', _.bind(function(e) {
-            var content = $(e.target).cleanHtml()();
-            this.ui.source.val(toMarkdown(content));
-            toggleSave(this.ui.source.val());
-          }, this));
+        var updateMarkdown = _.bind(function(e) {
+          var content = this.ui.html.cleanHtml();
+          this.ui.source.val(toMarkdown(content));
+          toggleSave(this.ui.source.val());
+        }, this);
+        this.ui.html.on('keyup', updateMarkdown);
+        this.ui.toolbar.on('click', updateMarkdown);
         this.ui.save.on('click', save);
         toggleSave(this._content);
       }
