@@ -835,7 +835,7 @@ define([
     }
   });
 
-  var MarkdownViewer = Backbone.Marionette.ItemView.extend({
+  var MarkdownEditor = Backbone.Marionette.ItemView.extend({
     modelEvents: {
       "sync": "fetchData"
     },
@@ -846,6 +846,7 @@ define([
     },
     initialize: function(options) {
       this._content = '';
+      this._users = this.options.users;
       this.fetchData();
     },
     fetchData: function() {
@@ -859,37 +860,58 @@ define([
         editable: this.editable()
       };
     },
-    editable: function() { return false; },
     template: function(obj) {
       return templates.render('markdown_viewer', {
         html: marked(obj.content),
         source: obj.content,
         editable: obj.editable
       });
-    }
-  });
-  
-  var MarkdownEditor = MarkdownViewer.extend({
-    editable: function() { return true; },
+    },
+    flags: function() {
+      return this._users.flags()['edit'];
+    },
+    editable: function() {
+      if (this.model.get('accessLevel') != 'RW') {
+        return false;
+      }
+      var flags = this.flags().filter(_.bind(function(f) {
+        return f.get('targetId') == this.model.id;
+      }, this));
+      return flags.length == 1 && _(flags).any(_.bind(function(m) {
+        return m.get('userId') == this._users.currentId();
+      }, this));
+    },
+    _watchEditFlags: function() {
+      if (this._watchingFlags) { return; }
+      this.flags().on('add remove', _.bind(function(f) {
+        if (f.get('targetId') == this.model.id) {
+          this.render();
+        }
+      }, this));
+      this._watchingFlags = true;
+    },
     onRender: function() {
-      var toggleSave = _.bind(function(content) {
-        this.ui.save.prop("disabled", this._content == content);
-      }, this);
-      var save = _.bind(function() {
-        $.ajax(this.model.uploadUrl(), {
-          type: 'POST',
-          contentType: 'text/x-markdown',
-          data: this.ui.source.val()
-        });
-      }, this);
-      this.ui.source
-        .on('keyup', _.bind(function(e) {
-          var content = $(e.target).val();
-          this.ui.html.html(marked(content));
-          toggleSave(content);
-        }, this));
-      this.ui.save.on('click', save);
-      toggleSave(this._content);
+      if (this.editable()) {
+        var toggleSave = _.bind(function(content) {
+          this.ui.save.prop("disabled", this._content == content);
+        }, this);
+        var save = _.bind(function() {
+          $.ajax(this.model.uploadUrl(), {
+            type: 'POST',
+            contentType: 'text/x-markdown',
+            data: this.ui.source.val()
+          });
+        }, this);
+        this.ui.source
+          .on('keyup', _.bind(function(e) {
+            var content = $(e.target).val();
+            this.ui.html.html(marked(content));
+            toggleSave(content);
+          }, this));
+        this.ui.save.on('click', save);
+        toggleSave(this._content);
+      }
+      this._watchEditFlags();
     }
   });
 
@@ -900,16 +922,14 @@ define([
   });
 
   var OnlineEditorView = {
-    create: function(model) {
-      if (/\.(markdown|md)$/.test(model.get('name'))) {
-        if (model.get('accessLevel') == 'RW') {
-          return new MarkdownEditor({ model: model });
-        }
-        return new MarkdownViewer({ model: model });
+    create: function(file, users) {
+      if (/\.(markdown|md)$/.test(file.get('name'))) {
+        return new MarkdownEditor({ model: file, users: users });
       }
       return new NoEditorView();
     }
   };
+
   var FileView = FileOrFolderView.extend({
     modelEvents: {
       "sync": "render"
@@ -973,7 +993,7 @@ define([
         model: this.model.info(),
         users: this._users
       }));
-      this.editor.show(OnlineEditorView.create(this.model));
+      this.editor.show(OnlineEditorView.create(this.model, this._users));
       if (this.model.get('accessLevel') == 'RW') {
         this.upload.show(new FileUploadView({
           type: 'file',
