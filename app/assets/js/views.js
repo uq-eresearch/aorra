@@ -10,7 +10,8 @@ define([
         'marionette',
         'marked',
         'to-markdown',
-        'FileAPI'
+        'FileAPI',
+        'jquery.bootstrap-wysiwyg'
         ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown) {
   'use strict';
 
@@ -903,6 +904,7 @@ define([
             data: this.ui.source.val()
           });
         }, this);
+        this.ui.html.wysiwyg(); // Initialize with Bootstrap WYSIWYG
         this.ui.source
           .on('keyup', _.bind(function(e) {
             var content = $(e.target).val();
@@ -911,7 +913,7 @@ define([
           }, this));
         this.ui.html
           .on('keyup', _.bind(function(e) {
-            var content = $(e.target).html();
+            var content = $(e.target).cleanHtml()();
             this.ui.source.val(toMarkdown(content));
             toggleSave(this.ui.source.val());
           }, this));

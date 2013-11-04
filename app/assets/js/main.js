@@ -12,6 +12,8 @@ requirejs.config({
       'hogan': 'lib/hogan',
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
       'jquery.bootstrap': 'lib/bootstrap',
+      'jquery.hotkeys': 'lib/jquery.hotkeys',
+      'jquery.bootstrap-wysiwyg': 'lib/bootstrap-wysiwyg',
       'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
@@ -39,6 +41,14 @@ requirejs.config({
       },
       'jquery.bootstrap': {
         deps: ['jquery'],
+        exports: 'jQuery'
+      },
+      'jquery.hotkeys': {
+        deps: ['jquery'],
+        exports: 'jQuery'
+      },
+      'jquery.bootstrap-wysiwyg': {
+        deps: ['jquery', 'jquery.hotkeys'],
         exports: 'jQuery'
       },
       'FileAPI': {
