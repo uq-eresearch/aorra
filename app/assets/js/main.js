@@ -15,7 +15,8 @@ requirejs.config({
       'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
-      'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min'
+      'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
+      'to-markdown': 'lib/to-markdown'
     },
     shim: {
       'backbone': {
@@ -42,6 +43,9 @@ requirejs.config({
       },
       'FileAPI': {
         exports: 'FileAPI'
+      },
+      'to-markdown': {
+        exports: 'toMarkdown'
       }
     },
     waitSeconds: 20

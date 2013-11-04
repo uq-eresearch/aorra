@@ -9,8 +9,9 @@ define([
         'jquery.bootstrap',
         'marionette',
         'marked',
+        'to-markdown',
         'FileAPI'
-        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked) {
+        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown) {
   'use strict';
 
   var formatTimestamp = function($n) {
@@ -907,6 +908,12 @@ define([
             var content = $(e.target).val();
             this.ui.html.html(marked(content));
             toggleSave(content);
+          }, this));
+        this.ui.html
+          .on('keyup', _.bind(function(e) {
+            var content = $(e.target).html();
+            this.ui.source.val(toMarkdown(content));
+            toggleSave(this.ui.source.val());
           }, this));
         this.ui.save.on('click', save);
         toggleSave(this._content);
