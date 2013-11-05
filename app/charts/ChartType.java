@@ -30,7 +30,9 @@ public enum ChartType {
     PSII_MAX_HEQ("Maximum PSII Herbicide Equivalent Concentrations"),
     MARINE_WQT("Water quality trend"),
     MARINE_ST("Seagrass trend"),
-    MARINE_CT("Coral trend");
+    MARINE_CT("Coral trend"),
+    RIPARIAN_FOREST_LOSS_TOTAL("Riparian forest loss since pre-European extend"),
+    RIPARIAN_FOREST_LOSS("Riparian forest loss");
 
     private final String label;
 

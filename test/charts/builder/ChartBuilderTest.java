@@ -117,6 +117,9 @@ public class ChartBuilderTest {
       return "test/PSII.xlsx";
     case PSII_TRENDS:
       return "test/Max conc.xlsx";
+    case RIPARIAN_FOREST_LOSS_TOTAL:
+    case RIPARIAN_FOREST_LOSS:
+      return "test/riparian_2010.xlsx";
     default:
       throw new RuntimeException("Unknown chart type: "+t);
     }

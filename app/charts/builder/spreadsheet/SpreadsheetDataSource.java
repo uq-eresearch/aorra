@@ -275,7 +275,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
   public void setDefaultSheet(String sheetname) {
       Sheet s = getSheet(sheetname);
       if(s!= null) {
-          defaultSheet = workbook.getSheetIndex(s);
+          setDefaultSheet(workbook.getSheetIndex(s));
       }
   }
 
@@ -311,9 +311,14 @@ public abstract class SpreadsheetDataSource implements DataSource {
   }
 
   public List<Value> selectColumn(int column) throws MissingDataException {
+      return selectColumn(column, 100);
+  }
+
+  public List<Value> selectColumn(int column, int limit) throws MissingDataException {
       List<Value> result = Lists.newArrayList();
       Sheet sheet = workbook.getSheetAt(defaultSheet);
-      for(int row = 0; row <= sheet.getLastRowNum();row++) {
+      int max = Math.min(sheet.getLastRowNum(), limit);
+      for(int row = 0; row <= max;row++) {
           result.add(select(row, column));
       }
       return result;

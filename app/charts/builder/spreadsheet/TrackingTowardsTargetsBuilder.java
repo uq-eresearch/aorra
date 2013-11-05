@@ -65,8 +65,7 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   @Override
   public boolean canHandle(SpreadsheetDataSource datasource) {
     try {
-      return "tracking towards tagets".equalsIgnoreCase(datasource.select("A1")
-          .getValue());
+        return "tracking towards tagets".equalsIgnoreCase(datasource.select("A1").asString());
     } catch (MissingDataException e) {
       return false;
     }
