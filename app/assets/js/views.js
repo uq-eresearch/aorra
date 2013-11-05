@@ -15,6 +15,8 @@ define([
         ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown) {
   'use strict';
 
+  var svgOrPng = Modernizr.svg ? 'svg' : 'png';
+  
   var formatTimestamp = function($n) {
     var dt = moment($n.text());
     $n.attr('title', $n.text());
@@ -795,7 +797,7 @@ define([
   var ChartElementView = Backbone.Marionette.ItemView.extend({
     initialize: function() {
       var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
-        format: Modernizr.svg ? 'svg' : 'png'
+        format: svgOrPng
       });
       var onSuccess = function(data) {
         this._charts = data.charts;
@@ -836,13 +838,58 @@ define([
       });
     }
   });
+  
+  var ChartSelector = Backbone.Marionette.Layout.extend({
+    ui: {
+      input: 'input',
+      fetchButton: '.btn-get-charts'
+    },
+    onRender: function() {
+      var $input = this.ui.input;
+      var filesAndFolders = this.model.collection;
+      var onSuccess = _.bind(function(data) {
+        this._charts = data.charts;
+        this.render();
+      }, this);
+      this.ui.fetchButton.on('click', function() {
+        var fileId = $input.val();
+        var file = filesAndFolders.findWhere({type: 'file', id: fileId});
+        if (_.isObject(file)) {
+          $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
+        }
+      });
+      this.$el.find('.chart-list a').on('click', _.bind(function(e) {
+        var chart = _(this._charts).findWhere({url: $(e.target).data('url')});
+        if (_.isObject(chart)) {
+          this.trigger('chart:selected', chart);
+        }
+        return false;
+      }, this));
+    },
+    onChartSelect: function(e) {
+      console.log(arguments);
+    },
+    serializeData: function() {
+      return {
+        charts: this._charts
+      };
+    },
+    template: function(serialized_model) {
+      return templates.render('chart_selector', serialized_model);
+    }
+  });
+  
 
-  var MarkdownEditor = Backbone.Marionette.ItemView.extend({
+  var MarkdownEditor = Backbone.Marionette.Layout.extend({
     modelEvents: {
       "sync": "fetchData"
     },
+    regions: {
+      insertChartContent: '.insert-chart-content'
+    },
     ui: {
       toolbar: '.html-toolbar',
+      insertChartButton: '.html-toolbar .btn-insert-chart',
       html: '.html-pane',
       source: '.source-pane',
       save: 'button.save'
@@ -920,6 +967,21 @@ define([
         this.ui.html.on('keyup', updateMarkdown);
         this.ui.toolbar.on('click', updateMarkdown);
         this.ui.save.on('click', save);
+        var $insertChartContent = this.$el.find('.insert-chart-content').hide()
+            .insertAfter(this.ui.insertChartButton);
+        this.ui.insertChartButton.popover({
+          'html': true,
+          'placement': 'bottom',
+          'content': function() {
+            return $insertChartContent.show();
+          }
+        });
+        var selector = new ChartSelector({ model: this.model });
+        this.insertChartContent.show(selector);
+        selector.on('chart:selected', _.bind(function(chart) {
+          this.ui.html.append(templates.render('chart_with_caption', chart));
+          updateMarkdown();
+        }, this));
         toggleSave(this._content);
       }
       this._watchEditFlags();
