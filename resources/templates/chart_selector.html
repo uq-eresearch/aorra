@@ -1,20 +1,16 @@
-<div class="input-group">
-  <input type="text" class="form-control" placeholder="File ID">
-  <span class="input-group-btn">
-    <button class="btn btn-default btn-get-charts"
-      title="Find Charts" type="button">
-      <i class="fa fa-arrow-right"></i>
-    </button>
-  </span>
+<a class="btn btn-default btn-insert-chart" title="Insert Chart">
+  <i class="fa fa-bar-chart-o"></i>
+</a>
+<div class="insert-chart-content">
+  <div class="input-group">
+    <input type="text" class="form-control" placeholder="File ID">
+    <span class="input-group-btn">
+      <button class="btn btn-default btn-get-charts"
+        title="Find Charts" type="button">
+        <i class="fa fa-arrow-right"></i>
+      </button>
+    </span>
+  </div>
+  <div class="chart-list">
+  </div>
 </div>
-<ul class="list-unstyled chart-list">
-{{#charts}}
-<li><a href="#" data-url="{{url}}">{{type}} - {{region}}</a></li>
-{{/charts}}
-{{#initialized}}
-{{^charts}}
-<li>No charts</li>
-{{/charts}}
-{{/initialized}}
-</li>
-</ul>

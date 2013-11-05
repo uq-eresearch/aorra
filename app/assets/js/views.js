@@ -840,34 +840,47 @@ define([
   });
   
   var ChartSelector = Backbone.Marionette.Layout.extend({
+    tagName: 'span',
     ui: {
+      toolbarButton: '.btn-insert-chart',
       input: 'input',
-      fetchButton: '.btn-get-charts'
+      chartList: '.chart-list'
+    },
+    renderChartList: function() {
+      this.ui.chartList.html(templates.render('chart_list', {
+        charts: this._charts
+      }));
     },
     onRender: function() {
+      var $insertChartContent = this.$el.find('.insert-chart-content').hide();
+      this.ui.toolbarButton.popover({
+        'html': true,
+        'placement': 'bottom',
+        'content': function() {
+          return $insertChartContent.show();
+        }
+      });
       var $input = this.ui.input;
       var filesAndFolders = this.model.collection;
       var onSuccess = _.bind(function(data) {
         this._charts = data.charts;
-        this.render();
+        this.renderChartList();
       }, this);
-      this.ui.fetchButton.on('click', function() {
+      this.$el.on('click', '.btn-get-charts', function() {
         var fileId = $input.val();
         var file = filesAndFolders.findWhere({type: 'file', id: fileId});
         if (_.isObject(file)) {
           $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
         }
       });
-      this.$el.find('.chart-list a').on('click', _.bind(function(e) {
+      this.$el.on('click', '.chart-list a', _.bind(function(e) {
         var chart = _(this._charts).findWhere({url: $(e.target).data('url')});
         if (_.isObject(chart)) {
           this.trigger('chart:selected', chart);
         }
+        this.ui.toolbarButton.popover('hide');
         return false;
       }, this));
-    },
-    onChartSelect: function(e) {
-      console.log(arguments);
     },
     serializeData: function() {
       return {
@@ -885,11 +898,10 @@ define([
       "sync": "fetchData"
     },
     regions: {
-      insertChartContent: '.insert-chart-content'
+      chartSelector: '.chart-selector'
     },
     ui: {
       toolbar: '.html-toolbar',
-      insertChartButton: '.html-toolbar .btn-insert-chart',
       html: '.html-pane',
       source: '.source-pane',
       save: 'button.save'
@@ -967,17 +979,8 @@ define([
         this.ui.html.on('keyup', updateMarkdown);
         this.ui.toolbar.on('click', updateMarkdown);
         this.ui.save.on('click', save);
-        var $insertChartContent = this.$el.find('.insert-chart-content').hide()
-            .insertAfter(this.ui.insertChartButton);
-        this.ui.insertChartButton.popover({
-          'html': true,
-          'placement': 'bottom',
-          'content': function() {
-            return $insertChartContent.show();
-          }
-        });
         var selector = new ChartSelector({ model: this.model });
-        this.insertChartContent.show(selector);
+        this.chartSelector.show(selector);
         selector.on('chart:selected', _.bind(function(chart) {
           this.ui.html.append(templates.render('chart_with_caption', chart));
           updateMarkdown();
