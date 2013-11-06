@@ -11,7 +11,8 @@ define([
         'marked',
         'to-markdown',
         'FileAPI',
-        'jquery.bootstrap-wysiwyg'
+        'jquery.bootstrap-wysiwyg',
+        'typeahead'
         ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown) {
   'use strict';
 
@@ -415,6 +416,7 @@ define([
 
   var WatchingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
+      
       return {
         icon: this.isSet() ? 'eye' : 'eye-slash',
         flagType: 'watch',
@@ -851,6 +853,15 @@ define([
         charts: this._charts
       }));
     },
+    initTypeahead: function() {
+      this.ui.input.typeahead({
+        name: 'files',
+        local: _(this.model.collection.where({ type: 'file' })).pluck('id')
+      });
+    },
+    destroyTypeahead: function() {
+      this.ui.input.typeahead('destroy');
+    },
     onRender: function() {
       var $insertChartContent = this.$el.find('.insert-chart-content').hide();
       this.ui.toolbarButton.popover({
@@ -860,6 +871,12 @@ define([
           return $insertChartContent.show();
         }
       });
+      // All events on popup content are detached when hiding the popup,
+      // so init typeahead when popup shows and destroy it on hide.
+      this.ui.toolbarButton.on('shown.bs.popover',
+          _.bind(this.initTypeahead, this));
+      this.ui.toolbarButton.on('hide.bs.popover',
+          _.bind(this.destroyTypeahead, this));
       var $input = this.ui.input;
       var filesAndFolders = this.model.collection;
       var onSuccess = _.bind(function(data) {
@@ -891,7 +908,6 @@ define([
       return templates.render('chart_selector', serialized_model);
     }
   });
-  
 
   var MarkdownEditor = Backbone.Marionette.Layout.extend({
     modelEvents: {

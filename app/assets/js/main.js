@@ -18,7 +18,8 @@ requirejs.config({
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
-      'to-markdown': 'lib/to-markdown'
+      'to-markdown': 'lib/to-markdown',
+      'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min'
     },
     shim: {
       'backbone': {
@@ -56,6 +57,10 @@ requirejs.config({
       },
       'to-markdown': {
         exports: 'toMarkdown'
+      },
+      'typeahead': {
+        deps: ['jquery'],
+        exports: 'jQuery'
       }
     },
     waitSeconds: 20
