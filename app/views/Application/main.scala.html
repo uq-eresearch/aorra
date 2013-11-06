@@ -101,10 +101,13 @@
           </ul>
         }
         <a class="navbar-brand" href="/"
+           rel="tooltip" data-placement="bottom"
            title="Automated Online Reef Report card Application">
           AORRA 
         </a>
-        <p class="navbar-text">@AppVersion</p>
+        <p class="navbar-text"
+           rel="tooltip" data-placement="bottom"
+           title="Application Version">@AppVersion</p>
         <ul class="nav navbar-nav pull-right hidden-xs">
           @subjectPresent() { currentUser =>
               <li class="dropdown">
