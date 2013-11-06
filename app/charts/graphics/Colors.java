@@ -19,6 +19,7 @@ public class Colors {
     public static final Color GRAY = fromHex("#898C8B");
     public static final Color BLUE = fromHex("#206FAD");
     public static final Color DARK_RED = fromHex("#853806");
+    public static final Color LIGHT_RED = fromHex("#FF7C7C");
 
     public static Color fromHex(String s) {
         String c = StringUtils.strip(StringUtils.strip(s), "#");

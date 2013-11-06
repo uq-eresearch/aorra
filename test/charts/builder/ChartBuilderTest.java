@@ -120,6 +120,8 @@ public class ChartBuilderTest {
     case RIPARIAN_FOREST_LOSS_TOTAL:
     case RIPARIAN_FOREST_LOSS:
       return "test/riparian_2010.xlsx";
+    case WETLANDS_LOSS:
+      return "test/wetlands_2010.xls";
     default:
       throw new RuntimeException("Unknown chart type: "+t);
     }

@@ -32,7 +32,8 @@ public enum ChartType {
     MARINE_ST("Seagrass trend"),
     MARINE_CT("Coral trend"),
     RIPARIAN_FOREST_LOSS_TOTAL("Riparian forest loss since pre-European extend"),
-    RIPARIAN_FOREST_LOSS("Riparian forest loss");
+    RIPARIAN_FOREST_LOSS("Riparian forest loss"),
+    WETLANDS_LOSS("Wetlands loss");
 
     private final String label;
 
