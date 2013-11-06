@@ -989,6 +989,16 @@ define([
       }, this));
       this._watchingFlags = true;
     },
+    onHtmlUpdate: function() {
+      this.updateSource();
+      this.updateDiff();
+      this.toggleSave();
+    },
+    onSourceUpdate: function() {
+      this.updateHtml();
+      this.updateDiff();
+      this.toggleSave();
+    },
     updateDiff: function() {
       var dmp = new DiffMatchPatch();
       // Perform diff calculation and cleanup
@@ -1011,11 +1021,20 @@ define([
       });
       this.ui.diff.html($docFragments);
     },
+    updateHtml: function() {
+      var content = this.ui.source.val();
+      this.ui.html.html(marked(content));
+    },
+    updateSource: function() {
+      var content = this.ui.html.cleanHtml();
+      this.ui.source.val(toMarkdown(content));
+    },
+    toggleSave: function() {
+      var content = this.ui.source.val();
+      this.ui.save.prop("disabled", this._content == content);
+    },
     onRender: function() {
       if (this.editable()) {
-        var toggleSave = _.bind(function(content) {
-          this.ui.save.prop("disabled", this._content == content);
-        }, this);
         var save = _.bind(function() {
           $.ajax(this.model.uploadUrl(), {
             type: 'POST',
@@ -1024,32 +1043,20 @@ define([
           });
         }, this);
         this.ui.html.wysiwyg(); // Initialize with Bootstrap WYSIWYG
-        var updateDiff = _.bind(this.updateDiff, this);
-        updateDiff();
-        this.ui.source
-          .on('keyup', _.bind(function(e) {
-            var content = $(e.target).val();
-            this.ui.html.html(marked(content));
-            toggleSave(content);
-          }, this));
-        this.ui.source.on('keyup', updateDiff);
-        var updateMarkdown = _.bind(function(e) {
-          var content = this.ui.html.cleanHtml();
-          this.ui.source.val(toMarkdown(content));
-          toggleSave(this.ui.source.val());
-        }, this);
-        this.ui.html.on('keyup', updateMarkdown);
-        this.ui.html.on('keyup', updateDiff);
-        this.ui.toolbar.on('click', updateMarkdown);
-        this.ui.toolbar.on('click', updateDiff);
+        this.ui.source.on('keyup',
+            _.bind(this.triggerMethod, this, 'source:update'));
+        var htmlUpdated = 
+          _.bind(this.triggerMethod, this, 'html:update')
+        this.ui.html.on('keyup', htmlUpdated);
+        this.ui.toolbar.on('click', htmlUpdated);
         this.ui.save.on('click', save);
         var selector = new ChartSelector({ model: this.model });
         this.chartSelector.show(selector);
         selector.on('chart:selected', _.bind(function(chart) {
           this.ui.html.append(templates.render('chart_with_caption', chart));
-          updateMarkdown();
+          htmlUpdated();
         }, this));
-        toggleSave(this._content);
+        this.toggleSave(this._content);
       } else {
         this.ui.toolbar.hide();
       }
