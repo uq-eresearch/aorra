@@ -6,6 +6,11 @@
     <li>
       <a href="#markdown-source" data-toggle="tab">Markdown</a>
     </li>
+    {{#editable}}
+    <li>
+      <a href="#markdown-diff" data-toggle="tab">Compare Differences</a>
+    </li>
+    {{/editable}}
   </ul>
   <div class="tab-content">
     <div class="tab-pane active" id="markdown-html">
@@ -46,6 +51,11 @@
         Markdown Cheat Sheet
       </a>
     </div>
+    {{#editable}}
+    <div class="tab-pane" id="markdown-diff">
+      <div class="diff-pane"></div>
+    </div>
+    {{/editable}}
   </div>
   {{#editable}}
   <div class="pull-right">

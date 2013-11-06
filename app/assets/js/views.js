@@ -840,7 +840,7 @@ define([
       });
     }
   });
-  
+
   var ChartSelector = Backbone.Marionette.Layout.extend({
     tagName: 'span',
     ui: {
@@ -937,6 +937,7 @@ define([
       chartSelector: '.chart-selector'
     },
     ui: {
+      diff: '.diff-pane',
       toolbar: '.html-toolbar',
       html: '.html-pane',
       source: '.source-pane',
@@ -988,6 +989,28 @@ define([
       }, this));
       this._watchingFlags = true;
     },
+    updateDiff: function() {
+      var dmp = new DiffMatchPatch();
+      // Perform diff calculation and cleanup
+      var diff = dmp.diff_main(this._content, this.ui.source.val());
+      dmp.diff_cleanupSemantic(diff);
+      var $docFragments = _.map(diff, function(v) {
+        var $el;
+        switch (v[0]) {
+        case -1:
+          $el = $('<del class="red-text"/>');
+          break;
+        case 1:
+          $el = $('<ins class="green-text"/>');
+          break;
+        default:
+          $el = $('<span/>');
+        }
+        $el.text(v[1]);
+        return $el;
+      });
+      this.ui.diff.html($docFragments);
+    },
     onRender: function() {
       if (this.editable()) {
         var toggleSave = _.bind(function(content) {
@@ -1001,19 +1024,24 @@ define([
           });
         }, this);
         this.ui.html.wysiwyg(); // Initialize with Bootstrap WYSIWYG
+        var updateDiff = _.bind(this.updateDiff, this);
+        updateDiff();
         this.ui.source
           .on('keyup', _.bind(function(e) {
             var content = $(e.target).val();
             this.ui.html.html(marked(content));
             toggleSave(content);
           }, this));
+        this.ui.source.on('keyup', updateDiff);
         var updateMarkdown = _.bind(function(e) {
           var content = this.ui.html.cleanHtml();
           this.ui.source.val(toMarkdown(content));
           toggleSave(this.ui.source.val());
         }, this);
         this.ui.html.on('keyup', updateMarkdown);
+        this.ui.html.on('keyup', updateDiff);
         this.ui.toolbar.on('click', updateMarkdown);
+        this.ui.toolbar.on('click', updateDiff);
         this.ui.save.on('click', save);
         var selector = new ChartSelector({ model: this.model });
         this.chartSelector.show(selector);
