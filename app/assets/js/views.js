@@ -903,10 +903,13 @@ define([
       });
       // All events on popup content are detached when hiding the popup,
       // so init typeahead when popup shows and destroy it on hide.
-      this.ui.toolbarButton.on('shown.bs.popover',
-          _.bind(this.initTypeahead, this));
+      this.ui.toolbarButton.on('shown.bs.popover', _.bind(function() {
+        this.initTypeahead();
+        this.ui.input.focus();
+      }, this));
       this.ui.toolbarButton.on('hide.bs.popover',
           _.bind(this.destroyTypeahead, this));
+      // Emit an event when the chart is selected
       this.$el.on('click', '.chart-list a', _.bind(function(e) {
         var chart = _(this._charts).findWhere({url: $(e.target).data('url')});
         if (_.isObject(chart)) {
