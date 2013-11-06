@@ -121,6 +121,7 @@ public class ChartBuilderTest {
     case RIPARIAN_FOREST_LOSS:
       return "test/riparian_2010.xlsx";
     case WETLANDS_LOSS:
+    case WETLANDS_REMAINING:
       return "test/wetlands_2010.xls";
     default:
       throw new RuntimeException("Unknown chart type: "+t);

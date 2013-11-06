@@ -23,7 +23,7 @@ public class RiparianFLT {
         final JFreeChart chart = ChartFactory.createBarChart(
             title,       // chart title
             cAxisTitle,               // domain axis label
-            "Per cent",                  // range axis label
+            "Riparian forest loss (%)",                  // range axis label
             dataset,                  // data
             PlotOrientation.VERTICAL, // orientation
             false,                    // include legend

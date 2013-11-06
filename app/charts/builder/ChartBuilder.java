@@ -34,8 +34,12 @@ public class ChartBuilder {
     checkNotNull(parameters);
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
-      if (builder.canHandle(type, datasources)) {
-        result.addAll(builder.build(datasources, type, regions, dimensions, parameters));
+      try {
+        if (builder.canHandle(type, datasources)) {
+            result.addAll(builder.build(datasources, type, regions, dimensions, parameters));
+        }
+      } catch(Exception e) {
+          e.printStackTrace();
       }
     }
     // make sure charts are sorted by region

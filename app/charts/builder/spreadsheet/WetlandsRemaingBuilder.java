@@ -18,51 +18,30 @@ import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
-import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
-import charts.graphics.WetlandLoss;
+import charts.builder.DataSource.MissingDataException;
+import charts.graphics.WetlandsRemaing;
 
-public class WetlandsLossBuilder extends AbstractBuilder {
+public class WetlandsRemaingBuilder extends AbstractBuilder {
 
-    private static final String SWAMPS = "Vegetated freshwater swamps loss";
-    private static final String FLATS = "Mangroves/salt flats loss";
-    private static final String WETLANDS_LOSS = "Wetlands loss (%)";
+    private static final String SWAMPS = "Vegetated freshwater swamps extent remaining";
+    private static final String FLATS = "Mangroves/salt flats extent";
     private static final String TITLE = "Wetlands (vegetated freshwater swamps and" +
-            " mangroves/salt flats) loss";
+            " mangroves/salt flats)\nremaining from pre-European extent";
 
-    public WetlandsLossBuilder() {
-        super(ChartType.WETLANDS_LOSS);
+
+    public WetlandsRemaingBuilder() {
+        super(ChartType.WETLANDS_REMAINING);
     }
 
     @Override
     public boolean canHandle(SpreadsheetDataSource ds) {
         try {
-            int fc = findFirstColumn(ds);
-            return (startsWith(ds.select(0, fc), "Region") || startsWith(ds.select(0, fc), "Catchment")) &&
-                    startsWith(ds.select(0, fc+1), SWAMPS) &&
-                    startsWith(ds.select(0, fc+2), FLATS) &&
-                    startsWith(ds.select(0, fc+3), SWAMPS) &&
-                    startsWith(ds.select(0, fc+4), FLATS);
+            return (startsWith(ds.select(0, 0), "Region") || startsWith(ds.select(0, 0), "Catchment")) &&
+                    startsWith(ds.select(0, 1), SWAMPS) &&
+                    startsWith(ds.select(0, 2), FLATS);
         } catch(MissingDataException e) {}
         return false;
-    }
-
-    private int findFirstColumn(SpreadsheetDataSource datasource) {
-        Integer cc = datasource.getColumnCount(0);
-        if(cc == null) {
-            return 0;
-        } else {
-            try {
-                for(int c = 0;c<cc;c++) {
-                    if(StringUtils.isNotBlank(datasource.select(0, c).asString())) {
-                        return c;
-                    }
-                }
-            } catch(MissingDataException e) {
-                throw new RuntimeException(e);
-            }
-            return 0;
-        }
     }
 
     private boolean startsWith(Value v, String prefix) {
@@ -72,8 +51,7 @@ public class WetlandsLossBuilder extends AbstractBuilder {
     private boolean matchesRegion(SpreadsheetDataSource ds, Region region) {
         try {
             String cmp = region.getProperName() + (region == Region.GBR?" total":" region");
-            int fc = findFirstColumn(ds);
-            List<Value> col0 = ds.selectColumn(fc, 20);
+            List<Value> col0 = ds.selectColumn(0, 20);
             for(Value v : col0) {
                 if(StringUtils.equalsIgnoreCase(
                         StringUtils.strip(v.asString()), cmp)) {
@@ -110,7 +88,8 @@ public class WetlandsLossBuilder extends AbstractBuilder {
 
                 @Override
                 public Drawable getChart() {
-                    return WetlandLoss.createChart(title(datasource, region), WETLANDS_LOSS, dataset, new Dimension(750, 500));
+                    return WetlandsRemaing.createChart(title(datasource, region),
+                            "Region", "Wetlands remaining (%)", dataset, new Dimension(750, 500));
                 }
 
                 @Override
@@ -120,13 +99,11 @@ public class WetlandsLossBuilder extends AbstractBuilder {
                       final CsvListWriter csv = new CsvListWriter(sw,
                           CsvPreference.STANDARD_PREFERENCE);
                       csv.writeHeader((region == Region.GBR?"Region":"Catchment"),
-                          (String)dataset.getRowKey(0), (String)dataset.getRowKey(1),
-                          (String)dataset.getRowKey(2), (String)dataset.getRowKey(3));
+                          (String)dataset.getRowKey(0), (String)dataset.getRowKey(1));
                       DecimalFormat f = new DecimalFormat(".##");
                       for(int cat=0;cat<dataset.getColumnCount();cat++) {
                           csv.write(dataset.getColumnKey(cat), f.format(dataset.getValue(0, cat)),
-                              f.format(dataset.getValue(1, cat)), f.format(dataset.getValue(2, cat)), 
-                              f.format(dataset.getValue(3, cat)));
+                              f.format(dataset.getValue(1, cat)));
                       }
                       csv.close();
                     } catch (IOException e) {
@@ -152,12 +129,11 @@ public class WetlandsLossBuilder extends AbstractBuilder {
     private CategoryDataset getDataset(SpreadsheetDataSource ds) {
         try {
             DefaultCategoryDataset d = new DefaultCategoryDataset();
-            int fc = findFirstColumn(ds);
-            for(int col=1;col<5;col++) {
-                String series = ds.select(0, fc+col).asString();
-                for(int row = 1;StringUtils.isNotBlank(ds.select(row, fc).asString());row++) {
-                    String region = ds.select(row, fc).asString();
-                    Double val = ds.select(row, fc+col).asDouble();
+            for(int col=1;col<3;col++) {
+                String series = ds.select(0, col).asString();
+                for(int row = 1;StringUtils.isNotBlank(ds.select(row, 0).asString());row++) {
+                    String region = ds.select(row, 0).asString();
+                    Double val = ds.select(row, col).asDouble();
                     d.addValue(val, series, region);
                 }
             }
