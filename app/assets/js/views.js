@@ -1022,6 +1022,8 @@ define([
           updateMarkdown();
         }, this));
         toggleSave(this._content);
+      } else {
+        this.ui.toolbar.hide();
       }
       this._watchEditFlags();
     }
