@@ -856,7 +856,15 @@ define([
     initTypeahead: function() {
       this.ui.input.typeahead({
         name: 'files',
-        local: _(this.model.collection.where({ type: 'file' })).pluck('id')
+        valueKey: 'id',
+        local: _(this.model.collection.where({ type: 'file' })).map(function(m){
+          return _.defaults(m.toJSON(), {
+            tokens: [m.id, m.get('name')]
+          });
+        }),
+        template: function(datum) {
+          return templates.render('file_typeahead', datum);
+        }
       });
     },
     destroyTypeahead: function() {
