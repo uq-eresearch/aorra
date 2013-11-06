@@ -840,7 +840,7 @@ define([
       });
     }
   });
-  
+
   var ChartSelector = Backbone.Marionette.Layout.extend({
     tagName: 'span',
     ui: {
@@ -937,6 +937,7 @@ define([
       chartSelector: '.chart-selector'
     },
     ui: {
+      diff: '.diff-pane',
       toolbar: '.html-toolbar',
       html: '.html-pane',
       source: '.source-pane',
@@ -988,11 +989,52 @@ define([
       }, this));
       this._watchingFlags = true;
     },
+    onHtmlUpdate: function() {
+      this.updateSource();
+      this.updateDiff();
+      this.toggleSave();
+    },
+    onSourceUpdate: function() {
+      this.updateHtml();
+      this.updateDiff();
+      this.toggleSave();
+    },
+    updateDiff: function() {
+      var dmp = new DiffMatchPatch();
+      // Perform diff calculation and cleanup
+      var diff = dmp.diff_main(this._content, this.ui.source.val());
+      dmp.diff_cleanupSemantic(diff);
+      var $docFragments = _.map(diff, function(v) {
+        var $el;
+        switch (v[0]) {
+        case -1:
+          $el = $('<del class="red-text"/>');
+          break;
+        case 1:
+          $el = $('<ins class="green-text"/>');
+          break;
+        default:
+          $el = $('<span/>');
+        }
+        $el.text(v[1]);
+        return $el;
+      });
+      this.ui.diff.html($docFragments);
+    },
+    updateHtml: function() {
+      var content = this.ui.source.val();
+      this.ui.html.html(marked(content));
+    },
+    updateSource: function() {
+      var content = this.ui.html.cleanHtml();
+      this.ui.source.val(toMarkdown(content));
+    },
+    toggleSave: function() {
+      var content = this.ui.source.val();
+      this.ui.save.prop("disabled", this._content == content);
+    },
     onRender: function() {
       if (this.editable()) {
-        var toggleSave = _.bind(function(content) {
-          this.ui.save.prop("disabled", this._content == content);
-        }, this);
         var save = _.bind(function() {
           $.ajax(this.model.uploadUrl(), {
             type: 'POST',
@@ -1001,27 +1043,20 @@ define([
           });
         }, this);
         this.ui.html.wysiwyg(); // Initialize with Bootstrap WYSIWYG
-        this.ui.source
-          .on('keyup', _.bind(function(e) {
-            var content = $(e.target).val();
-            this.ui.html.html(marked(content));
-            toggleSave(content);
-          }, this));
-        var updateMarkdown = _.bind(function(e) {
-          var content = this.ui.html.cleanHtml();
-          this.ui.source.val(toMarkdown(content));
-          toggleSave(this.ui.source.val());
-        }, this);
-        this.ui.html.on('keyup', updateMarkdown);
-        this.ui.toolbar.on('click', updateMarkdown);
+        this.ui.source.on('keyup',
+            _.bind(this.triggerMethod, this, 'source:update'));
+        var htmlUpdated = 
+          _.bind(this.triggerMethod, this, 'html:update')
+        this.ui.html.on('keyup', htmlUpdated);
+        this.ui.toolbar.on('click', htmlUpdated);
         this.ui.save.on('click', save);
         var selector = new ChartSelector({ model: this.model });
         this.chartSelector.show(selector);
         selector.on('chart:selected', _.bind(function(chart) {
           this.ui.html.append(templates.render('chart_with_caption', chart));
-          updateMarkdown();
+          htmlUpdated();
         }, this));
-        toggleSave(this._content);
+        this.toggleSave(this._content);
       } else {
         this.ui.toolbar.hide();
       }
