@@ -78,6 +78,15 @@ object ApplicationBuild extends Build {
       dependencies = appDependencies, settings = s).settings(
     version <<= version in ThisBuild,
     unmanagedResourceDirectories in Compile += file("resources"),
+    // Produce scala object that knows the app version
+    sourceGenerators in Compile <+= (sourceManaged in Compile, version) map { (dir, v) =>
+      val file = dir / "helpers" / "AppVersion.scala"
+      IO.write(file, s"""package helpers
+          object AppVersion { 
+            override def toString = "$v"
+          }""")
+      Seq(file)
+    },
     requireJs ++= Seq("models.js") ,
     requireJsShim += "main.js",
     requireJsFolder += "js",

@@ -1,6 +1,7 @@
 @(title: String)(content: Html)
 
 @import helper.session._
+@import helpers.AppVersion
 @import helpers.SessionHelper
 
 <!DOCTYPE html>
@@ -101,28 +102,31 @@
         }
         <a class="navbar-brand" href="/"
            title="Automated Online Reef Report card Application">
-          AORRA
+          AORRA 
         </a>
+        <p class="navbar-text">@AppVersion</p>
         <ul class="nav navbar-nav pull-right hidden-xs">
           @subjectPresent() { currentUser =>
               <li class="dropdown">
                 <a href="#" class="dropdown-toggle"
                   role="button"
-                  data-toggle="dropdown"
-                  title="Currently logged-in user">
+                  data-toggle="dropdown">
                   <i class="fa fa-user"></i>
-                  <span id="current-user" data-id="@currentUser.getId()">
+                  <span id="current-user" data-id="@currentUser.getId()"
+                    rel="tooltip"
+                    data-placement="bottom"
+                    title="@currentUser.getEmail()">
                   @currentUser.getName()
                   </span>
                   <b class="caret"></b>
                 </a>
                 <ul class="dropdown-menu">
                   <li>
-                    <a href="/#change-password" rel="tooltip"
-                      role="menu"
-                      data-placement="top"
-                      title="Any emails will be sent to this address.">
-                      <em>@currentUser.getEmail()</em>
+                    <a href="/invite">Invite New User</a>
+                  </li>
+                  <li>
+                    <a href="/#change-password">
+                      Change Password
                     </a>
                   </li>
                   <li class="divider"></li>
@@ -139,7 +143,9 @@
         <div class="collapse navbar-collapse navbar-responsive-collapse">
           <ul class="nav navbar-nav">
             @subjectPresent() { currentUser =>
-              <li><a href="/invite">Invite New User</a></li>
+              <li class="visible-xs">
+                <a href="/invite">Invite New User</a>
+              </li>
               <li class="visible-xs">
                 <a href="/#change-password">Change Password</a>
               </li>
