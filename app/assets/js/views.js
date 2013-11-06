@@ -11,7 +11,8 @@ define([
         'marked',
         'to-markdown',
         'FileAPI',
-        'jquery.bootstrap-wysiwyg'
+        'jquery.bootstrap-wysiwyg',
+        'typeahead'
         ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown) {
   'use strict';
 
@@ -415,6 +416,7 @@ define([
 
   var WatchingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
+      
       return {
         icon: this.isSet() ? 'eye' : 'eye-slash',
         flagType: 'watch',
@@ -851,6 +853,45 @@ define([
         charts: this._charts
       }));
     },
+    getCharts: function(datum) {
+      var $input = this.ui.input;
+      var filesAndFolders = this.model.collection;
+      var onSuccess = _.bind(function(data) {
+        this._charts = data.charts;
+        this.renderChartList();
+      }, this);
+      var fileId = $input.val();
+      var file = filesAndFolders.findWhere({type: 'file', id: fileId});
+      if (_.isObject(file)) {
+        $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
+      }
+    },
+    initTypeahead: function() {
+      this.ui.input.typeahead({
+        name: 'files',
+        valueKey: 'id',
+        local: _(this.model.collection.where({ type: 'file' })).map(function(m){
+          return _.defaults(m.toJSON(), {
+            tokens: [m.id, m.get('name')]
+          });
+        }),
+        template: function(datum) {
+          return templates.render('file_typeahead', datum);
+        }
+      });
+      // Compensate for typeahead DOM changes
+      $('.twitter-typeahead, .tt-dropdown-menu').css('min-width', '100%');
+      // Connect events to select file
+      var selectFile = _.bind(function() {
+        this.getCharts();
+        this.ui.input.blur();
+      }, this);
+      this.ui.input.on('typeahead:selected', selectFile);
+      this.ui.input.on('typeahead:autocompleted', selectFile);
+    },
+    destroyTypeahead: function() {
+      this.ui.input.typeahead('destroy');
+    },
     onRender: function() {
       var $insertChartContent = this.$el.find('.insert-chart-content').hide();
       this.ui.toolbarButton.popover({
@@ -860,19 +901,12 @@ define([
           return $insertChartContent.show();
         }
       });
-      var $input = this.ui.input;
-      var filesAndFolders = this.model.collection;
-      var onSuccess = _.bind(function(data) {
-        this._charts = data.charts;
-        this.renderChartList();
-      }, this);
-      this.$el.on('click', '.btn-get-charts', function() {
-        var fileId = $input.val();
-        var file = filesAndFolders.findWhere({type: 'file', id: fileId});
-        if (_.isObject(file)) {
-          $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
-        }
-      });
+      // All events on popup content are detached when hiding the popup,
+      // so init typeahead when popup shows and destroy it on hide.
+      this.ui.toolbarButton.on('shown.bs.popover',
+          _.bind(this.initTypeahead, this));
+      this.ui.toolbarButton.on('hide.bs.popover',
+          _.bind(this.destroyTypeahead, this));
       this.$el.on('click', '.chart-list a', _.bind(function(e) {
         var chart = _(this._charts).findWhere({url: $(e.target).data('url')});
         if (_.isObject(chart)) {
@@ -891,7 +925,6 @@ define([
       return templates.render('chart_selector', serialized_model);
     }
   });
-  
 
   var MarkdownEditor = Backbone.Marionette.Layout.extend({
     modelEvents: {
