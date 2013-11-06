@@ -853,6 +853,19 @@ define([
         charts: this._charts
       }));
     },
+    getCharts: function(datum) {
+      var $input = this.ui.input;
+      var filesAndFolders = this.model.collection;
+      var onSuccess = _.bind(function(data) {
+        this._charts = data.charts;
+        this.renderChartList();
+      }, this);
+      var fileId = $input.val();
+      var file = filesAndFolders.findWhere({type: 'file', id: fileId});
+      if (_.isObject(file)) {
+        $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
+      }
+    },
     initTypeahead: function() {
       this.ui.input.typeahead({
         name: 'files',
@@ -866,6 +879,15 @@ define([
           return templates.render('file_typeahead', datum);
         }
       });
+      // Compensate for typeahead DOM changes
+      $('.twitter-typeahead, .tt-dropdown-menu').css('min-width', '100%');
+      // Connect events to select file
+      var selectFile = _.bind(function() {
+        this.getCharts();
+        this.ui.input.blur();
+      }, this);
+      this.ui.input.on('typeahead:selected', selectFile);
+      this.ui.input.on('typeahead:autocompleted', selectFile);
     },
     destroyTypeahead: function() {
       this.ui.input.typeahead('destroy');
@@ -885,19 +907,6 @@ define([
           _.bind(this.initTypeahead, this));
       this.ui.toolbarButton.on('hide.bs.popover',
           _.bind(this.destroyTypeahead, this));
-      var $input = this.ui.input;
-      var filesAndFolders = this.model.collection;
-      var onSuccess = _.bind(function(data) {
-        this._charts = data.charts;
-        this.renderChartList();
-      }, this);
-      this.$el.on('click', '.btn-get-charts', function() {
-        var fileId = $input.val();
-        var file = filesAndFolders.findWhere({type: 'file', id: fileId});
-        if (_.isObject(file)) {
-          $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
-        }
-      });
       this.$el.on('click', '.chart-list a', _.bind(function(e) {
         var chart = _(this._charts).findWhere({url: $(e.target).data('url')});
         if (_.isObject(chart)) {
