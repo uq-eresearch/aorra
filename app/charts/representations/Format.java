@@ -8,7 +8,8 @@ public enum Format {
   EMF ("image/x-emf"),
   HTML ("text/html"),
   PNG ("image/png"),
-  SVG ("image/svg+xml");
+  SVG ("image/svg+xml"),
+  EPS ("image/x-eps");
 
   private String mimeType;
 
