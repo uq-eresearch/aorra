@@ -808,15 +808,10 @@ define([
       $.get(url, _.bind(onSuccess, this));
     },
     serializeData: function() {
-      var showTypes = _.uniq(_.pluck(this._charts, 'type')).length > 1;
-      return {
-        zip: this.model.url() + '/charts.zip',
-        charts: _.map(this._charts, function(c, i) {
+      var makeChartAttrs = function(region) {
+        return function(c, i) {
           return _(c).extend({
-            first: i == 0,
-            title: showTypes
-              ? c.type + " - " + c.region
-              : c.region,
+            title: c.type,
             slug: _.template("<%=v.type%>-<%=v.region%>-<%=v.uniqueId%>",
               {
                 type: _.str.slugify(c.type),
@@ -827,7 +822,30 @@ define([
             docx: c.url.replace(/\.(png|svg)\?/, ".docx?"),
             html: c.url.replace(/\.(png|svg)\?/, ".html?")
           });
-        })
+        };
+      };
+      return {
+        zip: this.model.url() + '/charts.zip',
+        regions: _.chain(this._charts).groupBy('region')
+        .map(function(charts, region) {
+          var common = { title: region, slug: _.str.slugify(region) };
+          if (charts.length == 1) {
+            return _(common).extend({
+              chart: makeChartAttrs(region)(charts[0], 0)
+            });
+          }
+          return _(common).extend({
+            charts: _(charts).chain()
+              .map(makeChartAttrs(region))
+              .sortBy('title')
+              .map(function(c, i) { return _(c).extend({ first: i == 0 }); })
+              .value()
+          });
+        }).map(function(region, i) {
+          return _(region).extend({
+            first: i == 0
+          });
+        }).tap(_.bind(console.log, console)).value()
       };
     },
     template: function(serialized_model) {

@@ -15,7 +15,7 @@ define(['jquery', 'hogan'], function($, hogan) {
 
   return {
     render: function(templateName, context) {
-      return templates[templateName].render(context);
+      return templates[templateName].render(context, templates);
     }
   };
 });

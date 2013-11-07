@@ -6,37 +6,41 @@
 </p>
 <div class="tabbable">
   <ul class="nav nav-tabs">
-    {{#charts}}
+    {{#regions}}
     <li{{#first}} class="active"{{/first}} style="width: 8em; font-size: 75%">
-      <a href="#chart-image-{{slug}}" data-toggle="tab">
+      <a href="#chart-region-{{slug}}" data-toggle="tab">
         {{title}}
       </a>
     </li>
-    {{/charts}}
+    {{/regions}}
   </ul>
   <div class="tab-content">
-    {{#charts}}
-    <div class="tab-pane {{#first}}active{{/first}}" id="chart-image-{{slug}}">
-      <img src="{{url}}" alt="Chart for {{region}}" />
-      <p class="commentary" data-url="{{html}}"></p>
-      <p>
-      Download as: 
-      <ul class="list-inline">
-        <li>
-          <a href="{{csv}}">
-            <i class="fa fa-table"></i>
-            CSV
-          </a>
-        </li>
-        <li>
-          <a href="{{docx}}">
-            <i class="fa fa-file-text"></i>
-            Word Document
-          </a>
-        </li>
-      </ul>
-      </p>
+    {{#regions}}
+    <div class="tab-pane {{#first}}active{{/first}}" id="chart-region-{{slug}}">
+    {{#chart}}
+       {{> chart}}
+    {{/chart}}
+    {{^chart}}
+      <div class="tabbable">
+        <ul class="nav nav-tabs">
+          {{#charts}}
+          <li{{#first}} class="active"{{/first}} style="width: 8em; font-size: 75%">
+            <a href="#chart-image-{{slug}}" data-toggle="tab">
+              {{title}}
+            </a>
+          </li>
+          {{/charts}}
+        </ul>
+        <div class="tab-content">
+          {{#charts}}
+          <div class="tab-pane {{#first}}active{{/first}}" id="chart-image-{{slug}}">
+            {{> chart}}
+          </div>
+          {{/charts}}
+        </div>
+      </div>
+    {{/chart}}
     </div>
-    {{/charts}}
+    {{/regions}}
   </div>
 </div>
