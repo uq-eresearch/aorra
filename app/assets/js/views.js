@@ -1057,6 +1057,16 @@ define([
       var content = this.ui.source.val();
       this.ui.save.prop("disabled", this._content == content);
     },
+    convertWordTextToMarkdown: function(text) {
+      return text
+      // Insert newline before and after bullet points and ordered lists
+        .replace(/((?:([0-9]+\.\t|[•o]\s+)[^\n]+\n)+)/g, "\n$1\n")
+      // Replace first and second level bullet points
+        .replace(/(?!\n)•\s+/mg, " * ")
+        .replace(/(?!\n)o\s+/mg, "   * ")
+      // Replace first level ordered lists
+        .replace(/(?!\n)([0-9]+\.)\t/mg, "$1 ");
+    },
     onRender: function() {
       if (this.editable()) {
         var save = _.bind(function() {
@@ -1071,7 +1081,23 @@ define([
             _.bind(this.triggerMethod, this, 'source:update'));
         var htmlUpdated = 
           _.bind(this.triggerMethod, this, 'html:update')
+        var plainTextPasteHandler = _.bind(function(f) {
+          return _.bind(function(e) {
+            // cancel paste
+            e.preventDefault();
+            // get text representation of clipboard
+            var text = e.originalEvent.clipboardData.getData("text/plain");
+            var markdown = this.convertWordTextToMarkdown(text);
+            return f(markdown);
+          }, this);
+        }, this);
         this.ui.html.on('keyup', htmlUpdated);
+        this.ui.html.on("paste", plainTextPasteHandler(function(text) {
+          document.execCommand("insertHTML", false, marked(text));
+        }));
+        this.ui.source.on("paste", plainTextPasteHandler(function(text) {
+          document.execCommand("insertText", false, text);
+        }));
         this.ui.toolbar.on('click', htmlUpdated);
         this.ui.save.on('click', save);
         var selector = new ChartSelector({ model: this.model });
