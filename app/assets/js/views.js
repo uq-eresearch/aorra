@@ -820,7 +820,10 @@ define([
               }, { variable: 'v' }),
             csv: c.url.replace(/\.(png|svg)\?/, ".csv?"),
             docx: c.url.replace(/\.(png|svg)\?/, ".docx?"),
-            html: c.url.replace(/\.(png|svg)\?/, ".html?")
+            emf: c.url.replace(/\.(png|svg)\?/, ".emf?"),
+            html: c.url.replace(/\.(png|svg)\?/, ".html?"),
+            png: c.url.replace(/\.(png|svg)\?/, ".png?"),
+            svg: c.url.replace(/\.(png|svg)\?/, ".svg?")
           });
         };
       };
