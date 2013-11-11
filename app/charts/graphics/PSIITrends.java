@@ -1,16 +1,6 @@
 package charts.graphics;
 
-import static charts.graphics.Colors.BROWN;
-import static charts.graphics.Colors.GRAY;
-import static charts.graphics.Colors.GREEN;
-import static charts.graphics.Colors.LIGHT_BLUE;
-import static charts.graphics.Colors.LIGHT_BROWN;
-import static charts.graphics.Colors.ORANGE;
-import static charts.graphics.Colors.PINK;
-import static charts.graphics.Colors.PURPLE;
-import static charts.graphics.Colors.RED;
-import static charts.graphics.Colors.VIOLET;
-import static charts.graphics.Colors.YELLOW;
+import static charts.graphics.Colors.*;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -34,8 +24,8 @@ import org.jfree.chart.labels.CategoryItemLabelGenerator;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.CategoryItemRendererState;
-import org.jfree.chart.renderer.category.GradientBarPainter;
 import org.jfree.chart.renderer.category.StackedBarRenderer;
+import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.title.LegendTitle;
 import org.jfree.data.DataUtilities;
 import org.jfree.data.Range;
@@ -55,7 +45,7 @@ public class PSIITrends {
     public static final String SEPARATOR = AutoSubCategoryAxis.DEFAULT_SEPARATOR;
 
     private static final Paint[] SERIES_PAINT = new Paint[] {
-        PURPLE, LIGHT_BROWN, VIOLET, PINK, YELLOW, BROWN, ORANGE, LIGHT_BLUE, GREEN, RED, GRAY };
+        PINK, LIGHT_BROWN, BLUE, LIGHT_PURPLE, YELLOW, BROWN, ORANGE, LIGHT_BLUE, GREEN, RED, BLACK };
 
     private static class Renderer extends StackedBarRenderer {
 
@@ -237,7 +227,7 @@ public class PSIITrends {
             for(int i=0;i<SERIES_PAINT.length;i++) {
                 renderer.setSeriesPaint(i, SERIES_PAINT[i]);
             }
-            renderer.setBarPainter(new GradientBarPainter(0.0,0.0,0.5));
+            renderer.setBarPainter(new StandardBarPainter());
         }
         {
             Font f = plot.getRangeAxis().getTickLabelFont();

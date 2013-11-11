@@ -6,10 +6,10 @@ import org.apache.commons.lang3.StringUtils;
 
 public class Colors {
 
-    public static final Color PURPLE = fromHex("#D6117E");
+    public static final Color LIGHT_PURPLE = fromHex("#A68ED6");
     public static final Color LIGHT_BROWN = fromHex("#BAAF93");
     public static final Color VIOLET = fromHex("#2B3077");
-    public static final Color PINK = fromHex("#802A7D");
+    public static final Color PINK = fromHex("#E84CE3");
     public static final Color YELLOW = fromHex("#FDF117");
     public static final Color BROWN = fromHex("#907F71");
     public static final Color ORANGE = fromHex("#EB8C28");
@@ -20,6 +20,7 @@ public class Colors {
     public static final Color BLUE = fromHex("#206FAD");
     public static final Color DARK_RED = fromHex("#853806");
     public static final Color LIGHT_RED = fromHex("#FF7C7C");
+    public static final Color BLACK = fromHex("#000000");
 
     public static Color fromHex(String s) {
         String c = StringUtils.strip(StringUtils.strip(s), "#");
