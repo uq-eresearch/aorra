@@ -1,6 +1,16 @@
 package charts.graphics;
 
-import static charts.graphics.Colors.*;
+import static charts.graphics.Colors.BLACK;
+import static charts.graphics.Colors.BLUE;
+import static charts.graphics.Colors.BROWN;
+import static charts.graphics.Colors.GREEN;
+import static charts.graphics.Colors.LIGHT_BLUE;
+import static charts.graphics.Colors.LIGHT_BROWN;
+import static charts.graphics.Colors.LIGHT_PURPLE;
+import static charts.graphics.Colors.ORANGE;
+import static charts.graphics.Colors.PINK;
+import static charts.graphics.Colors.RED;
+import static charts.graphics.Colors.YELLOW;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -33,6 +43,7 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
 
+import svg.AorraSvgGraphics2D;
 import charts.Drawable;
 import charts.graphics.AutoSubCategoryAxis.Border;
 
@@ -162,7 +173,13 @@ public class PSIITrends {
                 }
             }
             else if (pass == 1) {
-                getBarPainter().paintBar(g2, this, row, column, bar, barBase);
+                if(g2 instanceof AorraSvgGraphics2D) {
+                    g2.setPaint(getItemPaint(row, column));
+                    ((AorraSvgGraphics2D) g2).fillWithTooltip(bar, String.format("%s %s ng/L",
+                            dataset.getRowKey(row).toString(), value));
+                } else {
+                    getBarPainter().paintBar(g2, this, row, column, bar, barBase);
+                }
 
                 // add an item entity, if this information is being collected
                 EntityCollection entities = state.getEntityCollection();

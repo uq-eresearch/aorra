@@ -9,6 +9,7 @@ import org.apache.batik.svggen.DefaultExtensionHandler
 import org.apache.batik.svggen.ImageHandlerBase64Encoder
 import org.apache.batik.svggen.SVGGraphics2D
 import org.w3c.dom.svg.SVGDocument
+import svg.AorraSvgGraphics2D
 
 class ChartRenderer(val chart: Drawable) {
 
@@ -21,7 +22,7 @@ class ChartRenderer(val chart: Drawable) {
     val doc = impl.createDocument(svgNS, "svg", null).asInstanceOf[SVGDocument]
 
     // Create an instance of the SVG Generator.
-    val g2 = new SVGGraphics2D(doc,
+    val g2 = new AorraSvgGraphics2D(doc,
         // Turn BufferedImage textures into "data:image/png" URIs
         new ImageHandlerBase64Encoder(),
         new DefaultExtensionHandler(),
