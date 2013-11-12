@@ -10,10 +10,11 @@ define([
         'marionette',
         'marked',
         'to-markdown',
+        'unstyler',
         'FileAPI',
         'jquery.bootstrap-wysiwyg',
         'typeahead'
-        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown) {
+        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown, unstyle) {
   'use strict';
 
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
@@ -1057,15 +1058,8 @@ define([
       var content = this.ui.source.val();
       this.ui.save.prop("disabled", this._content == content);
     },
-    convertWordTextToMarkdown: function(text) {
-      return text
-      // Insert newline before and after bullet points and ordered lists
-        .replace(/((?:([0-9]+\.\t|[•o]\s+)[^\n]+\n)+)/g, "\n$1\n")
-      // Replace first and second level bullet points
-        .replace(/(?!\n)•\s+/mg, " * ")
-        .replace(/(?!\n)o\s+/mg, "   * ")
-      // Replace first level ordered lists
-        .replace(/(?!\n)([0-9]+\.)\t/mg, "$1 ");
+    convertWordHtmlToMarkdown: function(html) {
+      return toMarkdown(unstyle(html));
     },
     onRender: function() {
       if (this.editable()) {
@@ -1079,15 +1073,15 @@ define([
         this.ui.html.wysiwyg(); // Initialize with Bootstrap WYSIWYG
         this.ui.source.on('keyup',
             _.bind(this.triggerMethod, this, 'source:update'));
-        var htmlUpdated = 
+        var htmlUpdated =
           _.bind(this.triggerMethod, this, 'html:update')
         var plainTextPasteHandler = _.bind(function(f) {
           return _.bind(function(e) {
             // cancel paste
             e.preventDefault();
             // get text representation of clipboard
-            var text = e.originalEvent.clipboardData.getData("text/plain");
-            var markdown = this.convertWordTextToMarkdown(text);
+            var html = e.originalEvent.clipboardData.getData("text/html");
+            var markdown = this.convertWordHtmlToMarkdown(html);
             return f(markdown);
           }, this);
         }, this);
