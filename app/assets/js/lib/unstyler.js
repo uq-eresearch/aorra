@@ -10,7 +10,7 @@
 (function() {
   "use strict";
   (function(exportFunc) {
-    var convertLists, foldLeft, locateLists, operations, removeOp, replaceOp, takeWhile, unstyle, unstylerModule;
+    var convertLists, foldLeft, locateLists, operations, removeOp, replaceOp, takeWhile, transformOp, unstyle, unstylerModule;
     foldLeft = function(iterable, zero, f) {
       var fPair, foldLeftArray, k, v;
       foldLeftArray = function(iterable, zero, f) {
@@ -60,6 +60,33 @@
     removeOp = function(regex) {
       return function(text) {
         return text.replace(new RegExp(regex.source, 'mg'), '');
+      };
+    };
+    transformOp = function(regex, transformFunc) {
+      return function(text) {
+        var foundAt, i, m, matchStr, operations, overwriteOp, untilIndex;
+        overwriteOp = function(i, j, str) {
+          var f;
+          f = function(t) {
+            return t.slice(0, +(i - 1) + 1 || 9e9) + str + t.slice(j);
+          };
+          f.toString = function() {
+            return "Overwrite @ " + i + "-" + j + ": " + str;
+          };
+          return f;
+        };
+        i = 0;
+        operations = [];
+        while ((m = text.slice(i).match(regex))) {
+          matchStr = m[0];
+          foundAt = i + m.index;
+          untilIndex = foundAt + matchStr.length;
+          operations.push(overwriteOp(foundAt, untilIndex, transformFunc(m)));
+          i = untilIndex;
+        }
+        return foldLeft(operations.reverse(), text, function(text, f) {
+          return f(text);
+        });
       };
     };
     locateLists = function(text) {
@@ -140,7 +167,11 @@
         });
       }
     };
-    operations = [removeOp(/(?:<\/html>)[\s\S]+/), removeOp(/<!--(\w|\W)+?-->/), removeOp(/<title>(\w|\W)+?<\/title>/), removeOp(/<(meta|link|\/?o:|\/?style|\/?div|\/?st\d|\/?head|\/?html|body|\/?body|\/?span|!\[)[^>]*?>/), removeOp(/(<[^>]+>)+&nbsp;(<\/\w+>)+/), removeOp(/\s+v:\w+=""[^""]+""/), removeOp(/(\n\r){2,}/), replaceOp(/Ã¢â‚¬â€œ/, "&mdash;"), convertLists, replaceOp(/(?:<p[^>]*>(?:(?:&nbsp;)+\s*)?[a-z0-9]+\.)(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), replaceOp(/(?:<p[^>]*>[·o])(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), removeOp(/\s?class=([\'"][^\'"]*[\'"]|\w+)/), removeOp(/\s+style='[^']+'/), replaceOp(/<b>([\s\S]*)<\/b>/, "<strong>$1</strong>"), replaceOp(/<i>([\s\S]*)<\/i>/, "<em>$1</em>"), replaceOp(/(\r\n)/, ' ')];
+    operations = [
+      removeOp(/(?:<\/html>)[\s\S]+/), removeOp(/<!--(\w|\W)+?-->/), removeOp(/<title>(\w|\W)+?<\/title>/), transformOp(/(<\/?)(P|BR|B|I|STRONG|UL|OL|LI)([^>]*?>)/, function(match) {
+        return match[1] + match[2].toLowerCase() + match[3];
+      }), removeOp(/<(meta|link|\/?o:|\/?style|\/?div|\/?st\d|\/?head|\/?html|body|\/?body|\/?span|!\[)[^>]*?>/), removeOp(/(<[^>]+>)+&nbsp;(<\/\w+>)+/), removeOp(/\s+v:\w+=""[^""]+""/), removeOp(/(\n\r){2,}/), replaceOp(/Ã¢â‚¬â€œ/, "&mdash;"), convertLists, replaceOp(/(?:<p[^>]*>(?:(?:&nbsp;)+\s*)?[a-z0-9]+\.)(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), replaceOp(/(?:<p[^>]*>[·o])(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), removeOp(new RegExp('\\s?class=(?:\'[^\']*\'|"[^"]*"|\\w+)')), removeOp(new RegExp('\\s+style=(?:\'[^\']*\'|"[^"]*")')), replaceOp(new RegExp('(<[ou]l)\\s+type=(?:\'[^\']+\'|"[^""]+")'), "$1"), replaceOp(/<b>([^<]*)<\/b>/, "<strong>$1</strong>"), replaceOp(/<i>([^<]*)<\/i>/, "<em>$1</em>"), replaceOp(/<br>(?:<\/br>)?/, "<br/>"), replaceOp(/(<li>[^<]*?)(?=\s*<li)/, "$1</li>"), replaceOp(/(\r\n)/, '\n')
+    ];
     unstyle = function(html) {
       return foldLeft(operations, html, function(text, f) {
         return f(text);
