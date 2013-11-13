@@ -1080,7 +1080,8 @@ define([
             // cancel paste
             e.preventDefault();
             // get text representation of clipboard
-            var html = e.originalEvent.clipboardData.getData("text/html");
+            var cb = e.originalEvent.clipboardData;
+            var html = cb.getData("text/html") || cb.getData("text/plain");
             var markdown = this.convertWordHtmlToMarkdown(html);
             return f(markdown);
           }, this);
