@@ -25,6 +25,7 @@ import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.fop.render.ps.EPSTranscoder;
+import org.apache.fop.svg.PDFTranscoder;
 import org.docx4j.convert.in.xhtml.XHTMLImporter;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
@@ -82,9 +83,34 @@ public abstract class AbstractChart implements Chart {
     case EPS:
       return format.createRepresentation(
           renderEPS(getChart(), queryDimensions));
+    case PDF:
+        return format.createRepresentation(
+          renderPDF(getChart(), queryDimensions));
     }
     throw new Chart.UnsupportedFormatException();
   }
+
+protected byte[] renderPDF(Drawable d, Dimension dimensions) {
+    try {
+        Document doc = toDocument(getDrawableDocument(d), dimensions);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        PDFTranscoder t = new PDFTranscoder();
+        if (dimensions.getWidth() > 0.0) {
+            t.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH,
+                    (float) dimensions.getWidth());
+        }
+        if (dimensions.getHeight() > 0.0) {
+            t.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT,
+                    (float) dimensions.getHeight());
+        }
+        t.transcode(new TranscoderInput(doc), new TranscoderOutput(os));
+        return os.toByteArray();
+    } catch(IOException e) {
+        throw new RuntimeException(e);
+    } catch(TranscoderException e) {
+        throw new RuntimeException(e);
+    }
+}
 
 protected String renderEPS(Drawable d, Dimension dimensions) {
     try {

@@ -9,7 +9,8 @@ public enum Format {
   HTML ("text/html"),
   PNG ("image/png"),
   SVG ("image/svg+xml"),
-  EPS ("image/x-eps");
+  EPS ("image/x-eps"),
+  PDF ("application/pdf");
 
   private String mimeType;
 
