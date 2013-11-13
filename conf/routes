@@ -64,3 +64,5 @@ GET    /folder/:folderId/charts.zip @controllers.ArchiveAsync.chartArchive(folde
 GET    /file/:fileId/charts.zip     @controllers.ArchiveAsync.chartArchive(fileId: String)
 GET    /file/:fileId/charts         @controllers.Chart.singleFileCharts(format: String ?= "png", fileId)
 GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.singleFileChart(chart, format, fileId)
+
+GET    /file/:fileId/html           @controllers.Markdown.toHtml(fileId)
