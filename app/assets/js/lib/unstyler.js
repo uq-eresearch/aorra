@@ -101,11 +101,17 @@
         msoList = matchStr.match(/l(\d+) level(\d+)/);
         rootId = parseInt(msoList[1]);
         depth = parseInt(msoList[2]);
-        listType = /^<p[^>]*>\d+\.(&nbsp;\s*)+/.test(text.slice(foundAt, untilIndex)) ? 'ol' : 'ul';
+        listType = function(str) {
+          if (/^<p[^>]*>(?:\s|&nbsp;)*[a-z0-9]+\.(&nbsp;\s*)+/.test(str)) {
+            return 'ol';
+          } else {
+            return 'ul';
+          }
+        };
         indexes.push({
           start: foundAt,
           end: untilIndex,
-          type: listType,
+          type: listType(text.slice(foundAt, untilIndex)),
           root: rootId,
           depth: depth
         });
@@ -170,7 +176,7 @@
     operations = [
       removeOp(/(?:<\/html>)[\s\S]+/), removeOp(/<!--(\w|\W)+?-->/), removeOp(/<title>(\w|\W)+?<\/title>/), transformOp(/(<\/?)(P|BR|B|I|STRONG|UL|OL|LI)([^>]*?>)/, function(match) {
         return match[1] + match[2].toLowerCase() + match[3];
-      }), removeOp(/<(meta|link|\/?o:|\/?style|\/?div|\/?st\d|\/?head|\/?html|body|\/?body|\/?span|!\[)[^>]*?>/), removeOp(/(<[^>]+>)+&nbsp;(<\/\w+>)+/), removeOp(/\s+v:\w+=""[^""]+""/), removeOp(/(\n\r){2,}/), replaceOp(/Ã¢â‚¬â€œ/, "&mdash;"), convertLists, replaceOp(/(?:<p[^>]*>(?:(?:&nbsp;)+\s*)?[a-z0-9]+\.)(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), replaceOp(/(?:<p[^>]*>[·o])(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), removeOp(new RegExp('\\s?class=(?:\'[^\']*\'|"[^"]*"|\\w+)')), removeOp(new RegExp('\\s+style=(?:\'[^\']*\'|"[^"]*")')), replaceOp(new RegExp('(<[ou]l)\\s+type=(?:\'[^\']+\'|"[^""]+")'), "$1"), replaceOp(/<b>([^<]*)<\/b>/, "<strong>$1</strong>"), replaceOp(/<i>([^<]*)<\/i>/, "<em>$1</em>"), replaceOp(/<br>(?:<\/br>)?/, "<br/>"), replaceOp(/(<li>[^<]*?)(?=\s*<li)/, "$1</li>"), replaceOp(/(\r\n)/, '\n')
+      }), removeOp(/<(meta|link|\/?o:|\/?style|\/?div|\/?st\d|\/?head|\/?html|body|\/?body|\/?span|!\[)[^>]*?>/), removeOp(/(<[^>]+>)+&nbsp;(<\/\w+>)+/), removeOp(/\s+v:\w+=""[^""]+""/), removeOp(/(\n\r){2,}/), replaceOp(/Ã¢â‚¬â€œ/, "&mdash;"), convertLists, replaceOp(/(?:<p[^>]*>(?:(?:&nbsp;)+\s*)?[a-z0-9]+\.)(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), replaceOp(/(?:<p[^>]*>[·o�])(?:&nbsp;\s*)+([^<]+)<\/p>/, "$1"), removeOp(new RegExp('\\s?class=(?:\'[^\']*\'|"[^"]*"|\\w+)')), removeOp(new RegExp('\\s+style=(?:\'[^\']*\'|"[^"]*")')), replaceOp(new RegExp('(<[ou]l)\\s+type=(?:\'[^\']+\'|"[^""]+")'), "$1"), replaceOp(/<b>([^<]*)<\/b>/, "<strong>$1</strong>"), replaceOp(/<i>([^<]*)<\/i>/, "<em>$1</em>"), replaceOp(/<br>(?:<\/br>)?/, "<br/>"), replaceOp(/(<li>[^<]*?)(?=\s*<li)/, "$1</li>"), replaceOp(/(\r\n)/, '\n')
     ];
     unstyle = function(html) {
       return foldLeft(operations, html, function(text, f) {
