@@ -9,16 +9,23 @@ define([
         'jquery.bootstrap',
         'marionette',
         'marked',
-        'to-markdown',
+        'markdownDOMParser',
+        'html2markdown',
         'unstyler',
         'FileAPI',
         'jquery.bootstrap-wysiwyg',
         'typeahead'
-        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown, unstyle) {
+        ], function(
+            models, templates, moment, DiffMatchPatch, glyphtree,
+            $, Backbone, marked, markdownDOMParser, html2markdown, unstyle) {
   'use strict';
 
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
-  
+
+  var toMarkdown = function(html) {
+    return html2markdown(html, { parser: markdownDOMParser });
+  };
+
   var formatTimestamp = function($n) {
     var dt = moment($n.text());
     $n.attr('title', $n.text());

@@ -15,10 +15,11 @@ requirejs.config({
       'jquery.hotkeys': 'lib/jquery.hotkeys',
       'jquery.bootstrap-wysiwyg': 'lib/bootstrap-wysiwyg',
       'FileAPI': 'lib/FileAPI.min',
+      'html2markdown': 'lib/html2markdown',
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
+      'markdownDOMParser': 'lib/markdown_dom_parser',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
-      'to-markdown': 'lib/to-markdown',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
       'unstyler': 'lib/unstyler'
     },
@@ -56,8 +57,12 @@ requirejs.config({
       'FileAPI': {
         exports: 'FileAPI'
       },
-      'to-markdown': {
-        exports: 'toMarkdown'
+      'markdownDOMParser': {
+        exports: 'markdownDOMParser'
+      },
+      'html2markdown': {
+        deps: ['markdownDOMParser'],
+        exports: 'html2markdown'
       },
       'typeahead': {
         deps: ['jquery'],
