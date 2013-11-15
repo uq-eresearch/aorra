@@ -1,7 +1,19 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
 /*global _: false, $: false, Backbone: false, define: false, window: false */
-define(['backbone'], function(Backbone) {
+define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
   'use strict';
+
+  var Avatar = function(options) {
+    this.name = options.name;
+    this.email = options.email;
+    this.image = function() {
+      var email = options.email,
+          emailHash = CryptoJS.MD5(email.toLowerCase()),
+          missing = options.missing || 'identicon',
+          size = options.size || 50;
+      return "//www.gravatar.com/avatar/"+emailHash+"?d="+missing+"&s="+size;
+    }
+  };
 
   var FileOrFolder = Backbone.Model.extend({
     displayUrl: function() {
@@ -72,6 +84,12 @@ define(['backbone'], function(Backbone) {
         }, this));
       }
       return deferred.promise();
+    },
+    avatar: function(options) {
+      return new Avatar(_(options).defaults({
+        name: this.get('author').name,
+        email: this.get('author').email
+      }));
     },
     url: function() {
       return this.collection.url() + '/' + this.get('name');
@@ -167,8 +185,15 @@ define(['backbone'], function(Backbone) {
       return d1 > d2 ? -1 : 1;
     }
   });
-
-  var User = Backbone.Model.extend({});
+  
+  var User = Backbone.Model.extend({
+    avatar: function(options) {
+      return new Avatar(_(options).defaults({
+        name: this.get('name'),
+        email: this.get('email')
+      }));
+    }
+  });
 
   var Users = Backbone.Collection.extend({
     model: User,

@@ -18,7 +18,7 @@ define([
   'use strict';
 
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
-  
+
   var formatTimestamp = function($n) {
     var dt = moment($n.text());
     $n.attr('title', $n.text());
@@ -417,7 +417,6 @@ define([
 
   var WatchingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
-      
       return {
         icon: this.isSet() ? 'eye' : 'eye-slash',
         flagType: 'watch',
@@ -466,10 +465,26 @@ define([
     }
   });
 
-  var VersionView = Backbone.Marionette.ItemView.extend({
+  var UserAvatar = Backbone.Marionette.ItemView.extend({
+    tagName: 'span',
+    serializeData: function() {
+      return this.model.avatar(_(this.options).pick('missing', 'size'));
+    },
+    template: function(data) {
+      return templates.render('user_avatar', data);
+    },
+    onRender: function(data) {
+      this.$el.find('[rel=tooltip]').tooltip();
+    }
+  });
+
+  var VersionView = Backbone.Marionette.Layout.extend({
     tagName: 'tr',
     modelEvents: {
       "change": "render"
+    },
+    regions: {
+      avatar: '.user-avatar'
     },
     triggers: {
       "click .delete": "version:delete"
@@ -493,8 +508,18 @@ define([
     template: function(serialized_model) {
       return templates.render('version_row', serialized_model);
     },
+    avatarView: function() {
+      if (!this._avatar) {
+        this._avatar = new UserAvatar({
+          model: this.model,
+          size: 20
+        });
+      }
+      return this._avatar;
+    },
     onRender: function($e) {
       formatTimestamp(this.ui.timestamp);
+      this.avatar.show(this.avatarView())
     },
     onVersionDelete: function(e) {
       e.model.destroy();
@@ -1529,12 +1554,21 @@ define([
       this.addRegions({
         notifications: new Backbone.Marionette.Region({
           el: '#notifications-nav-item'
+        }),
+        currentUserAvatar: new Backbone.Marionette.Region({
+          el: '#current-user-avatar'
         })
       });
       this.notifications.show(new NotificationsNavView({
         collection: this.notificationMessages
       }));
       this.notificationMessages.fetch();
+      this.users.once('sync reset', function() {
+        this.currentUserAvatar.show(new UserAvatar({
+          model: this.users.current(),
+          size: 20
+        }));
+      }, this);
     },
     getFileTree: function() {
       if (_.isUndefined(this._fileTree)) {

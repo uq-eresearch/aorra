@@ -7,6 +7,7 @@ var FileAPI = {
 requirejs.config({
     paths: {
       'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min',
+      'cryptojs-md5': 'lib/cryptojs-md5',
       'diff_match_patch': 'lib/diff_match_patch',
       'glyphtree': 'lib/glyphtree',
       'hogan': 'lib/hogan',
@@ -33,6 +34,9 @@ requirejs.config({
       'marionette': {
         deps: ['backbone'],
         exports: 'Backbone'
+      },
+      'cryptojs-md5': {
+        exports: 'CryptoJS'
       },
       'diff_match_patch': {
         exports: 'diff_match_patch'
