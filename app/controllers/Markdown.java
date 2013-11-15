@@ -35,6 +35,16 @@ public class Markdown extends SessionAwareController {
         }
     }
 
+    @SubjectPresent
+    public Result toHtmlZip(final String fileId) {
+        try {
+            return ok(new markdown.Markdown().toHtmlZip(filename(fileId), content(fileId),
+                    request().cookie("PLAY_SESSION").value())).as("application/zip");
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String content(final String fileId) {
         return inUserSession(new F.Function<Session, String>() {
             @Override
@@ -50,4 +60,21 @@ public class Markdown extends SessionAwareController {
             }
         });
     }
+
+    private String filename(final String fileId) {
+        return inUserSession(new F.Function<Session, String>() {
+            @Override
+            public final String apply(Session session) throws Exception {
+                final FileStore.Manager fm = fileStore.getManager(session);
+                FileStore.FileOrFolder fof = fm.getByIdentifier(fileId);
+                if (fof instanceof FileStore.File) {
+                    FileStore.File file = (FileStore.File) fof;
+                    return file.getName();
+                } else {
+                    throw new RuntimeException("folder");
+                }
+            }
+        });
+    }
+
 }

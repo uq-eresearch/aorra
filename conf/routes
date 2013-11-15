@@ -66,3 +66,4 @@ GET    /file/:fileId/charts         @controllers.Chart.singleFileCharts(format: 
 GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.singleFileChart(chart, format, fileId)
 
 GET    /file/:fileId/html           @controllers.Markdown.toHtml(fileId)
+GET    /file/:fileId/htmlzip        @controllers.Markdown.toHtmlZip(fileId)
