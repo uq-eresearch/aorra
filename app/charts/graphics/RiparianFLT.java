@@ -11,7 +11,8 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.renderer.category.CategoryItemRenderer;
+import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.CategoryDataset;
 
 import charts.Drawable;
@@ -39,9 +40,10 @@ public class RiparianFLT {
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickUnit(new NumberTickUnit(5));
         rangeAxis.setRange(0.0, upperRange(dataset));
-        final CategoryItemRenderer renderer = plot.getRenderer();
+        final BarRenderer renderer = (BarRenderer)plot.getRenderer();
         renderer.setSeriesItemLabelsVisible(0, Boolean.TRUE);
         renderer.setSeriesPaint(0, Colors.BLUE);
+        renderer.setBarPainter(new StandardBarPainter());
         CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setMaximumCategoryLabelLines(3);
         domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);

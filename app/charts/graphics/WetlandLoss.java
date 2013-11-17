@@ -10,6 +10,7 @@ import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.GroupedStackedBarRenderer;
+import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.KeyToGroupMap;
 import org.jfree.data.category.CategoryDataset;
 
@@ -46,6 +47,7 @@ public class WetlandLoss {
         renderer.setSeriesPaint(2, Colors.BLUE);
         renderer.setSeriesPaint(3, Colors.LIGHT_BLUE);
         renderer.setItemMargin(0);
+        renderer.setBarPainter(new StandardBarPainter());
         plot.setRenderer(renderer);
         final CategoryAxis cAxis = plot.getDomainAxis();
         cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);

@@ -10,6 +10,7 @@ import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.CategoryDataset;
 
 import charts.Drawable;
@@ -37,6 +38,7 @@ public class WetlandsRemaing {
         renderer.setSeriesPaint(0, Colors.BLUE);
         renderer.setSeriesPaint(1, Colors.RED);
         renderer.setItemMargin(0);
+        renderer.setBarPainter(new StandardBarPainter());
         final CategoryAxis cAxis = plot.getDomainAxis();
         cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         chart.getTitle().setFont(cAxis.getLabelFont());

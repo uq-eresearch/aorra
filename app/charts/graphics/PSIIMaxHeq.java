@@ -20,7 +20,7 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.CategoryItemRendererState;
-import org.jfree.chart.renderer.category.GradientBarPainter;
+import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.title.LegendTitle;
 import org.jfree.data.Range;
 import org.jfree.data.category.CategoryDataset;
@@ -142,7 +142,7 @@ public class PSIIMaxHeq {
         }
         {
             BarRenderer renderer = (BarRenderer)plot.getRenderer();
-            renderer.setBarPainter(new GradientBarPainter(0.0,0.0,0.5));
+            renderer.setBarPainter(new StandardBarPainter());
         }
         {
             Font f = plot.getRangeAxis().getTickLabelFont();
