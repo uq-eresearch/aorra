@@ -50,6 +50,11 @@ GET     /file/:fileId/version/:vn       @controllers.FileStoreController.downloa
 DELETE  /file/:fileId/version/:vn       @controllers.FileStoreController.deleteVersion(fileId, vn)
 GET     /file/:fileId/version/:vn/text-summary    @controllers.FileStoreController.fileTextSummary(fileId, vn)
 DELETE  /file/:fileId                   @controllers.FileStoreController.delete(fileId)
+GET     /file/:fileId/comments          @controllers.CommentController.list(fileId)
+POST    /file/:fileId/comments          @controllers.CommentController.create(fileId)
+GET     /file/:fileId/comments/:cId     @controllers.CommentController.get(cId, fileId)
+PUT     /file/:fileId/comments/:cId     @controllers.CommentController.update(cId, fileId)
+DELETE  /file/:fileId/comments/:cId     @controllers.CommentController.delete(cId, fileId)
 
 GET     /events                     @controllers.FileStoreAsync.events()
 
