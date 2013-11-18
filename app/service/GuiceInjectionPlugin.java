@@ -21,6 +21,8 @@ import play.libs.F;
 import providers.CacheableUserProvider;
 import providers.CacheableUserProviderImpl;
 import providers.JackrabbitEmailPasswordAuthProvider;
+import service.filestore.CommentStore;
+import service.filestore.CommentStoreImpl;
 import service.filestore.EventManager;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
@@ -96,6 +98,8 @@ public class GuiceInjectionPlugin extends Plugin {
           public Session apply(Session session) throws Throwable {
             bind(FlagStore.class)
               .toInstance(new FlagStore(jcrom, session));
+            bind(CommentStore.class)
+              .toInstance(new CommentStoreImpl(jcrom, session));
             return session;
           }
         });
@@ -134,6 +138,7 @@ public class GuiceInjectionPlugin extends Plugin {
   private Jcrom buildJcrom() {
     final Jcrom jcrom = new Jcrom(false, true);
     jcrom.map(User.class);
+    jcrom.map(models.Comment.class);
     jcrom.map(models.Flag.class);
     jcrom.map(models.filestore.File.class);
     jcrom.map(models.filestore.Folder.class);
