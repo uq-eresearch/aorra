@@ -119,7 +119,7 @@ public final class CommentController extends SessionAwareController {
 
   private ObjectNode toJson(CommentStore.Comment comment) {
     final SimpleDateFormat iso8601 = new SimpleDateFormat(
-        "yyyy-MM-dd'T'HH:mm:ssZ");
+        "yyyy-MM-dd'T'HH:mm:ss.SZ");
     final ObjectNode json = JsonNodeFactory.instance.objectNode();
     json.put("id", comment.getId());
     json.put("userId", comment.getUserId());

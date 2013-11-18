@@ -69,6 +69,7 @@ public class CommentControllerTest {
             injector().getInstance(CommentStore.class).getManager(session);
         csm.create(user.getId(), targetId, "Test message #1");
         csm.create(user.getId(), targetId, "Test message #2");
+        csm.create(user.getId(), UUID.randomUUID().toString(), "Other message");
         final Result result = callAction(
             controllers.routes.ref.CommentController.list(targetId),
             newRequest);
@@ -80,10 +81,157 @@ public class CommentControllerTest {
         final JsonNode json = Json.parse(contentAsString(result));
         assertThat(json.isArray()).isTrue();
         for (JsonNode jsonObj : json) {
-          System.out.println(jsonObj);
+          assertThat(jsonObj.has("id")).isTrue();
           assertThat(jsonObj.get("targetId").asText()).isEqualTo(targetId);
           assertThat(jsonObj.get("userId").asText()).isEqualTo(user.getId());
+          assertThat(jsonObj.has("message")).isTrue();
+          assertThat(jsonObj.has("created")).isTrue();
+          assertThat(jsonObj.has("modified")).isTrue();
         }
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void get() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final String targetId = UUID.randomUUID().toString();
+        final CommentStore.Manager csm =
+            injector().getInstance(CommentStore.class).getManager(session);
+        csm.create(user.getId(), targetId, "Test message #1");
+        final CommentStore.Comment intendedComment =
+            csm.create(user.getId(), targetId, "Test message #2");
+        final Result result = callAction(
+            controllers.routes.ref.CommentController.get(
+                intendedComment.getId(), targetId),
+            newRequest);
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
+        final JsonNode json = Json.parse(contentAsString(result));
+        assertThat(json.isArray()).isFalse();
+        assertThat(json.get("id").asText()).isEqualTo(intendedComment.getId());
+        assertThat(json.get("targetId").asText()).isEqualTo(targetId);
+        assertThat(json.get("userId").asText()).isEqualTo(user.getId());
+        assertThat(json.get("message").asText()).isEqualTo(
+            intendedComment.getMessage());
+        assertThat(json.has("created")).isTrue();
+        assertThat(json.has("modified")).isTrue();
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void create() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final String targetId = UUID.randomUUID().toString();
+        final String msg = "Test message.";
+        final CommentStore.Manager csm =
+            injector().getInstance(CommentStore.class).getManager(session);
+        final ObjectNode requestJson = Json.newObject();
+        requestJson.put("message", msg);
+        final Result result = callAction(
+            controllers.routes.ref.CommentController.create(targetId),
+            newRequest.withJsonBody(requestJson));
+        assertThat(status(result)).isEqualTo(201);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
+        final JsonNode json = Json.parse(contentAsString(result));
+        assertThat(json.isArray()).isFalse();
+        final CommentStore.Comment comment = csm.findByTarget(targetId).first();
+        assertThat(json.get("id").asText()).isEqualTo(comment.getId());
+        assertThat(json.get("targetId").asText()).isEqualTo(targetId);
+        assertThat(comment.getTargetId()).isEqualTo(targetId);
+        assertThat(json.get("userId").asText()).isEqualTo(user.getId());
+        assertThat(comment.getUserId()).isEqualTo(user.getId());
+        assertThat(json.get("message").asText()).isEqualTo(msg);
+        assertThat(comment.getMessage()).isEqualTo(msg);
+        assertThat(json.has("created")).isTrue();
+        assertThat(json.has("modified")).isTrue();
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void update() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final String targetId = UUID.randomUUID().toString();
+        final String msg = "Test message.";
+        final String newMsg = "Updated message.";
+        final CommentStore.Manager csm =
+            injector().getInstance(CommentStore.class).getManager(session);
+        final String cId = csm.create(user.getId(), targetId, msg).getId();
+        final ObjectNode requestJson = Json.newObject();
+        requestJson.put("message", newMsg);
+        final Result result = callAction(
+            controllers.routes.ref.CommentController.update(cId, targetId),
+            newRequest.withJsonBody(requestJson));
+        assertThat(status(result)).isEqualTo(200);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
+        final JsonNode json = Json.parse(contentAsString(result));
+        assertThat(json.isArray()).isFalse();
+        final CommentStore.Comment comment = csm.findById(cId);
+        assertThat(json.get("id").asText()).isEqualTo(comment.getId());
+        assertThat(json.get("targetId").asText()).isEqualTo(targetId);
+        assertThat(comment.getTargetId()).isEqualTo(targetId);
+        assertThat(json.get("userId").asText()).isEqualTo(user.getId());
+        assertThat(comment.getUserId()).isEqualTo(user.getId());
+        assertThat(json.get("message").asText()).isEqualTo(newMsg);
+        assertThat(comment.getMessage()).isEqualTo(newMsg);
+        assertThat(json.has("created")).isTrue();
+        assertThat(json.has("modified")).isTrue();
+        assertThat(json.get("modified").asText()).isNotEqualTo(
+            json.get("created").asText());
+        return session;
+      }
+    });
+  }
+
+  @Test
+  public void delete() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final String targetId = UUID.randomUUID().toString();
+        final String msg = "Test message.";
+        final CommentStore.Manager csm =
+            injector().getInstance(CommentStore.class).getManager(session);
+        final String cId = csm.create(user.getId(), targetId, msg).getId();
+        final Result result = callAction(
+            controllers.routes.ref.CommentController.delete(cId, targetId),
+            newRequest);
+        assertThat(status(result)).isEqualTo(204);
+        assertThat(header("Cache-Control", result))
+          .isEqualTo("max-age=0, must-revalidate");
+        assertThat(csm.findById(cId)).isNull();
         return session;
       }
     });
