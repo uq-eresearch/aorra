@@ -67,3 +67,4 @@ GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.singleFileCh
 
 GET    /file/:fileId/html           @controllers.Markdown.toHtml(fileId)
 GET    /file/:fileId/htmlzip        @controllers.Markdown.toHtmlZip(fileId)
+GET    /file/:fileId/pdf            @controllers.Markdown.toPdf(fileId, converter: String ?="", copts: String ?= "")

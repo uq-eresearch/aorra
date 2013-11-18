@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -35,6 +36,9 @@ import com.google.common.io.Files;
 
 public class Markdown {
 
+    private static final String CMD_WK = "/usr/bin/wkhtmltopdf";
+    private static final String CMD_PANDOC = "/usr/bin/pandoc";
+
     private static final String HTML_INTRO = "<!doctype html><html><head></head><body>";
     private static final String HTML_OUTRO = "</body></html>";
 
@@ -49,6 +53,121 @@ public class Markdown {
                 FilenameUtils.removeExtension(name)+".html", html, playSession);
         File zipFile = zip(destination, name);
         return zipFile;
+    }
+
+    public File toPdf(String name, String markdown, String playSession, String converter, String copts) {
+        String html = toHtml(markdown);
+        File destination = Files.createTempDir();
+        String filename = FilenameUtils.removeExtension(name)+".html";
+        File htmlFile = toFolder(destination, filename, html, playSession);
+        return pdf(htmlFile, converter, copts);
+    }
+
+    private File pdf(File in, String converter, String copts) {
+        try {
+            File destfolder = Files.createTempDir();
+            File out = new File(destfolder, FilenameUtils.removeExtension(in.getName())+".pdf");
+            ProcessBuilder pb = converter(choose(converter), copts, in, out);
+            pb.directory(in.getParentFile());
+            pb.redirectErrorStream(true);
+            File log = new File(destfolder, "converter.log");
+            pb.redirectErrorStream(true);
+            pb.redirectOutput(Redirect.to(log));
+            Process p = pb.start();
+            // TODO do not wait forever
+            int es = p.waitFor();
+            if(out.exists()) {
+                return out;
+            } else {
+                String msg = "pdf creation failed with exit status "+es;
+                if(log.exists()) {
+                    throw new RuntimeException(msg+"\n"+FileUtils.readFileToString(log)+
+                            "\nfrom "+log.getAbsolutePath());
+                } else {
+                    throw new RuntimeException(msg+" "+destfolder.getAbsolutePath());
+                }
+            }
+        } catch(Exception e) {
+            throw new RuntimeException(String.format("failed to create pdf from %s",in.getName()),e);
+        }
+    }
+
+    private String choose(String converter) {
+        List<String> available = Lists.newArrayList();
+        if(new File(CMD_WK).exists()) {
+            available.add(CMD_WK);
+        }
+        if(new File(CMD_PANDOC).exists()) {
+            available.add(CMD_PANDOC);
+        }
+        if(available.isEmpty()) {
+            throw new RuntimeException("no converter available (install pandoc or wkhtmltopdf)");
+        } else if(available.size() == 1) {
+            return available.get(0);
+        } else {
+            for(String s : available) {
+                if(StringUtils.contains(s, converter)) {
+                    return s;
+                }
+            }
+            return available.get(0);
+        }
+    }
+
+    private ProcessBuilder converter(String converter, String copts, File in, File out) {
+        if(StringUtils.equals(converter, CMD_WK)) {
+            return new ProcessBuilder(cmd(converter,
+                    options(copts), in.getName(), out.getAbsolutePath()));
+        } else if(StringUtils.equals(converter,CMD_PANDOC)) {
+            return new ProcessBuilder(cmd(converter,
+                    options(copts), "-o", out.getAbsolutePath(), in.getName()));
+        } else {
+            throw new RuntimeException(String.format("unknown converter '%s'", converter));
+        }
+    }
+
+    private List<String> cmd(Object... params) {
+        List<String> cmd = Lists.newArrayList();
+        for(Object o : params) {
+            if(o instanceof String) {
+                cmd.add((String)o);
+            } else if(o instanceof List<?>) {
+                for(Object o2 : (List<?>)o) {
+                    if(o2 instanceof String) {
+                        cmd.add((String)o2);
+                    } else {
+                        throw new RuntimeException();
+                    }
+                }
+            } else {
+                throw new RuntimeException();
+            }
+        }
+        return cmd;
+    }
+
+    private List<String> options(String copts) {
+        return split(copts);
+    }
+
+    //from http://stackoverflow.com/a/366532
+    private List<String> split(String copts) {
+        List<String> matchList = Lists.newArrayList();
+        Pattern regex = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
+        Matcher regexMatcher = regex.matcher(copts);
+        while (regexMatcher.find()) {
+            if (regexMatcher.group(1) != null) {
+                // Add double-quoted string without the quotes
+                matchList.add(regexMatcher.group(1));
+            } else if (regexMatcher.group(2) != null) {
+                // Add single-quoted string without the quotes
+                matchList.add(regexMatcher.group(2));
+            } else {
+                // Add unquoted word
+                matchList.add(regexMatcher.group());
+            }
+        }
+        return matchList;
     }
 
     private File zip(File destination, String name) {
@@ -95,22 +214,16 @@ public class Markdown {
     private String downloadImages(String html, File destination, String playSession) {
         Map<String, String> srcMap = Maps.newHashMap();
         int fc = 0;
-        String line = html.replace("\n", "");
-        Pattern p = Pattern.compile(".*?<img.+?src=\"(.+?)\".*?>.*");
-        while(true) {
-            Matcher m = p.matcher(line);
-            if(m.matches()) {
-                String imgSrc = m.group(1);
-                if(!srcMap.containsKey(imgSrc)) {
-                    String localPath = String.format("files/img%s_%s",
-                            Integer.toString(fc++), getFilename(imgSrc));
-                    if(download(imgSrc, localPath, destination, playSession)) {
-                        srcMap.put(imgSrc, localPath);
-                    }
+        Pattern p = Pattern.compile("<img.+?src=\"(.+?)\".*?>");
+        Matcher m = p.matcher(html.replace("\n", "").replace("\r", ""));
+        while(m.find()) {
+            String imgSrc = m.group(1);
+            if(!srcMap.containsKey(imgSrc)) {
+                String localPath = String.format("files/img%s_%s",
+                        Integer.toString(fc++), getFilename(imgSrc));
+                if(download(imgSrc, localPath, destination, playSession)) {
+                    srcMap.put(imgSrc, localPath);
                 }
-                line = line.substring(line.indexOf(imgSrc)+1);
-            } else {
-                break;
             }
         }
         for(Map.Entry<String, String> me : srcMap.entrySet()) {

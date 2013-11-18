@@ -45,6 +45,16 @@ public class Markdown extends SessionAwareController {
         }
     }
 
+    @SubjectPresent
+    public Result toPdf(final String fileId, String converter, String copts) {
+        try {
+            return ok(new markdown.Markdown().toPdf(filename(fileId), content(fileId),
+                    request().cookie("PLAY_SESSION").value(), converter, copts)).as("application/pdf");
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String content(final String fileId) {
         return inUserSession(new F.Function<Session, String>() {
             @Override
