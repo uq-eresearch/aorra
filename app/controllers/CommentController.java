@@ -122,8 +122,8 @@ public final class CommentController extends SessionAwareController {
         "yyyy-MM-dd'T'HH:mm:ssZ");
     final ObjectNode json = JsonNodeFactory.instance.objectNode();
     json.put("id", comment.getId());
-    json.put("userId", comment.getTargetId());
-    json.put("targetId", comment.getUserId());
+    json.put("userId", comment.getUserId());
+    json.put("targetId", comment.getTargetId());
     json.put("message", comment.getMessage());
     json.put("created",
         iso8601.format(comment.getCreationTime().getTime()));
