@@ -39,6 +39,8 @@ public class Markdown {
     private static final String CMD_WK = "/usr/bin/wkhtmltopdf";
     private static final String CMD_PANDOC = "/usr/bin/pandoc";
 
+    private static final String MISSING = "files/img_missing.png";
+
     private static final String HTML_INTRO = "<!doctype html><html><head></head><body>";
     private static final String HTML_OUTRO = "</body></html>";
 
@@ -211,25 +213,38 @@ public class Markdown {
         }
     }
 
-    private String downloadImages(String html, File destination, String playSession) {
+    private String downloadImages(String html, File destination, String playSession) throws IOException {
         Map<String, String> srcMap = Maps.newHashMap();
         int fc = 0;
-        Pattern p = Pattern.compile("<img.+?src=\"(.+?)\".*?>");
-        Matcher m = p.matcher(html.replace("\n", "").replace("\r", ""));
+        Pattern p = Pattern.compile("(<img.+?src=\")(.+?)(\".*?>)");
+        Matcher m = p.matcher(html);
+        StringBuffer result = new StringBuffer();
         while(m.find()) {
-            String imgSrc = m.group(1);
+            String imgSrc = m.group(2);
+            String localPath;
             if(!srcMap.containsKey(imgSrc)) {
-                String localPath = String.format("files/img%s_%s",
-                        Integer.toString(fc++), getFilename(imgSrc));
+                localPath = String.format("files/img%s_%s",
+                        Integer.toString(fc), getFilename(imgSrc));
                 if(download(imgSrc, localPath, destination, playSession)) {
-                    srcMap.put(imgSrc, localPath);
+                    fc++;
+                } else {
+                    File fMissing = new File(destination, MISSING);
+                    if(!fMissing.exists()) {
+                        InputStream in = this.getClass().getResourceAsStream("missing.png");
+                        FileOutputStream out = new FileOutputStream(fMissing);
+                        IOUtils.copy(in, out);
+                        IOUtils.closeQuietly(out);
+                    }
+                    localPath = MISSING;
                 }
+                srcMap.put(imgSrc, localPath);
+            } else {
+                localPath = srcMap.get(imgSrc);
             }
+            m.appendReplacement(result, String.format("$1%s$3", localPath));
         }
-        for(Map.Entry<String, String> me : srcMap.entrySet()) {
-            html = StringUtils.replace(html, me.getKey(), me.getValue());
-        }
-        return html;
+        m.appendTail(result);
+        return result.toString();
     }
 
     private boolean download(String src, String local, File destination, String playSession) {
