@@ -251,13 +251,13 @@ require(['models', 'views'], function(models, views) {
         this._setMainActive();
       },
       _setMainActive: function() {
-        layout.main.$el.addClass('active');
-        layout.sidebar.$el.removeClass('active');
+        $('#main').addClass('active');
+        $('#sidebar').removeClass('active');
         $('#nav-back').removeClass('hidden');
       },
       _setSidebarActive: function() {
-        layout.sidebar.$el.addClass('active');
-        layout.main.$el.removeClass('active');
+        $('#sidebar').addClass('active');
+        $('#main').removeClass('active');
         $('#nav-back').addClass('hidden');
       }
     });
