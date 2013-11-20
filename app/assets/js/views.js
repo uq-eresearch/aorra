@@ -1574,13 +1574,16 @@ define([
     },
     onRender: function() {
       var $sidebar = this.$el.find('#sidebar');
+      var $main = this.$el.find('#main');
       var $sidebarPanel = $sidebar.find('.panel');
       $sidebarPanel.on('click', '.panel-heading', function(e) {
         var dt = 500;
         $sidebar.toggleClass('col-md-4 col-md-1', dt);
         if ($sidebarPanel.hasClass('collapsed')) {
+          $main.toggleClass('col-md-8 col-md-11', dt * 0.9);
           _.delay(function() { $sidebarPanel.removeClass('collapsed'); }, dt);
         } else {
+          $main.toggleClass('col-md-8 col-md-11', dt);
           $sidebarPanel.addClass('collapsed');
         }
       });
