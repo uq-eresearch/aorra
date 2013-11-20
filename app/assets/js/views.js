@@ -13,6 +13,7 @@ define([
         'unstyler',
         'FileAPI',
         'jquery.bootstrap-wysiwyg',
+        'jquery.ui',
         'typeahead'
         ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown, unstyle) {
   'use strict';
@@ -1547,7 +1548,7 @@ define([
     template: "#main-layout",
     regions: {
       main: "#main",
-      sidebar: "#sidebar"
+      sidebar: "#sidebar .panel-body"
     },
     initialize: function(options) {
       this.users = options.users;
@@ -1570,6 +1571,19 @@ define([
           size: 20
         }));
       }, this);
+    },
+    onRender: function() {
+      var $sidebar = this.$el.find('#sidebar');
+      var $sidebarPanel = $sidebar.find('.panel');
+      $sidebarPanel.on('click', '.panel-heading', function(e) {
+        var dt = 500;
+        $sidebar.toggleClass('col-md-4 col-md-1', dt);
+        if ($sidebarPanel.hasClass('collapsed')) {
+          _.delay(function() { $sidebarPanel.removeClass('collapsed'); }, dt);
+        } else {
+          $sidebarPanel.addClass('collapsed');
+        }
+      });
     },
     getFileTree: function() {
       if (_.isUndefined(this._fileTree)) {

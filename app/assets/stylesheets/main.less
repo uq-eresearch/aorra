@@ -45,6 +45,25 @@ html, body {
 	margin-top: 5px;
 }
 
+.sidebar-panel {
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.sidebar-panel.collapsed {
+	float: left;
+  width: 45px;
+  .panel-heading {
+    height: 500px;
+    .title-text {
+      display: none;
+    }
+  }
+  .panel-body {
+    display: none;
+  }
+}
+
 #markdown-html {
 	border: dashed 1px #dddddd;
 	border-top: none;
