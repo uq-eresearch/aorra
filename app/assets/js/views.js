@@ -1203,7 +1203,7 @@ define([
     updateDiff: function() {
       var dmp = new DiffMatchPatch();
       // Perform diff calculation and cleanup
-      var diff = dmp.diff_main(this._content, this.ui.html.html());
+      var diff = dmp.diff_main(this._content, this.ui.html.cleanHtml());
       dmp.diff_cleanupSemantic(diff);
       var $docFragments = _.map(diff, function(v) {
         var $el;
