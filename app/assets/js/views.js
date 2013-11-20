@@ -28,7 +28,6 @@ define([
 
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
-      { pattern: /markdown/, type: 'document' },
       { pattern: /^image/, type: 'image' },
       { pattern: /^text/, type: 'document' },
       { pattern: /wordprocessingml\.document$/, type: 'document' },
@@ -1135,6 +1134,140 @@ define([
       this._watchEditFlags();
     }
   });
+  
+  var HtmlEditor = Backbone.Marionette.Layout.extend({
+    modelEvents: {
+      "sync": "fetchData"
+    },
+    regions: {
+      chartSelector: '.chart-selector'
+    },
+    ui: {
+      diff: '.diff-pane',
+      toolbar: '.html-toolbar',
+      html: '.html-pane',
+      save: 'button.save'
+    },
+    initialize: function(options) {
+      this._content = '';
+      this._users = this.options.users;
+      this.fetchData();
+    },
+    fetchData: function() {
+      $.get(this.model.downloadUrl(), _.bind(function(data) {
+        this._content = data;
+      }, this)).done(_.bind(this.render, this));
+    },
+    serializeData: function() {
+      return {
+        content: this._content,
+        editable: this.editable()
+      };
+    },
+    template: function(obj) {
+      return templates.render('html_editor', {
+        html: unstyle(obj.content),
+        editable: obj.editable
+      });
+    },
+    flags: function() {
+      return this._users.flags()['edit'];
+    },
+    editable: function() {
+      if (this.model.get('accessLevel') != 'RW') {
+        return false;
+      }
+      var flags = this.flags().filter(_.bind(function(f) {
+        return f.get('targetId') == this.model.id;
+      }, this));
+      return flags.length == 1 && _(flags).any(_.bind(function(m) {
+        return m.get('userId') == this._users.currentId();
+      }, this));
+    },
+    _watchEditFlags: function() {
+      if (this._watchingFlags) { return; }
+      this.flags().on('add remove', _.bind(function(f) {
+        if (f.get('targetId') == this.model.id) {
+          this.render();
+        }
+      }, this));
+      this._watchingFlags = true;
+    },
+    onHtmlUpdate: function() {
+      this.ui.html.find('span[style]').each(function(i, e) {
+        $(e).replaceWith($(e).html());
+      })
+      this.updateDiff();
+      this.toggleSave();
+    },
+    updateDiff: function() {
+      var dmp = new DiffMatchPatch();
+      // Perform diff calculation and cleanup
+      var diff = dmp.diff_main(this._content, this.ui.html.html());
+      dmp.diff_cleanupSemantic(diff);
+      var $docFragments = _.map(diff, function(v) {
+        var $el;
+        switch (v[0]) {
+        case -1:
+          $el = $('<del class="red-text"/>');
+          break;
+        case 1:
+          $el = $('<ins class="green-text"/>');
+          break;
+        default:
+          $el = $('<span/>');
+        }
+        $el.text(v[1]);
+        return $el;
+      });
+      this.ui.diff.html($docFragments);
+    },
+    toggleSave: function() {
+      var content = this.ui.html.html();
+      this.ui.save.prop("disabled", this._content == content);
+    },
+    onRender: function() {
+      if (this.editable()) {
+        var save = _.bind(function() {
+          $.ajax(this.model.uploadUrl(), {
+            type: 'POST',
+            contentType: 'text/html',
+            data: unstyle(this.ui.html.html())
+          });
+        }, this);
+        this.ui.html.wysiwyg(); // Initialize with Bootstrap WYSIWYG
+        var htmlUpdated =
+          _.bind(this.triggerMethod, this, 'html:update')
+        var plainTextPasteHandler = _.bind(function(f) {
+          return _.bind(function(e) {
+            // cancel paste
+            e.preventDefault();
+            // get text representation of clipboard
+            var cb = e.originalEvent.clipboardData;
+            var html = cb.getData("text/html") || cb.getData("text/plain");
+            var cleanHtml = unstyle(html);
+            return f(cleanHtml);
+          }, this);
+        }, this);
+        this.ui.html.on('keyup', htmlUpdated);
+        this.ui.html.on("paste", plainTextPasteHandler(function(text) {
+          document.execCommand("insertHTML", false, text);
+        }));
+        this.ui.toolbar.on('click', htmlUpdated);
+        this.ui.save.on('click', save);
+        var selector = new ChartSelector({ model: this.model });
+        this.chartSelector.show(selector);
+        selector.on('chart:selected', _.bind(function(chart) {
+          this.ui.html.append(templates.render('chart_with_caption', chart));
+          htmlUpdated();
+        }, this));
+        this.toggleSave(this._content);
+      } else {
+        this.ui.toolbar.hide();
+      }
+      this._watchEditFlags();
+    }
+  });
 
   var NoEditorView = Backbone.Marionette.ItemView.extend({
     template: function() {
@@ -1149,6 +1282,9 @@ define([
       case 'document':
         if (/markdown/.test(file.get('mime'))) {
           return new MarkdownEditor({ model: file, users: users });
+        }
+        if (/html/.test(file.get('mime'))) {
+          return new HtmlEditor({ model: file, users: users });
         }
         break;
       case 'spreadsheet':
