@@ -27,6 +27,7 @@ define([
 
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
+      { pattern: /markdown/, type: 'document' },
       { pattern: /^image/, type: 'image' },
       { pattern: /^text/, type: 'document' },
       { pattern: /wordprocessingml\.document$/, type: 'document' },
@@ -1142,8 +1143,17 @@ define([
 
   var OnlineEditorView = {
     create: function(file, users) {
-      if (/\.(markdown|md)$/.test(file.get('name'))) {
-        return new MarkdownEditor({ model: file, users: users });
+      var type = typeFromMimeType(file.get('mime'));
+      switch (type) {
+      case 'document':
+        if (/markdown/.test(file.get('mime'))) {
+          return new MarkdownEditor({ model: file, users: users });
+        }
+        break;
+      case 'spreadsheet':
+        return new ChartElementView({ model: file });
+      case 'image':
+        return new ImageElementView({ model: file });
       }
       return new NoEditorView();
     }
@@ -1206,7 +1216,6 @@ define([
       }
     },
     onRender: function() {
-      var type = typeFromMimeType(this.model.get('mime'));
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       this.info.show(new FileInfoView({
         model: this.model.info(),
@@ -1238,14 +1247,6 @@ define([
           }),
           new DownloadButtonView({ url: this.model.url()+"/version/latest" })
         ]));
-      }
-      switch (type) {
-      case 'spreadsheet':
-        this.display.show(new ChartElementView({ model: this.model }));
-        break;
-      case 'image':
-        this.display.show(new ImageElementView({ model: this.model }));
-        break;
       }
       this.delegateEvents();
     },
