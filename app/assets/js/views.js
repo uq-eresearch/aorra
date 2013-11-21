@@ -1545,7 +1545,6 @@ define([
   });
 
   var AppLayout = Backbone.Marionette.Layout.extend({
-    template: "#main-layout",
     regions: {
       main: "#main",
       sidebar: "#sidebar .panel-body"
@@ -1630,6 +1629,9 @@ define([
     showDeleted: function(fof) {
       this.sidebar.show(this.getFileTree());
       this.main.show(new DeletedView({ model: fof }));
+    },
+    template: function(data) {
+      return templates.render('main_layout', data);
     }
   });
 
