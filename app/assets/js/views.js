@@ -14,6 +14,7 @@ define([
         'FileAPI',
         'jquery.bootstrap-wysiwyg',
         'jquery.ui',
+        'jquery.ckeditor',
         'typeahead'
         ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown, unstyle) {
   'use strict';
@@ -1144,8 +1145,7 @@ define([
     },
     ui: {
       diff: '.diff-pane',
-      toolbar: '.html-toolbar',
-      html: '.html-pane',
+      html: '.html-pane[contenteditable]',
       save: 'button.save'
     },
     initialize: function(options) {
@@ -1203,7 +1203,7 @@ define([
     updateDiff: function() {
       var dmp = new DiffMatchPatch();
       // Perform diff calculation and cleanup
-      var diff = dmp.diff_main(this._content, this.ui.html.cleanHtml());
+      var diff = dmp.diff_main(this._content, this.ui.html.html());
       dmp.diff_cleanupSemantic(diff);
       var $docFragments = _.map(diff, function(v) {
         var $el;
@@ -1235,7 +1235,7 @@ define([
             data: unstyle(this.ui.html.html())
           });
         }, this);
-        this.ui.html.wysiwyg(); // Initialize with Bootstrap WYSIWYG
+        this.ui.html.ckeditor(); // Initialize with CKEditor
         var htmlUpdated =
           _.bind(this.triggerMethod, this, 'html:update')
         var plainTextPasteHandler = _.bind(function(f) {
@@ -1253,7 +1253,6 @@ define([
         this.ui.html.on("paste", plainTextPasteHandler(function(text) {
           document.execCommand("insertHTML", false, text);
         }));
-        this.ui.toolbar.on('click', htmlUpdated);
         this.ui.save.on('click', save);
         var selector = new ChartSelector({ model: this.model });
         this.chartSelector.show(selector);
@@ -1262,8 +1261,6 @@ define([
           htmlUpdated();
         }, this));
         this.toggleSave(this._content);
-      } else {
-        this.ui.toolbar.hide();
       }
       this._watchEditFlags();
     }

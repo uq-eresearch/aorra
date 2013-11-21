@@ -7,12 +7,14 @@ var FileAPI = {
 requirejs.config({
     paths: {
       'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min',
+      'ckeditor': '../ckeditor/ckeditor',
       'cryptojs-md5': 'lib/cryptojs-md5',
       'diff_match_patch': 'lib/diff_match_patch',
       'glyphtree': 'lib/glyphtree',
       'hogan': 'lib/hogan',
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
       'jquery.bootstrap': 'lib/bootstrap',
+      'jquery.ckeditor': '../ckeditor/adapters/jquery',
       'jquery.hotkeys': 'lib/jquery.hotkeys',
       'jquery.bootstrap-wysiwyg': 'lib/bootstrap-wysiwyg',
       'jquery.ui': '//code.jquery.com/ui/1.10.3/jquery-ui',
@@ -35,6 +37,10 @@ requirejs.config({
       'marionette': {
         deps: ['backbone'],
         exports: 'Backbone'
+      },
+      'jquery.ckeditor': {
+        deps: ['jquery', 'ckeditor'],
+        exports: 'jQuery'
       },
       'cryptojs-md5': {
         exports: 'CryptoJS'
