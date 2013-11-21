@@ -1136,6 +1136,52 @@ define([
     }
   });
   
+  var FileIdAutocomplete = Backbone.View.extend({
+    tagName: 'input',
+    getCharts: function(datum) {
+      var $input = this.ui.input;
+      var filesAndFolders = this.model.collection;
+      var onSuccess = _.bind(function(data) {
+        this._charts = data.charts;
+        this.renderChartList();
+      }, this);
+      var fileId = $input.val();
+      var file = filesAndFolders.findWhere({type: 'file', id: fileId});
+      if (_.isObject(file)) {
+        $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
+      }
+    },
+    render: function() {
+      var files = this.model.collection.where({ type: 'file' });
+      this.$el.typeahead({
+        name: 'files',
+        valueKey: 'id',
+        local: _(files).map(function(m){
+          return _.defaults(m.toJSON(), {
+            tokens: [m.id, m.get('name')]
+          });
+        }),
+        template: function(datum) {
+          return templates.render('file_typeahead', datum);
+        }
+      });
+      // Compensate for typeahead DOM changes
+      $('.twitter-typeahead, .tt-dropdown-menu').css('min-width', '100%');
+      this.$el.siblings('.tt-hint')
+        .css('height', 'auto')
+        .css('width', 'auto');
+      // Force bootstrap styles
+      this.$el.parent().addClass('nested-bootstrap');
+      // Connect events to select file
+      var emitEvent = _.bind(function() {
+        var fileId = this.$el.val();
+        this.trigger('file:selected', _(files).findWhere({id: fileId}));
+      }, this);
+      this.$el.on('typeahead:selected', emitEvent);
+      this.$el.on('typeahead:autocompleted', emitEvent);
+    }
+  });
+  
   var HtmlEditor = Backbone.Marionette.Layout.extend({
     modelEvents: {
       "sync": "fetchData"
@@ -1145,7 +1191,7 @@ define([
     },
     ui: {
       diff: '.diff-pane',
-      html: '.html-pane[contenteditable]',
+      html: '.html-pane',
       save: 'button.save'
     },
     initialize: function(options) {
@@ -1194,16 +1240,13 @@ define([
       this._watchingFlags = true;
     },
     onHtmlUpdate: function() {
-      this.ui.html.find('span[style]').each(function(i, e) {
-        $(e).replaceWith($(e).html());
-      })
       this.updateDiff();
       this.toggleSave();
     },
     updateDiff: function() {
       var dmp = new DiffMatchPatch();
       // Perform diff calculation and cleanup
-      var diff = dmp.diff_main(this._content, this.ui.html.html());
+      var diff = dmp.diff_main(this._content, this.getContent());
       dmp.diff_cleanupSemantic(diff);
       var $docFragments = _.map(diff, function(v) {
         var $el;
@@ -1222,20 +1265,61 @@ define([
       });
       this.ui.diff.html($docFragments);
     },
+    getContent: function() {
+      return this.ui.html.editor.getData();
+    },
     toggleSave: function() {
-      var content = this.ui.html.html();
+      var content = this.getContent();
       this.ui.save.prop("disabled", this._content == content);
     },
+    getCharts: function(file, callback) {
+      if (_.isObject(file)) {
+        $.get(file.url() + '/charts?format='+svgOrPng, callback);
+      }
+    },
     onRender: function() {
+      var file = this.model;
       if (this.editable()) {
         var save = _.bind(function() {
           $.ajax(this.model.uploadUrl(), {
             type: 'POST',
             contentType: 'text/html',
-            data: unstyle(this.ui.html.html())
+            data: this.getContent()
           });
         }, this);
-        this.ui.html.ckeditor(); // Initialize with CKEditor
+        this.ui.html.ckeditor({
+          extraPlugins: 'aorrachart'
+        }); // Initialize with CKEditor
+        var fileIdInit = _.bind(function(e) {
+          var elementObj = e.data;
+          var $element = $('#'+elementObj.domId);
+          this._fileIdAutocomplete = new FileIdAutocomplete({
+            el: $element.find('input').get(0),
+            model: file
+          });
+          this._fileIdAutocomplete.on('file:selected', _.bind(function(file) {
+            this.trigger('chartFile:selected', file)
+          }, this));
+          this._fileIdAutocomplete.render();
+        }, this);
+        var chartUrlInit = _.bind(function(e) {
+          var elementObj = e.data;
+          this.on('chartFile:selected', function(file) {
+            var populateSelect = function(charts) {
+              elementObj.clear();
+              _(charts).each(function(chart) {
+                elementObj.add(chart.type+" - "+chart.region, chart.url);
+              });
+            }
+            this.getCharts(file, function(data) {
+              populateSelect(data.charts);
+            });
+          });
+        }, this);
+        this.ui.html.ckeditor().editor.on(
+            'aorrachart_fileId:loaded', fileIdInit);
+        this.ui.html.ckeditor().editor.on(
+            'aorrachart_chartUrl:loaded', chartUrlInit);
         var htmlUpdated =
           _.bind(this.triggerMethod, this, 'html:update')
         var plainTextPasteHandler = _.bind(function(f) {
