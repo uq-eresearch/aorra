@@ -88,116 +88,6 @@ html, body {
     white-space: pre-wrap;
   }
 
-  html.hero-page {
-  	background:
-  	 url("/assets/images/bg.jpg")
-  	 no-repeat
-  	 center
-  	 center
-  	 fixed;
-  	background-size: cover;
-  	overflow: hidden;
-  	background-color: black;
-  	min-height: 100%;
-  	/* Polyfill for IE8 */
-  	-ms-behavior: url(/assets/htc/backgroundsize.min.htc);
-  }
-
-  .hero-page {
-    body {
-      background: transparent; /* Override Bootstrap default */
-    }
-
-    h1#big-headline {
-      color: #f8f8f8;
-      font-weight: bold;
-      line-height: 120%;
-      font-size: 500%;
-      text-shadow: 0 2px 0 black;
-    }
-
-    .well {
-      border: 0;
-      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGCYCQAAngCauPYSkQAAAABJRU5ErkJggg==") repeat; /* IE8 */
-      background: rgba(0,0,0,0.6);
-      a {
-        white-space: nowrap;
-      }
-      a:hover {
-        color: inherit;
-      }
-      h1, p, li {
-        color: white;
-      }
-    }
-
-    @media @phone {
-      .login-field {
-        margin-bottom: 1em;
-      }
-    }
-
-    @media @not-phone {
-      .login-field {
-        display: inline-block;
-        width: 15em;
-        vertical-align: bottom;
-      }
-    }
-
-    .login-container {
-      text-align: center;
-      p {
-       font-style: italic;
-      }
-    }
-
-    h1#big-headline {
-      small {
-        font-size: 30%;
-        display: block;
-        color: inherit;
-      }
-      .word {
-        display: inline;
-        white-space: nowrap;
-        .first {
-          font-weight: bold;
-        }
-      }
-    }
-
-    .attribution > a {
-      color: white;
-    }
-
-    .attribution {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      padding-right: 1em;
-    }
-
-    .above-login {
-      @media (min-height: 520px) {
-        padding-top:  1em;
-        min-height:   2em;
-      }
-      @media (min-height: 560px) {
-        padding-top:  2em;
-        min-height:   4em;
-      }
-      @media (min-height: 600px) {
-        padding-top:  3em;
-        min-height:   6em;
-      }
-      @media (min-height: 640px) {
-        padding-top:  4em;
-        min-height:   8em;
-      }
-    }
-  }
-
   #nav-back.hidden {
     display: none;
   }
@@ -290,12 +180,6 @@ html, body {
       }
     }
 
-    .hero-page .attribution {
-      position: relative;
-      float: right;
-      margin: auto;
-    }
-
     #sidebar, #main {
       display: none;
     }
@@ -304,5 +188,122 @@ html, body {
       display: block;
     }
 
+  }
+}
+
+html.hero-page {
+  background:
+   url("/assets/images/bg.jpg")
+   no-repeat
+   center
+   center
+   fixed;
+  background-size: cover;
+  overflow: hidden;
+  background-color: black;
+  min-height: 100%;
+  /* Polyfill for IE8 */
+  -ms-behavior: url(/assets/htc/backgroundsize.min.htc);
+
+  body {
+    background: transparent; /* Override Bootstrap default */
+  }
+
+  h1#big-headline {
+    color: #f8f8f8;
+    font-weight: bold;
+    line-height: 120%;
+    font-size: 500%;
+    text-shadow: 0 2px 0 black;
+  }
+
+  .well {
+    border: 0;
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGCYCQAAngCauPYSkQAAAABJRU5ErkJggg==") repeat; /* IE8 */
+    background: rgba(0,0,0,0.6);
+    a {
+      white-space: nowrap;
+    }
+    a:hover {
+      color: inherit;
+    }
+    h1, p, li {
+      color: white;
+    }
+  }
+
+  @media @phone {
+    .login-field {
+      margin-bottom: 1em;
+    }
+  }
+
+  @media @not-phone {
+    .login-field {
+      display: inline-block;
+      width: 15em;
+      vertical-align: bottom;
+      margin-right: 1ex;
+    }
+  }
+
+  .login-container {
+    text-align: center;
+    p {
+     font-style: italic;
+    }
+  }
+
+  h1#big-headline {
+    small {
+      font-size: 30%;
+      display: block;
+      color: inherit;
+    }
+    .word {
+      display: inline;
+      white-space: nowrap;
+      .first {
+        font-weight: bold;
+      }
+    }
+  }
+
+  .attribution > a {
+    color: white;
+  }
+
+  .attribution {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding-right: 1em;
+  }
+
+  .above-login {
+    @media (min-height: 520px) {
+      padding-top:  1em;
+      min-height:   2em;
+    }
+    @media (min-height: 560px) {
+      padding-top:  2em;
+      min-height:   4em;
+    }
+    @media (min-height: 600px) {
+      padding-top:  3em;
+      min-height:   6em;
+    }
+    @media (min-height: 640px) {
+      padding-top:  4em;
+      min-height:   8em;
+    }
+  }
+
+  @media @not-desktop {
+    .attribution {
+      position: relative;
+      float: right;
+      margin: auto;
+    }
   }
 }
