@@ -145,8 +145,6 @@ object ApplicationBuild extends Build {
       commitNextVersion
     )
   ).dependsOn(RootProject(uri(
-      "git://github.com/sgougi/play21-jackrabbit-plugin.git#94d3d7f2bca50815b0c96d90a0f34d40440bda0f"))
-  ).dependsOn(RootProject(uri(
-      "git://github.com/tjdett/play2-crash-plugin.git#d32c3a74dac8cad120d1574f5e12b58f5ab6b074")))
+      "git://github.com/sgougi/play21-jackrabbit-plugin.git#94d3d7f2bca50815b0c96d90a0f34d40440bda0f")))
 
 }
