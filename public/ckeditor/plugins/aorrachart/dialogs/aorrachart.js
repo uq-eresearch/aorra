@@ -7,7 +7,7 @@ CKEDITOR.dialog.add('aorrachart', function(editor) {
       id : 'aorra-chart-info',
       elements : [{
         id: 'fileId',
-        label: 'File ID',
+        label: 'File name or ID',
         type: 'text',
         onLoad: function(data) {
           var dialog = data.sender;
@@ -30,7 +30,8 @@ CKEDITOR.dialog.add('aorrachart', function(editor) {
         },
         commit: function(widget) {
           widget.setData('chartUrl', this.getValue());
-        }
+        },
+        validate: CKEDITOR.dialog.validate.notEmpty("A chart must be selected")
       }]
     }]
   };
