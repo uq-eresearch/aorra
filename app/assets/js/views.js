@@ -1289,7 +1289,7 @@ define([
           });
         }, this);
         this.ui.html.ckeditor({
-          extraPlugins: 'aorrachart'
+          extraPlugins: 'aorrafigure'
         }); // Initialize with CKEditor
         var fileIdInit = _.bind(function(e) {
           var elementObj = e.data;
@@ -1299,7 +1299,16 @@ define([
             model: file
           });
           this._fileIdAutocomplete.on('file:selected', _.bind(function(file) {
-            this.trigger('chartFile:selected', file)
+            var fileType = typeFromMimeType(file.get('mime'));
+            console.log(fileType);
+            switch (fileType) {
+            case 'spreadsheet':
+              this.trigger('chartFile:selected', file)
+              break;
+            case 'image':
+              this.trigger('imageFile:selected', file)
+              break;
+            }
           }, this));
           this._fileIdAutocomplete.render();
         }, this);
@@ -1316,11 +1325,15 @@ define([
               populateSelect(data.charts);
             });
           });
+          this.on('imageFile:selected', function(file) {
+            elementObj.clear();
+            elementObj.add(file.get('name'), file.downloadUrl());
+          });
         }, this);
         this.ui.html.ckeditor().editor.on(
-            'aorrachart_fileId:loaded', fileIdInit);
+            'aorrafigure_fileId:loaded', fileIdInit);
         this.ui.html.ckeditor().editor.on(
-            'aorrachart_chartUrl:loaded', chartUrlInit);
+            'aorrafigure_imageUrl:loaded', chartUrlInit);
         var htmlUpdated =
           _.bind(this.triggerMethod, this, 'html:update')
         var plainTextPasteHandler = _.bind(function(f) {

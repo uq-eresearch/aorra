@@ -1,19 +1,19 @@
-CKEDITOR.plugins.add('aorrachart', {
+CKEDITOR.plugins.add('aorrafigure', {
   requires : 'widget',
 
-  icons : 'aorrachart',
+  icons : 'aorrafigure',
 
   init : function(editor) {
-    editor.widgets.add('aorrachart', {
-      dialog: 'aorrachart',
+    editor.widgets.add('aorrafigure', {
+      dialog: 'aorrafigure',
 
-      button : 'Insert an AORRA chart',
+      button : 'Insert an AORRA figure',
 
       data: function() {
-        var chartUrl = this.data.chartUrl;
+        var imageUrl = this.data.imageUrl;
         var img = this.element.findOne("img");
-        if (img && chartUrl) {
-          img.setAttribute('src', chartUrl);
+        if (img && imageUrl) {
+          img.setAttribute('src', imageUrl);
         }
       },
 
@@ -38,6 +38,6 @@ CKEDITOR.plugins.add('aorrachart', {
         return element.name == 'figure';
       }
     });
-    CKEDITOR.dialog.add('aorrachart', this.path + 'dialogs/aorrachart.js');
+    CKEDITOR.dialog.add('aorrafigure', this.path + 'dialogs/aorrafigure.js');
   }
 });

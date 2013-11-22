@@ -1,10 +1,10 @@
-CKEDITOR.dialog.add('aorrachart', function(editor) {
+CKEDITOR.dialog.add('aorrafigure', function(editor) {
   return {
-    title : 'Insert AORRA Chart',
+    title : 'Insert AORRA figure',
     minWidth : 300,
     minHeight : 300,
     contents : [{
-      id : 'aorra-chart-info',
+      id : 'aorra-figure-info',
       elements : [{
         id: 'fileId',
         label: 'File name or ID',
@@ -12,24 +12,25 @@ CKEDITOR.dialog.add('aorrachart', function(editor) {
         onLoad: function(data) {
           var dialog = data.sender;
           var editor = dialog.getParentEditor();
-          var element = dialog.getContentElement('aorra-chart-info','fileId');
+          var element = dialog.getContentElement('aorra-figure-info', 'fileId');
           // Fire an editor event so we can tie in our application
-          editor.fire('aorrachart_fileId:loaded', element);
+          editor.fire('aorrafigure_fileId:loaded', element);
         }
       },{
-        id: 'chartUrl',
-        label: 'Chart',
+        id: 'imageUrl',
+        label: 'Image',
         type: 'select',
         items: [],
         onLoad: function(data) {
           var dialog = data.sender;
           var editor = dialog.getParentEditor();
-          var element = dialog.getContentElement('aorra-chart-info','chartUrl');
+          var element = dialog.getContentElement(
+              'aorra-figure-info', 'imageUrl');
           // Fire an editor event so we can tie in our application
-          editor.fire('aorrachart_chartUrl:loaded', element);
+          editor.fire('aorrafigure_imageUrl:loaded', element);
         },
         commit: function(widget) {
-          widget.setData('chartUrl', this.getValue());
+          widget.setData('imageUrl', this.getValue());
         },
         validate: CKEDITOR.dialog.validate.notEmpty("A chart must be selected")
       }]
