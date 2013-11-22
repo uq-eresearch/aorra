@@ -11,7 +11,7 @@
   </ul>
   <div class="tab-content">
     <div class="tab-pane active" id="html-tab">
-      <div class="html-pane" {{#editable}}contenteditable="true"{{/editable}}>{{{html}}}</div>
+      <div class="html-pane" {{#editable}}contenteditable="true" spellcheck="true"{{/editable}}>{{{html}}}</div>
     </div>
     {{#editable}}
     <div class="tab-pane" id="html-diff-tab">
@@ -20,6 +20,13 @@
     {{/editable}}
   </div>
   {{#editable}}
+  <div class="pull-left">
+    {{#editable}}
+    <p class="text-muted">
+    Use <code>ctrl + right click</code> to correct spelling.
+    </p>
+    {{/editable}}
+  </div>
   <div class="pull-right">
     <br/>
     <button class="btn btn-default save">Save</button>
