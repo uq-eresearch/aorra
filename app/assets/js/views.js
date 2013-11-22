@@ -84,7 +84,19 @@ define([
           this.trigger("file:select", node.id);
         }
       }, this);
-      var hoverHandler = function(e) {
+      var createTooltip = function(e, node) {
+        $(e.currentTarget).tooltip({
+          placement: 'bottom',
+          trigger: 'manual',
+          delay: { show: 0, hide: 100 },
+          title: function() {
+            return (node.isExpanded() ? 'Collapse' : 'Expand') + ' Folder';
+          }
+        });
+      };
+      var hoverHandler = function(e, node) {
+        if (node.isLeaf()) { return; }
+        createTooltip(e, node);
         $(e.currentTarget).tooltip(e.type == 'mouseenter' ? 'show' : 'hide');
       };
       var setTooltipText = function(e) {
@@ -95,21 +107,10 @@ define([
         var isClosed = function(node) { return !node.isExpanded(); };
         $hint.toggle(_.all(tree.nodes(), isClosed));
       };
-      var createTooltip = function(e, node) {
-        if (node.isLeaf()) { return; }
-        $(e.currentTarget).tooltip({
-          placement: 'bottom',
-          trigger: 'manual',
-          delay: { show: 0, hide: 100 },
-          title: function() {
-            return (node.isExpanded() ? 'Collapse' : 'Expand') + ' Folder';
-          }
-        });
-      };
       tree.events.label.click = [selectHandler];
       tree.events.icon.click.push(setTooltipText);
       tree.events.icon.click.push(toggleHint);
-      tree.events.icon.mouseenter = [createTooltip, hoverHandler];
+      tree.events.icon.mouseenter = [hoverHandler];
       tree.events.icon.mouseleave = [hoverHandler];
       return tree;
     },
@@ -879,7 +880,7 @@ define([
           return _(region).extend({
             first: i == 0
           });
-        }).tap(_.bind(console.log, console)).value()
+        }).value()
       };
     },
     template: function(serialized_model) {
