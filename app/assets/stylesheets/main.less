@@ -49,13 +49,13 @@ html, body {
   	margin-top: 5px;
   }
 
-  #markdown-html, #html-tab {
+  #markdown-html, #html-tab, #html-diff-tab {
   	border: dashed 1px #dddddd;
   	border-top: none;
   	.html-toolbar {
   	  padding: 5px;
   	}
-  	.html-pane {
+  	.html-pane, .diff-pane {
   	  padding: 5px;
   		figure {
   		  padding: 1em;
@@ -73,6 +73,28 @@ html, body {
         }
   		}
   	}
+  	.diff-pane {
+		  ins {
+		    background-color: #eeffee;
+		    * {
+		      background-color: #eeffee;
+		    }
+		    color: #468847;
+        img {
+          opacity: 0.5;
+        }
+		  }
+		  del {
+        background-color: #ffeeee;
+        * {
+          background-color: #ffeeee;
+        }
+		    color: #b94a48;
+		    img {
+		      opacity: 0.5;
+		    }
+		  }
+  	}
   }
 
   #markdown-source .source-pane {
@@ -81,7 +103,7 @@ html, body {
     min-height: 15em;
   }
 
-  #markdown-diff .diff-pane, #html-diff-tab .diff-pane {
+  #markdown-diff .diff-pane {
     padding: 5px;
     width: 100%;
     min-height: 15em;

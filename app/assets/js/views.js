@@ -11,12 +11,13 @@ define([
         'marked',
         'to-markdown',
         'unstyler',
+        'htmldiff',
         'FileAPI',
         'jquery.bootstrap-wysiwyg',
         'jquery.ui',
         'jquery.ckeditor',
         'typeahead'
-        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown, unstyle) {
+        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown, unstyle, htmldiff) {
   'use strict';
 
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
@@ -1245,26 +1246,7 @@ define([
       this.toggleSave();
     },
     updateDiff: function() {
-      var dmp = new DiffMatchPatch();
-      // Perform diff calculation and cleanup
-      var diff = dmp.diff_main(this._content, this.getContent());
-      dmp.diff_cleanupSemantic(diff);
-      var $docFragments = _.map(diff, function(v) {
-        var $el;
-        switch (v[0]) {
-        case -1:
-          $el = $('<del class="red-text"/>');
-          break;
-        case 1:
-          $el = $('<ins class="green-text"/>');
-          break;
-        default:
-          $el = $('<span/>');
-        }
-        $el.text(v[1]);
-        return $el;
-      });
-      this.ui.diff.html($docFragments);
+      this.ui.diff.html(htmldiff(this._content, this.getContent()));
     },
     getContent: function() {
       return this.ui.html.editor.getData();
@@ -1300,7 +1282,6 @@ define([
           });
           this._fileIdAutocomplete.on('file:selected', _.bind(function(file) {
             var fileType = typeFromMimeType(file.get('mime'));
-            console.log(fileType);
             switch (fileType) {
             case 'spreadsheet':
               this.trigger('chartFile:selected', file)

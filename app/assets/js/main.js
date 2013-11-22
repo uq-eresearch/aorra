@@ -11,6 +11,7 @@ requirejs.config({
       'cryptojs-md5': 'lib/cryptojs-md5',
       'diff_match_patch': 'lib/diff_match_patch',
       'glyphtree': 'lib/glyphtree',
+      'htmldiff': 'lib/htmldiff',
       'hogan': 'lib/hogan',
       'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
       'jquery.bootstrap': 'lib/bootstrap',
