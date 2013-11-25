@@ -1381,6 +1381,9 @@ define([
     },
     initialize: function(options) {
       this._users = options.users;
+      // Cache content an versions views
+      this.getContentView = _.memoize(this.getContentView);
+      this.getVersionsView = _.memoize(this.getVersionsView);
     },
     serializeData: function() {
       return _(this.model.toJSON()).extend({
@@ -1412,16 +1415,22 @@ define([
       nameField: 'input.name',
       displayToggle: '.display-toggle'
     },
+    getContentView: function() {
+      return OnlineEditorView.create(this.model, this._users);
+    },
+    getVersionsView: function() {
+      return new FileInfoView({
+        model: this.model.info(),
+        users: this._users
+      })
+    },
     onDisplayContent: function() {
-      this.display.show(OnlineEditorView.create(this.model, this._users));
+      this.display.show(this.getContentView());
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-content').addClass('active');
     },
     onDisplayVersions: function() {
-      this.display.show(new FileInfoView({
-        model: this.model.info(),
-        users: this._users
-      }));
+      this.display.show(this.getVersionsView());
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-versions').addClass('active');
     },
@@ -1462,7 +1471,7 @@ define([
             collection: this._users,
             targetId: this.model.id
           }),
-          new DownloadButtonView({ url: this.model.url()+"/version/latest" }),
+          new DownloadButtonView({ url: this.model.downloadUrl() }),
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
@@ -1471,7 +1480,7 @@ define([
             collection: this._users,
             targetId: this.model.id
           }),
-          new DownloadButtonView({ url: this.model.url()+"/version/latest" })
+          new DownloadButtonView({ url: this.model.downloadUrl() })
         ]));
       }
       this.triggerMethod('display:content');
@@ -1481,8 +1490,6 @@ define([
       return this._users.current().get('isAdmin');
     })
   });
-  
-  
 
   var DiffView = Backbone.View.extend({
     initialize: function(version1, version2) {
