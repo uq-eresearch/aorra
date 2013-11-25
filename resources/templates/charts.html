@@ -5,10 +5,10 @@
   </a>
 </p>
 <div class="tabbable">
-  <ul class="nav nav-tabs">
+  <ul class="nav nav-pills">
     {{#regions}}
     <li{{#first}} class="active"{{/first}} style="width: 8em; font-size: 75%">
-      <a href="#chart-region-{{slug}}" data-toggle="tab">
+      <a href="#chart-region-{{slug}}" data-toggle="pill">
         {{title}}
       </a>
     </li>
@@ -22,10 +22,10 @@
     {{/chart}}
     {{^chart}}
       <div class="tabbable">
-        <ul class="nav nav-tabs">
+        <ul class="nav nav-pills">
           {{#charts}}
           <li{{#first}} class="active"{{/first}} style="width: 8em; font-size: 75%">
-            <a href="#chart-image-{{slug}}" data-toggle="tab">
+            <a href="#chart-image-{{slug}}" data-toggle="pill">
               {{title}}
             </a>
           </li>

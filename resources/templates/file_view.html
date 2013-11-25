@@ -1,5 +1,4 @@
 <div class="region-breadcrumbs"></div>
-<div class="region-buttons pull-right"></div>
 <h2>
   <span class="name"
     {{#canRename}}style="cursor: pointer" title="Click to rename"{{/canRename}}>
@@ -7,9 +6,22 @@
   </span>
   <input style="display: none" class="name" value="{{name}}"/>
 </h2>
-<div class="clearfix"></div>
 
-<ul class="display-toggle nav nav-pills nav-justified">
+<div class="row">
+	<div class="col-xs-12 col-sm-4">
+		<span class="text-muted">
+      <i class="fa fa-clock-o" title="Last updated"></i>
+      <abbr title="{{prettyModification}}" style="white-space: nowrap;">
+      {{sinceModification}}
+      </abbr>
+    </span>
+	</div>
+  <div class="col-xs-12 col-sm-8">
+    <div class="region-buttons text-right"></div>
+  </div>
+</div>
+
+<ul class="display-toggle nav nav-tabs nav-justified">
   <li class="show-content active">
     <a class="not-link"
       title="Show the content of this file"
@@ -26,6 +38,7 @@
 
 <div class="region-display"></div>
 
+<div class="clearfix"></div>
 <hr/>
 
 {{#hasWrite}}

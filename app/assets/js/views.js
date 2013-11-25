@@ -530,7 +530,7 @@ define([
     }
   });
 
-  var FileInfoView = Backbone.Marionette.CompositeView.extend({
+  var VersionsView = Backbone.Marionette.CompositeView.extend({
     initialize: function(options) {
       this._users = options.users;
       this.collection = this.model.versionList();
@@ -637,9 +637,11 @@ define([
     },
     render: function() {
       var $link = $('<a class="btn btn-default" title="Download"/>');
+      var $icon = '<i class="fa fa-download"></i>';
       $link.attr('href', this._url);
-      $link.append('<i class="fa fa-download"></i>');
-      $link.append('<span class="hidden-phone">'+this._label+'</span>');
+      $link.append($('<span class="hidden-lg">').append($icon));
+      $link.append(
+          $('<span class="visible-lg">').append($icon).append(" "+this._label));
       this.$el.html($link);
     }
   });
@@ -1386,7 +1388,14 @@ define([
       this.getVersionsView = _.memoize(this.getVersionsView);
     },
     serializeData: function() {
+      var dt = moment(this.model.get('modified'));
       return _(this.model.toJSON()).extend({
+        prettyModification: function() {
+          return dt.format('dddd, D MMMM YYYY @ h:mm:ss a');
+        },
+        sinceModification: function() {
+          return dt.fromNow();
+        },
         canRename: this.isAdmin(),
         url: this.model.url()
       });
@@ -1419,7 +1428,7 @@ define([
       return OnlineEditorView.create(this.model, this._users);
     },
     getVersionsView: function() {
-      return new FileInfoView({
+      return new VersionsView({
         model: this.model.info(),
         users: this._users
       })

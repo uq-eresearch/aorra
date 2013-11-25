@@ -92,6 +92,9 @@ public class JsonBuilderTest {
       assertThat(json.get("data")).isNull();
       assertThat(json.get("accessLevel")).isNotNull();
       assertThat(json.get("accessLevel").asText()).isEqualTo("RO");
+      assertThat(json.get("modified")).isNotNull();
+      assertThat(json.get("modified").asText()).startsWith(
+          file1.getModificationTime().get(Calendar.YEAR)+"");
     }
   }
 

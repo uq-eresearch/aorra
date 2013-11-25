@@ -1,11 +1,11 @@
 <div class="tabbable">
-  <ul class="nav nav-tabs">
+  <ul class="nav nav-pills nav-justified">
     <li class="active">
-      <a href="#html-tab" data-toggle="tab">HTML</a>
+      <a href="#html-tab" data-toggle="pill">HTML</a>
     </li>
     {{#editable}}
     <li>
-      <a href="#html-diff-tab" data-toggle="tab">Compare Differences</a>
+      <a href="#html-diff-tab" data-toggle="pill">Compare Differences</a>
     </li>
     {{/editable}}
   </ul>
@@ -20,13 +20,9 @@
     {{/editable}}
   </div>
   {{#editable}}
-  <div class="pull-left">
-    {{#editable}}
-    <p class="text-muted">
-    Use <code>ctrl + right click</code> to correct spelling.
-    </p>
-    {{/editable}}
-  </div>
+  <p class="pull-left text-muted">
+  Use <code>ctrl + right click</code> to correct spelling.
+  </p>
   <div class="pull-right">
     <br/>
     <button class="btn btn-default save">Save</button>
