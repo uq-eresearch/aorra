@@ -18,7 +18,7 @@ public class HtmlToPdf {
 
     private static final String CMD_WK = "/usr/bin/wkhtmltopdf";
     private static final String CMD_PANDOC = "/usr/bin/pandoc";
-    private static final String CMD_WEASYPRINT = "/usr/local/bin/weasyprint";
+    private static final String CMD_WEASYPRINT = "/usr/bin/weasyprint";
 
     public File toPdf(String name, String html, String playSession, String converter, String copts) {
         String filename = FilenameUtils.removeExtension(name)+".html";
