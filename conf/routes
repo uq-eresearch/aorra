@@ -70,6 +70,6 @@ GET    /file/:fileId/charts.zip     @controllers.ArchiveAsync.chartArchive(fileI
 GET    /file/:fileId/charts         @controllers.Chart.singleFileCharts(format: String ?= "png", fileId)
 GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.singleFileChart(chart, format, fileId)
 
-GET    /file/:fileId/html           @controllers.Markdown.toHtml(fileId)
-GET    /file/:fileId/htmlzip        @controllers.Markdown.toHtmlZip(fileId)
-GET    /file/:fileId/pdf            @controllers.Markdown.toPdf(fileId, converter: String ?="", copts: String ?= "")
+GET    /file/:fileId/html           @controllers.HtmlController.toHtml(fileId)
+GET    /file/:fileId/htmlzip        @controllers.HtmlController.toHtmlZip(fileId)
+GET    /file/:fileId/pdf            @controllers.HtmlController.toPdf(fileId, converter: String ?="", copts: String ?= "")
