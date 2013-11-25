@@ -817,12 +817,15 @@ define([
     })
   });
 
-  var ImageElementView = Backbone.View.extend({
-    render: function() {
-      this.$el.append(_.template(
-          '<img class="img-thumbnail" alt="Image for <%= model.get("path") %>"' +
-          ' src="<%= model.url() %>/version/latest" />',
-          { model: this.model }));
+  var ImageElementView = Backbone.Marionette.ItemView.extend({
+    serializeData: function() {
+      return {
+        path: this.model.get('path'),
+        url: this.model.downloadUrl()
+      }
+    },
+    template: function(serialized_model) {
+      return templates.render('img_view', serialized_model);
     }
   });
 
@@ -1347,7 +1350,7 @@ define([
 
   var NoEditorView = Backbone.Marionette.ItemView.extend({
     template: function() {
-      return "";
+      return templates.render('no_editor', {});
     }
   });
 
@@ -1395,17 +1398,32 @@ define([
       breadcrumbs: '.region-breadcrumbs',
       buttons: '.region-buttons',
       display: '.region-display',
-      editor: '.region-editor',
       info:   '.region-info',
       upload: '.region-upload'
     },
     triggers: {
       'click span.name': 'focus:name',
+      'click .show-content a': 'display:content',
+      'click .show-versions a': 'display:versions',
       'blur input.name': 'blur:name'
     },
     ui: {
       nameSpan: 'span.name',
-      nameField: 'input.name'
+      nameField: 'input.name',
+      displayToggle: '.display-toggle'
+    },
+    onDisplayContent: function() {
+      this.display.show(OnlineEditorView.create(this.model, this._users));
+      this.ui.displayToggle.find('li').removeClass('active');
+      this.ui.displayToggle.find('li.show-content').addClass('active');
+    },
+    onDisplayVersions: function() {
+      this.display.show(new FileInfoView({
+        model: this.model.info(),
+        users: this._users
+      }));
+      this.ui.displayToggle.find('li').removeClass('active');
+      this.ui.displayToggle.find('li.show-versions').addClass('active');
     },
     onFocusName: function() {
       if (this.isAdmin()) {
@@ -1430,11 +1448,6 @@ define([
     },
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
-      this.info.show(new FileInfoView({
-        model: this.model.info(),
-        users: this._users
-      }));
-      this.editor.show(OnlineEditorView.create(this.model, this._users));
       if (this.model.get('accessLevel') == 'RW') {
         this.upload.show(new FileUploadView({
           type: 'file',
@@ -1461,12 +1474,15 @@ define([
           new DownloadButtonView({ url: this.model.url()+"/version/latest" })
         ]));
       }
+      this.triggerMethod('display:content');
       this.delegateEvents();
     },
     isAdmin: _.memoize(function() {
       return this._users.current().get('isAdmin');
     })
   });
+  
+  
 
   var DiffView = Backbone.View.extend({
     initialize: function(version1, version2) {

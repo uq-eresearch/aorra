@@ -7,15 +7,24 @@
   </span>
   <input style="display: none" class="name" value="{{name}}"/>
 </h2>
+<div class="clearfix"></div>
 
-<div class="region-editor"></div>
+<ul class="display-toggle nav nav-pills nav-justified">
+  <li class="show-content active">
+    <a class="not-link" href="#">Content</a>
+  </li>
+  <li class="show-versions">
+    <a class="not-link" href="#">Versions</a>
+  </li>
+</ul>
+
+<br/>
+
+<div class="region-display"></div>
+
+<hr/>
 
 {{#hasWrite}}
 <h3>Upload new version</h3>
 <div class="region-upload"></div>
 {{/hasWrite}}
-
-<div class="region-info"></div>
-
-<br/>
-<div class="region-display"></div>
