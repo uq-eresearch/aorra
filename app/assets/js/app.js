@@ -18,6 +18,10 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       this._layout = options.layout;
       this._fileTree = options.fileTree;
       this._fs = options.filestore;
+      this.showLoading();
+    },
+    showLoading: function() {
+      this._layout.showLoading();
     },
     start: function() {
       var fileTree = this._fileTree;
@@ -84,6 +88,15 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
   });
   
   var App = new Backbone.Marionette.Application();
+  
+  var bubbleToAppFunc = function(prefix) {
+    return function(eventName) {
+      var args = [prefix + ':' + eventName].concat(_.rest(arguments));
+      App.vent.trigger.apply(App.vent, args);
+    };
+  };
+  
+  App.vent.on('all', _.bind(console.log, console));
 
   // Start routing when all data is loaded
   App.vent.once('data:preloaded', startRouting);
@@ -104,17 +117,33 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
   });
   
   App.addInitializer(function(options) {
+    var eventFeed = new EventFeed({
+      lastEventId: window.lastEventID
+    });
+    // Bubble all feeds up
+    eventFeed.on("all", bubbleToAppFunc('feed'));
+    // If our data is out-of-date, refresh and reopen event feed.
+    eventFeed.on("outofdate", function(id) {
+      eventFeed.listenToOnce(App.vent, "data:refreshed", function() {
+        eventFeed.updateLastId(id);
+        eventFeed.trigger('recheck');
+      });
+    });
+    // Open feed on application start
+    eventFeed.listenToOnce(App, 'start', function() {
+      eventFeed.open();
+    });
+  });
+  
+  App.addInitializer(function(options) {
     var users = new models.Users({
       currentId: options.currentUserID
     });
     var fs = new models.FileStore();
     var notifications = new models.Notifications();
-    var eventFeed = new EventFeed({
-      lastEventId: window.lastEventID
-    });
 
     // Event handlers - users, fs & eventFeed
-    eventFeed.on("folder:create", function(id) {
+    App.vent.on("feed:folder:create", function(id) {
         // Create a stand-alone folder
         var folder = new models.Folder({ id: id });
         // Get the data for it
@@ -123,19 +152,19 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
           fs.add([folder.toJSON()]);
         });
       });
-    eventFeed.on("file:create",
+    App.vent.on("feed:file:create",
       function(id) {
         var file = new models.File({ id: id });
         file.fetch().done(function() {
           fs.add([file.toJSON()]);
         });
       });
-    eventFeed.on("folder:update file:update", function(id) {
+    App.vent.on("feed:folder:update feed:file:update", function(id) {
       var fof = fs.get(id);
       if (fof) { fof.fetch(); }
     });
     // Rather brute-force, but the flag will turn up
-    eventFeed.on("flag:create",
+    App.vent.on("feed:flag:create",
       function(id) {
         _.each(users.flags(), function(c) {
           if (c.get(id)) { return; } // Already exists
@@ -146,35 +175,33 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
         });
       });
     // We can delete from all without error
-    eventFeed.on("flag:delete",
+    App.vent.on("feed:flag:delete",
       function(id) {
         _.each(users.flags(), function(c) { c.remove(id); });
       });
-    eventFeed.on("folder:delete file:delete",
+    App.vent.on("feed:folder:delete feed:file:delete",
       function(id) {
         fs.remove(fs.get(id));
       });
     // If our data is out-of-date, refresh and reopen event feed.
-    eventFeed.on("outofdate", function(id) {
-      fs.reset();
-      fs.fetch().done(function() {
-        eventFeed.updateLastId(id);
-        eventFeed.trigger('recheck');
+    App.vent.on("feed:outofdate", function(id) {
+      fs.refresh().done(function() {
+        App.vent.trigger('data:refreshed');
       });
     });
 
     // Update notifications based on events - notifications & eventFeed
-    eventFeed.on("notification:create",
+    App.vent.on("feed:notification:create",
       function() {
         // TODO: Make this more efficient
         notifications.fetch();
       });
-    eventFeed.on("notification:update",
+    App.vent.on("feed:notification:update",
       function(id) {
         var n = notifications.get(id);
         if (n) { n.fetch(); }
       });
-    eventFeed.on("notification:delete",
+    App.vent.on("feed:notification:delete",
       function(id) {
         notifications.remove(notifications.get(id));
       });
@@ -186,8 +213,6 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       users: users
     });
     layout.render();
-    $('#content').append(layout.$el);
-    layout.showLoading();
 
     var fileTree = layout.getFileTree();
     
@@ -261,8 +286,6 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       App.vent.trigger('data:preloaded:users', users);
     });
 
-    // Open feed
-    eventFeed.open();
   });
   
   $(function() {

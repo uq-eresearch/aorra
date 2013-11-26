@@ -23,6 +23,11 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
       }
       this.reset(initialData);
       return Q(this);
+    },
+    // Produce a promise that a collection has been reset to empty and fetched
+    refresh: function(initialData) {
+      this.reset();
+      return Q(this.fetch());
     }
   });
 
