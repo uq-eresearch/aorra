@@ -198,7 +198,8 @@ define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
   var Users = Backbone.Collection.extend({
     model: User,
     url: '/user',
-    initialize: function() {
+    initialize: function(options) {
+      this.options = options;
       // Build flag collections
       this._flags = {
         edit: new EditFlags(),
@@ -207,7 +208,7 @@ define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
       _.each(this._flags, function(c) { return c.fetch(); });
     },
     currentId: function() {
-      return $('#current-user').data('id');
+      return this.options.currentId;
     },
     current: function() {
       return this.get(this.currentId());

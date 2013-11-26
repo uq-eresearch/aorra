@@ -2,14 +2,19 @@
 /*global _: false, $: false, Backbone: false, EventSource: false, window: false */
 require(['events', 'models', 'views'], function(EventFeed, models, views) {
   'use strict';
-  $(function () {
 
-    var users = new models.Users();
+  var App = new Backbone.Marionette.Application();
+
+  App.addInitializer(function(options) {
+    var users = new models.Users({
+      currentId: options.currentUserID
+    });
     var fs = new models.FileStore();
     var notifications = new models.Notifications();
     var eventFeed = new EventFeed({
       lastEventId: window.lastEventID
     });
+
     // Event handlers
     eventFeed.on("folder:create", function(id) {
         // Create a stand-alone folder
@@ -195,19 +200,19 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
     });
 
     var initFilestore = function() {
-      if (_.isUndefined(window.filestoreJSON)) {
+      if (_.isUndefined(options.filesAndFolders)) {
         return fs.fetch();
       }
-      fs.reset(window.filestoreJSON);
+      fs.reset(options.filesAndFolders);
       return $.Deferred().resolve();
     };
 
     // Users collection
     var initUsers = function() {
-      if (_.isUndefined(window.usersJSON)) {
+      if (_.isUndefined(options.users)) {
         return users.fetch();
       }
-      users.reset(window.usersJSON);
+      users.reset(options.users);
       return $.Deferred().resolve();
     };
 
@@ -227,5 +232,14 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
 
     // Open feed
     eventFeed.open();
+  });
+  
+  
+  $(function() {
+    App.start({
+      currentUserID: $('#current-user').data('id'),
+      users: window.usersJSON,
+      filesAndFolders: window.filestoreJSON
+    });
   });
 });
