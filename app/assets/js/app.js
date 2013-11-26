@@ -1,6 +1,6 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true */
 /*global _: false, window: false */
-require(['jquery', 'backbone', 'q', 'events', 'models', 'views'], 
+require(['jquery', 'marionette', 'q', 'events', 'models', 'views'], 
     function($, Backbone, Q, EventFeed, models, views) {
   'use strict';
   
@@ -12,6 +12,76 @@ require(['jquery', 'backbone', 'q', 'events', 'models', 'views'],
     }
     Backbone.history.start({ pushState: false });
   };
+  
+  var MainController = Backbone.Marionette.Controller.extend({
+    initialize: function(options) {
+      this._layout = options.layout;
+      this._fileTree = options.fileTree;
+      this._fs = options.filestore;
+    },
+    start: function() {
+      var fileTree = this._fileTree;
+      this._layout.showStart();
+      this._setSidebarActive();
+      // Expand if at root
+      var firstNode = _.first(fileTree.tree().nodes());
+      if (firstNode.name == '/') {
+        fileTree.expandTo(firstNode);
+      }
+    },
+    changePassword: function() {
+      this._layout.changePassword();
+      this._setMainActive();
+    },
+    showNotifications: function() {
+      this._layout.showNotifications();
+      this._setMainActive();
+    },
+    showFolder: function(id) {
+      var layout = this._layout,
+          fileTree = this._fileTree;
+      var node = fileTree.tree().find(id);
+      if (node == null) {
+        layout.showDeleted();
+      } else {
+        layout.showFolder(this._fs.get(node.id));
+        fileTree.expandTo(node);
+      }
+      this._setMainActive();
+    },
+    showFile: function(id) {
+      var layout = this._layout,
+          fileTree = this._fileTree;
+      var node = fileTree.tree().find(id);
+      if (node == null) {
+        layout.showDeleted();
+      } else {
+        layout.showFile(this._fs.get(node.id));
+        fileTree.expandTo(node);
+      }
+      this._setMainActive();
+    },
+    showFileDiff: function(id, version) {
+      var layout = this._layout;
+      var node = this._fileTree.tree().find(id);
+      if (node == null) {
+        layout.showDeleted();
+      } else {
+        layout.showFileDiff(this._fs.get(node.id), version);
+      }
+      this._setMainActive();
+    },
+    _setMainActive: function() {
+      $('#main').addClass('active');
+      $('#sidebar').removeClass('active');
+      $('#nav-back').removeClass('hidden');
+    },
+    _setSidebarActive: function() {
+      $('#sidebar').addClass('active');
+      $('#main').removeClass('active');
+      $('#nav-back').addClass('hidden');
+    }
+  });
   
   var App = new Backbone.Marionette.Application();
 
@@ -155,10 +225,16 @@ require(['jquery', 'backbone', 'q', 'events', 'models', 'views'],
         layout.showDeleted(m);
       }
     });
-
+    
+    var mainController = new MainController({
+      layout: layout,
+      fileTree: fileTree,
+      filestore: fs
+    });
+    
     // Router really acting like a controller here
-    var Router = Backbone.Router.extend({
-      routes: {
+    var router = new Backbone.Marionette.AppRouter({
+      appRoutes: {
         "": "start",
         "change-password": "changePassword",
         "file/:id": "showFile",
@@ -166,65 +242,8 @@ require(['jquery', 'backbone', 'q', 'events', 'models', 'views'],
         "file/:id/version/:version/diff": "showFileDiff",
         "notifications": "showNotifications"
       },
-      start: function() {
-        layout.showStart();
-        this._setSidebarActive();
-        // Expand if at root
-        var firstNode = _.first(fileTree.tree().nodes());
-        if (firstNode.name == '/') {
-          fileTree.expandTo(firstNode);
-        }
-      },
-      changePassword: function() {
-        layout.changePassword();
-        this._setMainActive();
-      },
-      showNotifications: function() {
-        layout.showNotifications();
-        this._setMainActive();
-      },
-      showFolder: function(id) {
-        var node = fileTree.tree().find(id);
-        if (node == null) {
-          layout.showDeleted();
-        } else {
-          layout.showFolder(fs.get(node.id));
-          fileTree.expandTo(node);
-        }
-        this._setMainActive();
-      },
-      showFile: function(id) {
-        var node = fileTree.tree().find(id);
-        if (node == null) {
-          layout.showDeleted();
-        } else {
-          layout.showFile(fs.get(node.id));
-          fileTree.expandTo(node);
-        }
-        this._setMainActive();
-      },
-      showFileDiff: function(id, version) {
-        var node = fileTree.tree().find(id);
-        if (node == null) {
-          layout.showDeleted();
-        } else {
-          layout.showFileDiff(fs.get(node.id), version);
-        }
-        this._setMainActive();
-      },
-      _setMainActive: function() {
-        $('#main').addClass('active');
-        $('#sidebar').removeClass('active');
-        $('#nav-back').removeClass('hidden');
-      },
-      _setSidebarActive: function() {
-        $('#sidebar').addClass('active');
-        $('#main').removeClass('active');
-        $('#nav-back').addClass('hidden');
-      }
+      controller: mainController
     });
-
-    var router = new Router();
 
     // Functions using router & fileTree
     fileTree.on("folder:select", function(folderId) {
