@@ -15,7 +15,7 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
       lastEventId: window.lastEventID
     });
 
-    // Event handlers
+    // Event handlers - users, fs & eventFeed
     eventFeed.on("folder:create", function(id) {
         // Create a stand-alone folder
         var folder = new models.Folder({ id: id });
@@ -57,7 +57,7 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
         fs.remove(fs.get(id));
       });
 
-    // Update notifications based on events
+    // Update notifications based on events - notifications & eventFeed
     eventFeed.on("notification:create",
       function() {
         // TODO: Make this more efficient
@@ -73,6 +73,7 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
         notifications.remove(notifications.get(id));
       });
 
+    // Once we switch to pushState, this will just start the history
     var startRouting = function() {
       // If we're using IE8 heavily, then push state is just trouble
       if (window.location.pathname != '/') {
@@ -81,6 +82,7 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
       Backbone.history.start({ pushState: false });
     };
 
+    // This probably shouldn't be a layout
     var layout = new views.AppLayout({
       el: '#content',
       notifications: notifications,
@@ -90,7 +92,11 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
     $('#content').append(layout.$el);
     layout.showLoading();
 
+    
     var fileTree = layout.getFileTree();
+    
+    
+    // These functions only use fileTree & fs
     fs.on('reset', function() {
       fileTree.tree().load([]);
       fs.each(function(m) {
@@ -113,6 +119,8 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
     fs.on('change', function(m) {
       fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
     });
+    
+    // This function uses fileTree, fs & layout
     fs.on('remove', function(m) {
       fileTree.tree().remove(m.get('id'));
       // Handle being on the deleted page already
@@ -123,6 +131,7 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
       }
     });
 
+    // Router really acting like a controller here
     var Router = Backbone.Router.extend({
       routes: {
         "": "start",
@@ -192,6 +201,7 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
 
     var router = new Router();
 
+    // Functions using router & fileTree
     fileTree.on("folder:select", function(folderId) {
       router.navigate("folder/"+folderId, {trigger: true});
     });
