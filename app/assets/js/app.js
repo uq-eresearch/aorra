@@ -1,10 +1,38 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true */
-/*global _: false, $: false, Backbone: false, EventSource: false, window: false */
-require(['events', 'models', 'views'], function(EventFeed, models, views) {
+/*global _: false, window: false */
+require(['jquery', 'backbone', 'q', 'events', 'models', 'views'], 
+    function($, Backbone, Q, EventFeed, models, views) {
   'use strict';
-
+  
+  // Once we switch to pushState, this will just start the history
+  var startRouting = function() {
+    // If we're using IE8 heavily, then push state is just trouble
+    if (window.location.pathname != '/') {
+      window.location.href = "/#"+window.location.pathname.replace(/^\//,'');
+    }
+    Backbone.history.start({ pushState: false });
+  };
+  
   var App = new Backbone.Marionette.Application();
 
+  // Start routing when all data is loaded
+  App.vent.once('data:preloaded', startRouting);
+  
+  // Set up data:preloaded to be triggered
+  App.addInitializer(function(options) {
+    // Monitor each of the listed precursor events
+    var loadPrecursorEvents = ['filestore', 'users'];
+    var promises = _(loadPrecursorEvents).map(function(e) {
+      var d = Q.defer();
+      App.vent.on('data:preloaded:'+e, d.resolve);
+      return d.promise;
+    });
+    // Once all events have been seen once, trigger the overall preloaded event
+    Q.all(promises).done(function() {
+      App.vent.trigger('data:preloaded');
+    });
+  });
+  
   App.addInitializer(function(options) {
     var users = new models.Users({
       currentId: options.currentUserID
@@ -56,6 +84,14 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
       function(id) {
         fs.remove(fs.get(id));
       });
+    // If our data is out-of-date, refresh and reopen event feed.
+    eventFeed.on("outofdate", function(id) {
+      fs.reset();
+      fs.fetch().done(function() {
+        eventFeed.updateLastId(id);
+        eventFeed.trigger('recheck');
+      });
+    });
 
     // Update notifications based on events - notifications & eventFeed
     eventFeed.on("notification:create",
@@ -73,15 +109,6 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
         notifications.remove(notifications.get(id));
       });
 
-    // Once we switch to pushState, this will just start the history
-    var startRouting = function() {
-      // If we're using IE8 heavily, then push state is just trouble
-      if (window.location.pathname != '/') {
-        window.location.href = "/#"+window.location.pathname.replace(/^\//,'');
-      }
-      Backbone.history.start({ pushState: false });
-    };
-
     // This probably shouldn't be a layout
     var layout = new views.AppLayout({
       el: '#content',
@@ -92,9 +119,7 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
     $('#content').append(layout.$el);
     layout.showLoading();
 
-    
     var fileTree = layout.getFileTree();
-    
     
     // These functions only use fileTree & fs
     fs.on('reset', function() {
@@ -208,42 +233,18 @@ require(['events', 'models', 'views'], function(EventFeed, models, views) {
     fileTree.on("file:select", function(fileId) {
       router.navigate("file/"+fileId, {trigger: true});
     });
-
-    var initFilestore = function() {
-      if (_.isUndefined(options.filesAndFolders)) {
-        return fs.fetch();
-      }
-      fs.reset(options.filesAndFolders);
-      return $.Deferred().resolve();
-    };
-
-    // Users collection
-    var initUsers = function() {
-      if (_.isUndefined(options.users)) {
-        return users.fetch();
-      }
-      users.reset(options.users);
-      return $.Deferred().resolve();
-    };
-
-    // Wait to start routing
-    $.when(initFilestore(), initUsers()).done(function() {
-      startRouting();
+    
+    fs.preload(options.filesAndFolders).done(function(fs) {
+      App.vent.trigger('data:preloaded:filestore', fs);
     });
 
-    // If our data is out-of-date, refresh and reopen event feed.
-    eventFeed.on("outofdate", function(id) {
-      fs.reset();
-      fs.fetch().done(function() {
-        eventFeed.updateLastId(id);
-        eventFeed.trigger('recheck');
-      });
+    users.preload(options.users).done(function(users) {
+      App.vent.trigger('data:preloaded:users', users);
     });
 
     // Open feed
     eventFeed.open();
   });
-  
   
   $(function() {
     App.start({

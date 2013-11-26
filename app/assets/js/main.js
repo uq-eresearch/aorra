@@ -23,6 +23,7 @@ requirejs.config({
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
+      'q': '//cdnjs.cloudflare.com/ajax/libs/q.js/0.9.6/q.min',
       'to-markdown': 'lib/to-markdown',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
       'unstyler': 'lib/unstyler'
