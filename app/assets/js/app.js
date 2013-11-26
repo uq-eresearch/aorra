@@ -19,6 +19,10 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       this._fileTree = options.fileTree;
       this._fs = options.filestore;
       this.showLoading();
+      // Bind actions to file tree events
+      _(this).bindAll('showFile', 'showFolder');
+      this.listenTo(this._fileTree, "folder:select", this.showFolder);
+      this.listenTo(this._fileTree, "file:select", this.showFile);
     },
     showLoading: function() {
       this._layout.showLoading();
@@ -32,6 +36,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       if (firstNode.name == '/') {
         fileTree.expandTo(firstNode);
       }
+      this.trigger('start');
     },
     changePassword: function() {
       this._layout.changePassword();
@@ -47,9 +52,12 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       var node = fileTree.tree().find(id);
       if (node == null) {
         layout.showDeleted();
+        this.trigger('start');
       } else {
-        layout.showFolder(this._fs.get(node.id));
+        var folder = this._fs.get(node.id);
+        layout.showFolder(folder);
         fileTree.expandTo(node);
+        this.trigger('showFolder', folder);
       }
       this._setMainActive();
     },
@@ -59,9 +67,12 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       var node = fileTree.tree().find(id);
       if (node == null) {
         layout.showDeleted();
+        this.trigger('start');
       } else {
-        layout.showFile(this._fs.get(node.id));
+        var file = this._fs.get(node.id);
+        layout.showFile(file);
         fileTree.expandTo(node);
+        this.trigger('showFile', file);
       }
       this._setMainActive();
     },
@@ -269,13 +280,15 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       },
       controller: mainController
     });
-
-    // Functions using router & fileTree
-    fileTree.on("folder:select", function(folderId) {
-      router.navigate("folder/"+folderId, {trigger: true});
+    // Router listens to main controller actions to change URL
+    router.listenTo(mainController, "start", function() {
+      router.navigate("");
     });
-    fileTree.on("file:select", function(fileId) {
-      router.navigate("file/"+fileId, {trigger: true});
+    router.listenTo(mainController, "showFolder", function(folder) {
+      router.navigate("folder/"+folder.id);
+    });
+    router.listenTo(mainController, "showFile", function(file) {
+      router.navigate("file/"+file.id);
     });
     
     fs.preload(options.filesAndFolders).done(function(fs) {
