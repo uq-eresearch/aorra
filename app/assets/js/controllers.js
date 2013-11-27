@@ -12,6 +12,13 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       this._fs = options.filestore;
       this.showLoading();
     },
+    isShowingFileOrFolder: function(id) {
+      var layout = this._layout;
+      // Handle being on the deleted page already
+      if (_.isUndefined(layout.main.currentView.model)) { return false; }
+      // If the current path has been deleted, then hide it.
+      return id == layout.main.currentView.model.id;
+    },
     showLoading: function() {
       this._layout.showLoading();
     },
@@ -28,12 +35,17 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       this._layout.showNotifications();
       this._setMainActive();
     },
+    showDeleted: function(fof) {
+      var layout = this._layout;
+      layout.sidebar.show(layout.getFileTree());
+      layout.main.show(new views.DeletedView({ model: fof }));
+      this.trigger('deleted');
+    },
     showFolder: function(id) {
       var layout = this._layout;
       var folder = this._fs.get(id);
       if (folder == null) {
-        layout.showDeleted();
-        this.trigger('start');
+        this.showDeleted();
       } else {
         layout.showFolder(folder);
         this.trigger('showFolder', folder);
@@ -44,8 +56,7 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       var layout = this._layout;
       var file = this._fs.get(id);
       if (file == null) {
-        layout.showDeleted();
-        this.trigger('start');
+        this.showDeleted();
       } else {
         layout.showFile(file);
         this.trigger('showFile', file);
@@ -56,8 +67,7 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       var layout = this._layout;
       var file = this._fs.get(id);
       if (file == null) {
-        layout.showDeleted();
-        this.trigger('start');
+        this.showDeleted();
       } else {
         layout.showFileDiff(file, version);
         this.trigger('showFileDiff', file);

@@ -137,15 +137,6 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
       users: users
     });
     layout.render();
-    // This function uses fileTree & layout
-    layout.listenTo(fs, 'remove', function(m) {
-      // Handle being on the deleted page already
-      if (_.isUndefined(layout.main.currentView.model)) { return; }
-      // If the current path has been deleted, then hide it.
-      if (m.id == layout.main.currentView.model.id) {
-        layout.showDeleted(m);
-      }
-    });
 
     var fileTree = layout.getFileTree();
     
@@ -184,12 +175,20 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
     var setupFileTreeEvents = function(c) {
       fileTree.on("folder:select", _.bind(c.showFolder, c));
       fileTree.on("file:select", _.bind(c.showFile, c));
-      fileTree.listenTo(c, 'start', function() { fileTree.expand(); });
+      fileTree.listenTo(c, 'start deleted', function() { fileTree.expand(); });
       fileTree.listenTo(c, 'showFolder showFile showFileDiff', function(fof) {
         fileTree.expand(fof.id);
       });
     };
     setupFileTreeEvents(mainController);
+    
+    // This function uses fileTree & layout
+    mainController.listenTo(fs, 'remove', function(m) {
+      // If the current path has been deleted, then hide it.
+      if (mainController.isShowingFileOrFolder(m.id)) {
+        mainController.showDeleted(m);
+      }
+    });
     
     // Router really acting like a controller here
     var router = new Backbone.Marionette.AppRouter({
@@ -204,7 +203,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
       controller: mainController
     });
     // Router listens to main controller actions to change URL
-    router.listenTo(mainController, "start", function() {
+    router.listenTo(mainController, "start deleted", function() {
       router.navigate("");
     });
     router.listenTo(mainController, "showFolder", function(folder) {

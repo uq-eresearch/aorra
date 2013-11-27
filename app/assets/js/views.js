@@ -1890,10 +1890,6 @@ define([
         versionName: versionName
       }));
     },
-    showDeleted: function(fof) {
-      this.sidebar.show(this.getFileTree());
-      this.main.show(new DeletedView({ model: fof }));
-    },
     template: function(data) {
       return templates.render('main_layout', data);
     }
@@ -1901,6 +1897,7 @@ define([
 
   return {
     AppLayout: AppLayout,
+    DeletedView: DeletedView,
     FileTree: FileTree
   };
 });
