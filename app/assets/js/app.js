@@ -116,7 +116,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
     var eventFeed = new EventFeed({
       lastEventId: window.lastEventID
     });
-    // Bubble all feeds up
+    // Bubble all events up
     eventFeed.on("all", bubbleAllToAppFunc('feed'));
     // If our data is out-of-date, refresh and reopen event feed.
     eventFeed.on("outofdate", function(id) {
@@ -208,7 +208,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
     });
     layout.render();
     // This function uses fileTree & layout
-    fs.on('remove', function(m) {
+    layout.listenTo(fs, 'remove', function(m) {
       // Handle being on the deleted page already
       if (_.isUndefined(layout.main.currentView.model)) { return; }
       // If the current path has been deleted, then hide it.
@@ -220,7 +220,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
     var fileTree = layout.getFileTree();
     
     // These functions only use fileTree & fs
-    fs.on('reset', function() {
+    fileTree.listenTo(fs, 'reset', function() {
       fileTree.tree().load([]);
       fs.each(function(m) {
         fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
@@ -239,10 +239,10 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       };
       f();
     });
-    fs.on('change', function(m) {
+    fileTree.listenTo(fs, 'change', function(m) {
       fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
     });
-    fs.on('remove', function(m) {
+    fileTree.listenTo(fs, 'remove', function(m) {
       fileTree.tree().remove(m.get('id'));
     });
     
