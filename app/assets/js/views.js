@@ -1813,6 +1813,11 @@ define([
       main: "#main",
       sidebar: "#sidebar .panel-body"
     },
+    ui: {
+      main: "#main",
+      sidebar: "#sidebar",
+      sidebarTitle: "#sidebar .title"
+    },
     initialize: function(options) {
       this.users = options.users;
       this.notificationMessages = options.notifications;
@@ -1857,39 +1862,6 @@ define([
       }
       return this._fileTree;
     },
-    changePassword: function() {
-      this.sidebar.show(new UserMenu());
-      this.main.show(new ChangePasswordView());
-    },
-    showNotifications: function() {
-      this.sidebar.show(new UserMenu());
-      this.main.show(new NotificationsView({
-        collection: this.notificationMessages
-      }));
-    },
-    showLoading: function() {
-      this.main.show(this.getFileTree());
-      this.main.show(new LoadingView());
-    },
-    showStart: function() {
-      this.sidebar.show(this.getFileTree());
-      this.main.show(new StartView());
-    },
-    showFolder: function(folder) {
-      this.sidebar.show(this.getFileTree());
-      this.main.show(new FolderView({ model: folder, users: this.users }));
-    },
-    showFile: function(file) {
-      this.sidebar.show(this.getFileTree());
-      this.main.show(new FileView({ model: file, users: this.users }));
-    },
-    showFileDiff: function(file, versionName) {
-      this.sidebar.show(this.getFileTree());
-      this.main.show(new FileDiffView({
-        model: file,
-        versionName: versionName
-      }));
-    },
     template: function(data) {
       return templates.render('main_layout', data);
     }
@@ -1897,7 +1869,15 @@ define([
 
   return {
     AppLayout: AppLayout,
+    ChangePasswordView: ChangePasswordView,
     DeletedView: DeletedView,
-    FileTree: FileTree
+    LoadingView: LoadingView,
+    FileView: FileView,
+    FileDiffView: FileDiffView,
+    FolderView: FolderView,
+    FileTree: FileTree,
+    NotificationsView: NotificationsView,
+    StartView: StartView,
+    UserMenu: UserMenu
   };
 });

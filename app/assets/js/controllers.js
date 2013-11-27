@@ -20,23 +20,38 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       return id == layout.main.currentView.model.id;
     },
     showLoading: function() {
-      this._layout.showLoading();
+      var layout = this._layout;
+      layout.ui.sidebarTitle.text('Files & Folders');
+      layout.sidebar.show(layout.getFileTree());
+      layout.main.show(new views.LoadingView());
     },
     start: function() {
-      this._layout.showStart();
+      var layout = this._layout;
+      layout.ui.sidebarTitle.text('Files & Folders');
+      layout.sidebar.show(layout.getFileTree());
+      layout.main.show(new views.StartView());
       this._setSidebarActive();
       this.trigger('start');
     },
     changePassword: function() {
-      this._layout.changePassword();
+      var layout = this._layout;
+      layout.ui.sidebarTitle.text('User Menu');
+      layout.sidebar.show(new views.UserMenu());
+      layout.main.show(new views.ChangePasswordView());
       this._setMainActive();
     },
     showNotifications: function() {
-      this._layout.showNotifications();
+      var layout = this._layout;
+      layout.ui.sidebarTitle.text('User Menu');
+      layout.sidebar.show(new views.UserMenu());
+      layout.main.show(new views.NotificationsView({
+        collection: layout.notificationMessages
+      }));
       this._setMainActive();
     },
     showDeleted: function(fof) {
       var layout = this._layout;
+      layout.ui.sidebarTitle.text('Files & Folders');
       layout.sidebar.show(layout.getFileTree());
       layout.main.show(new views.DeletedView({ model: fof }));
       this.trigger('deleted');
@@ -47,7 +62,12 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       if (folder == null) {
         this.showDeleted();
       } else {
-        layout.showFolder(folder);
+        layout.ui.sidebarTitle.text('Files & Folders');
+        layout.sidebar.show(layout.getFileTree());
+        layout.main.show(new views.FolderView({
+          model: folder,
+          users: layout.users
+        }));
         this.trigger('showFolder', folder);
       }
       this._setMainActive();
@@ -58,7 +78,12 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       if (file == null) {
         this.showDeleted();
       } else {
-        layout.showFile(file);
+        layout.ui.sidebarTitle.text('Files & Folders');
+        layout.sidebar.show(layout.getFileTree());
+        layout.main.show(new views.FileView({
+          model: file,
+          users: layout.users
+        }));
         this.trigger('showFile', file);
       }
       this._setMainActive();
@@ -69,19 +94,26 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       if (file == null) {
         this.showDeleted();
       } else {
-        layout.showFileDiff(file, version);
+        layout.ui.sidebarTitle.text('Files & Folders');
+        layout.sidebar.show(layout.getFileTree());
+        layout.main.show(new views.FileDiffView({
+          model: file,
+          versionName: version
+        }));
         this.trigger('showFileDiff', file);
       }
       this._setMainActive();
     },
     _setMainActive: function() {
-      $('#main').addClass('active');
-      $('#sidebar').removeClass('active');
+      var layout = this._layout;
+      layout.ui.main.addClass('active');
+      layout.ui.sidebar.removeClass('active');
       $('#nav-back').removeClass('hidden');
     },
     _setSidebarActive: function() {
-      $('#sidebar').addClass('active');
-      $('#main').removeClass('active');
+      var layout = this._layout;
+      layout.ui.sidebar.addClass('active');
+      layout.ui.main.removeClass('active');
       $('#nav-back').addClass('hidden');
     }
   });
