@@ -150,12 +150,12 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
     // Router really acting like a controller here
     var router = new Backbone.Marionette.AppRouter({
       appRoutes: {
-        "": "start",
         "change-password": "changePassword",
         "file/:id": "showFile",
         "folder/:id": "showFolder",
         "file/:id/version/:version/diff": "showFileDiff",
-        "notifications": "showNotifications"
+        "notifications": "showNotifications",
+        "": "start"
       },
       controller: mainController
     });
@@ -168,6 +168,12 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
     });
     router.listenTo(mainController, "showFile", function(file) {
       router.navigate("file/"+file.id);
+    });
+    router.listenTo(App.vent, "nav:password:change", function(folder) {
+      router.navigate("change-password");
+    });
+    router.listenTo(App.vent, "nav:notification:list", function(file) {
+      router.navigate("notifications");
     });
     
     fs.preload(options.filesAndFolders).done(function(fs) {

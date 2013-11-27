@@ -4,6 +4,6 @@ define(['marionette', 'q'], function(Marionette, Q) {
 
   var App = new Backbone.Marionette.Application();
   App.vent.on('all', _.bind(console.log, console));
-
+  
   return App;
 });

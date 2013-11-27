@@ -1,7 +1,7 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true */
 /*global _: false, window: false */
-define(['jquery', 'marionette', 'q', 'models', 'views'], 
-    function($, Marionette, Q, models, views) {
+define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'], 
+    function($, Marionette, Q, App, models, views) {
   'use strict';
 
   var module = {};
@@ -23,7 +23,29 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
           size: 20
         }));
       }, this);
+      this._setupVentListeners();
       this.showLoading();
+    },
+    _setupVentListeners: function() {
+      var c = this;
+      c.listenTo(App.vent, "nav:start", function() {
+        c.start();
+      });
+      c.listenTo(App.vent, "nav:folder:show", function(folder) {
+        c.showFolder(folder.id);
+      });
+      c.listenTo(App.vent, "nav:file:show", function(file) {
+        c.showFile(file.id);
+      });
+      c.listenTo(App.vent, "nav:file:diff", function(file, version) {
+        c.showFileDiff(file.id, version.get('name'));
+      });
+      c.listenTo(App.vent, "nav:notification:list", function() {
+        c.showNotifications();
+      });
+      c.listenTo(App.vent, "nav:password:change", function() {
+        c.changePassword();
+      });
     },
     _buildFileTree: function() {
       var fileTree = new views.FileTree();

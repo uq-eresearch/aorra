@@ -506,6 +506,7 @@ define([
 
   var VersionView = Backbone.Marionette.Layout.extend({
     tagName: 'tr',
+    className: 'version-row',
     modelEvents: {
       "change": "render"
     },
@@ -513,7 +514,8 @@ define([
       avatar: '.user-avatar'
     },
     triggers: {
-      "click .delete": "version:delete"
+      "click .js-filediff": "version:compare",
+      "click .js-delete": "version:delete"
     },
     ui: {
       timestamp: '.timestamp'
@@ -525,7 +527,7 @@ define([
       });
       if (this.model != this.model.collection.last()) {
         data = _(data).extend({
-          compareUrl: this.model.url().replace(/^\//, '#') + '/diff',
+          canCompare: true,
           canDelete: this.options.canDelete
         });
       }
@@ -547,6 +549,9 @@ define([
       formatTimestamp(this.ui.timestamp);
       this.avatar.show(this.avatarView())
     },
+    onVersionCompare: function(e) {
+      this.trigger("show:diff");
+    },
     onVersionDelete: function(e) {
       e.model.destroy();
     }
@@ -554,6 +559,10 @@ define([
 
   var VersionsView = Backbone.Marionette.CompositeView.extend({
     initialize: function(options) {
+      var file = options.file;
+      this.on("itemview:show:diff", function(view) {
+        App.vent.trigger("nav:file:diff", file, view.model);
+      });
       this._users = options.users;
       this.collection = this.model.versionList();
       this.render();
@@ -667,46 +676,61 @@ define([
       this.$el.html($link);
     }
   });
-
-  var BreadcrumbView = Backbone.Marionette.ItemView.extend({
-    ui: {
-      share: '.share-link',
-      shareContent: '.share-link-content',
-      popover: '.popover-content'
+  
+  var BreadcrumbItemView = Backbone.Marionette.ItemView.extend({
+    tagName: 'li',
+    triggers: {
+      'click .js-folder': 'folder:show'
+    },
+    onFolderShow: function() {
+      App.vent.trigger('nav:folder:show', this.model);
+    },
+    _isLast: function() {
+      return this.options.isLast;
     },
     serializeData: function() {
-      var collection = this.model.collection;
-      var path = [];
-      var m = this.model;
-      while (m != null) {
-        path.unshift(m);
-        m = collection.get(m.get('parent'));
-      }
-      var breadcrumbs = _.map(path, function(m) {
-        return _.extend(m.asNodeStruct(), { url: m.displayUrl() });
-      });
       return {
-        parents: _.initial(breadcrumbs),
-        current: _.last(breadcrumbs)
+        name: this.model.get('path') == '/' ? '/' : this.model.get('name'),
+        url: this.model.url(),
+        isLast: this._isLast()
       };
     },
     template: function(serialized_model) {
-      return templates.render('breadcrumbs', serialized_model);
+      if (serialized_model.isLast) {
+        return serialized_model.name;
+      }
+      return _.template(
+          '<a class="js-folder" href="<%=url%>"><%=name%></a>',
+          serialized_model);
     },
     onRender: function() {
-      var content = templates.render('link_popup', {
-        url: window.location.protocol+"//"+window.location.host+this.model.url()
-      });
-      this.ui.share.popover({
-        html: true,
-        content: content
-      });
-      this.ui.share.on('click', _.bind(function() {
-        var $share = this.ui.share;
-        var $input = this.$el.find('input');
-        $input.select();
-        $input.on('blur', function() { $share.popover('hide'); });
-      }, this));
+      if (this._isLast()) {
+        this.$el.addClass('active');
+      }
+    }
+  });
+
+  var BreadcrumbView = Backbone.Marionette.CollectionView.extend({
+    tagName: 'ol',
+    className: 'breadcrumb',
+    itemView: BreadcrumbItemView,
+    itemViewOptions: function(model, index) {
+      if (this.collection.size() - 1 == index) {
+        return { isLast: true };
+      }
+    },
+    initialize: function() {
+      this.collection = this._createParentFoldersCollection();
+    },
+    _createParentFoldersCollection: function() {
+      var collection = this.model.collection;
+      var parentFolders = new models.FileStore();
+      var m = this.model;
+      while (m != null) {
+        parentFolders.unshift(m);
+        m = collection.get(m.get('parent'));
+      }
+      return parentFolders;
     }
   });
 
@@ -1452,6 +1476,7 @@ define([
     getVersionsView: function() {
       return new VersionsView({
         model: this.model.info(),
+        file: this.model,
         users: this._users
       })
     },
@@ -1617,6 +1642,9 @@ define([
   });
 
   var FileDiffView = FileOrFolderView.extend({
+    triggers: {
+      'click .js-back': 'show:file'
+    },
     initialize: function(attrs) {
       var versionName = attrs.versionName;
       var info = this.model.info();
@@ -1651,6 +1679,9 @@ define([
       breadcrumbs: '.region-breadcrumbs',
       diff: '.region-diff'
     },
+    onShowFile: function() {
+      App.vent.trigger('nav:file:show', this.model);
+    },
     onRender: function() {
       if (!_.isObject(this.version)) { return; }
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
@@ -1684,6 +1715,20 @@ define([
   });
 
   var UserMenu = Backbone.Marionette.ItemView.extend({
+    triggers: {
+      'click .js-notification-list': 'notification:list',
+      'click .js-change-password': 'password:change',
+      'click .js-back': 'back'
+    },
+    onBack: function() {
+      App.vent.trigger('nav:start');
+    },
+    onNotificationList: function() {
+      App.vent.trigger('nav:notification:list');
+    },
+    onPasswordChange: function() {
+      App.vent.trigger('nav:password:change');
+    },
     template: function() {
       return templates.render('user_menu', {});
     },
@@ -1790,9 +1835,12 @@ define([
       'sync': 'render',
       'remove': 'render'
     },
+    triggers: {
+      'click': 'notification:list'
+    },
     attributes: {
       "data-placement": "bottom",
-      href: '#notifications',
+      href: '#',
       rel: "tooltip",
       title: "Notification messages"
     },
@@ -1804,6 +1852,9 @@ define([
     },
     template: function(data) {
       return templates.render('notifications_nav_item', data);
+    },
+    onNotificationList: function() {
+      App.vent.trigger('nav:notification:list')
     },
     onRender: function() {
       this.$el.tooltip();
