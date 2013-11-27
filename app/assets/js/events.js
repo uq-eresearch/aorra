@@ -11,6 +11,10 @@ define(['backbone'], function(Backbone) {
       updateLastId: function(id) {
         obj.lastEventId = id;
       },
+      reopen: function(lastEventID) {
+        this.updateLastId(lastEventID);
+        this.trigger('recheck');
+      },
       open: function() {
         var trigger = _.bind(this.trigger, this);
         var triggerRecheck = function() {

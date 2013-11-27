@@ -136,8 +136,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
     // If our data is out-of-date, refresh and reopen event feed.
     eventFeed.on("outofdate", function(id) {
       eventFeed.listenToOnce(App.vent, "data:refreshed", function() {
-        eventFeed.updateLastId(id);
-        eventFeed.trigger('recheck');
+        eventFeed.reopen(id);
       });
     });
     // Open feed on application start
