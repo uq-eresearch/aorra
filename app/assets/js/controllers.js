@@ -8,9 +8,28 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
   
   module.MainController = Backbone.Marionette.Controller.extend({
     initialize: function(options) {
-      this._layout = options.layout;
+      var layout = options.layout;
+      this._layout = layout;
       this._fs = options.filestore;
+      this._users = options.users;
+      this._notificationMessages = options.notifications;
+      layout.notifications.show(new views.NotificationsNavView({
+        collection: this._notificationMessages
+      }));
+      this._notificationMessages.fetch();
+      this._users.once('sync reset', function() {
+        layout.currentUserAvatar.show(new views.UserAvatar({
+          model: this._users.current(),
+          size: 20
+        }));
+      }, this);
       this.showLoading();
+    },
+    getFileTree: function() {
+      if (_.isUndefined(this._fileTree)) {
+        this._fileTree = new views.FileTree();
+      }
+      return this._fileTree;
     },
     isShowingFileOrFolder: function(id) {
       var layout = this._layout;
@@ -22,13 +41,13 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
     showLoading: function() {
       var layout = this._layout;
       layout.ui.sidebarTitle.text('Files & Folders');
-      layout.sidebar.show(layout.getFileTree());
+      layout.sidebar.show(this.getFileTree());
       layout.main.show(new views.LoadingView());
     },
     start: function() {
       var layout = this._layout;
       layout.ui.sidebarTitle.text('Files & Folders');
-      layout.sidebar.show(layout.getFileTree());
+      layout.sidebar.show(this.getFileTree());
       layout.main.show(new views.StartView());
       this._setSidebarActive();
       this.trigger('start');
@@ -45,14 +64,14 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       layout.ui.sidebarTitle.text('User Menu');
       layout.sidebar.show(new views.UserMenu());
       layout.main.show(new views.NotificationsView({
-        collection: layout.notificationMessages
+        collection: this._notificationMessages
       }));
       this._setMainActive();
     },
     showDeleted: function(fof) {
       var layout = this._layout;
       layout.ui.sidebarTitle.text('Files & Folders');
-      layout.sidebar.show(layout.getFileTree());
+      layout.sidebar.show(this.getFileTree());
       layout.main.show(new views.DeletedView({ model: fof }));
       this.trigger('deleted');
     },
@@ -63,10 +82,10 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
         this.showDeleted();
       } else {
         layout.ui.sidebarTitle.text('Files & Folders');
-        layout.sidebar.show(layout.getFileTree());
+        layout.sidebar.show(this.getFileTree());
         layout.main.show(new views.FolderView({
           model: folder,
-          users: layout.users
+          users: this._users
         }));
         this.trigger('showFolder', folder);
       }
@@ -79,10 +98,10 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
         this.showDeleted();
       } else {
         layout.ui.sidebarTitle.text('Files & Folders');
-        layout.sidebar.show(layout.getFileTree());
+        layout.sidebar.show(this.getFileTree());
         layout.main.show(new views.FileView({
           model: file,
-          users: layout.users
+          users: this._users
         }));
         this.trigger('showFile', file);
       }
@@ -95,7 +114,7 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
         this.showDeleted();
       } else {
         layout.ui.sidebarTitle.text('Files & Folders');
-        layout.sidebar.show(layout.getFileTree());
+        layout.sidebar.show(this.getFileTree());
         layout.main.show(new views.FileDiffView({
           model: file,
           versionName: version

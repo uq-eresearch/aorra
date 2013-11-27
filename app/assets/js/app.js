@@ -130,15 +130,20 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
       notifications.remove(notifications.get(id));
     });
 
-    // This probably shouldn't be a layout
+    // This is probably fine as a layout now
     var layout = new views.AppLayout({
-      el: '#content',
+      el: options.rootSelector
+    });
+    layout.render();
+    
+    var mainController = new controllers.MainController({
+      filestore: fs,
+      layout: layout,
       notifications: notifications,
       users: users
     });
-    layout.render();
 
-    var fileTree = layout.getFileTree();
+    var fileTree = mainController.getFileTree();
     
     // These functions only use fileTree & fs
     fileTree.listenTo(fs, 'reset', function() {
@@ -165,11 +170,6 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
     });
     fileTree.listenTo(fs, 'remove', function(m) {
       fileTree.tree().remove(m.get('id'));
-    });
-    
-    var mainController = new controllers.MainController({
-      layout: layout,
-      filestore: fs
     });
     
     var setupFileTreeEvents = function(c) {
@@ -225,6 +225,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
   
   $(function() {
     App.start({
+      rootSelector: '#content',
       currentUserID: $('#current-user').data('id'),
       users: window.usersJSON,
       filesAndFolders: window.filestoreJSON

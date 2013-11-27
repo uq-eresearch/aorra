@@ -1819,8 +1819,6 @@ define([
       sidebarTitle: "#sidebar .title"
     },
     initialize: function(options) {
-      this.users = options.users;
-      this.notificationMessages = options.notifications;
       this.addRegions({
         notifications: new Backbone.Marionette.Region({
           el: '#notifications-nav-item'
@@ -1829,20 +1827,10 @@ define([
           el: '#current-user-avatar'
         })
       });
-      this.notifications.show(new NotificationsNavView({
-        collection: this.notificationMessages
-      }));
-      this.notificationMessages.fetch();
-      this.users.once('sync reset', function() {
-        this.currentUserAvatar.show(new UserAvatar({
-          model: this.users.current(),
-          size: 20
-        }));
-      }, this);
     },
     onRender: function() {
-      var $sidebar = this.$el.find('#sidebar');
-      var $main = this.$el.find('#main');
+      var $sidebar = this.ui.sidebar;
+      var $main = this.ui.sidebar;
       var $sidebarPanel = $sidebar.find('.panel');
       $sidebarPanel.on('click', '.panel-heading', function(e) {
         var dt = 500;
@@ -1856,12 +1844,6 @@ define([
         }
       });
     },
-    getFileTree: function() {
-      if (_.isUndefined(this._fileTree)) {
-        this._fileTree = new FileTree();
-      }
-      return this._fileTree;
-    },
     template: function(data) {
       return templates.render('main_layout', data);
     }
@@ -1874,10 +1856,12 @@ define([
     LoadingView: LoadingView,
     FileView: FileView,
     FileDiffView: FileDiffView,
-    FolderView: FolderView,
     FileTree: FileTree,
+    FolderView: FolderView,
+    NotificationsNavView: NotificationsNavView,
     NotificationsView: NotificationsView,
     StartView: StartView,
+    UserAvatar: UserAvatar,
     UserMenu: UserMenu
   };
 });
