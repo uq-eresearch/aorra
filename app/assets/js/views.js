@@ -64,7 +64,6 @@ define([
       this.tree().element.detach();
     },
     _getNode: function(nodeOrId) {
-      console.log(nodeOrId);
       if (nodeOrId == null)
         return null;
       if (_.isObject(nodeOrId))

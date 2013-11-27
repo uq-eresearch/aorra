@@ -16,27 +16,13 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
   var MainController = Backbone.Marionette.Controller.extend({
     initialize: function(options) {
       this._layout = options.layout;
-      this._fileTree = options.fileTree;
       this._fs = options.filestore;
       this.showLoading();
-      // Bind actions to file tree events
-      _(this).bindAll('showFile', 'showFolder');
-      this.listenTo(this._fileTree, "folder:select", this.showFolder);
-      this.listenTo(this._fileTree, "file:select", this.showFile);
-      // TODO: Move setup elsewhere
-      this.on('start showFolder showFile', function(fof) {
-        if (fof == null) {
-          this._fileTree.expand();
-        } else {
-          this._fileTree.expand(fof.id);
-        }
-      })
     },
     showLoading: function() {
       this._layout.showLoading();
     },
     start: function() {
-      var fileTree = this._fileTree;
       this._layout.showStart();
       this._setSidebarActive();
       this.trigger('start');
@@ -81,6 +67,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
         this.trigger('start');
       } else {
         layout.showFileDiff(file, version);
+        this.trigger('showFileDiff', file);
       }
       this._setMainActive();
     },
@@ -150,8 +137,9 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
     var fs = new models.FileStore();
     var notifications = new models.Notifications();
 
-    // Event handlers - users, fs & eventFeed
+    // Event handlers - fs & eventFeed
     App.vent.on("feed:folder:create", function(id) {
+      if (fs.get(id) == null) {
         // Create a stand-alone folder
         var folder = new models.Folder({ id: id });
         // Get the data for it
@@ -159,38 +147,23 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
           // It exists, so add it to the collection
           fs.add([folder.toJSON()]);
         });
-      });
-    App.vent.on("feed:file:create",
-      function(id) {
+      }
+    });
+    App.vent.on("feed:file:create", function(id) {
+      if (fs.get(id) == null) {
         var file = new models.File({ id: id });
         file.fetch().done(function() {
           fs.add([file.toJSON()]);
         });
-      });
+      }
+    });
     App.vent.on("feed:folder:update feed:file:update", function(id) {
       var fof = fs.get(id);
       if (fof) { fof.fetch(); }
     });
-    // Rather brute-force, but the flag will turn up
-    App.vent.on("feed:flag:create",
-      function(id) {
-        _.each(users.flags(), function(c) {
-          if (c.get(id)) { return; } // Already exists
-          c.add({ id: id });
-          c.get(id).fetch().error(function() {
-            c.remove(id);
-          });
-        });
-      });
-    // We can delete from all without error
-    App.vent.on("feed:flag:delete",
-      function(id) {
-        _.each(users.flags(), function(c) { c.remove(id); });
-      });
-    App.vent.on("feed:folder:delete feed:file:delete",
-      function(id) {
-        fs.remove(fs.get(id));
-      });
+    App.vent.on("feed:folder:delete feed:file:delete", function(id) {
+      fs.remove(fs.get(id));
+    });
     // If our data is out-of-date, refresh and reopen event feed.
     App.vent.on("feed:outofdate", function(id) {
       fs.refresh().done(function() {
@@ -198,21 +171,34 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       });
     });
 
+    // Event handlers - users & eventFeed
+    // Rather brute-force, but the flag will turn up
+    App.vent.on("feed:flag:create", function(id) {
+      _.each(users.flags(), function(c) {
+        if (c.get(id)) { return; } // Already exists
+        c.add({ id: id });
+        c.get(id).fetch().error(function() {
+          c.remove(id);
+        });
+      });
+    });
+    // We can delete from all without error
+    App.vent.on("feed:flag:delete", function(id) {
+      _.each(users.flags(), function(c) { c.remove(id); });
+    });
+
     // Update notifications based on events - notifications & eventFeed
-    App.vent.on("feed:notification:create",
-      function() {
-        // TODO: Make this more efficient
-        notifications.fetch();
-      });
-    App.vent.on("feed:notification:update",
-      function(id) {
-        var n = notifications.get(id);
-        if (n) { n.fetch(); }
-      });
-    App.vent.on("feed:notification:delete",
-      function(id) {
-        notifications.remove(notifications.get(id));
-      });
+    App.vent.on("feed:notification:create", function() {
+      // TODO: Make this more efficient
+      notifications.fetch();
+    });
+    App.vent.on("feed:notification:update", function(id) {
+      var n = notifications.get(id);
+      if (n) { n.fetch(); }
+    });
+    App.vent.on("feed:notification:delete", function(id) {
+      notifications.remove(notifications.get(id));
+    });
 
     // This probably shouldn't be a layout
     var layout = new views.AppLayout({
@@ -221,6 +207,15 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       users: users
     });
     layout.render();
+    // This function uses fileTree & layout
+    fs.on('remove', function(m) {
+      // Handle being on the deleted page already
+      if (_.isUndefined(layout.main.currentView.model)) { return; }
+      // If the current path has been deleted, then hide it.
+      if (m.id == layout.main.currentView.model.id) {
+        layout.showDeleted(m);
+      }
+    });
 
     var fileTree = layout.getFileTree();
     
@@ -231,7 +226,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
         fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
       });
     });
-    fs.on('add', function(m) {
+    fileTree.listenTo(fs, 'add', function(m) {
       // Retry failed adding, as sometimes events arrive out-of-order
       var f = function() {
         try {
@@ -247,23 +242,24 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
     fs.on('change', function(m) {
       fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
     });
-    
-    // This function uses fileTree, fs & layout
     fs.on('remove', function(m) {
       fileTree.tree().remove(m.get('id'));
-      // Handle being on the deleted page already
-      if (_.isUndefined(layout.main.currentView.model)) { return; }
-      // If the current path has been deleted, then hide it.
-      if (m.id == layout.main.currentView.model.id) {
-        layout.showDeleted(m);
-      }
     });
     
     var mainController = new MainController({
       layout: layout,
-      fileTree: fileTree,
       filestore: fs
     });
+    
+    var setupFileTreeEvents = function(c) {
+      fileTree.on("folder:select", _.bind(c.showFolder, c));
+      fileTree.on("file:select", _.bind(c.showFile, c));
+      fileTree.listenTo(c, 'start', function() { fileTree.expand(); });
+      fileTree.listenTo(c, 'showFolder showFile showFileDiff', function(fof) {
+        fileTree.expand(fof.id);
+      });
+    };
+    setupFileTreeEvents(mainController);
     
     // Router really acting like a controller here
     var router = new Backbone.Marionette.AppRouter({
