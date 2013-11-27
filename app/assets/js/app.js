@@ -23,6 +23,14 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       _(this).bindAll('showFile', 'showFolder');
       this.listenTo(this._fileTree, "folder:select", this.showFolder);
       this.listenTo(this._fileTree, "file:select", this.showFile);
+      // TODO: Move setup elsewhere
+      this.on('start showFolder showFile', function(fof) {
+        if (fof == null) {
+          this._fileTree.expand();
+        } else {
+          this._fileTree.expand(fof.id);
+        }
+      })
     },
     showLoading: function() {
       this._layout.showLoading();
@@ -31,11 +39,6 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       var fileTree = this._fileTree;
       this._layout.showStart();
       this._setSidebarActive();
-      // Expand if at root
-      var firstNode = _.first(fileTree.tree().nodes());
-      if (firstNode.name == '/') {
-        fileTree.expandTo(firstNode);
-      }
       this.trigger('start');
     },
     changePassword: function() {
@@ -47,42 +50,37 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       this._setMainActive();
     },
     showFolder: function(id) {
-      var layout = this._layout,
-          fileTree = this._fileTree;
-      var node = fileTree.tree().find(id);
-      if (node == null) {
+      var layout = this._layout;
+      var folder = this._fs.get(id);
+      if (folder == null) {
         layout.showDeleted();
         this.trigger('start');
       } else {
-        var folder = this._fs.get(node.id);
         layout.showFolder(folder);
-        fileTree.expandTo(node);
         this.trigger('showFolder', folder);
       }
       this._setMainActive();
     },
     showFile: function(id) {
-      var layout = this._layout,
-          fileTree = this._fileTree;
-      var node = fileTree.tree().find(id);
-      if (node == null) {
+      var layout = this._layout;
+      var file = this._fs.get(id);
+      if (file == null) {
         layout.showDeleted();
         this.trigger('start');
       } else {
-        var file = this._fs.get(node.id);
         layout.showFile(file);
-        fileTree.expandTo(node);
         this.trigger('showFile', file);
       }
       this._setMainActive();
     },
     showFileDiff: function(id, version) {
       var layout = this._layout;
-      var node = this._fileTree.tree().find(id);
-      if (node == null) {
+      var file = this._fs.get(id);
+      if (file == null) {
         layout.showDeleted();
+        this.trigger('start');
       } else {
-        layout.showFileDiff(this._fs.get(node.id), version);
+        layout.showFileDiff(file, version);
       }
       this._setMainActive();
     },

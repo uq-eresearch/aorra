@@ -63,8 +63,15 @@ define([
     close: function() {
       this.tree().element.detach();
     },
-    expandTo: function(node) {
-      var n = node;
+    _getNode: function(nodeOrId) {
+      console.log(nodeOrId);
+      if (nodeOrId == null)
+        return null;
+      if (_.isObject(nodeOrId))
+        return nodeOrId;
+      return this.tree().find(nodeOrId);
+    },
+    _expandTo: function(n) {
       var nodes = [];
       while (n != null) {
         nodes.push(n);
@@ -74,6 +81,20 @@ define([
         if (!n.isLeaf()) { n.expand(); }
       });
       this._hint$el.hide();
+    },
+    expand: function(nodeOrId) {
+      var n = this._getNode(nodeOrId);
+      if (n != null) {
+        this._expandTo(n);
+        return n;
+      }
+      // Expand if at root
+      var firstNode = _.first(this.tree().nodes());
+      if (firstNode.name == '/') {
+        this._expandTo(firstNode);
+        return firstNode;
+      }
+      this.tree().collapseAll();
     },
     _buildTree: function() {
       var tree = glyphtree($('<div/>'), this.options);
