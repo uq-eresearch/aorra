@@ -100,7 +100,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
   
   var App = new Backbone.Marionette.Application();
   
-  var bubbleToAppFunc = function(prefix) {
+  var bubbleAllToAppFunc = function(prefix) {
     return function(eventName) {
       var args = [prefix + ':' + eventName].concat(_.rest(arguments));
       App.vent.trigger.apply(App.vent, args);
@@ -132,7 +132,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views'],
       lastEventId: window.lastEventID
     });
     // Bubble all feeds up
-    eventFeed.on("all", bubbleToAppFunc('feed'));
+    eventFeed.on("all", bubbleAllToAppFunc('feed'));
     // If our data is out-of-date, refresh and reopen event feed.
     eventFeed.on("outofdate", function(id) {
       eventFeed.listenToOnce(App.vent, "data:refreshed", function() {
