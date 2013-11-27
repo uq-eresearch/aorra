@@ -67,7 +67,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
     var fs = new models.FileStore();
     var notifications = new models.Notifications();
 
-    // Event handlers - fs & eventFeed
+    // Event handlers - fs
     App.vent.on("feed:folder:create", function(id) {
       if (fs.get(id) == null) {
         // Create a stand-alone folder
@@ -101,7 +101,7 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
       });
     });
 
-    // Event handlers - users & eventFeed
+    // Event handlers - users
     // Rather brute-force, but the flag will turn up
     App.vent.on("feed:flag:create", function(id) {
       _.each(users.flags(), function(c) {
@@ -142,45 +142,6 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
       notifications: notifications,
       users: users
     });
-
-    var fileTree = mainController.getFileTree();
-    
-    // These functions only use fileTree & fs
-    fileTree.listenTo(fs, 'reset', function() {
-      fileTree.tree().load([]);
-      fs.each(function(m) {
-        fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
-      });
-    });
-    fileTree.listenTo(fs, 'add', function(m) {
-      // Retry failed adding, as sometimes events arrive out-of-order
-      var f = function() {
-        try {
-          fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
-        } catch (e) {
-          // Try again
-          _.delay(f, 1000);
-          //console.log(m.id+": "+e.message);
-        }
-      };
-      f();
-    });
-    fileTree.listenTo(fs, 'change', function(m) {
-      fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
-    });
-    fileTree.listenTo(fs, 'remove', function(m) {
-      fileTree.tree().remove(m.get('id'));
-    });
-    
-    var setupFileTreeEvents = function(c) {
-      fileTree.on("folder:select", _.bind(c.showFolder, c));
-      fileTree.on("file:select", _.bind(c.showFile, c));
-      fileTree.listenTo(c, 'start deleted', function() { fileTree.expand(); });
-      fileTree.listenTo(c, 'showFolder showFile showFileDiff', function(fof) {
-        fileTree.expand(fof.id);
-      });
-    };
-    setupFileTreeEvents(mainController);
     
     // This function uses fileTree & layout
     mainController.listenTo(fs, 'remove', function(m) {

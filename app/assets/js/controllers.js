@@ -25,9 +25,52 @@ define(['jquery', 'marionette', 'q', 'models', 'views'],
       }, this);
       this.showLoading();
     },
+    _buildFileTree: function() {
+      var fileTree = new views.FileTree();
+      // Controller hooks
+      fileTree.on("folder:select", _.bind(this.showFolder, this));
+      fileTree.on("file:select", _.bind(this.showFile, this));
+      fileTree.listenTo(this, 'start deleted', function() { 
+        fileTree.expand();
+      });
+      fileTree.listenTo(this, 
+          'showFolder showFile showFileDiff', function(fof) {
+        fileTree.expand(fof.id);
+      });
+      // Filestore hooks
+      (function(fs) {
+        // These functions only use fileTree & fs
+        fileTree.listenTo(fs, 'reset', function() {
+          fileTree.tree().load([]);
+          fs.each(function(m) {
+            fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+          });
+        });
+        fileTree.listenTo(fs, 'add', function(m) {
+          // Retry failed adding, as sometimes events arrive out-of-order
+          var f = function() {
+            try {
+              fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+            } catch (e) {
+              // Try again
+              _.delay(f, 1000);
+              //console.log(m.id+": "+e.message);
+            }
+          };
+          f();
+        });
+        fileTree.listenTo(fs, 'change', function(m) {
+          fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
+        });
+        fileTree.listenTo(fs, 'remove', function(m) {
+          fileTree.tree().remove(m.get('id'));
+        });
+      })(this._fs);
+      return fileTree;
+    },
     getFileTree: function() {
       if (_.isUndefined(this._fileTree)) {
-        this._fileTree = new views.FileTree();
+        this._fileTree = this._buildFileTree();
       }
       return this._fileTree;
     },
