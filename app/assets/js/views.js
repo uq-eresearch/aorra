@@ -1,12 +1,14 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
 /*global _: false, FileAPI: false, Modernizr: false, define: false, window: false */
 define([
+        'appcore',
         'models',
         'templates',
         'moment',
         'diff_match_patch',
         'glyphtree',
         'jquery.bootstrap',
+        'backbone',
         'marionette',
         'marked',
         'to-markdown',
@@ -17,9 +19,9 @@ define([
         'jquery.ui',
         'jquery.ckeditor',
         'typeahead'
-        ], function(models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, marked, toMarkdown, unstyle, htmldiff) {
+        ], function(App, models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, Marionette, marked, toMarkdown, unstyle, htmldiff) {
   'use strict';
-
+  
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
 
   var formatTimestamp = function($n) {
@@ -1830,9 +1832,9 @@ define([
     },
     onRender: function() {
       var $sidebar = this.ui.sidebar;
-      var $main = this.ui.sidebar;
+      var $main = this.ui.main;
       var $sidebarPanel = $sidebar.find('.panel');
-      $sidebarPanel.on('click', '.panel-heading', function(e) {
+      $sidebar.on('click', '.panel-heading', function(e) {
         var dt = 500;
         $sidebar.toggleClass('col-md-4 col-md-1', dt);
         if ($sidebarPanel.hasClass('collapsed')) {

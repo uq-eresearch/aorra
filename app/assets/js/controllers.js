@@ -1,12 +1,12 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true */
 /*global _: false, window: false */
 define(['jquery', 'marionette', 'q', 'models', 'views'], 
-    function($, Backbone, Q, models, views) {
+    function($, Marionette, Q, models, views) {
   'use strict';
 
   var module = {};
   
-  module.MainController = Backbone.Marionette.Controller.extend({
+  module.MainController = Marionette.Controller.extend({
     initialize: function(options) {
       var layout = options.layout;
       this._layout = layout;

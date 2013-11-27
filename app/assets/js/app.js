@@ -1,7 +1,7 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true */
 /*global _: false, window: false */
-require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'], 
-    function($, Backbone, Q, EventFeed, models, views, controllers) {
+require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models', 'views', 'controllers'], 
+    function($, Backbone, Marionette, Q, App, EventFeed, models, views, controllers) {
   'use strict';
   
   // Once we switch to pushState, this will just start the history
@@ -13,16 +13,12 @@ require(['jquery', 'marionette', 'q', 'events', 'models', 'views', 'controllers'
     Backbone.history.start({ pushState: false });
   };
   
-  var App = new Backbone.Marionette.Application();
-  
   var bubbleAllToAppFunc = function(prefix) {
     return function(eventName) {
       var args = [prefix + ':' + eventName].concat(_.rest(arguments));
       App.vent.trigger.apply(App.vent, args);
     };
   };
-  
-  App.vent.on('all', _.bind(console.log, console));
 
   // Start routing when all data is loaded
   App.vent.once('data:preloaded', startRouting);

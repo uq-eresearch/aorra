@@ -38,7 +38,7 @@ requirejs.config({
       },
       'marionette': {
         deps: ['backbone'],
-        exports: 'Backbone'
+        exports: 'Marionette'
       },
       'jquery.ckeditor': {
         deps: ['jquery', 'ckeditor'],
