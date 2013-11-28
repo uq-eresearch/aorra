@@ -24,7 +24,7 @@ class EventFormatterSpec extends Specification {
 
         (msg \ "id") must beJson(eventId)
         (msg \ "type") must beJson("folder:update")
-        (msg \ "data") must beJson(event.info.id)
+        (msg \ "data") must beJson(event.info.get("id"))
       }
 
       "without node info" in {
@@ -51,7 +51,7 @@ class EventFormatterSpec extends Specification {
 
         lines must contain(s"id: $eventId")
         lines must contain(s"event: folder:update")
-        lines must contain(s"data: ${event.info.id}")
+        lines must contain(s"data: ${event.info.get("id")}")
         msg must endWith("\n\n") // Finish with empty line
       }
 

@@ -14,9 +14,9 @@ object EventFormatter {
 
   def jsonMessage(id: String, event: EmEvent): JsObject = {
     // Response varies depending on whether event.info is null
-    val body = event.info match {
+    val body = event.info.get("id") match {
       case null => Json.obj("type" -> event.`type`)
-      case _ => Json.obj("type" -> event.`type`, "data" -> event.info.id)
+      case mId => Json.obj("type" -> event.`type`, "data" -> mId)
     }
     // All responses have an ID
     Json.obj("id" -> id) ++ body
@@ -24,9 +24,9 @@ object EventFormatter {
 
   def sseMessage(id: String, event: EmEvent): String = {
     val tmpl = "id: %s\nevent: %s\ndata: %s\n\n"
-    event.info match {
+    event.info.get("id") match {
       case null => tmpl.format(id, event.`type`, id)
-      case _    => tmpl.format(id, event.`type`, event.info.id)
+      case mId => tmpl.format(id, event.`type`, mId)
     }
   }
 

@@ -55,7 +55,6 @@ import service.EventManager;
 import service.EventManagerImpl;
 import service.JcrSessionFactory;
 import service.EventManager.Event;
-import service.EventManager.Event.NodeInfo;
 import service.filestore.roles.Admin;
 import akka.actor.TypedActor;
 import akka.actor.TypedProps;

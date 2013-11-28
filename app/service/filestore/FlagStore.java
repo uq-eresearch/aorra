@@ -1,5 +1,6 @@
 package service.filestore;
 
+import java.util.Map;
 import java.util.Set;
 
 import javax.jcr.RepositoryException;
@@ -16,6 +17,7 @@ import org.jcrom.Jcrom;
 
 import service.EventManager.Event;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class FlagStore {
@@ -104,8 +106,8 @@ public class FlagStore {
       return new Event("flag:delete", nodeInfo(flag));
     }
 
-    private static Event.NodeInfo nodeInfo(Flag flag) {
-      return new Event.NodeInfo(flag.getId());
+    private static Map<String,String> nodeInfo(Flag flag) {
+      return ImmutableMap.of("id", flag.getId());
     }
   }
 

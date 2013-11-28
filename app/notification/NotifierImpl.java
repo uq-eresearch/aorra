@@ -26,7 +26,6 @@ import service.OrderedEvent;
 import service.EventManager.Event;
 import service.EventManager.EventReceiver;
 import service.EventManager.EventReceiverMessage;
-import service.EventManager.Event.NodeInfo;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import akka.actor.TypedActor;
@@ -152,7 +151,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   private void sendNotification(Session session, final Event event)
       throws RepositoryException {
     final FileStore.Manager manager = fileStore.getManager(session);
-    for (final User user : getWatchUsers(session, event.info.id)) {
+    for (final User user : getWatchUsers(session, event.info.get("id"))) {
       FileStore.FileOrFolder item = getItem(manager, event);
       final String message = views.html.notification.notification.render(event,
           item).toString();
@@ -162,23 +161,23 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   private FileStore.FileOrFolder getItem(
       FileStore.Manager manager, Event event) throws RepositoryException {
-    return manager.getByIdentifier(event.info.id);
+    return manager.getByIdentifier(event.info.get("id"));
   }
 
   private String getTargetId(Session session, Event event) {
-    Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+    Flag flag = flagStore.getManager(session).getFlag(event.info.get("id"));
     return flag.getTargetId();
   }
 
   private boolean isEditFlag(Session session, Event event) {
     final FlagStore.Manager mgr = flagStore.getManager(session);
-    final Flag f = mgr.getFlag(FlagStore.FlagType.EDIT, event.info.id);
+    final Flag f = mgr.getFlag(FlagStore.FlagType.EDIT, event.info.get("id"));
     return f != null;
   }
 
   private void sendEditNotification(Session session, final Iterable<User> users,
       final Event event) throws RepositoryException {
-    final Flag flag = flagStore.getManager(session).getFlag(event.info.id);
+    final Flag flag = flagStore.getManager(session).getFlag(event.info.get("id"));
     final User creator = flag.getUser();
     final FileStore.Manager manager = fileStore.getManager(session);
     FileStore.FileOrFolder fof = manager.getByIdentifier(flag.getTargetId());

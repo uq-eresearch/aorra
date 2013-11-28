@@ -1,6 +1,10 @@
 package notification;
 
+import java.util.Map;
+
 import javax.jcr.RepositoryException;
+
+import com.google.common.collect.ImmutableMap;
 
 import models.Notification;
 import service.OrderedEvent;
@@ -27,8 +31,8 @@ public interface Notifier {
       return new Event("notification:delete", nodeInfo(notification));
     }
 
-    private static Event.NodeInfo nodeInfo(Notification notification) {
-      return new Event.NodeInfo(notification.getId());
+    private static Map<String, String> nodeInfo(Notification notification) {
+      return ImmutableMap.of("id", notification.getId());
     }
 
   }

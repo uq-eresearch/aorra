@@ -12,10 +12,10 @@ import javax.jcr.Session;
 
 import service.EventManager;
 import service.EventManager.Event;
-import service.EventManager.Event.NodeInfo;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableMap;
 
 import models.User;
 
@@ -160,7 +160,7 @@ public interface FileStore {
 
     public static Event updateFolder(String folderId)
         throws RepositoryException {
-      return new Event("folder:update", new NodeInfo(folderId));
+      return new Event("folder:update", ImmutableMap.of("id", folderId));
     }
 
     public static Event delete(FileStore.File file)
@@ -173,12 +173,12 @@ public interface FileStore {
       return new EventManager.Event("folder:delete", nodeInfo(folder));
     }
 
-    private static Event.NodeInfo nodeInfo(FileStore.Folder folder) {
-      return new Event.NodeInfo(folder.getIdentifier());
+    private static Map<String, String> nodeInfo(FileStore.Folder folder) {
+      return ImmutableMap.of("id", folder.getIdentifier());
     }
 
-    private static Event.NodeInfo nodeInfo(FileStore.File file) {
-      return new Event.NodeInfo(file.getIdentifier());
+    private static Map<String, String> nodeInfo(FileStore.File file) {
+      return ImmutableMap.of("id", file.getIdentifier());
     }
 
   }

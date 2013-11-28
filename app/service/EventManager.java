@@ -1,9 +1,12 @@
 package service;
 
+import static java.util.Collections.emptyMap;
+
+import java.util.Map;
+
 import javax.jcr.RepositoryException;
 
 import service.OrderedEvent;
-import models.Flag;
 
 public interface EventManager {
 
@@ -51,30 +54,15 @@ public interface EventManager {
 
   public static class Event {
 
-    public static class NodeInfo {
-
-      public final String id;
-
-      public NodeInfo(String id) {
-        this.id = id;
-      }
-
-      @Override
-      public String toString() {
-        return id;
-      }
-
-    }
-
     public final String type;
-    public final NodeInfo info;
+    public final Map<String, String> info;
 
     protected Event(String type) {
       this.type = type;
-      this.info = null;
+      this.info = emptyMap();
     }
 
-    public Event(String type, NodeInfo info)
+    public Event(String type, Map<String, String> info)
         throws RepositoryException {
       this.type = type;
       this.info = info;
