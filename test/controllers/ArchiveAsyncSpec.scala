@@ -80,9 +80,9 @@ class ArchiveAsyncSpec extends Specification {
         val futureZipBytes = result.body.through(Results.dechunk)
             .run(Iteratee.consume[Array[Byte]]())
 
-        // Wait for 30 seconds for all bytes to be collected
+        // Wait 2 minutes for all bytes to be collected
         val zipBytes: Array[Byte] =
-          Await.result(futureZipBytes, Duration(30, TimeUnit.SECONDS))
+          Await.result(futureZipBytes, Duration(2, TimeUnit.MINUTES))
 
         // Check magic number of sent file
         zipBytes.slice(0, 2) must equalTo("PK".getBytes)
@@ -114,7 +114,7 @@ class ArchiveAsyncSpec extends Specification {
     }
 
     "handle charts with extra parameters" in new FakeAorraApp {
-        asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
+      asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         val folder = filestore.getManager(session).getRoot()
         folder.createFile("seagrass_cover.xls", XLS_MIME_TYPE,
             new FileInputStream("test/seagrass_cover.xls"))
@@ -135,9 +135,9 @@ class ArchiveAsyncSpec extends Specification {
         val futureZipBytes = result.body.through(Results.dechunk)
             .run(Iteratee.consume[Array[Byte]]())
 
-        // Wait for 30 seconds for all bytes to be collected
+        // Wait 2 minutes for all bytes to be collected
         val zipBytes: Array[Byte] =
-          Await.result(futureZipBytes, Duration(30, TimeUnit.SECONDS))
+          Await.result(futureZipBytes, Duration(2, TimeUnit.MINUTES))
 
         // Check magic number of sent file
         zipBytes.slice(0, 2) must equalTo("PK".getBytes)
