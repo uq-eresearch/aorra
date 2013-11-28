@@ -15,8 +15,8 @@ object EventFormatter {
   def jsonMessage(id: String, event: EmEvent): JsObject = {
     // Response varies depending on whether event.info is null
     val body = event.info match {
-      case null => Json.obj("type" -> event.`type`.toString)
-      case _ => Json.obj("type" -> eventType(event), "data" -> event.info.id)
+      case null => Json.obj("type" -> event.`type`)
+      case _ => Json.obj("type" -> event.`type`, "data" -> event.info.id)
     }
     // All responses have an ID
     Json.obj("id" -> id) ++ body
@@ -26,17 +26,13 @@ object EventFormatter {
     val tmpl = "id: %s\nevent: %s\ndata: %s\n\n"
     event.info match {
       case null => tmpl.format(id, event.`type`, id)
-      case _    => tmpl.format(id, eventType(event), event.info.id)
+      case _    => tmpl.format(id, event.`type`, event.info.id)
     }
   }
 
   def ssePingMessage(): String = {
     val msg = dtFormat.format(Calendar.getInstance.getTime)
     s"event: ping\ndata: $msg\n\n"
-  }
-
-  private def eventType(event: EmEvent) = {
-    event.info.`type`+":"+event.`type`
   }
 
 }

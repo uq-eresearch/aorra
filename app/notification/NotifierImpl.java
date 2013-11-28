@@ -108,12 +108,11 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   }
 
   private static boolean isNotificationEvent(final Event event) {
-    return event.info != null
-        && event.info.type.equals("notification");
+    return event.type.startsWith("notification:");
   }
 
   private static boolean isFlagEvent(final Event event) {
-    return event.info != null && event.info.type.equals("flag");
+    return event.type.startsWith("flag:");
   }
 
   private void processEvent(Session session, Event event)

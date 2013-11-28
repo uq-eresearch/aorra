@@ -145,41 +145,40 @@ public interface FileStore {
 
     public static Event create(FileStore.File file)
         throws RepositoryException {
-      return new Event("create", nodeInfo(file));
+      return new Event("file:create", nodeInfo(file));
     }
 
     public static Event create(FileStore.Folder folder)
         throws RepositoryException {
-      return new Event("create", nodeInfo(folder));
+      return new Event("folder:create", nodeInfo(folder));
     }
 
     public static Event update(FileStore.File file)
         throws RepositoryException {
-      return new Event("update", nodeInfo(file));
+      return new Event("file:update", nodeInfo(file));
     }
 
     public static Event updateFolder(String folderId)
         throws RepositoryException {
-      return new Event("update",
-          new NodeInfo("folder", folderId));
+      return new Event("folder:update", new NodeInfo(folderId));
     }
 
     public static Event delete(FileStore.File file)
         throws RepositoryException {
-      return new EventManager.Event("delete", nodeInfo(file));
+      return new EventManager.Event("file:delete", nodeInfo(file));
     }
 
     public static Event delete(FileStore.Folder folder)
         throws RepositoryException {
-      return new EventManager.Event("delete", nodeInfo(folder));
+      return new EventManager.Event("folder:delete", nodeInfo(folder));
     }
 
     private static Event.NodeInfo nodeInfo(FileStore.Folder folder) {
-      return new Event.NodeInfo("folder", folder.getIdentifier());
+      return new Event.NodeInfo(folder.getIdentifier());
     }
 
     private static Event.NodeInfo nodeInfo(FileStore.File file) {
-      return new Event.NodeInfo("file", file.getIdentifier());
+      return new Event.NodeInfo(file.getIdentifier());
     }
 
   }

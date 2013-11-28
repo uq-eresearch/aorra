@@ -53,17 +53,15 @@ public interface EventManager {
 
     public static class NodeInfo {
 
-      public final String type;
       public final String id;
 
-      public NodeInfo(String type, String id) {
-        this.type = type;
+      public NodeInfo(String id) {
         this.id = id;
       }
 
       @Override
       public String toString() {
-        return String.format("%s (%s)", id, type);
+        return id;
       }
 
     }

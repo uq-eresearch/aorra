@@ -96,16 +96,16 @@ public class FlagStore {
 
     public static Event create(Flag flag)
         throws RepositoryException {
-      return new Event("create", nodeInfo(flag));
+      return new Event("flag:create", nodeInfo(flag));
     }
 
     public static Event delete(Flag flag)
         throws RepositoryException {
-      return new Event("delete", nodeInfo(flag));
+      return new Event("flag:delete", nodeInfo(flag));
     }
 
     private static Event.NodeInfo nodeInfo(Flag flag) {
-      return new Event.NodeInfo("flag", flag.getId());
+      return new Event.NodeInfo(flag.getId());
     }
   }
 

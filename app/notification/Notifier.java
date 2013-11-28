@@ -14,21 +14,21 @@ public interface Notifier {
 
     public static Event create(Notification notification)
         throws RepositoryException {
-      return new Event("create", nodeInfo(notification));
+      return new Event("notification:create", nodeInfo(notification));
     }
 
     public static Event update(Notification notification)
         throws RepositoryException {
-      return new Event("update", nodeInfo(notification));
+      return new Event("notification:update", nodeInfo(notification));
     }
 
     public static Event delete(Notification notification)
         throws RepositoryException {
-      return new Event("delete", nodeInfo(notification));
+      return new Event("notification:delete", nodeInfo(notification));
     }
 
     private static Event.NodeInfo nodeInfo(Notification notification) {
-      return new Event.NodeInfo("notification", notification.getId());
+      return new Event.NodeInfo(notification.getId());
     }
 
   }
