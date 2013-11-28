@@ -1,5 +1,9 @@
 package controllers;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import html.FileCleanup;
 import html.HtmlToPdf;
 import html.HtmlZip;
 import html.XToHtml;
@@ -42,8 +46,15 @@ public class HtmlController extends SessionAwareController {
     @SubjectPresent
     public Result toHtmlZip(final String fileId) {
         try {
-            return ok(new HtmlZip().toHtmlZip(filename(fileId), html(fileId),
-                    request().cookie("PLAY_SESSION").value())).as("application/zip");
+            final FileCleanup c = new HtmlZip().toHtmlZip(filename(fileId), html(fileId),
+                    request().cookie("PLAY_SESSION").value());
+            return ok(new FileInputStream(c.result()) {
+                @Override
+                public void close() throws IOException {
+                  super.close();
+                  c.cleanup();
+                }
+              }).as("application/zip");
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
@@ -52,8 +63,15 @@ public class HtmlController extends SessionAwareController {
     @SubjectPresent
     public Result toPdf(final String fileId, String converter, String copts) {
         try {
-            return ok(new HtmlToPdf().toPdf(filename(fileId), html(fileId),
-                    request().cookie("PLAY_SESSION").value(), converter, copts)).as("application/pdf");
+            final FileCleanup c = new HtmlToPdf().toPdf(filename(fileId), html(fileId),
+                    request().cookie("PLAY_SESSION").value(), converter, copts);
+            return ok(new FileInputStream(c.result()) {
+                @Override
+                public void close() throws IOException {
+                  super.close();
+                  c.cleanup();
+                }
+              }).as("application/pdf");
         } catch(Exception e) {
             throw new RuntimeException(e);
         }

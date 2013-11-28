@@ -20,10 +20,11 @@ public class HtmlToPdf {
     private static final String CMD_PANDOC = "/usr/bin/pandoc";
     private static final String CMD_WEASYPRINT = "/usr/bin/weasyprint";
 
-    public File toPdf(String name, String html, String playSession, String converter, String copts) {
+    public FileCleanup toPdf(String name, String html, String playSession, String converter, String copts) {
         String filename = FilenameUtils.removeExtension(name)+".html";
         File htmlFile = new HtmlZip().toFolder(Files.createTempDir(), filename, html, playSession);
-        return pdf(htmlFile, converter, copts);
+        File pdfFile = pdf(htmlFile, converter, copts);
+        return new FileCleanup(pdfFile, pdfFile.getParentFile(), htmlFile.getParentFile());
     }
 
     private File pdf(File in, String converter, String copts) {
@@ -88,8 +89,8 @@ public class HtmlToPdf {
             return new ProcessBuilder(cmd(converter,
                     options(copts), "-o", out.getAbsolutePath(), in.getName()));
         } else if(StringUtils.equals(converter, CMD_WEASYPRINT)) {
-            File css = new File(in.getParentFile(), "usercss.css");
-            FileUtils.writeStringToFile(css, "img {max-width: 100%;}");
+            File css = new File(in.getParentFile(), "print.css");
+            FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream("weasyprint.css"), css);
             return new ProcessBuilder(cmd(converter, "--stylesheet", css.getAbsolutePath(),
                     options(copts), in.getName(), out.getAbsolutePath()));
         } else {

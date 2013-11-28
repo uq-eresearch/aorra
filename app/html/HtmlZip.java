@@ -31,12 +31,12 @@ public class HtmlZip {
 
     private static final String MISSING = "files/img_missing.png";
 
-    public File toHtmlZip(String name, String html, String playSession) {
+    public FileCleanup toHtmlZip(String name, String html, String playSession) {
         File destination = Files.createTempDir();
         toFolder(destination,
                 FilenameUtils.removeExtension(name)+".html", html, playSession);
         File zipFile = zip(destination, name);
-        return zipFile;
+        return new FileCleanup(zipFile, zipFile.getParentFile(), destination);
     }
 
     public File toFolder(File destination, String name, String html, String playSession) {
