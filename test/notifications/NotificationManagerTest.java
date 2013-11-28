@@ -203,7 +203,7 @@ public class NotificationManagerTest {
         for(OrderedEvent oe : events) {
           EventManager.Event event = oe.event();
           if (event.info != null &&
-              event.info.type == EventManager.Event.NodeType.NOTIFICATION) {
+              event.info.type.equals("notification")) {
             actualCount++;
           }
         }

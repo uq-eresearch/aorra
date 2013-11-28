@@ -12,9 +12,7 @@ import javax.jcr.Session;
 
 import service.EventManager;
 import service.EventManager.Event;
-import service.EventManager.Event.EventType;
 import service.EventManager.Event.NodeInfo;
-import service.EventManager.Event.NodeType;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
@@ -147,41 +145,41 @@ public interface FileStore {
 
     public static Event create(FileStore.File file)
         throws RepositoryException {
-      return new Event(EventType.CREATE, nodeInfo(file));
+      return new Event("create", nodeInfo(file));
     }
 
     public static Event create(FileStore.Folder folder)
         throws RepositoryException {
-      return new Event(EventType.CREATE, nodeInfo(folder));
+      return new Event("create", nodeInfo(folder));
     }
 
     public static Event update(FileStore.File file)
         throws RepositoryException {
-      return new Event(EventType.UPDATE, nodeInfo(file));
+      return new Event("update", nodeInfo(file));
     }
 
     public static Event updateFolder(String folderId)
         throws RepositoryException {
-      return new Event(EventType.UPDATE,
-          new NodeInfo(NodeType.FOLDER, folderId));
+      return new Event("update",
+          new NodeInfo("folder", folderId));
     }
 
     public static Event delete(FileStore.File file)
         throws RepositoryException {
-      return new EventManager.Event(EventType.DELETE, nodeInfo(file));
+      return new EventManager.Event("delete", nodeInfo(file));
     }
 
     public static Event delete(FileStore.Folder folder)
         throws RepositoryException {
-      return new EventManager.Event(EventType.DELETE, nodeInfo(folder));
+      return new EventManager.Event("delete", nodeInfo(folder));
     }
 
     private static Event.NodeInfo nodeInfo(FileStore.Folder folder) {
-      return new Event.NodeInfo(NodeType.FOLDER, folder.getIdentifier());
+      return new Event.NodeInfo("folder", folder.getIdentifier());
     }
 
     private static Event.NodeInfo nodeInfo(FileStore.File file) {
-      return new Event.NodeInfo(NodeType.FILE, file.getIdentifier());
+      return new Event.NodeInfo("file", file.getIdentifier());
     }
 
   }

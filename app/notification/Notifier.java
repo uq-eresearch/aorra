@@ -5,8 +5,6 @@ import javax.jcr.RepositoryException;
 import models.Notification;
 import service.OrderedEvent;
 import service.EventManager.Event;
-import service.EventManager.Event.EventType;
-import service.EventManager.Event.NodeType;
 
 public interface Notifier {
 
@@ -16,21 +14,21 @@ public interface Notifier {
 
     public static Event create(Notification notification)
         throws RepositoryException {
-      return new Event(EventType.CREATE, nodeInfo(notification));
+      return new Event("create", nodeInfo(notification));
     }
 
     public static Event update(Notification notification)
         throws RepositoryException {
-      return new Event(EventType.UPDATE, nodeInfo(notification));
+      return new Event("update", nodeInfo(notification));
     }
 
     public static Event delete(Notification notification)
         throws RepositoryException {
-      return new Event(EventType.DELETE, nodeInfo(notification));
+      return new Event("delete", nodeInfo(notification));
     }
 
     private static Event.NodeInfo nodeInfo(Notification notification) {
-      return new Event.NodeInfo(NodeType.NOTIFICATION, notification.getId());
+      return new Event.NodeInfo("notification", notification.getId());
     }
 
   }

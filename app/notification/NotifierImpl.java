@@ -26,9 +26,7 @@ import service.OrderedEvent;
 import service.EventManager.Event;
 import service.EventManager.EventReceiver;
 import service.EventManager.EventReceiverMessage;
-import service.EventManager.Event.EventType;
 import service.EventManager.Event.NodeInfo;
-import service.EventManager.Event.NodeType;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import akka.actor.TypedActor;
@@ -85,7 +83,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
       @Override
       public void push(OrderedEvent oe) {
         // Skip out-of-date messages
-        if (oe.event().type == EventType.OUTOFDATE)
+        if (oe.event().type.equals("outofdate"))
           return;
         // Trigger notification for event
         n.handleEvent(oe);
@@ -111,12 +109,11 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   private static boolean isNotificationEvent(final Event event) {
     return event.info != null
-        && event.info.type == EventManager.Event.NodeType.NOTIFICATION;
+        && event.info.type.equals("notification");
   }
 
   private static boolean isFlagEvent(final Event event) {
-    return event.info != null
-        && event.info.type == EventManager.Event.NodeType.FLAG;
+    return event.info != null && event.info.type.equals("flag");
   }
 
   private void processEvent(Session session, Event event)

@@ -51,24 +51,12 @@ public interface EventManager {
 
   public static class Event {
 
-    public static enum EventType {
-      CREATE, UPDATE, DELETE, OUTOFDATE;
-      @Override
-      public String toString() { return super.toString().toLowerCase(); }
-    }
-
-    public static enum NodeType {
-      FILE, FOLDER, FLAG, NOTIFICATION;
-      @Override
-      public String toString() { return super.toString().toLowerCase(); }
-    }
-
     public static class NodeInfo {
 
-      public final NodeType type;
+      public final String type;
       public final String id;
 
-      public NodeInfo(NodeType type, String id) {
+      public NodeInfo(String type, String id) {
         this.type = type;
         this.id = id;
       }
@@ -80,22 +68,22 @@ public interface EventManager {
 
     }
 
-    public final EventType type;
+    public final String type;
     public final NodeInfo info;
 
-    protected Event(EventType type) {
+    protected Event(String type) {
       this.type = type;
       this.info = null;
     }
 
-    public Event(EventType type, NodeInfo info)
+    public Event(String type, NodeInfo info)
         throws RepositoryException {
       this.type = type;
       this.info = info;
     }
 
     public static Event outOfDate() {
-      return new Event(EventType.OUTOFDATE);
+      return new Event("outofdate");
     }
 
     @Override

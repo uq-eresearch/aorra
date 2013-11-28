@@ -2,25 +2,19 @@ package service.filestore;
 
 import java.util.Set;
 
-import javax.jcr.ItemExistsException;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
-import javax.jcr.version.VersionException;
 
-import org.apache.jackrabbit.commons.JcrUtils;
-import org.jcrom.Jcrom;
-import org.jcrom.JcrMappingException;
-
-import service.EventManager.Event;
-import service.EventManager.Event.EventType;
-import service.EventManager.Event.NodeInfo;
 import models.Flag;
 import models.FlagDAO;
 import models.User;
+
+import org.apache.jackrabbit.commons.JcrUtils;
+import org.jcrom.JcrMappingException;
+import org.jcrom.Jcrom;
+
+import service.EventManager.Event;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -102,16 +96,16 @@ public class FlagStore {
 
     public static Event create(Flag flag)
         throws RepositoryException {
-      return new Event(EventType.CREATE, nodeInfo(flag));
+      return new Event("create", nodeInfo(flag));
     }
 
     public static Event delete(Flag flag)
         throws RepositoryException {
-      return new Event(EventType.DELETE, nodeInfo(flag));
+      return new Event("delete", nodeInfo(flag));
     }
 
     private static Event.NodeInfo nodeInfo(Flag flag) {
-      return new Event.NodeInfo(Event.NodeType.FLAG, flag.getId());
+      return new Event.NodeInfo("flag", flag.getId());
     }
   }
 
