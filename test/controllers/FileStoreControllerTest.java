@@ -332,9 +332,11 @@ public class FileStoreControllerTest {
               controllers.routes.ref.FileStoreController.showFolder(
                   fm.getRoot().getIdentifier()),
               newRequest.withHeader("Accept", mime));
-          assertThat(status(result)).isEqualTo(303);
-          assertThat(header("Location", result)).isEqualTo(
-              "/#folder/" + fm.getRoot().getIdentifier());
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/html");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
         }
         return session;
       }
@@ -358,9 +360,11 @@ public class FileStoreControllerTest {
               controllers.routes.ref.FileStoreController.showFile(
                   file.getIdentifier()),
               newRequest.withHeader("Accept", mime));
-          assertThat(status(result)).isEqualTo(303);
-          assertThat(header("Location", result)).isEqualTo(
-              "/#file/" + file.getIdentifier());
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/html");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
         }
         return session;
       }
