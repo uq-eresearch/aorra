@@ -9,6 +9,7 @@ import models.Notification;
 import models.NotificationDAO;
 import models.User;
 import models.UserDAO;
+import notification.Notifier.Events;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -101,7 +102,7 @@ public final class UserController extends SessionAwareController {
           return badRequest("Should have read attribute.");
         n.setRead(json.get("read").asBoolean());
         dao.update(n);
-        eventManager.tell(Event.update(n));
+        eventManager.tell(Events.update(n));
         return ok(jb.toJson(n)).as("application/json; charset=utf-8");
       }
     });
@@ -118,7 +119,7 @@ public final class UserController extends SessionAwareController {
           return notFound();
         dao.removeById(n.getId());
         session.save();
-        eventManager.tell(Event.delete(n));
+        eventManager.tell(Events.delete(n));
         return noContent();
       }
     });

@@ -15,6 +15,9 @@ import org.apache.jackrabbit.commons.JcrUtils;
 import org.jcrom.Jcrom;
 import org.jcrom.JcrMappingException;
 
+import service.EventManager.Event;
+import service.EventManager.Event.EventType;
+import service.EventManager.Event.NodeInfo;
 import models.Flag;
 import models.FlagDAO;
 import models.User;
@@ -94,6 +97,24 @@ public class FlagStore {
     }
 
   }
+
+  public static class Events {
+
+    public static Event create(Flag flag)
+        throws RepositoryException {
+      return new Event(EventType.CREATE, nodeInfo(flag));
+    }
+
+    public static Event delete(Flag flag)
+        throws RepositoryException {
+      return new Event(EventType.DELETE, nodeInfo(flag));
+    }
+
+    private static Event.NodeInfo nodeInfo(Flag flag) {
+      return new Event.NodeInfo(Event.NodeType.FLAG, flag.getId());
+    }
+  }
+
 
   protected final Jcrom jcrom;
 

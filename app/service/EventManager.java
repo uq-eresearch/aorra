@@ -3,11 +3,7 @@ package service;
 import javax.jcr.RepositoryException;
 
 import service.OrderedEvent;
-import service.filestore.FileStore;
-import service.filestore.FileStore.File;
-import service.filestore.FileStore.Folder;
 import models.Flag;
-import models.Notification;
 
 public interface EventManager {
 
@@ -72,29 +68,9 @@ public interface EventManager {
       public final NodeType type;
       public final String id;
 
-      NodeInfo(NodeType type, String id) {
+      public NodeInfo(NodeType type, String id) {
         this.type = type;
         this.id = id;
-      }
-
-      NodeInfo(FileStore.Folder folder) {
-        this.type = NodeType.FOLDER;
-        this.id = folder.getIdentifier();
-      }
-
-      NodeInfo(FileStore.File file) {
-        this.type = NodeType.FILE;
-        this.id = file.getIdentifier();
-      }
-
-      NodeInfo(Notification notification) {
-        this.type = NodeType.NOTIFICATION;
-        this.id = notification.getId();
-      }
-
-      NodeInfo(Flag flag) {
-        this.type = NodeType.FLAG;
-        this.id = flag.getId();
       }
 
       @Override
@@ -112,7 +88,7 @@ public interface EventManager {
       this.info = null;
     }
 
-    protected Event(EventType type, NodeInfo info)
+    public Event(EventType type, NodeInfo info)
         throws RepositoryException {
       this.type = type;
       this.info = info;
@@ -120,62 +96,6 @@ public interface EventManager {
 
     public static Event outOfDate() {
       return new Event(EventType.OUTOFDATE);
-    }
-
-    public static Event create(FileStore.File file)
-        throws RepositoryException {
-      return new Event(EventType.CREATE, new NodeInfo(file));
-    }
-
-    public static Event create(FileStore.Folder folder)
-        throws RepositoryException {
-      return new Event(EventType.CREATE, new NodeInfo(folder));
-    }
-
-    public static Event create(Flag flag)
-        throws RepositoryException {
-      return new Event(EventType.CREATE, new NodeInfo(flag));
-    }
-
-    public static Event create(Notification notification)
-        throws RepositoryException {
-      return new Event(EventType.CREATE, new NodeInfo(notification));
-    }
-
-    public static Event updateFolder(String folderId)
-        throws RepositoryException {
-      return new Event(EventType.UPDATE,
-          new NodeInfo(NodeType.FOLDER, folderId));
-    }
-
-    public static Event update(FileStore.File file)
-        throws RepositoryException {
-      return new Event(EventType.UPDATE, new NodeInfo(file));
-    }
-
-    public static Event update(Notification notification)
-        throws RepositoryException {
-      return new Event(EventType.UPDATE, new NodeInfo(notification));
-    }
-
-    public static Event delete(FileStore.File file)
-        throws RepositoryException {
-      return new Event(EventType.DELETE, new NodeInfo(file));
-    }
-
-    public static Event delete(FileStore.Folder folder)
-        throws RepositoryException {
-      return new Event(EventType.DELETE, new NodeInfo(folder));
-    }
-
-    public static Event delete(Flag flag)
-        throws RepositoryException {
-      return new Event(EventType.DELETE, new NodeInfo(flag));
-    }
-
-    public static Event delete(Notification notification)
-        throws RepositoryException {
-      return new Event(EventType.DELETE, new NodeInfo(notification));
     }
 
     @Override

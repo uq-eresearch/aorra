@@ -207,7 +207,7 @@ public final class FileStoreController extends SessionAwareController {
         final Flag flag = flagStoreImpl.getManager(session)
             .setFlag(t, targetId, user);
         fileStoreImpl.getEventManager()
-          .tell(EventManager.Event.create(flag));
+          .tell(FlagStore.Events.create(flag));
         return created(jb.toJson(flag)).as("application/json; charset=utf-8");
       }
     });
@@ -225,7 +225,7 @@ public final class FileStoreController extends SessionAwareController {
           return notFound();
         flm.unsetFlag(t, flagId);
         fileStoreImpl.getEventManager()
-          .tell(EventManager.Event.delete(flag));
+          .tell(FlagStore.Events.delete(flag));
         return status(204);
       }
     });
@@ -478,7 +478,7 @@ public final class FileStoreController extends SessionAwareController {
         acm.grant(group.getPrincipal(),
             session.getNodeByIdentifier(id).getPath(),
             accessLevel.toJackrabbitPermission());
-        fileStoreImpl.getEventManager().tell(Event.updateFolder(id));
+        fileStoreImpl.getEventManager().tell(FileStore.Events.updateFolder(id));
         return null;
       }
     });

@@ -27,6 +27,8 @@ import service.EventManager.Event;
 import service.EventManager.EventReceiver;
 import service.EventManager.EventReceiverMessage;
 import service.EventManager.Event.EventType;
+import service.EventManager.Event.NodeInfo;
+import service.EventManager.Event.NodeType;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import akka.actor.TypedActor;
@@ -196,7 +198,6 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     Notification notification = new Notification(to, msg);
     notificationDao.create(notification);
     session.save();
-    fileStore.getEventManager().tell(EventManager.Event.create(notification));
+    fileStore.getEventManager().tell(Events.create(notification));
   }
-
 }

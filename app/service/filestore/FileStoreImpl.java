@@ -55,6 +55,9 @@ import service.EventManager;
 import service.EventManagerImpl;
 import service.JcrSessionFactory;
 import service.EventManager.Event;
+import service.EventManager.Event.EventType;
+import service.EventManager.Event.NodeInfo;
+import service.EventManager.Event.NodeType;
 import service.filestore.roles.Admin;
 import akka.actor.TypedActor;
 import akka.actor.TypedProps;
@@ -345,7 +348,7 @@ public class FileStoreImpl implements FileStore {
       final FileStore.Folder folder =
           filestoreManager.wrap(newFolderEntity, this);
       getMutableFolderSet().add(folder);
-      eventManagerImpl.tell(Event.create(folder));
+      eventManagerImpl.tell(Events.create(folder));
       return folder;
     }
 
@@ -359,7 +362,7 @@ public class FileStoreImpl implements FileStore {
       final FileStore.File file = filestoreManager.wrap(newFileEntity, this);
       getMutableFileSet().add(file);
       Logger.debug("New file, version "+newFileEntity.getVersion());
-      eventManagerImpl.tell(Event.create(file));
+      eventManagerImpl.tell(Events.create(file));
       return file;
     }
 
@@ -435,13 +438,13 @@ public class FileStoreImpl implements FileStore {
     public void rename(final String newName)
         throws ItemExistsException, RepositoryException {
       super.rename(newName);
-      eventManagerImpl.tell(Event.updateFolder(getIdentifier()));
+      eventManagerImpl.tell(Events.updateFolder(getIdentifier()));
     }
 
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final Event event = Event.delete(this);
+      final Event event = Events.delete(this);
       getDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }
@@ -518,7 +521,7 @@ public class FileStoreImpl implements FileStore {
       entity.setMimeType(mime);
       entity.setData(data);
       getDAO().update(entity);
-      eventManagerImpl.tell(Event.update(this));
+      eventManagerImpl.tell(Events.update(this));
       return this;
     }
 
@@ -551,13 +554,13 @@ public class FileStoreImpl implements FileStore {
     public void rename(final String newName)
         throws ItemExistsException, RepositoryException {
       super.rename(newName);
-      eventManagerImpl.tell(Event.update(this));
+      eventManagerImpl.tell(Events.update(this));
     }
 
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final Event event = Event.delete(this);
+      final Event event = Events.delete(this);
       getDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }
@@ -658,7 +661,7 @@ public class FileStoreImpl implements FileStore {
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final Event event = Event.delete(this);
+      final Event event = Events.delete(this);
       if (entity.getVersion().equals(file.getLatestVersionName())) {
         final List<models.filestore.File> versions =
             getDAO().getVersionListById(file.getIdentifier());
