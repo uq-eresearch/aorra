@@ -1731,10 +1731,6 @@ define([
     },
     template: function() {
       return templates.render('user_menu', {});
-    },
-    onRender: function() {
-      this.$el.find("[href='"+Backbone.history.location.hash+"']")
-        .parent('li').addClass('active');
     }
   });
 
@@ -1840,7 +1836,7 @@ define([
     },
     attributes: {
       "data-placement": "bottom",
-      href: '#',
+      href: '/notifications',
       rel: "tooltip",
       title: "Notification messages"
     },

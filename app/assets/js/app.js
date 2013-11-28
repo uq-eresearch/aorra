@@ -6,11 +6,7 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
   
   // Once we switch to pushState, this will just start the history
   var startRouting = function() {
-    // If we're using IE8 heavily, then push state is just trouble
-    if (window.location.pathname != '/') {
-      window.location.href = "/#"+window.location.pathname.replace(/^\//,'');
-    }
-    Backbone.history.start({ pushState: false });
+    Backbone.history.start({ pushState: true });
   };
   
   var bubbleAllToAppFunc = function(prefix) {
@@ -125,7 +121,7 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
     App.vent.on("feed:notification:delete", function(id) {
       notifications.remove(notifications.get(id));
     });
-
+    
     // This is probably fine as a layout now
     var layout = new views.AppLayout({
       el: options.rootSelector
