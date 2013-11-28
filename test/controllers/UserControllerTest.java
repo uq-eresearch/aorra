@@ -112,7 +112,7 @@ public class UserControllerTest {
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(1);
         // Perform set flag and trigger event
         final Flag flag = flm.setFlag(FlagType.EDIT, f.getIdentifier(), other);
-        fileStore().getEventManager().tell(FlagStore.Events.create(flag));
+        fileStore().getEventManager().tell(FlagStore.Events.create(flag, FlagType.EDIT));
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(2);
         awaitNotifications(1);
         List<Notification> notifications =
