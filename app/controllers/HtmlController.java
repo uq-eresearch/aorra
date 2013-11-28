@@ -37,7 +37,8 @@ public class HtmlController extends SessionAwareController {
     @SubjectPresent
     public Result toHtml(final String fileId) {
         try {
-            return ok(html(fileId)).as("text/html");
+            String h = html(fileId);
+            return h!=null?ok(h).as("text/html"):notFound("can not convert this file to html");
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
@@ -46,15 +47,20 @@ public class HtmlController extends SessionAwareController {
     @SubjectPresent
     public Result toHtmlZip(final String fileId) {
         try {
-            final FileCleanup c = new HtmlZip().toHtmlZip(filename(fileId), html(fileId),
-                    request().cookie("PLAY_SESSION").value());
-            return ok(new FileInputStream(c.result()) {
-                @Override
-                public void close() throws IOException {
-                  super.close();
-                  c.cleanup();
-                }
-              }).as("application/zip");
+            String h = html(fileId);
+            if(h!=null) {
+                final FileCleanup c = new HtmlZip().toHtmlZip(filename(fileId), h,
+                        request().cookie("PLAY_SESSION").value());
+                return ok(new FileInputStream(c.result()) {
+                    @Override
+                    public void close() throws IOException {
+                      super.close();
+                      c.cleanup();
+                    }
+                  }).as("application/zip");
+            } else {
+                return notFound("can not convert this file to html");
+            }
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
@@ -63,15 +69,20 @@ public class HtmlController extends SessionAwareController {
     @SubjectPresent
     public Result toPdf(final String fileId, String converter, String copts) {
         try {
-            final FileCleanup c = new HtmlToPdf().toPdf(filename(fileId), html(fileId),
-                    request().cookie("PLAY_SESSION").value(), converter, copts);
-            return ok(new FileInputStream(c.result()) {
-                @Override
-                public void close() throws IOException {
-                  super.close();
-                  c.cleanup();
-                }
-              }).as("application/pdf");
+            String h = html(fileId);
+            if(h!=null) {
+                final FileCleanup c = new HtmlToPdf().toPdf(filename(fileId), html(fileId),
+                        request().cookie("PLAY_SESSION").value(), converter, copts);
+                return ok(new FileInputStream(c.result()) {
+                    @Override
+                    public void close() throws IOException {
+                      super.close();
+                      c.cleanup();
+                    }
+                  }).as("application/pdf");
+            } else {
+                return notFound("can not convert this file to pdf");
+            }
         } catch(Exception e) {
             throw new RuntimeException(e);
         }

@@ -33,7 +33,6 @@ public class HtmlToPdf {
             File out = new File(destfolder, FilenameUtils.removeExtension(in.getName())+".pdf");
             ProcessBuilder pb = converter(choose(converter), copts, in, out);
             pb.directory(in.getParentFile());
-            pb.redirectErrorStream(true);
             File log = new File(destfolder, "converter.log");
             pb.redirectErrorStream(true);
             pb.redirectOutput(Redirect.to(log));
