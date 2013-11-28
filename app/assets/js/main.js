@@ -13,7 +13,7 @@ requirejs.config({
       'glyphtree': 'lib/glyphtree',
       'htmldiff': 'lib/htmldiff',
       'hogan': 'lib/hogan',
-      'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min',
+      'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min',
       'jquery.bootstrap': 'lib/bootstrap',
       'jquery.ckeditor': '../ckeditor/adapters/jquery',
       'jquery.hotkeys': 'lib/jquery.hotkeys',
@@ -26,11 +26,13 @@ requirejs.config({
       'q': '//cdnjs.cloudflare.com/ajax/libs/q.js/0.9.6/q.min',
       'to-markdown': 'lib/to-markdown',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
+      'underscore': '//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min',
+      'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',
       'unstyler': 'lib/unstyler'
     },
     shim: {
       'backbone': {
-        deps: ['jquery'],
+        deps: ['jquery', 'underscore'],
         exports: 'Backbone'
       },
       'marked': {
@@ -79,6 +81,13 @@ requirejs.config({
       'typeahead': {
         deps: ['jquery'],
         exports: 'jQuery'
+      },
+      'underscore': {
+        exports: '_'
+      },
+      'underscore.string': {
+        deps: ['underscore'],
+        exports: '_'
       },
       'unstyler': {
         exports: 'unstyle'

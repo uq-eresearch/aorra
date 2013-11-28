@@ -4,6 +4,8 @@ define([
         'appcore',
         'models',
         'templates',
+        'underscore',
+        'underscore.string',
         'moment',
         'diff_match_patch',
         'glyphtree',
@@ -19,7 +21,7 @@ define([
         'jquery.ui',
         'jquery.ckeditor',
         'typeahead'
-        ], function(App, models, templates, moment, DiffMatchPatch, glyphtree, $, Backbone, Marionette, marked, toMarkdown, unstyle, htmldiff) {
+        ], function(App, models, templates, _, _s, moment, DiffMatchPatch, glyphtree, $, Backbone, Marionette, marked, toMarkdown, unstyle, htmldiff) {
   'use strict';
   
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
@@ -898,8 +900,8 @@ define([
             title: c.type,
             slug: _.template("<%=v.type%>-<%=v.region%>-<%=v.uniqueId%>",
               {
-                type: _.str.slugify(c.type),
-                region: _.str.slugify(c.region),
+                type: _s.slugify(c.type),
+                region: _s.slugify(c.region),
                 uniqueId: i
               }, { variable: 'v' }),
             csv: c.url.replace(/\.(png|svg)\?/, ".csv?"),
@@ -915,7 +917,7 @@ define([
         zip: this.model.url() + '/charts.zip',
         regions: _.chain(this._charts).groupBy('region')
         .map(function(charts, region) {
-          var common = { title: region, slug: _.str.slugify(region) };
+          var common = { title: region, slug: _s.slugify(region) };
           if (charts.length == 1) {
             return _(common).extend({
               chart: makeChartAttrs(region)(charts[0], 0)
