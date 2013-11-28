@@ -8,7 +8,9 @@ GET     /login                      @controllers.Application.login
 POST    /login                      @controllers.Application.postLogin
 GET     /invite                     @controllers.Application.invite
 POST    /invite                     @controllers.Application.postInvite
+GET     /change-password            @controllers.FileStoreController.index
 POST    /change-password            @controllers.Application.changePassword
+GET     /notifications              @controllers.FileStoreController.index
 GET     /reset-password             @controllers.Application.forgottenPassword
 POST    /reset-password             @controllers.Application.postForgottenPassword
 GET     /user                       @controllers.UserController.usersJson

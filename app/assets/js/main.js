@@ -6,7 +6,7 @@ var FileAPI = {
 
 requirejs.config({
     paths: {
-      'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min',
+      'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min',
       'ckeditor': '../ckeditor/ckeditor',
       'cryptojs-md5': 'lib/cryptojs-md5',
       'diff_match_patch': 'lib/diff_match_patch',
@@ -23,6 +23,7 @@ requirejs.config({
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
+      'q': '//cdnjs.cloudflare.com/ajax/libs/q.js/0.9.6/q.min',
       'to-markdown': 'lib/to-markdown',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
       'unstyler': 'lib/unstyler'
@@ -37,7 +38,7 @@ requirejs.config({
       },
       'marionette': {
         deps: ['backbone'],
-        exports: 'Backbone'
+        exports: 'Marionette'
       },
       'jquery.ckeditor': {
         deps: ['jquery', 'ckeditor'],

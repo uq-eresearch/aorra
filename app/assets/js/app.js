@@ -1,94 +1,67 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true */
-/*global _: false, $: false, Backbone: false, EventSource: false, window: false */
-require(['models', 'views'], function(models, views) {
+/*global _: false, window: false */
+require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models', 'views', 'controllers'], 
+    function($, Backbone, Marionette, Q, App, EventFeed, models, views, controllers) {
   'use strict';
-  var EventFeed = function(config) {
-    var obj = _.extend({}, config);
-    _.extend(obj, Backbone.Events);
-    _.extend(obj, {
-      url: function() {
-        return '/events?from='+obj.lastEventId;
-      },
-      updateLastId: function(id) {
-        obj.lastEventId = id;
-      },
-      open: function() {
-        var trigger = _.bind(this.trigger, this);
-        var triggerRecheck = function() {
-          trigger('recheck');
-        };
-        // Are we using a modern browser, or are we using IE?
-        if (_.isUndefined(window.EventSource)) {
-          var poll = _.bind(function(callback) {
-            var updateLastId = _.bind(this.updateLastId, this);
-            $.ajax({
-              url: this.url(),
-              dataType: 'json',
-              success: function(data) {
-                var canContinue = _(data).all(function(v) {
-                  if (v.type == 'outofdate') {
-                    trigger('outofdate', v.id);
-                    return false;
-                  }
-                  updateLastId(v.id);
-                  trigger(v.type, v.data);
-                  return true;
-                });
-                if (canContinue) {
-                  callback();
-                }
-              },
-              error: callback
-            });
-          }, this);
-          this.on('recheck', function() {
-            poll(function() {
-              _.delay(triggerRecheck, 5000);
-            });
-          });
-        } else {
-          this.on('recheck', function() {
-            // EventSource
-            var es = new EventSource(this.url());
-            es.addEventListener('outofdate', function(event) {
-              trigger('outofdate', event.data);
-              es.close();
-            });
-            es.addEventListener('ping', function(event) {
-              trigger('ping', event.data);
-            });
-            _.each(['folder', 'file', 'flag', 'notification'], function(t) {
-              _.each(['create', 'update', 'delete'], function(n) {
-                var eventName = t+":"+n;
-                es.addEventListener(eventName, function(event) {
-                  // Ensure that notifications always follow the UI events
-                  // that trigger them.
-                  _.delay(function() {
-                    trigger(eventName, event.data);
-                  }, 100);
-                });
-              });
-            });
-            this.es = es;
-          });
-        }
-        triggerRecheck();
-      }
-    });
-
-    return obj;
+  
+  // Once we switch to pushState, this will just start the history
+  var startRouting = function() {
+    Backbone.history.start({ pushState: true });
+  };
+  
+  var bubbleAllToAppFunc = function(prefix) {
+    return function(eventName) {
+      var args = [prefix + ':' + eventName].concat(_.rest(arguments));
+      App.vent.trigger.apply(App.vent, args);
+    };
   };
 
-  $(function () {
-
-    var users = new models.Users();
-    var fs = new models.FileStore();
-    var notifications = new models.Notifications();
+  // Start routing when all data is loaded
+  App.vent.once('data:preloaded', startRouting);
+  
+  // Set up data:preloaded to be triggered
+  App.addInitializer(function(options) {
+    // Monitor each of the listed precursor events
+    var loadPrecursorEvents = ['filestore', 'users'];
+    var promises = _(loadPrecursorEvents).map(function(e) {
+      var d = Q.defer();
+      App.vent.on('data:preloaded:'+e, d.resolve);
+      return d.promise;
+    });
+    // Once all events have been seen once, trigger the overall preloaded event
+    Q.all(promises).done(function() {
+      App.vent.trigger('data:preloaded');
+    });
+  });
+  
+  App.addInitializer(function(options) {
     var eventFeed = new EventFeed({
       lastEventId: window.lastEventID
     });
-    // Event handlers
-    eventFeed.on("folder:create", function(id) {
+    // Bubble all events up
+    eventFeed.on("all", bubbleAllToAppFunc('feed'));
+    // If our data is out-of-date, refresh and reopen event feed.
+    eventFeed.on("outofdate", function(id) {
+      eventFeed.listenToOnce(App.vent, "data:refreshed", function() {
+        eventFeed.reopen(id);
+      });
+    });
+    // Open feed on application start
+    eventFeed.listenToOnce(App, 'start', function() {
+      eventFeed.open();
+    });
+  });
+  
+  App.addInitializer(function(options) {
+    var users = new models.Users({
+      currentId: options.currentUserID
+    });
+    var fs = new models.FileStore();
+    var notifications = new models.Notifications();
+
+    // Event handlers - fs
+    App.vent.on("feed:folder:create", function(id) {
+      if (fs.get(id) == null) {
         // Create a stand-alone folder
         var folder = new models.Folder({ id: id });
         // Get the data for it
@@ -96,213 +69,125 @@ require(['models', 'views'], function(models, views) {
           // It exists, so add it to the collection
           fs.add([folder.toJSON()]);
         });
-      });
-    eventFeed.on("file:create",
-      function(id) {
+      }
+    });
+    App.vent.on("feed:file:create", function(id) {
+      if (fs.get(id) == null) {
         var file = new models.File({ id: id });
         file.fetch().done(function() {
           fs.add([file.toJSON()]);
         });
-      });
-    eventFeed.on("folder:update file:update", function(id) {
+      }
+    });
+    App.vent.on("feed:folder:update feed:file:update", function(id) {
       var fof = fs.get(id);
       if (fof) { fof.fetch(); }
     });
+    App.vent.on("feed:folder:delete feed:file:delete", function(id) {
+      fs.remove(fs.get(id));
+    });
+    // If our data is out-of-date, refresh and reopen event feed.
+    App.vent.on("feed:outofdate", function(id) {
+      fs.refresh().done(function() {
+        App.vent.trigger('data:refreshed');
+      });
+    });
+
+    // Event handlers - users
     // Rather brute-force, but the flag will turn up
-    eventFeed.on("flag:create",
-      function(id) {
-        _.each(users.flags(), function(c) {
-          if (c.get(id)) { return; } // Already exists
-          c.add({ id: id });
-          c.get(id).fetch().error(function() {
-            c.remove(id);
-          });
+    App.vent.on("feed:flag:create", function(id) {
+      _.each(users.flags(), function(c) {
+        if (c.get(id)) { return; } // Already exists
+        c.add({ id: id });
+        c.get(id).fetch().error(function() {
+          c.remove(id);
         });
       });
+    });
     // We can delete from all without error
-    eventFeed.on("flag:delete",
-      function(id) {
-        _.each(users.flags(), function(c) { c.remove(id); });
-      });
-    eventFeed.on("folder:delete file:delete",
-      function(id) {
-        fs.remove(fs.get(id));
-      });
+    App.vent.on("feed:flag:delete", function(id) {
+      _.each(users.flags(), function(c) { c.remove(id); });
+    });
 
-    // Update notifications based on events
-    eventFeed.on("notification:create",
-      function() {
-        // TODO: Make this more efficient
-        notifications.fetch();
-      });
-    eventFeed.on("notification:update",
-      function(id) {
-        var n = notifications.get(id);
-        if (n) { n.fetch(); }
-      });
-    eventFeed.on("notification:delete",
-      function(id) {
-        notifications.remove(notifications.get(id));
-      });
-
-    var startRouting = function() {
-      // If we're using IE8 heavily, then push state is just trouble
-      if (window.location.pathname != '/') {
-        window.location.href = "/#"+window.location.pathname.replace(/^\//,'');
-      }
-      Backbone.history.start({ pushState: false });
-    };
-
+    // Update notifications based on events - notifications & eventFeed
+    App.vent.on("feed:notification:create", function() {
+      // TODO: Make this more efficient
+      notifications.fetch();
+    });
+    App.vent.on("feed:notification:update", function(id) {
+      var n = notifications.get(id);
+      if (n) { n.fetch(); }
+    });
+    App.vent.on("feed:notification:delete", function(id) {
+      notifications.remove(notifications.get(id));
+    });
+    
+    // This is probably fine as a layout now
     var layout = new views.AppLayout({
-      el: '#content',
+      el: options.rootSelector
+    });
+    layout.render();
+    
+    var mainController = new controllers.MainController({
+      filestore: fs,
+      layout: layout,
       notifications: notifications,
       users: users
     });
-    layout.render();
-    $('#content').append(layout.$el);
-    layout.showLoading();
-
-    var fileTree = layout.getFileTree();
-    fs.on('reset', function() {
-      fileTree.tree().load([]);
-      fs.each(function(m) {
-        fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
-      });
-    });
-    fs.on('add', function(m) {
-      // Retry failed adding, as sometimes events arrive out-of-order
-      var f = function() {
-        try {
-          fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
-        } catch (e) {
-          // Try again
-          _.delay(f, 1000);
-          //console.log(m.id+": "+e.message);
-        }
-      };
-      f();
-    });
-    fs.on('change', function(m) {
-      fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
-    });
-    fs.on('remove', function(m) {
-      fileTree.tree().remove(m.get('id'));
-      // Handle being on the deleted page already
-      if (_.isUndefined(layout.main.currentView.model)) { return; }
+    
+    // This function uses fileTree & layout
+    mainController.listenTo(fs, 'remove', function(m) {
       // If the current path has been deleted, then hide it.
-      if (m.id == layout.main.currentView.model.id) {
-        layout.showDeleted(m);
+      if (mainController.isShowingFileOrFolder(m.id)) {
+        mainController.showDeleted(m);
       }
     });
-
-    var Router = Backbone.Router.extend({
-      routes: {
-        "": "start",
+    
+    // Router really acting like a controller here
+    var router = new Backbone.Marionette.AppRouter({
+      appRoutes: {
         "change-password": "changePassword",
         "file/:id": "showFile",
         "folder/:id": "showFolder",
         "file/:id/version/:version/diff": "showFileDiff",
-        "notifications": "showNotifications"
+        "notifications": "showNotifications",
+        "": "start"
       },
-      start: function() {
-        layout.showStart();
-        this._setSidebarActive();
-        // Expand if at root
-        var firstNode = _.first(fileTree.tree().nodes());
-        if (firstNode.name == '/') {
-          fileTree.expandTo(firstNode);
-        }
-      },
-      changePassword: function() {
-        layout.changePassword();
-        this._setMainActive();
-      },
-      showNotifications: function() {
-        layout.showNotifications();
-        this._setMainActive();
-      },
-      showFolder: function(id) {
-        var node = fileTree.tree().find(id);
-        if (node == null) {
-          layout.showDeleted();
-        } else {
-          layout.showFolder(fs.get(node.id));
-          fileTree.expandTo(node);
-        }
-        this._setMainActive();
-      },
-      showFile: function(id) {
-        var node = fileTree.tree().find(id);
-        if (node == null) {
-          layout.showDeleted();
-        } else {
-          layout.showFile(fs.get(node.id));
-          fileTree.expandTo(node);
-        }
-        this._setMainActive();
-      },
-      showFileDiff: function(id, version) {
-        var node = fileTree.tree().find(id);
-        if (node == null) {
-          layout.showDeleted();
-        } else {
-          layout.showFileDiff(fs.get(node.id), version);
-        }
-        this._setMainActive();
-      },
-      _setMainActive: function() {
-        $('#main').addClass('active');
-        $('#sidebar').removeClass('active');
-        $('#nav-back').removeClass('hidden');
-      },
-      _setSidebarActive: function() {
-        $('#sidebar').addClass('active');
-        $('#main').removeClass('active');
-        $('#nav-back').addClass('hidden');
-      }
+      controller: mainController
+    });
+    // Router listens to main controller actions to change URL
+    router.listenTo(mainController, "start deleted", function() {
+      router.navigate("");
+    });
+    router.listenTo(mainController, "showFolder", function(folder) {
+      router.navigate("folder/"+folder.id);
+    });
+    router.listenTo(mainController, "showFile", function(file) {
+      router.navigate("file/"+file.id);
+    });
+    router.listenTo(App.vent, "nav:password:change", function(folder) {
+      router.navigate("change-password");
+    });
+    router.listenTo(App.vent, "nav:notification:list", function(file) {
+      router.navigate("notifications");
+    });
+    
+    fs.preload(options.filesAndFolders).done(function(fs) {
+      App.vent.trigger('data:preloaded:filestore', fs);
     });
 
-    var router = new Router();
-
-    fileTree.on("folder:select", function(folderId) {
-      router.navigate("folder/"+folderId, {trigger: true});
-    });
-    fileTree.on("file:select", function(fileId) {
-      router.navigate("file/"+fileId, {trigger: true});
+    users.preload(options.users).done(function(users) {
+      App.vent.trigger('data:preloaded:users', users);
     });
 
-    var initFilestore = function() {
-      if (_.isUndefined(window.filestoreJSON)) {
-        return fs.fetch();
-      }
-      fs.reset(window.filestoreJSON);
-      return $.Deferred().resolve();
-    };
-
-    // Users collection
-    var initUsers = function() {
-      if (_.isUndefined(window.usersJSON)) {
-        return users.fetch();
-      }
-      users.reset(window.usersJSON);
-      return $.Deferred().resolve();
-    };
-
-    // Wait to start routing
-    $.when(initFilestore(), initUsers()).done(function() {
-      startRouting();
+  });
+  
+  $(function() {
+    App.start({
+      rootSelector: '#content',
+      currentUserID: $('#current-user').data('id'),
+      users: window.usersJSON,
+      filesAndFolders: window.filestoreJSON
     });
-
-    // If our data is out-of-date, refresh and reopen event feed.
-    eventFeed.on("outofdate", function(id) {
-      fs.reset();
-      fs.fetch().done(function() {
-        eventFeed.updateLastId(id);
-        eventFeed.trigger('recheck');
-      });
-    });
-
-    // Open feed
-    eventFeed.open();
   });
 });

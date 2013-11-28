@@ -11,7 +11,7 @@
 </td>
 <td>
   {{#canDelete}}
-  <button type="button" class="close delete" title="Delete Version">
+  <button type="button" class="close js-delete" title="Delete Version">
     &times;
   </button>
   {{/canDelete}}
@@ -20,21 +20,23 @@
       <i class="fa fa-download"></i> Download
     </a>
     &nbsp;
-    {{#compareUrl}}
-    <a href="{{compareUrl}}" title="Compare Versions">
+    {{#canCompare}}
+    <button type="button" class="btn btn-link js-filediff"
+      title="Compare Versions">
       <i class="fa fa-exchange"></i> Compare
-    </a>
-    {{/compareUrl}}
+    </button>
+    {{/canCompare}}
   </div>
   <div class="hidden-lg">
     <a href="{{downloadUrl}}" title="Download Version">
       <i class="fa fa-download"></i>
     </a>
     &nbsp;
-    {{#compareUrl}}
-    <a href="{{compareUrl}}" title="Compare Versions">
+    {{#canCompare}}
+    <button type="button" class="btn btn-link js-filediff"
+      title="Compare Versions">
       <i class="fa fa-exchange"></i>
-    </a>
-    {{/compareUrl}}
+    </button>
+    {{/canCompare}}
   </div>
 </td>

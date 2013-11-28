@@ -1,6 +1,6 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
-/*global _: false, $: false, Backbone: false, define: false, window: false */
-define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
+/*global _: false, define: false, window: false */
+define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
   'use strict';
 
   var Avatar = function(options) {
@@ -14,6 +14,22 @@ define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
       return "//www.gravatar.com/avatar/"+emailHash+"?d="+missing+"&s="+size;
     }
   };
+  
+  var ExtendedCollection = Backbone.Collection.extend({
+    // Produce a promise that a collection has been preloaded
+    preload: function(initialData) {
+      if (_.isUndefined(initialData)) {
+        return Q(this.fetch()).thenResolve(this);
+      }
+      this.reset(initialData);
+      return Q(this);
+    },
+    // Produce a promise that a collection has been reset to empty and fetched
+    refresh: function(initialData) {
+      this.reset();
+      return Q(this.fetch());
+    }
+  });
 
   var FileOrFolder = Backbone.Model.extend({
     displayUrl: function() {
@@ -149,7 +165,7 @@ define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
     }
   });
 
-  var FileStore = Backbone.Collection.extend({
+  var FileStore = ExtendedCollection.extend({
     url: '/filestore',
     model: function(attrs, options) {
       if (attrs.type == 'folder') {
@@ -195,10 +211,11 @@ define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
     }
   });
 
-  var Users = Backbone.Collection.extend({
+  var Users = ExtendedCollection.extend({
     model: User,
     url: '/user',
-    initialize: function() {
+    initialize: function(options) {
+      this.options = options;
       // Build flag collections
       this._flags = {
         edit: new EditFlags(),
@@ -207,7 +224,7 @@ define(['backbone', 'cryptojs-md5'], function(Backbone, CryptoJS) {
       _.each(this._flags, function(c) { return c.fetch(); });
     },
     currentId: function() {
-      return $('#current-user').data('id');
+      return this.options.currentId;
     },
     current: function() {
       return this.get(this.currentId());

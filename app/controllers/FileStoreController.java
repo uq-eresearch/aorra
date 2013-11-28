@@ -122,9 +122,7 @@ public final class FileStoreController extends SessionAwareController {
   public Result showFolder(final String folderId) {
     for (final MediaRange m : ctx().request().acceptedTypes()) {
       if (m.accepts("text/html")) {
-        return seeOther(routes.FileStoreController.showFolder(folderId)
-            .url()
-            .replaceFirst("/", "/#"));
+        return index();
       } else if (m.accepts("application/json") || m.accepts("text/javascript")){
         return folderJson(folderId);
       }
@@ -136,9 +134,7 @@ public final class FileStoreController extends SessionAwareController {
   public Result showFile(final String fileId) {
     for (final MediaRange m : ctx().request().acceptedTypes()) {
       if (m.accepts("text/html")) {
-        return seeOther(routes.FileStoreController.showFile(fileId)
-            .url()
-            .replaceFirst("/", "/#"));
+        return index();
       } else if (m.accepts("application/json") || m.accepts("text/javascript")){
         return fileJson(fileId);
       }
