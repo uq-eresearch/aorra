@@ -207,7 +207,7 @@ public final class FileStoreController extends SessionAwareController {
         final Flag flag = flagStoreImpl.getManager(session)
             .setFlag(t, targetId, user);
         fileStoreImpl.getEventManager()
-          .tell(FlagStore.Events.create(flag));
+          .tell(FlagStore.Events.create(flag, t));
         return created(jb.toJson(flag)).as("application/json; charset=utf-8");
       }
     });
@@ -225,7 +225,7 @@ public final class FileStoreController extends SessionAwareController {
           return notFound();
         flm.unsetFlag(t, flagId);
         fileStoreImpl.getEventManager()
-          .tell(FlagStore.Events.delete(flag));
+          .tell(FlagStore.Events.delete(flag, t));
         return status(204);
       }
     });

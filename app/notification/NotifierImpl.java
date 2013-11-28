@@ -170,9 +170,8 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   }
 
   private boolean isEditFlag(Session session, Event event) {
-    final FlagStore.Manager mgr = flagStore.getManager(session);
-    final Flag f = mgr.getFlag(FlagStore.FlagType.EDIT, event.info.get("id"));
-    return f != null;
+    FlagStore.FlagType t = FlagStore.FlagType.valueOf(event.info.get("type"));
+    return t == FlagStore.FlagType.EDIT;
   }
 
   private void sendEditNotification(Session session, final Iterable<User> users,

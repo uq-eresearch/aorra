@@ -96,18 +96,18 @@ public class FlagStore {
 
   public static class Events {
 
-    public static Event create(Flag flag)
+    public static Event create(Flag flag, FlagType t)
         throws RepositoryException {
-      return new Event("flag:create", nodeInfo(flag));
+      return new Event("flag:create", nodeInfo(flag, t));
     }
 
-    public static Event delete(Flag flag)
+    public static Event delete(Flag flag, FlagType t)
         throws RepositoryException {
-      return new Event("flag:delete", nodeInfo(flag));
+      return new Event("flag:delete", nodeInfo(flag, t));
     }
 
-    private static Map<String,String> nodeInfo(Flag flag) {
-      return ImmutableMap.of("id", flag.getId());
+    private static Map<String,String> nodeInfo(Flag flag, FlagType t) {
+      return ImmutableMap.of("id", flag.getId(), "type", t.toString());
     }
   }
 
