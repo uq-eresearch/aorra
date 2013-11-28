@@ -1,4 +1,4 @@
-package service.filestore;
+package service;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -8,9 +8,8 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 
 import play.Logger;
-import service.EventTimeline;
 import service.EventTimeline.ForgottenEventException;
-import service.InMemoryEventTimeline;
+import service.OrderedEvent;
 
 public class EventManagerImpl implements EventManager {
 

@@ -1,6 +1,6 @@
 package notification;
 
-import service.filestore.OrderedEvent;
+import service.OrderedEvent;
 
 public interface Notifier {
 

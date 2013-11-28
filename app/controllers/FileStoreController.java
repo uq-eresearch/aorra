@@ -25,10 +25,12 @@ import models.UserDAO;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.jackrabbit.api.security.user.Group;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
@@ -43,9 +45,9 @@ import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
+import service.EventManager;
 import service.JcrSessionFactory;
-import service.filestore.EventManager;
-import service.filestore.EventManager.Event;
+import service.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;

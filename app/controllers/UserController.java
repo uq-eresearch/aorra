@@ -13,15 +13,16 @@ import models.UserDAO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+
 import org.jcrom.Jcrom;
 
 import play.libs.F;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
+import service.EventManager;
 import service.JcrSessionFactory;
-import service.filestore.EventManager;
-import service.filestore.EventManager.Event;
+import service.EventManager.Event;
 import service.filestore.JsonBuilder;
 
 import com.google.inject.Inject;

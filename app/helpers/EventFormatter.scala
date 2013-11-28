@@ -2,7 +2,8 @@ package helpers
 
 import java.text.DateFormat
 import java.util.Calendar
-import service.filestore.EventManager.{Event => EmEvent}
+import service.EventManager.{Event => EmEvent}
+
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.libs.json.JsObject

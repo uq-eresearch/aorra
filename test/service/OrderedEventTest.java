@@ -1,4 +1,4 @@
-package service.filestore;
+package service;
 
 import static org.fest.assertions.Assertions.assertThat;
 

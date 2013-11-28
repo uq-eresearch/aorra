@@ -10,6 +10,8 @@ import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import service.EventManager;
+
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 

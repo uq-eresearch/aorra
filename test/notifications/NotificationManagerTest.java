@@ -25,12 +25,12 @@ import org.junit.Test;
 
 import play.libs.F;
 import play.test.FakeRequest;
-import service.filestore.EventManager;
-import service.filestore.EventManager.Event;
+import service.EventManager;
+import service.EventManager.Event;
+import service.OrderedEvent;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
-import service.filestore.OrderedEvent;
 
 public class NotificationManagerTest {
 

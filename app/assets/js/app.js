@@ -56,6 +56,7 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
     var users = new models.Users({
       currentId: options.currentUserID
     });
+    window.users = users;
     var fs = new models.FileStore();
     var notifications = new models.Notifications();
 

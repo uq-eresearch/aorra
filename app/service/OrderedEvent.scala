@@ -1,6 +1,6 @@
-package service.filestore
+package service
 
-import service.filestore.EventManager.Event
+import service.EventManager.Event;
 
 case class OrderedEvent(val id: String, val event: Event)
   extends Ordered[OrderedEvent] {

@@ -26,16 +26,17 @@ import models.UserDAO;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+
 import org.junit.Test;
 
 import play.api.mvc.Call;
 import play.libs.F;
 import play.mvc.Result;
 import play.test.FakeRequest;
+import service.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import service.filestore.JsonBuilder;
-import service.filestore.EventManager.Event;
 import service.filestore.FlagStore.FlagType;
 
 public class UserControllerTest {

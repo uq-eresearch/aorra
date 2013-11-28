@@ -1,7 +1,11 @@
-package service.filestore;
+package service;
 
 import javax.jcr.RepositoryException;
 
+import service.OrderedEvent;
+import service.filestore.FileStore;
+import service.filestore.FileStore.File;
+import service.filestore.FileStore.Folder;
 import models.Flag;
 import models.Notification;
 
