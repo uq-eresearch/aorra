@@ -119,7 +119,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     if (isFlagEvent(event)) {
       if (isEditFlag(session, event)) {
         sendEditNotification(session,
-            getWatchUsers(session, getTargetId(session, event)),
+            getWatchUsers(session, event.info("target:id")),
             event);
       }
     } else {
@@ -164,11 +164,6 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     return manager.getByIdentifier(event.info("id"));
   }
 
-  private String getTargetId(Session session, Event event) {
-    Flag flag = flagStore.getManager(session).getFlag(event.info("id"));
-    return flag.getTargetId();
-  }
-
   private boolean isEditFlag(Session session, Event event) {
     FlagStore.FlagType t = FlagStore.FlagType.valueOf(event.info("type"));
     return t == FlagStore.FlagType.EDIT;
@@ -176,11 +171,17 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   private void sendEditNotification(Session session, final Iterable<User> users,
       final Event event) throws RepositoryException {
-    final Flag flag = flagStore.getManager(session).getFlag(event.info("id"));
-    final User creator = flag.getUser();
     final FileStore.Manager manager = fileStore.getManager(session);
-    FileStore.FileOrFolder fof = manager.getByIdentifier(flag.getTargetId());
-    Html msg = views.html.notification.edit_notification.render(creator, fof);
+    final FileStore.FileOrFolder fof =
+        manager.getByIdentifier(event.info("target:id"));
+    final Html msg;
+    if (event.type.endsWith("create")) {
+      msg = views.html.notification.editFlagCreated.render(event, fof);
+    } else if (event.type.endsWith("delete")) {
+      msg = views.html.notification.editFlagRemoved.render(event, fof);
+    } else {
+      return;
+    }
     for (User u : users) {
       sendNotification(session, u, msg.toString());
     }

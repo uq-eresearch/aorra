@@ -1,0 +1,24 @@
+@(event: service.EventManager.Event,
+  target: service.filestore.FileStore.FileOrFolder)
+@import service.filestore.FileStore.{File, Folder}
+@import _root_.notification.NotificationManager.absUrl
+
+<p>
+  @event.info("instigator:id") match {
+    case null => {
+      <a href="mailto:@event.info("owner:email")">@event.info("owner:name")</a>
+      has finished editing
+    }
+    case _ => {
+      <a href="mailto:@event.info("instigator:email")">@event.info("instigator:name")</a>
+      revoked the editing flag for
+      <a href="mailto:@event.info("owner:email")">@event.info("owner:name")</a>
+      on
+    }
+  }
+  the @target match {
+    case _: File => { file }
+    case _: Folder => { folder }
+  } 
+  <a href="@absUrl(target)">@target.getPath</a>
+</p>
