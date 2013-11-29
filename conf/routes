@@ -75,3 +75,5 @@ GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.singleFileCh
 GET    /file/:fileId/html           @controllers.HtmlController.toHtml(fileId)
 GET    /file/:fileId/htmlzip        @controllers.HtmlController.toHtmlZip(fileId)
 GET    /file/:fileId/pdf            @controllers.HtmlController.toPdf(fileId, converter: String ?="", copts: String ?= "")
+
+GET    /search                      @controllers.Search.search(q: String ?="")
