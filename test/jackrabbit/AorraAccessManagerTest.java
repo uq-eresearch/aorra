@@ -82,14 +82,21 @@ public class AorraAccessManagerTest {
     running(fakeAorraApp(),
       acmTest(new F.Function2<Session, AorraAccessManager, Session>() {
         @Override
-        public Session apply(final Session session, AorraAccessManager acm)
+        public Session apply(final Session session, final AorraAccessManager acm)
             throws RepositoryException {
           // Check admin permissions
           final ItemId rootID;
           try {
             acm.checkPermission(rootPath, 3);
             rootID = makeId(session.getNode("/").getIdentifier());
-            acm.checkPermission(rootID, 3);
+            // Wrapped to avoid suppressing deprecation warning anywhere else
+            (new F.Callback0() {
+              @SuppressWarnings("deprecation")
+              @Override
+              public void invoke() throws RepositoryException {
+                acm.checkPermission(rootID, 3);
+              }
+            }).invoke();
           } catch (AccessDeniedException e) {
             fail("Should be allowed.");
             return session;

@@ -41,7 +41,7 @@ import service.JcrSessionFactory
 import org.jcrom.Jcrom
 import models.User
 import models.UserDAO
-import service.filestore.EventManager;
+import service.EventManager;
 
 @Usage("flag management operations")
 class flag {

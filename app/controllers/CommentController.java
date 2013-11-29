@@ -11,10 +11,10 @@ import play.libs.F;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
+import service.EventManager;
 import service.JcrSessionFactory;
 import service.filestore.CommentStore;
 import service.filestore.CommentStore.Comment;
-import service.filestore.EventManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;

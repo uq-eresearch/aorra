@@ -1,15 +1,13 @@
 package models;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 
-import com.feth.play.module.pa.user.AuthUser;
 import com.feth.play.module.pa.user.EmailIdentity;
-import com.feth.play.module.pa.user.NameIdentity;
 import com.google.common.collect.ImmutableList;
 
-public class CacheableUser implements NameIdentity, EmailIdentity, Serializable {
+public class CacheableUser implements IdentifiableUser, EmailIdentity,
+    Serializable {
 
   private static final long serialVersionUID = 2956403030598144283L;
 

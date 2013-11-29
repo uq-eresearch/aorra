@@ -20,15 +20,14 @@ import play.Application;
 import play.Logger;
 import play.api.templates.Html;
 import play.libs.F;
+import service.EventManager;
 import service.JcrSessionFactory;
-import service.filestore.EventManager;
-import service.filestore.EventManager.Event;
-import service.filestore.EventManager.Event.EventType;
-import service.filestore.EventManager.EventReceiver;
-import service.filestore.EventManager.EventReceiverMessage;
+import service.OrderedEvent;
+import service.EventManager.Event;
+import service.EventManager.EventReceiver;
+import service.EventManager.EventReceiverMessage;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
-import service.filestore.OrderedEvent;
 import akka.actor.TypedActor;
 
 import com.google.common.collect.Sets;
@@ -83,7 +82,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
       @Override
       public void push(OrderedEvent oe) {
         // Skip out-of-date messages
-        if (oe.event().type == EventType.OUTOFDATE)
+        if (oe.event().type.equals("outofdate"))
           return;
         // Trigger notification for event
         n.handleEvent(oe);
@@ -108,13 +107,11 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   }
 
   private static boolean isNotificationEvent(final Event event) {
-    return event.info != null
-        && event.info.type == EventManager.Event.NodeType.NOTIFICATION;
+    return event.type.startsWith("notification:");
   }
 
   private static boolean isFlagEvent(final Event event) {
-    return event.info != null
-        && event.info.type == EventManager.Event.NodeType.FLAG;
+    return event.type.startsWith("flag:");
   }
 
   private void processEvent(Session session, Event event)
@@ -122,7 +119,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     if (isFlagEvent(event)) {
       if (isEditFlag(session, event)) {
         sendEditNotification(session,
-            getWatchUsers(session, getTargetId(session, event)),
+            getWatchUsers(session, event.info("target:id")),
             event);
       }
     } else {
@@ -154,7 +151,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   private void sendNotification(Session session, final Event event)
       throws RepositoryException {
     final FileStore.Manager manager = fileStore.getManager(session);
-    for (final User user : getWatchUsers(session, event.info.id)) {
+    for (final User user : getWatchUsers(session, event.info("id"))) {
       FileStore.FileOrFolder item = getItem(manager, event);
       final String message = views.html.notification.notification.render(event,
           item).toString();
@@ -164,27 +161,27 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   private FileStore.FileOrFolder getItem(
       FileStore.Manager manager, Event event) throws RepositoryException {
-    return manager.getByIdentifier(event.info.id);
-  }
-
-  private String getTargetId(Session session, Event event) {
-    Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-    return flag.getTargetId();
+    return manager.getByIdentifier(event.info("id"));
   }
 
   private boolean isEditFlag(Session session, Event event) {
-    final FlagStore.Manager mgr = flagStore.getManager(session);
-    final Flag f = mgr.getFlag(FlagStore.FlagType.EDIT, event.info.id);
-    return f != null;
+    FlagStore.FlagType t = FlagStore.FlagType.valueOf(event.info("type"));
+    return t == FlagStore.FlagType.EDIT;
   }
 
   private void sendEditNotification(Session session, final Iterable<User> users,
       final Event event) throws RepositoryException {
-    final Flag flag = flagStore.getManager(session).getFlag(event.info.id);
-    final User creator = flag.getUser();
     final FileStore.Manager manager = fileStore.getManager(session);
-    FileStore.FileOrFolder fof = manager.getByIdentifier(flag.getTargetId());
-    Html msg = views.html.notification.edit_notification.render(creator, fof);
+    final FileStore.FileOrFolder fof =
+        manager.getByIdentifier(event.info("target:id"));
+    final Html msg;
+    if (event.type.endsWith("create")) {
+      msg = views.html.notification.editFlagCreated.render(event, fof);
+    } else if (event.type.endsWith("delete")) {
+      msg = views.html.notification.editFlagRemoved.render(event, fof);
+    } else {
+      return;
+    }
     for (User u : users) {
       sendNotification(session, u, msg.toString());
     }
@@ -196,7 +193,6 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     Notification notification = new Notification(to, msg);
     notificationDao.create(notification);
     session.save();
-    fileStore.getEventManager().tell(EventManager.Event.create(notification));
+    fileStore.getEventManager().tell(Events.create(notification));
   }
-
 }

@@ -1,10 +1,10 @@
-@(user: models.User,
+@(event: service.EventManager.Event,
   target: service.filestore.FileStore.FileOrFolder)
 @import service.filestore.FileStore.{File, Folder}
 @import _root_.notification.NotificationManager.absUrl
 
 <p>
-  <a href="mailto:@user.getEmail">@user.getName</a>
+  <a href="mailto:@event.info("owner:email")">@event.info("owner:name")</a>
   is now editing the @target match {
     case _: File => { file }
     case _: Folder => { folder }

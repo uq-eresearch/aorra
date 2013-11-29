@@ -1,24 +1,24 @@
 package service.filestore;
 
+import java.util.Map;
 import java.util.Set;
 
-import javax.jcr.ItemExistsException;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
-import javax.jcr.version.VersionException;
-
-import org.apache.jackrabbit.commons.JcrUtils;
-import org.jcrom.Jcrom;
-import org.jcrom.JcrMappingException;
 
 import models.Flag;
 import models.FlagDAO;
+import models.IdentifiableUser;
 import models.User;
 
+import org.apache.jackrabbit.commons.JcrUtils;
+import org.jcrom.JcrMappingException;
+import org.jcrom.Jcrom;
+
+import service.EventManager.Event;
+
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class FlagStore {
@@ -94,6 +94,37 @@ public class FlagStore {
     }
 
   }
+
+  public static class Events {
+
+    public static Event create(Flag flag, FlagType t, IdentifiableUser u)
+        throws RepositoryException {
+      return new Event("flag:create", nodeInfo(flag, t, u));
+    }
+
+    public static Event delete(Flag flag, FlagType t, IdentifiableUser u)
+        throws RepositoryException {
+      return new Event("flag:delete", nodeInfo(flag, t, u));
+    }
+
+    private static Map<String, String> nodeInfo(Flag flag, FlagType t,
+        IdentifiableUser u) {
+      final ImmutableMap.Builder<String, String> b = ImmutableMap.builder();
+      b.put("id", flag.getId());
+      b.put("type", t.toString());
+      b.put("owner:id", flag.getUser().getId());
+      b.put("owner:email", flag.getUser().getEmail());
+      b.put("owner:name", flag.getUser().getName());
+      b.put("target:id", flag.getTargetId());
+      if (!u.getId().equals(flag.getUser().getId())) {
+        b.put("instigator:id", u.getId());
+        b.put("instigator:email", u.getEmail());
+        b.put("instigator:name", u.getName());
+      }
+      return b.build();
+    }
+  }
+
 
   protected final Jcrom jcrom;
 

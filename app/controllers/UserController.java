@@ -9,19 +9,21 @@ import models.Notification;
 import models.NotificationDAO;
 import models.User;
 import models.UserDAO;
+import notification.Notifier.Events;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+
 import org.jcrom.Jcrom;
 
 import play.libs.F;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
+import service.EventManager;
 import service.JcrSessionFactory;
-import service.filestore.EventManager;
-import service.filestore.EventManager.Event;
+import service.EventManager.Event;
 import service.filestore.JsonBuilder;
 
 import com.google.inject.Inject;
@@ -100,7 +102,7 @@ public final class UserController extends SessionAwareController {
           return badRequest("Should have read attribute.");
         n.setRead(json.get("read").asBoolean());
         dao.update(n);
-        eventManager.tell(Event.update(n));
+        eventManager.tell(Events.update(n));
         return ok(jb.toJson(n)).as("application/json; charset=utf-8");
       }
     });
@@ -117,7 +119,7 @@ public final class UserController extends SessionAwareController {
           return notFound();
         dao.removeById(n.getId());
         session.save();
-        eventManager.tell(Event.delete(n));
+        eventManager.tell(Events.delete(n));
         return noContent();
       }
     });

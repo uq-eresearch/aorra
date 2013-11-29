@@ -1,14 +1,13 @@
 package helpers
 
 import java.util.UUID
-
 import org.specs2.mutable.Specification
-
 import EventFormatter.jsonMessage
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.libs.json.JsValue
-import service.filestore.EventManager
+import service.EventManager
+import service.filestore.FileStore
 
 class EventFormatterSpec extends Specification {
 
@@ -20,12 +19,12 @@ class EventFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val event = EventManager.Event.updateFolder(randomUUID)
+        val event = FileStore.Events.updateFolder(randomUUID)
         val msg = jsonMessage(eventId, event)
 
         (msg \ "id") must beJson(eventId)
         (msg \ "type") must beJson("folder:update")
-        (msg \ "data") must beJson(event.info.id)
+        (msg \ "data") must beJson(event.info("id"))
       }
 
       "without node info" in {
@@ -46,13 +45,13 @@ class EventFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val event = EventManager.Event.updateFolder(randomUUID)
+        val event = FileStore.Events.updateFolder(randomUUID)
         val msg: String = sseMessage(eventId, event)
         val lines: Seq[String] = msg.split('\n')
 
         lines must contain(s"id: $eventId")
         lines must contain(s"event: folder:update")
-        lines must contain(s"data: ${event.info.id}")
+        lines must contain(s"data: ${event.info("id")}")
         msg must endWith("\n\n") // Finish with empty line
       }
 

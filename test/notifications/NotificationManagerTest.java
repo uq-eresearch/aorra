@@ -25,12 +25,12 @@ import org.junit.Test;
 
 import play.libs.F;
 import play.test.FakeRequest;
-import service.filestore.EventManager;
-import service.filestore.EventManager.Event;
+import service.EventManager;
+import service.EventManager.Event;
+import service.OrderedEvent;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
-import service.filestore.OrderedEvent;
 
 public class NotificationManagerTest {
 
@@ -169,7 +169,8 @@ public class NotificationManagerTest {
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(1);
         // Perform set flag and trigger event
         final Flag flag = flm.setFlag(FlagType.EDIT, f.getIdentifier(), user);
-        fileStore().getEventManager().tell(Event.create(flag));
+        fileStore().getEventManager().tell(FlagStore.Events.create(
+            flag, FlagType.EDIT, flaguser));
         awaitNotifications(1);
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(3);
         flaguser =  (new UserDAO(session, jcrom())).loadById(flaguser.getId());
@@ -202,8 +203,7 @@ public class NotificationManagerTest {
         int actualCount = 0;
         for(OrderedEvent oe : events) {
           EventManager.Event event = oe.event();
-          if (event.info != null &&
-              event.info.type == EventManager.Event.NodeType.NOTIFICATION) {
+          if (event.type.startsWith("notification")) {
             actualCount++;
           }
         }

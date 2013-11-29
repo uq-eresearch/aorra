@@ -10,8 +10,12 @@ import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import service.EventManager;
+import service.EventManager.Event;
+
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableMap;
 
 import models.User;
 
@@ -134,6 +138,48 @@ public interface FileStore {
     User getAuthor();
 
     Calendar getModificationTime();
+
+  }
+
+  public static class Events {
+
+    public static Event create(FileStore.File file)
+        throws RepositoryException {
+      return new Event("file:create", nodeInfo(file));
+    }
+
+    public static Event create(FileStore.Folder folder)
+        throws RepositoryException {
+      return new Event("folder:create", nodeInfo(folder));
+    }
+
+    public static Event update(FileStore.File file)
+        throws RepositoryException {
+      return new Event("file:update", nodeInfo(file));
+    }
+
+    public static Event updateFolder(String folderId)
+        throws RepositoryException {
+      return new Event("folder:update", ImmutableMap.of("id", folderId));
+    }
+
+    public static Event delete(FileStore.File file)
+        throws RepositoryException {
+      return new EventManager.Event("file:delete", nodeInfo(file));
+    }
+
+    public static Event delete(FileStore.Folder folder)
+        throws RepositoryException {
+      return new EventManager.Event("folder:delete", nodeInfo(folder));
+    }
+
+    private static Map<String, String> nodeInfo(FileStore.Folder folder) {
+      return ImmutableMap.of("id", folder.getIdentifier());
+    }
+
+    private static Map<String, String> nodeInfo(FileStore.File file) {
+      return ImmutableMap.of("id", file.getIdentifier());
+    }
 
   }
 

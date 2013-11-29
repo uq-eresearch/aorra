@@ -1,12 +1,16 @@
 package controllers
 
 import java.text.DateFormat
+
 import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.future
+
 import org.jcrom.Jcrom
+
 import com.feth.play.module.pa.user.AuthUser
 import com.google.inject.Inject
+
 import ScalaSecured.isAuthenticated
 import helpers.EventFormatter.jsonMessage
 import helpers.EventFormatter.sseMessage
@@ -25,11 +29,11 @@ import play.api.mvc.AnyContent
 import play.api.mvc.Controller
 import play.api.mvc.EssentialAction
 import play.api.mvc.Request
-import service.filestore.EventManager.EventReceiver
-import service.filestore.EventManager.EventReceiverMessage
-import service.filestore.EventManager.{Event => EmEvent}
+import service.EventManager.EventReceiver;
+import service.EventManager.EventReceiverMessage;
+import service.EventManager.{Event => EmEvent}
 import play.api.libs.json.JsArray
-import service.filestore.OrderedEvent
+import service.OrderedEvent
 import models.CacheableUser
 
 /**
@@ -50,8 +54,8 @@ class FileStoreAsync @Inject()(
 
   val ssePingBroadcast: Enumerator[String] = {
     import play.api.Play.current
-    import play.api.libs.concurrent.Execution.Implicits._
-    import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.duration._
     val (enumerator, channel) = Concurrent.broadcast[String]
     // Ping every 15 seconds, after the first 1 second delay
     Akka.system.scheduler.schedule(1.seconds, 15.seconds) {
@@ -122,7 +126,7 @@ class FileStoreAsync @Inject()(
 
   private def eventSourceFormatter = {
     // Play Framework uses structural types to implement the Enumeratee
-    import scala.language.reflectiveCalls
+import scala.language.reflectiveCalls
     Enumeratee.map[OrderedEvent] {
       case OrderedEvent(id, event) => sseMessage(id, event)
     }

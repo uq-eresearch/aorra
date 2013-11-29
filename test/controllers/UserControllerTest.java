@@ -26,16 +26,17 @@ import models.UserDAO;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+
 import org.junit.Test;
 
 import play.api.mvc.Call;
 import play.libs.F;
 import play.mvc.Result;
 import play.test.FakeRequest;
+import service.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import service.filestore.JsonBuilder;
-import service.filestore.EventManager.Event;
 import service.filestore.FlagStore.FlagType;
 
 public class UserControllerTest {
@@ -111,7 +112,8 @@ public class UserControllerTest {
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(1);
         // Perform set flag and trigger event
         final Flag flag = flm.setFlag(FlagType.EDIT, f.getIdentifier(), other);
-        fileStore().getEventManager().tell(Event.create(flag));
+        fileStore().getEventManager().tell(FlagStore.Events.create(
+            flag, FlagType.EDIT, user));
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(2);
         awaitNotifications(1);
         List<Notification> notifications =

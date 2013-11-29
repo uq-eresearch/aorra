@@ -23,7 +23,6 @@ import providers.CacheableUserProviderImpl;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.filestore.CommentStore;
 import service.filestore.CommentStoreImpl;
-import service.filestore.EventManager;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
