@@ -9,6 +9,7 @@ import javax.jcr.nodetype.NodeType;
 
 import models.Flag;
 import models.FlagDAO;
+import models.IdentifiableUser;
 import models.User;
 
 import org.apache.jackrabbit.commons.JcrUtils;
@@ -96,18 +97,31 @@ public class FlagStore {
 
   public static class Events {
 
-    public static Event create(Flag flag, FlagType t)
+    public static Event create(Flag flag, FlagType t, IdentifiableUser u)
         throws RepositoryException {
-      return new Event("flag:create", nodeInfo(flag, t));
+      return new Event("flag:create", nodeInfo(flag, t, u));
     }
 
-    public static Event delete(Flag flag, FlagType t)
+    public static Event delete(Flag flag, FlagType t, IdentifiableUser u)
         throws RepositoryException {
-      return new Event("flag:delete", nodeInfo(flag, t));
+      return new Event("flag:delete", nodeInfo(flag, t, u));
     }
 
-    private static Map<String,String> nodeInfo(Flag flag, FlagType t) {
-      return ImmutableMap.of("id", flag.getId(), "type", t.toString());
+    private static Map<String, String> nodeInfo(Flag flag, FlagType t,
+        IdentifiableUser u) {
+      final ImmutableMap.Builder<String, String> b = ImmutableMap.builder();
+      b.put("id", flag.getId());
+      b.put("type", t.toString());
+      b.put("owner:id", flag.getUser().getId());
+      b.put("owner:email", flag.getUser().getEmail());
+      b.put("owner:name", flag.getUser().getName());
+      b.put("target:id", flag.getTargetId());
+      if (!u.getId().equals(flag.getUser().getId())) {
+        b.put("instigator:id", u.getId());
+        b.put("instigator:email", u.getEmail());
+        b.put("instigator:name", u.getName());
+      }
+      return b.build();
     }
   }
 

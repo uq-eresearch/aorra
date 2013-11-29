@@ -169,7 +169,8 @@ public class NotificationManagerTest {
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(1);
         // Perform set flag and trigger event
         final Flag flag = flm.setFlag(FlagType.EDIT, f.getIdentifier(), user);
-        fileStore().getEventManager().tell(FlagStore.Events.create(flag, FlagType.EDIT));
+        fileStore().getEventManager().tell(FlagStore.Events.create(
+            flag, FlagType.EDIT, flaguser));
         awaitNotifications(1);
         assertThat(fileStore().getEventManager().getSince(null)).hasSize(3);
         flaguser =  (new UserDAO(session, jcrom())).loadById(flaguser.getId());

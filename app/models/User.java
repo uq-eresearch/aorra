@@ -39,7 +39,7 @@ import com.google.common.collect.ImmutableMap.Builder;
       NodeType.MIX_REFERENCEABLE
     },
     classNameProperty = "className")
-public class User {
+public class User implements IdentifiableUser {
 
   @JcrIdentifier private String id;
   @JcrName private String nodeName;
@@ -128,6 +128,7 @@ public class User {
 
   public User() {}
 
+  @Override
   public String getId() {
     return id;
   }
@@ -140,6 +141,7 @@ public class User {
     return new SimpleCredentials(email, "".toCharArray());
   }
 
+  @Override
   public String getEmail() {
     return email;
   }
@@ -149,6 +151,7 @@ public class User {
     this.nodeName = generateNodeName(email);
   }
 
+  @Override
   public String getName() {
     return name;
   }
