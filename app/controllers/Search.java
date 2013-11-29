@@ -78,12 +78,16 @@ public class Search extends SessionAwareController {
 
     @SubjectPresent
     public Result search(final String q) {
+      if (q.isEmpty()) {
+        return badRequest("Query string cannot be blank.");
+      } else {
         try {
             return ok(Json.toJson(srch(q))).as("application/json; charset=utf-8");
         } catch(Exception e) {
             e.printStackTrace();
             return ok("[]").as("application/json; charset=utf-8");
         }
+      }
     }
 
     private List<SearchResult> srch(final String q) {
@@ -136,7 +140,7 @@ public class Search extends SessionAwareController {
                     "SELECT * FROM [nt:file] WHERE localname() LIKE $query",
                   javax.jcr.query.Query.JCR_SQL2);
                 ValueFactory vf = session.getValueFactory();
-                query.bindValue("query", vf.createValue(q));
+                query.bindValue("query", vf.createValue("%"+q+"%"));
                 QueryResult result = query.execute();
                 RowIterator iter = result.getRows();
                 while(iter.hasNext()) {
