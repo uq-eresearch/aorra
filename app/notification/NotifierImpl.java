@@ -151,7 +151,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   private void sendNotification(Session session, final Event event)
       throws RepositoryException {
     final FileStore.Manager manager = fileStore.getManager(session);
-    for (final User user : getWatchUsers(session, event.info.get("id"))) {
+    for (final User user : getWatchUsers(session, event.info("id"))) {
       FileStore.FileOrFolder item = getItem(manager, event);
       final String message = views.html.notification.notification.render(event,
           item).toString();
@@ -161,22 +161,22 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
 
   private FileStore.FileOrFolder getItem(
       FileStore.Manager manager, Event event) throws RepositoryException {
-    return manager.getByIdentifier(event.info.get("id"));
+    return manager.getByIdentifier(event.info("id"));
   }
 
   private String getTargetId(Session session, Event event) {
-    Flag flag = flagStore.getManager(session).getFlag(event.info.get("id"));
+    Flag flag = flagStore.getManager(session).getFlag(event.info("id"));
     return flag.getTargetId();
   }
 
   private boolean isEditFlag(Session session, Event event) {
-    FlagStore.FlagType t = FlagStore.FlagType.valueOf(event.info.get("type"));
+    FlagStore.FlagType t = FlagStore.FlagType.valueOf(event.info("type"));
     return t == FlagStore.FlagType.EDIT;
   }
 
   private void sendEditNotification(Session session, final Iterable<User> users,
       final Event event) throws RepositoryException {
-    final Flag flag = flagStore.getManager(session).getFlag(event.info.get("id"));
+    final Flag flag = flagStore.getManager(session).getFlag(event.info("id"));
     final User creator = flag.getUser();
     final FileStore.Manager manager = fileStore.getManager(session);
     FileStore.FileOrFolder fof = manager.getByIdentifier(flag.getTargetId());

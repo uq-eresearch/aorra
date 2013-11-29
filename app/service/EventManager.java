@@ -55,7 +55,7 @@ public interface EventManager {
   public static class Event {
 
     public final String type;
-    public final Map<String, String> info;
+    private final Map<String, String> info;
 
     protected Event(String type) {
       this.type = type;
@@ -66,6 +66,10 @@ public interface EventManager {
         throws RepositoryException {
       this.type = type;
       this.info = info;
+    }
+
+    public String info(String key) {
+      return this.info.get(key);
     }
 
     public static Event outOfDate() {
