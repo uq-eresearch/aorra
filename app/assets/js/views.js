@@ -363,12 +363,13 @@ define([
       var data = this.dataDefaults();
       // Filter to target ID
       var users = _(this._flags.where({ targetId: this.targetId })).chain()
-        // Get associated user ID
-        .invoke('get', 'userId')
         // Grab matching user object from user collection
-        .map(_.bind(function(v) {
-          var obj = this.collection.get(v);
-          return obj != null ? obj.toJSON() : null;
+        .map(_.bind(function(f) {
+          var obj = this.collection.get(f.get('userId'));
+          if (obj == null) {
+            return null;
+          }
+          return _(obj.toJSON()).extend({ flagId: f.get('id') });
         }, this))
         // Filter out the missing users
         .compact()
@@ -378,7 +379,9 @@ define([
         isSet: this.isSet(),
         contentTitle: function() { return data.title+"ing"; },
         users: users,
-        count: users.length
+        count: users.length,
+        adminOverride: data.adminOverride &&
+          this.collection.current().get('isAdmin')
       });
     },
     template: function(serialized_model) {
@@ -429,6 +432,13 @@ define([
         html: true,
         content: content
       });
+      this.$el.on('click', '.js-delete', _.bind(function(e) {
+        var flagId = $(e.target).data('flag-id');
+        var flag = this._flags.findWhere({ id: flagId });
+        if (flag) {
+          flag.destroy();
+        }
+      }, this));
     }
   });
 
@@ -438,7 +448,8 @@ define([
         icon: this.isSet() ? 'flag' : 'flag-o',
         flagType: 'edit',
         title: 'Edit',
-        tooltip: 'Let other users know you are making edits to this file.'
+        tooltip: 'Let other users know you are making edits to this file.',
+        adminOverride: true
       };
     }
   });

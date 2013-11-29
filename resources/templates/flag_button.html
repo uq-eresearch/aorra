@@ -15,8 +15,14 @@
   <div class="counter-button-content hidden">
     <ul class="list-unstyled">
       {{#users}}
-      <li>
-        <a href="mailto:{{email}}" style="white-space: nowrap;">{{name}}</a>
+      <li class="clearfix" style="white-space: nowrap;">
+        <a href="mailto:{{email}}">{{name}}</a>
+        {{#adminOverride}}
+        <button type="button" class="close js-delete"
+          style="float: none; font-size: inherit;"
+          title="Remove this flag for the user (they will be notified)"
+          data-flag-id="{{flagId}}" aria-hidden="true">&times;</button>
+        {{/adminOverride}}
       </li>
       {{/users}}
     </ul>
