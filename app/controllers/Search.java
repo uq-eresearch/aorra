@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFactory;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
@@ -31,10 +33,10 @@ public class Search extends SessionAwareController {
 
     public static class SearchResult {
 
-        private String id;
-        private double score;
+        private final String id;
+        private final double score;
         private String excerpt;
-        private String type;
+        private final String type;
 
         public SearchResult(String id, double score, String type) {
             this.id = id;
@@ -98,7 +100,7 @@ public class Search extends SessionAwareController {
                         javax.jcr.query.Query.JCR_SQL2);
                 query.bindValue("query", vf.createValue(q));
                 QueryResult result = query.execute();
-                RowIterator iter = result.getRows(); 
+                RowIterator iter = result.getRows();
                 while(iter.hasNext()) {
                     Row row = iter.nextRow();
                     Node n = row.getNode().getParent().getParent().getParent();
@@ -106,10 +108,7 @@ public class Search extends SessionAwareController {
                     slist.add(sr);
                     srMap.put(row.getNode().getIdentifier(), sr);
                 }
-                // TODO figure out how to do bindValue with javax.jcr.query.Query.SQL
-                iter = queryManager.createQuery(
-                        "SELECT * FROM nt:resource WHERE contains(.,'"+q+"')",
-                        javax.jcr.query.Query.SQL).execute().getRows();
+                iter = fulltextQuery(queryManager);
                 while(iter.hasNext()) {
                     Row row = iter.nextRow();
                     SearchResult sr = srMap.get(row.getNode().getIdentifier());
@@ -119,6 +118,15 @@ public class Search extends SessionAwareController {
                 }
                 searchFilename(session, slist, q);
                 return slist;
+            }
+
+            @SuppressWarnings("deprecation")
+            protected RowIterator fulltextQuery(QueryManager queryManager)
+                throws RepositoryException, InvalidQueryException {
+              // TODO figure out how to do bindValue with javax.jcr.query.Query.SQL
+              return queryManager.createQuery(
+                      "SELECT * FROM nt:resource WHERE contains(.,'"+q+"')",
+                      javax.jcr.query.Query.SQL).execute().getRows();
             }
 
             private void searchFilename(Session session, List<SearchResult> slist,
