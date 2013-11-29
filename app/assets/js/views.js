@@ -23,7 +23,7 @@ define([
         'typeahead'
         ], function(App, models, templates, _, _s, moment, DiffMatchPatch, glyphtree, $, Backbone, Marionette, marked, toMarkdown, unstyle, htmldiff) {
   'use strict';
-  
+
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
 
   var formatTimestamp = function($n) {
@@ -124,16 +124,12 @@ define([
         createTooltip(e, node);
         $(e.currentTarget).tooltip(e.type == 'mouseenter' ? 'show' : 'hide');
       };
-      var setTooltipText = function(e) {
-        $(e.currentTarget).tooltip('show');
-      };
       var $hint = this._hint$el;
       var toggleHint = function(e) {
         var isClosed = function(node) { return !node.isExpanded(); };
         $hint.toggle(_.all(tree.nodes(), isClosed));
       };
       tree.events.label.click = [selectHandler];
-      tree.events.icon.click.push(setTooltipText);
       tree.events.icon.click.push(toggleHint);
       tree.events.icon.mouseenter = [hoverHandler];
       tree.events.icon.mouseleave = [hoverHandler];

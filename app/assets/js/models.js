@@ -14,7 +14,7 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
       return "//www.gravatar.com/avatar/"+emailHash+"?d="+missing+"&s="+size;
     }
   };
-  
+
   var ExtendedCollection = Backbone.Collection.extend({
     // Produce a promise that a collection has been preloaded
     preload: function(initialData) {
@@ -201,7 +201,7 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
       return d1 > d2 ? -1 : 1;
     }
   });
-  
+
   var User = Backbone.Model.extend({
     avatar: function(options) {
       return new Avatar(_(options).defaults({
