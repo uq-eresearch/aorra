@@ -604,7 +604,6 @@ define([
       $textarea.focus();
     },
     onCommentEditEnd: function() {
-      console.log(this.$('textarea.js-message').val());
       this.model.set('message', this.$('textarea.js-message').val());
       this.model.save();
     },
