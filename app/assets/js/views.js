@@ -26,10 +26,14 @@ define([
 
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
 
-  var formatTimestamp = function($n) {
+  var formatTimestamp = function($n, delta) {
     var dt = moment($n.text());
     $n.attr('title', $n.text());
-    $n.text(dt.format('dddd, D MMMM YYYY @ h:mm:ss a'));
+    if (delta) {
+      $n.text(dt.fromNow());
+    } else {
+      $n.text(dt.format('dddd, D MMMM YYYY @ h:mm:ss a'));
+    }
   };
 
   var typeFromMimeType = function(mimeType) {
@@ -563,6 +567,108 @@ define([
     },
     onVersionDelete: function(e) {
       e.model.destroy();
+    }
+  });
+  
+  var CommentView = Backbone.Marionette.Layout.extend({
+    triggers: {
+      'click .js-edit': 'comment:edit:start',
+      'change textarea.js-message': 'comment:edit:end'
+    },
+    modelEvents: {
+      'change': 'render'
+    },
+    ui: {
+      message: '.js-message',
+      modified: '.modified'
+    },
+    serializeData: function() {
+      var commentData = this.model.toJSON();
+      var isCurrent = this.model.collection.target.get('modified') <=
+          this.model.get('modified');
+      return _(commentData).extend({
+        author: this.options.author.avatar({ size: 64 }),
+        isCurrent: isCurrent,
+        mine: this.model.get("userId") == this.options.currentUser.id
+      });
+    },
+    template: function(serialized_model) {
+      return templates.render('comment_view', serialized_model);
+    },
+    onCommentEditStart: function() {
+      var $textarea = $('<textarea/>')
+        .addClass('js-message form-control')
+        .attr('rows', 5)
+        .text(this.model.get('message'));
+      this.ui.message.replaceWith($textarea);
+      $textarea.focus();
+    },
+    onCommentEditEnd: function() {
+      this.model.set('message', this.$('textarea.js-message').val());
+      this.model.save();
+    },
+    onRender: function() {
+      formatTimestamp(this.ui.modified, true);
+    }
+  });
+  
+  var CommentsView = Backbone.Marionette.CompositeView.extend({
+    events: {
+      "keyup .new-comment textarea": 'textKeyUp'
+    },
+    triggers: {
+      "click .js-submit": 'comment:new'
+    },
+    ui: {
+      newCommentText: '.new-comment textarea'
+    },
+    itemView: CommentView,
+    itemViewContainer: '.comments',
+    itemViewOptions: function(model, index) {
+      if (!model.get("userId")) {
+        return {};
+      }
+      return {
+        author: this._users.findWhere({ id: model.get("userId") }),
+        currentUser: this._users.current()
+      };
+    },
+    initialize: function(options) {
+      this._users = options.users;
+      this.collection.fetch();
+    },
+    appendHtml: function(collectionView, itemView, index){
+      var container = collectionView.$(collectionView.itemViewContainer);
+      var children = container.children();
+      if (children.size() <= index) {
+        container.prepend(itemView.el);
+      } else {
+        children.eq(index).after(itemView.el);
+      }
+    },
+    emptyView: Backbone.Marionette.ItemView.extend({
+      template: function() {
+        return '<p>No comments yet</p>';
+      }
+    }),
+    onCommentNew: function() {
+      var iso8601now = moment().format();
+      this.collection.create({
+        message: this.ui.newCommentText.val(),
+        // Not used by the server, but important locally
+        userId: this._users.current().id,
+        created: iso8601now,
+        modified: iso8601now
+      });
+    },
+    textKeyUp: function(e) {
+      // ctrl + enter
+      if (e.ctrlKey && e.which == 13) {
+        this.triggerMethod('comment:new')
+      }
+    },
+    template: function(serialized_model) {
+      return templates.render('comments_view', serialized_model);
     }
   });
 
@@ -1438,9 +1544,10 @@ define([
     },
     initialize: function(options) {
       this._users = options.users;
-      // Cache content an versions views
+      // Cache views at the instance level
       this.getContentView = _.memoize(this.getContentView);
       this.getVersionsView = _.memoize(this.getVersionsView);
+      this.getCommentsView = _.memoize(this.getCommentsView);
     },
     serializeData: function() {
       var dt = moment(this.model.get('modified'));
@@ -1472,6 +1579,7 @@ define([
       'click span.name': 'focus:name',
       'click .show-content a': 'display:content',
       'click .show-versions a': 'display:versions',
+      'click .show-comments a': 'display:comments',
       'blur input.name': 'blur:name'
     },
     ui: {
@@ -1489,15 +1597,30 @@ define([
         users: this._users
       })
     },
+    getCommentsView: function() {
+      return new CommentsView({
+        collection: this.model.comments(),
+        file: this.model,
+        users: this._users
+      })
+    },
     onDisplayContent: function() {
       this.display.show(this.getContentView());
+      this.upload.$el.show();
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-content').addClass('active');
     },
     onDisplayVersions: function() {
       this.display.show(this.getVersionsView());
+      this.upload.$el.show();
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-versions').addClass('active');
+    },
+    onDisplayComments: function() {
+      this.display.show(this.getCommentsView());
+      this.upload.$el.hide();
+      this.ui.displayToggle.find('li').removeClass('active');
+      this.ui.displayToggle.find('li.show-comments').addClass('active');
     },
     onFocusName: function() {
       if (this.isAdmin()) {

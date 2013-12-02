@@ -148,6 +148,22 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
       return this.file.url() + "/info";
     }
   });
+  
+  var Comment = Backbone.Model.extend({});
+
+  var Comments = Backbone.Collection.extend({
+    model: Comment,
+    initialize: function(models, options) {
+      this.target = options.target;
+    }
+  }, {
+    forFile: function(file) {
+      var CommentsForThisFile = Comments.extend({
+        url: file.url() + '/comments'
+      });
+      return new CommentsForThisFile([], { target: file });
+    }
+  });
 
   var File = FileOrFolder.extend({
     urlRoot: '/file',
@@ -162,6 +178,12 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
         this._infoModel = new FileInfo({}, {file: this});
       }
       return this._infoModel;
+    },
+    comments: function() {
+      if (_.isUndefined(this._commentCollection)) {
+        this._commentCollection = Comments.forFile(this);
+      }
+      return this._commentCollection;
     }
   });
 
