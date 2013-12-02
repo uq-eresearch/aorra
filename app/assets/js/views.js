@@ -782,7 +782,7 @@ define([
       this._label = options.label || 'Download';
     },
     render: function() {
-      var $link = $('<a class="btn btn-default" title="Download"/>');
+      var $link = $('<a class="btn btn-default"/>').attr("title", this._label);
       var $icon = '<i class="fa fa-download"></i>';
       $link.attr('href', this._url);
       $link.append($('<span class="hidden-lg">').append($icon));
