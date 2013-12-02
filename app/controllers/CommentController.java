@@ -48,6 +48,7 @@ public final class CommentController extends SessionAwareController {
         final CommentStore.Manager csm = commentStore.getManager(session);
         final CommentStore.Comment comment =
             csm.create(getUser().getId(), targetId, message);
+        eventManager.tell(CommentStore.Events.create(comment, getUser()));
         return created(toJson(comment)).as("application/json; charset=utf-8");
       }
     });
@@ -95,6 +96,7 @@ public final class CommentController extends SessionAwareController {
           return notFound();
         }
         comment.setMessage(params.get("message").asText());
+        eventManager.tell(CommentStore.Events.update(comment, getUser()));
         return ok(toJson(csm.update(comment)))
             .as("application/json; charset=utf-8");
       }

@@ -1,0 +1,13 @@
+@(event: service.EventManager.Event,
+  target: service.filestore.FileStore.FileOrFolder)
+@import service.filestore.FileStore.{File, Folder}
+@import _root_.notification.NotificationManager.absUrl
+
+<p>
+  <a href="mailto:@event.info("author:email")">@event.info("author:name")</a>
+  posted a new comment on @target match {
+    case _: File => { file }
+    case _: Folder => { folder }
+  }
+  <a href="@absUrl(target)">@target.getPath</a>
+</p>

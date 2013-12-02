@@ -114,6 +114,10 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     return event.type.startsWith("flag:");
   }
 
+  private static boolean isCommentEvent(final Event event) {
+    return event.type.startsWith("comment:");
+  }
+
   private void processEvent(Session session, Event event)
       throws RepositoryException {
     if (isFlagEvent(event)) {
@@ -122,6 +126,9 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
             getWatchUsers(session, event.info("target:id")),
             event);
       }
+    } else if (isCommentEvent(event)) {
+      sendCommentNotification(session,
+          getWatchUsers(session, event.info("target:id")), event);
     } else {
       sendNotification(session, event);
     }
@@ -169,7 +176,8 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     return t == FlagStore.FlagType.EDIT;
   }
 
-  private void sendEditNotification(Session session, final Iterable<User> users,
+  private void sendEditNotification(final Session session,
+      final Iterable<User> users,
       final Event event) throws RepositoryException {
     final FileStore.Manager manager = fileStore.getManager(session);
     final FileStore.FileOrFolder fof =
@@ -182,6 +190,18 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     } else {
       return;
     }
+    for (User u : users) {
+      sendNotification(session, u, msg.toString());
+    }
+  }
+
+  private void sendCommentNotification(final Session session,
+      final Iterable<User> users,
+      final Event event) throws RepositoryException {
+    final FileStore.Manager manager = fileStore.getManager(session);
+    final FileStore.FileOrFolder fof =
+        manager.getByIdentifier(event.info("target:id"));
+    final Html msg = views.html.notification.comment.render(event, fof);
     for (User u : users) {
       sendNotification(session, u, msg.toString());
     }
