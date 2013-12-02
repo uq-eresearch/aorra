@@ -16,20 +16,22 @@
           {{/mine}}
         </div>
       	<span class="text-muted">{{name}}</span>
+        <div class="pull-right text-muted">
+          <i class="fa fa-clock-o" title="Last modified"></i>
+          <span class="text-muted modified">{{modified}}</span>
+          &#x2003;
+        </div>
+        <div class="pull-right text-muted">
+          {{^isCurrent}}
+          about a previous version
+          &#x2003;
+          {{/isCurrent}}
+        </div>
       </div>
       {{/author}}
       <div class="panel-body">
         <div class="js-message"
           style="white-space: pre-line">{{message}}</div>
-        <div class="text-muted text-right">
-          <i class="fa fa-clock-o" title="Last modified"></i>
-          <span class="modified">{{modified}}</span>
-          <br/>
-          {{^isCurrent}}
-          <i class="fa fa-info-circle"></i>
-          about a previous version
-          {{/isCurrent}}
-        </div>
       </div>
     </div>
   </div>
