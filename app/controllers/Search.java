@@ -81,12 +81,7 @@ public class Search extends SessionAwareController {
       if (q.isEmpty()) {
         return badRequest("Query string cannot be blank.");
       } else {
-        try {
-            return ok(Json.toJson(srch(q))).as("application/json; charset=utf-8");
-        } catch(Exception e) {
-            e.printStackTrace();
-            return ok("[]").as("application/json; charset=utf-8");
-        }
+        return ok(Json.toJson(srch(q))).as("application/json; charset=utf-8");
       }
     }
 
