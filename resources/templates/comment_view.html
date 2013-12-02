@@ -1,0 +1,36 @@
+<div class="media">
+  {{#author}}
+  <a class="pull-left" href="#">
+    <img class="media-object img-rounded"
+      title="{{name}}"
+      src="{{image}}">
+  </a>
+  {{/author}}
+  <div class="media-body">
+    <div class="panel panel-default">
+      {{#author}}
+      <div class="panel-heading">
+        <div class="pull-right">
+          {{#mine}}
+          <button class="js-edit btn btn-link btn-xs">Edit</button>
+          {{/mine}}
+        </div>
+      	<span class="text-muted">{{name}}</span>
+      </div>
+      {{/author}}
+      <div class="panel-body">
+        <div class="js-message"
+          style="white-space: pre-line">{{message}}</div>
+        <div class="text-muted text-right">
+          <i class="fa fa-clock-o" title="Last modified"></i>
+          <span class="modified">{{modified}}</span>
+          <br/>
+          {{^isCurrent}}
+          <i class="fa fa-info-circle"></i>
+          about a previous version
+          {{/isCurrent}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
