@@ -2,35 +2,23 @@ package service.filestore;
 
 import static com.google.common.collect.Lists.newLinkedList;
 import static org.fest.assertions.Assertions.assertThat;
-import static play.test.Helpers.running;
-import static test.AorraTestUtils.fakeAorraApp;
-import static test.AorraTestUtils.fileStore;
-import static test.AorraTestUtils.jcrom;
-import static test.AorraTestUtils.injector;
 import static test.AorraTestUtils.asAdminUser;
+import static test.AorraTestUtils.injector;
 
-import java.io.ByteArrayInputStream;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.UUID;
 
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import models.Flag;
-import models.GroupManager;
 import models.User;
-import models.UserDAO;
 
 import org.junit.Test;
 
 import play.libs.F;
-import play.libs.F.Function;
 import play.test.FakeRequest;
-import service.filestore.FlagStore.FlagType;
-import service.filestore.roles.Admin;
 
 public class CommentStoreTest {
 
@@ -66,7 +54,7 @@ public class CommentStoreTest {
         assertThat(c.getCreationTime()).isNotNull();
         assertThat(c.getModificationTime()).isNotNull();
         assertThat(c.getCreationTime().getTimeInMillis())
-        .isGreaterThanOrEqualTo(beforeCreation.getTimeInMillis());
+          .isGreaterThanOrEqualTo(beforeCreation.getTimeInMillis());
         assertThat(c.getModificationTime().getTimeInMillis())
           .isGreaterThanOrEqualTo(beforeCreation.getTimeInMillis());
         return c;
@@ -115,7 +103,6 @@ public class CommentStoreTest {
         }
         final SortedSet<CommentStore.Comment> foundComments =
             csm.findByTarget(targetIds.getFirst());
-        System.out.println(""+createdComments.size()+" ; "+foundComments.size());
         assertThat(foundComments).hasSize(10);
         for (CommentStore.Comment c : createdComments) {
           if (c.getId().equals(targetIds.getFirst())) {
