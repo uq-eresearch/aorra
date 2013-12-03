@@ -7122,6 +7122,7 @@ figure img {
 	display: block;
 	margin-left: auto;
 	margin-right: auto;
+	page-break-after: avoid;
 }
 
 figure figcaption {
