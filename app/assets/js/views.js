@@ -1505,7 +1505,7 @@ define([
           this.ui.html.append(templates.render('chart_with_caption', chart));
           htmlUpdated();
         }, this));
-        this.toggleSave(this._content);
+        this.ui.save.prop("disabled", true);
       }
       this._watchEditFlags();
     }
