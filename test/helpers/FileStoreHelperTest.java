@@ -11,13 +11,14 @@ import static test.AorraTestUtils.jcrom;
 import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 
 import javax.jcr.Session;
 
@@ -25,6 +26,7 @@ import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.eclipse.jetty.util.IO;
 import org.junit.Test;
@@ -185,34 +187,42 @@ public class FileStoreHelperTest {
         fh.mkdir("/a (a-f)/1", true);
         fh.mkdir("/a (a-f)/2", true);
         fh.mkdir("/b (a-f)/1", true);
+        final byte[] testBytes = "Some test content.".getBytes();
         ((FileStore.Folder) fm.getFileOrFolder("/a (a-f)/2"))
           .createFile("test.txt", "text/plain",
-              new ByteArrayInputStream(
-                  "Some test content.".getBytes()));
+              new ByteArrayInputStream(testBytes));
         // Test root folder
         {
           final java.io.File tf = fh.createZipFile(fm.getRoot());
           assertThat(tf).isNotNull();
-          final ZipInputStream zis = new ZipInputStream(
-              new FileInputStream(tf));
-          final ZipEntry ze = zis.getNextEntry();
+          final ZipFile zf = new ZipFile(tf);
+          final Enumeration<? extends ZipEntry> entries = zf.entries();
+          final ZipEntry ze = entries.nextElement();
           assertThat(ze).isNotNull();
           assertThat(ze.getName()).isEqualTo("a (a-f)/2/test.txt");
-          assertThat(zis.getNextEntry()).isNull();
-          zis.close();
+          assertThat(ze.getSize()).isEqualTo(testBytes.length);
+          final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+          IOUtils.copy(zf.getInputStream(ze), bos);
+          assertThat(bos.toByteArray()).isEqualTo(testBytes);
+          assertThat(entries.hasMoreElements()).isFalse();
+          zf.close();
         }
         // Test subfolder
         {
           final java.io.File tf = fh.createZipFile((FileStore.Folder)
               fm.getFileOrFolder("/a (a-f)/2"));
           assertThat(tf).isNotNull();
-          final ZipInputStream zis = new ZipInputStream(
-              new FileInputStream(tf));
-          final ZipEntry ze = zis.getNextEntry();
+          final ZipFile zf = new ZipFile(tf);
+          final Enumeration<? extends ZipEntry> entries = zf.entries();
+          final ZipEntry ze = entries.nextElement();
           assertThat(ze).isNotNull();
           assertThat(ze.getName()).isEqualTo("2/test.txt");
-          assertThat(zis.getNextEntry()).isNull();
-          zis.close();
+          assertThat(ze.getSize()).isEqualTo(testBytes.length);
+          final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+          IOUtils.copy(zf.getInputStream(ze), bos);
+          assertThat(bos.toByteArray()).isEqualTo(testBytes);
+          assertThat(entries.hasMoreElements()).isFalse();
+          zf.close();
         }
         return session;
       }

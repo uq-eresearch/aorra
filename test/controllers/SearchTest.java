@@ -80,6 +80,7 @@ public class SearchTest {
                 "Whenever you find yourself on the side of the majority, "+
                 "it is time to pause and reflect.").getBytes()))
                 .getIdentifier();
+        Thread.sleep(2000);
         final Result result = callAction(
             controllers.routes.ref.Search.search("majority"),
             newRequest);
