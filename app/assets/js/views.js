@@ -18,7 +18,6 @@ define([
         'htmldiff',
         'FileAPI',
         'jquery.bootstrap-wysiwyg',
-        'jquery.ui',
         'jquery.ckeditor',
         'typeahead'
         ], function(App, models, templates, _, _s, moment, DiffMatchPatch, glyphtree, $, Backbone, Marionette, marked, toMarkdown, unstyle, htmldiff) {
