@@ -201,6 +201,10 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     final FileStore.Manager manager = fileStore.getManager(session);
     final FileStore.FileOrFolder fof =
         manager.getByIdentifier(event.info("target:id"));
+    if (fof == null) {
+      // We can't issue a useful comment notification
+      return;
+    }
     final Html msg = views.html.notification.comment.render(event, fof);
     for (User u : users) {
       sendNotification(session, u, msg.toString());
