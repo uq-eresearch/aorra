@@ -445,7 +445,7 @@ define([
   var EditingButtonView = FlagButtonView.extend({
     dataDefaults: function() {
       return {
-        icon: this.isSet() ? 'flag' : 'flag-o',
+        icon: this.isSet() ? 'pencil-square' : 'pencil-square-o',
         flagType: 'edit',
         title: 'Edit',
         tooltip: 'Let other users know you are making edits to this file.',
@@ -778,17 +778,16 @@ define([
   var DownloadButtonView = Backbone.View.extend({
     tagName: 'span',
     initialize: function(options) {
-      this._url = options.url;
-      this._label = options.label || 'Download';
+      // { "label": "url" } => { label: "label", url: "url" }
+      this.formats = _(options.formats).map(function(v, k) {
+        return { label: k, url: v};
+      });
     },
     render: function() {
-      var $link = $('<a class="btn btn-default"/>').attr("title", this._label);
-      var $icon = '<i class="fa fa-download"></i>';
-      $link.attr('href', this._url);
-      $link.append($('<span class="hidden-lg">').append($icon));
-      $link.append(
-          $('<span class="visible-lg">').append($icon).append(" "+this._label));
-      this.$el.html($link);
+      var html = (this.formats.length == 1) ?
+          templates.render("download_button_single", this.formats[0]) :
+          templates.render("download_button_multiple", {formats: this.formats});
+      this.$el.html(html);
     }
   });
   
@@ -963,14 +962,22 @@ define([
             collection: this._users,
             targetId: this.model.id
           }),
-          new DownloadButtonView({ url: this.model.url()+"/archive" }),
-          new DownloadButtonView({ 
-            label: 'Charts', url: this.model.url()+"/charts.zip" }),
+          new DownloadButtonView({
+            formats: {
+              'All files': this.model.url()+"/archive",
+              'Generated charts': this.model.url()+"/charts.zip"
+            }
+          }),
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
         this.buttons.show(new InlineListView([
-          new DownloadButtonView({ url: this.model.url()+"/archive" })
+          new DownloadButtonView({
+            formats: {
+              'All files': this.model.url()+"/archive",
+              'Generated charts': this.model.url()+"/charts.zip"
+            }
+          })
         ]));
       }
       this.delegateEvents();
@@ -1643,6 +1650,16 @@ define([
         this.model.save().error(_.bind(this.model.fetch, this.model));
       }
     },
+    downloadFormats: function() {
+      var formats = {
+        "Original": this.model.downloadUrl()
+      };
+      if (this.model.get('mime') == 'text/html') {
+        formats['HTML Zip'] = this.model.url()+"/htmlzip";
+        formats['PDF'] = this.model.url()+"/pdf";
+      }
+      return formats;
+    },
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       if (this.model.get('accessLevel') == 'RW') {
@@ -1659,7 +1676,9 @@ define([
             collection: this._users,
             targetId: this.model.id
           }),
-          new DownloadButtonView({ url: this.model.downloadUrl() }),
+          new DownloadButtonView({
+            formats: this.downloadFormats()
+          }),
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
@@ -1668,7 +1687,9 @@ define([
             collection: this._users,
             targetId: this.model.id
           }),
-          new DownloadButtonView({ url: this.model.downloadUrl() })
+          new DownloadButtonView({
+            formats: this.downloadFormats()
+          })
         ]));
       }
       this.triggerMethod('display:content');

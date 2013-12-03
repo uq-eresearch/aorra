@@ -1,0 +1,17 @@
+<div class="btn-group">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    <span class="hidden-lg">
+      <i class="fa fa-download"></i>&nbsp;
+      <i class="fa fa-caret-down"></i>
+    </span>
+    <span class="visible-lg">
+      Download
+      <i class="fa fa-caret-down"></i>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    {{#formats}}
+    <li><a href="{{url}}">{{label}}</a></li>
+    {{/formats}}
+  </ul>
+</div>
