@@ -12,6 +12,10 @@ import static test.AorraTestUtils.sessionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Enumeration;
@@ -193,7 +197,7 @@ public class FileStoreHelperTest {
               new ByteArrayInputStream(testBytes));
         // Test root folder
         {
-          final java.io.File tf = fh.createZipFile(fm.getRoot());
+          final java.io.File tf = asTempFile(fh.createZipFile(fm.getRoot()));
           assertThat(tf).isNotNull();
           final ZipFile zf = new ZipFile(tf);
           final Enumeration<? extends ZipEntry> entries = zf.entries();
@@ -209,8 +213,8 @@ public class FileStoreHelperTest {
         }
         // Test subfolder
         {
-          final java.io.File tf = fh.createZipFile((FileStore.Folder)
-              fm.getFileOrFolder("/a (a-f)/2"));
+          final java.io.File tf = asTempFile(fh.createZipFile(
+              (FileStore.Folder) fm.getFileOrFolder("/a (a-f)/2")));
           assertThat(tf).isNotNull();
           final ZipFile zf = new ZipFile(tf);
           final Enumeration<? extends ZipEntry> entries = zf.entries();
@@ -226,6 +230,14 @@ public class FileStoreHelperTest {
         }
         return session;
       }
+
+      public java.io.File asTempFile(InputStream is) throws IOException {
+        final java.io.File tf = File.createTempFile("zipfile", "");
+        tf.deleteOnExit();
+        IOUtils.copy(is, new FileOutputStream(tf));
+        return tf;
+      }
+
     });
   }
 

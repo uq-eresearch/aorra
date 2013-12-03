@@ -124,7 +124,7 @@ public class FileStoreHelper {
     return folder;
   }
 
-  public File createZipFile(final FileStore.Folder folder)
+  public InputStream createZipFile(final FileStore.Folder folder)
       throws IOException, RepositoryException {
     final File tempFile = File.createTempFile("zipfile", "");
     final ZipOutputStream zos =
@@ -133,7 +133,13 @@ public class FileStoreHelper {
     zos.setLevel(5);
     addFolderToZip(zos, folder, folder);
     zos.close();
-    return tempFile;
+    return new FileInputStream(tempFile) {
+      @Override
+      public void close() throws IOException {
+        super.close();
+        tempFile.delete();
+      }
+    };
   }
 
   /**

@@ -339,18 +339,10 @@ public final class FileStoreController extends SessionAwareController {
       public Result apply(Session session, Folder folder)
           throws RepositoryException, IOException {
         final FileStoreHelper fh = new FileStoreHelper(session);
-        final java.io.File zipFile = fh.createZipFile(folder);
         ctx().response().setContentType("application/zip");
         ctx().response().setHeader("Content-Disposition",
             "attachment; filename="+encodeQuery(folder.getName())+".zip");
-        ctx().response().setHeader("Content-Length", zipFile.length()+"");
-        return ok(new FileInputStream(zipFile) {
-          @Override
-          public void close() throws IOException {
-            super.close();
-            zipFile.delete();
-          }
-        });
+        return ok(fh.createZipFile(folder));
       }
     });
   }
