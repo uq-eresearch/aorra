@@ -1,14 +1,14 @@
 <div class="tabbable">
+  {{#editable}}
   <ul class="nav nav-pills nav-justified">
     <li class="active">
       <a href="#html-tab" data-toggle="pill">HTML</a>
     </li>
-    {{#editable}}
     <li>
       <a href="#html-diff-tab" data-toggle="pill">Compare Differences</a>
     </li>
-    {{/editable}}
   </ul>
+  {{/editable}}
   <div class="tab-content">
     <div class="tab-pane active" id="html-tab">
       <div class="html-pane" {{#editable}}contenteditable="true" spellcheck="true"{{/editable}}>{{{html}}}</div>
