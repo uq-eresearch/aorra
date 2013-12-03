@@ -6,26 +6,28 @@
 @import service.filestore.FileStore.{File, Folder}
 @import _root_.notification.NotificationManager.absUrl
 
-@item match {
-  case file: File => {
-    @file.getAuthor match {
-      case null => {
-        Somebody
+@defining(event.`type`.split(':').last) { eventType =>
+  @item match {
+    case file: File => {
+      @file.getAuthor match {
+        case null => {
+          Somebody
+        }
+        case author: models.User => {
+          <a href="mailto:@author.getEmail">@author.getName</a>
+        }
       }
-      case author: models.User => {
-        <a href="mailto:@author.getEmail">@author.getName</a>
-      }
+      @(eventType)d
+      <a href="@absUrl(file)">
+        @file.getPath()
+      </a>
     }
-    @(event.`type`)d
-    <a href="@absUrl(file)">
-      @file.getPath()
-    </a>
-  }
-  case folder: Folder => {
-    <a href="@absUrl(folder)">
-      @folder.getPath())
-    </a>
-    was
-    @(event.`type`)d
+    case folder: Folder => {
+      <a href="@absUrl(folder)">
+        @folder.getPath())
+      </a>
+      was
+      @(eventType)d
+    }
   }
 }
