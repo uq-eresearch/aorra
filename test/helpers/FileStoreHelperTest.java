@@ -230,14 +230,6 @@ public class FileStoreHelperTest {
         }
         return session;
       }
-
-      public java.io.File asTempFile(InputStream is) throws IOException {
-        final java.io.File tf = File.createTempFile("zipfile", "");
-        tf.deleteOnExit();
-        IOUtils.copy(is, new FileOutputStream(tf));
-        return tf;
-      }
-
     });
   }
 
@@ -415,7 +407,8 @@ public class FileStoreHelperTest {
         folder.createFile("test.txt", "text/plain",
             new ByteArrayInputStream("Hello World!".getBytes()));
         assertThat(fm.getFileOrFolder("/foo/bar/test.txt")).isNotNull();
-        final java.io.File zipFile = fsh.createZipFile(fm.getRoot());
+        final java.io.File zipFile =
+            asTempFile(fsh.createZipFile(fm.getRoot()));
         // Delete all files
         assertThat(fm.getFileOrFolder("/foo")).isNotNull();
         fm.getFileOrFolder("/foo").delete();
@@ -502,6 +495,13 @@ public class FileStoreHelperTest {
         });
       }
     });
+  }
+
+  private static java.io.File asTempFile(InputStream is) throws IOException {
+    final java.io.File tf = File.createTempFile("zipfile", "");
+    tf.deleteOnExit();
+    IOUtils.copy(is, new FileOutputStream(tf));
+    return tf;
   }
 
   private class PrintWriterTester {
