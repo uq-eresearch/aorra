@@ -3,6 +3,7 @@ package controllers;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.charset;
+import static play.test.Helpers.contentAsBytes;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
 import static play.test.Helpers.header;
@@ -1029,23 +1030,48 @@ public class FileStoreControllerTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
-        final FileStore.File file =
-            fm.getRoot().createFile("test file.txt", "text/plain",
-                new ByteArrayInputStream("Some content.".getBytes()));
-        for (String versionString : new String[] {"1.0", "latest"}) {
-          final Result result = callAction(
-              controllers.routes.ref.FileStoreController.downloadFile(
-                  file.getIdentifier(),
-                  versionString),
-              newRequest.withHeader("Accept", "text/plain"));
-          assertThat(status(result)).isEqualTo(200);
-          assertThat(header("Cache-Control", result))
-            .isEqualTo("max-age=0, must-revalidate");
-          assertThat(header("Content-Disposition", result))
-            .startsWith("attachment; filename=test%20file");
-          // File result is async
-          //assertThat(result.getWrappedResult()).isInstanceOf(
-          //    play.api.mvc.AsyncResult.class);
+        {
+          final FileStore.File file =
+              fm.getRoot().createFile("test file.txt", "text/plain",
+                  new ByteArrayInputStream("Some content.".getBytes()));
+          for (String versionString : new String[] {"1.0", "latest"}) {
+            final Result result = callAction(
+                controllers.routes.ref.FileStoreController.downloadFile(
+                    file.getIdentifier(),
+                    versionString),
+                newRequest.withHeader("Accept", "text/plain"));
+            assertThat(status(result)).isEqualTo(200);
+            assertThat(contentType(result)).isEqualTo("text/plain");
+            assertThat(header("Cache-Control", result))
+              .isEqualTo("max-age=0, must-revalidate");
+            assertThat(header("Content-Disposition", result))
+              .startsWith("attachment; filename=test%20file");
+          }
+        }
+        {
+          final String notFoundId = UUID.randomUUID().toString();
+          for (String versionString : new String[] {"1.0", "latest"}) {
+            final Result defaultResult = callAction(
+                controllers.routes.ref.FileStoreController.downloadFile(
+                    notFoundId,
+                    versionString),
+                newRequest.withHeader("Accept", "*/*"));
+            assertThat(status(defaultResult)).isEqualTo(404);
+            assertThat(contentType(defaultResult)).isEqualTo("text/plain");
+            assertThat(contentAsString(defaultResult)).isEqualTo(
+                IOUtils.toString(
+                    getClass().getResourceAsStream("/notfound/not_found.txt")));
+            final Result pngResult = callAction(
+                controllers.routes.ref.FileStoreController.downloadFile(
+                    notFoundId,
+                    versionString),
+                newRequest.withHeader("Accept", "image/png,image/*,*/*;q=0.5"));
+            assertThat(status(pngResult)).isEqualTo(404);
+            assertThat(contentType(pngResult)).isEqualTo("image/png");
+            assertThat(contentAsBytes(pngResult)).isEqualTo(
+                IOUtils.toByteArray(
+                    getClass().getResourceAsStream("/notfound/not_found.png")));
+          }
         }
         return session;
       }

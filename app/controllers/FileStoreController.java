@@ -678,8 +678,7 @@ public final class FileStoreController extends SessionAwareController {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         final FileStore.FileOrFolder fof = fm.getByIdentifier(fofId);
         if (fof == null) {
-          return notFound("The "+typeName+" specified does not exist.")
-              .as("text/plain");
+          return notFoundOfRequestedType();
         } else if (!fofClass.isInstance(fof)) {
           return badRequest(fofId+" is not a "+typeName+".")
               .as("text/plain");
@@ -719,6 +718,11 @@ public final class FileStoreController extends SessionAwareController {
       return guessed.nonEmpty() ? guessed.get() : "application/octet-stream";
     }
     return filePart.getContentType();
+  }
+
+  protected Result notFoundOfRequestedType() {
+    final NotFoundMessage nf = NotFoundMessage.from(request().acceptedTypes());
+    return notFound(nf.inputStream()).as(nf.mimeType());
   }
 
 }
