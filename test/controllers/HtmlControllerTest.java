@@ -67,7 +67,7 @@ public class HtmlControllerTest {
           FileStore.File htmlFile = root.createFile("foo.html", "text/html", new ByteArrayInputStream((
             "<html><body>some html content</body></html>").getBytes()));
           final Result result = callAction(
-                  controllers.routes.ref.HtmlController.toPdf(htmlFile.getIdentifier(), "", ""),
+                  controllers.routes.ref.HtmlController.toPdf(htmlFile.getIdentifier(), ""),
                   newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/pdf");

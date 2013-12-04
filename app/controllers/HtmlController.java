@@ -65,13 +65,13 @@ public class HtmlController extends SessionAwareController {
     }
 
     @SubjectPresent
-    public Result toPdf(final String fileId, String converter, String copts) {
+    public Result toPdf(final String fileId, String copts) {
         FileCleanup c = null;
         try {
             String h = html(fileId);
             if(h!=null) {
                 c = new HtmlToPdf().toPdf(filename(fileId), html(fileId),
-                        request().cookie("PLAY_SESSION").value(), converter, copts);
+                        request().cookie("PLAY_SESSION").value(), copts);
                 ctx().response().setHeader("Content-Disposition",
                         "attachment; filename="+filename(fileId)+".pdf");
                 return ok(c.result()).as("application/pdf");

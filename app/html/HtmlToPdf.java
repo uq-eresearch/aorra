@@ -9,29 +9,26 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 public class HtmlToPdf {
 
-    private static final String CMD_WK = "/usr/bin/wkhtmltopdf";
-    private static final String CMD_PANDOC = "/usr/bin/pandoc";
-    private static final String CMD_WEASYPRINT = "/usr/bin/weasyprint";
+    private static final String CMD_WEASYPRINT = "weasyprint";
 
-    public FileCleanup toPdf(String name, String html, String playSession, String converter, String copts) {
+    public FileCleanup toPdf(String name, String html, String playSession, String copts) {
         String filename = FilenameUtils.removeExtension(name)+".html";
         File htmlFile = new HtmlZip().toFolder(Files.createTempDir(), filename, html, playSession);
-        File pdfFile = pdf(htmlFile, converter, copts);
+        File pdfFile = pdf(htmlFile, copts);
         return new FileCleanup(pdfFile, pdfFile.getParentFile(), htmlFile.getParentFile());
     }
 
-    private File pdf(File in, String converter, String copts) {
+    private File pdf(File in, String copts) {
         try {
             File destfolder = Files.createTempDir();
             File out = new File(destfolder, FilenameUtils.removeExtension(in.getName())+".pdf");
-            ProcessBuilder pb = converter(choose(converter), copts, in, out);
+            ProcessBuilder pb = converter(copts, in, out);
             pb.directory(in.getParentFile());
             File log = new File(destfolder, "converter.log");
             pb.redirectErrorStream(true);
@@ -55,46 +52,11 @@ public class HtmlToPdf {
         }
     }
 
-    private String choose(String converter) {
-        List<String> available = Lists.newArrayList();
-        if(new File(CMD_WEASYPRINT).exists()) {
-            available.add(CMD_WEASYPRINT);
-        }
-        if(new File(CMD_WK).exists()) {
-            available.add(CMD_WK);
-        }
-        if(new File(CMD_PANDOC).exists()) {
-            available.add(CMD_PANDOC);
-        }
-        if(available.isEmpty()) {
-            throw new RuntimeException("no converter available (install pandoc/wkhtmltopdf/weasyprint)");
-        } else if(available.size() == 1) {
-            return available.get(0);
-        } else {
-            for(String s : available) {
-                if(StringUtils.contains(s, converter)) {
-                    return s;
-                }
-            }
-            return available.get(0);
-        }
-    }
-
-    private ProcessBuilder converter(String converter, String copts, File in, File out) throws IOException {
-        if(StringUtils.equals(converter, CMD_WK)) {
-            return new ProcessBuilder(cmd(converter,
-                    options(copts), in.getName(), out.getAbsolutePath()));
-        } else if(StringUtils.equals(converter,CMD_PANDOC)) {
-            return new ProcessBuilder(cmd(converter,
-                    options(copts), "-o", out.getAbsolutePath(), in.getName()));
-        } else if(StringUtils.equals(converter, CMD_WEASYPRINT)) {
-            File css = new File(in.getParentFile(), "print.css");
-            FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream("weasyprint.css"), css);
-            return new ProcessBuilder(cmd(converter, "--stylesheet", css.getAbsolutePath(),
-                    options(copts), in.getName(), out.getAbsolutePath()));
-        } else {
-            throw new RuntimeException(String.format("unknown converter '%s'", converter));
-        }
+    private ProcessBuilder converter(String copts, File in, File out) throws IOException {
+        File css = new File(in.getParentFile(), "print.css");
+        FileUtils.copyInputStreamToFile(this.getClass().getResourceAsStream("weasyprint.css"), css);
+        return new ProcessBuilder(cmd(CMD_WEASYPRINT, "--stylesheet", css.getAbsolutePath(),
+                options(copts), in.getName(), out.getAbsolutePath()));
     }
 
     private List<String> cmd(Object... params) {
