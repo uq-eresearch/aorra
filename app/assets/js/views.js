@@ -1612,19 +1612,25 @@ define([
     },
     onDisplayContent: function() {
       this.display.show(this.getContentView());
-      this.upload.$el.show();
+      this.upload.show(new FileUploadView({
+        type: 'file',
+        model: this.model
+      }));
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-content').addClass('active');
     },
     onDisplayVersions: function() {
       this.display.show(this.getVersionsView());
-      this.upload.$el.show();
+      this.upload.show(new FileUploadView({
+        type: 'file',
+        model: this.model
+      }));
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-versions').addClass('active');
     },
     onDisplayComments: function() {
       this.display.show(this.getCommentsView());
-      this.upload.$el.hide();
+      this.upload.close();
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-comments').addClass('active');
     },
@@ -1662,10 +1668,6 @@ define([
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       if (this.model.get('accessLevel') == 'RW') {
-        this.upload.show(new FileUploadView({
-          type: 'file',
-          model: this.model
-        }));
         this.buttons.show(new InlineListView([
           new WatchingButtonView({
             collection: this._users,
