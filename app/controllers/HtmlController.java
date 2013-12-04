@@ -1,8 +1,5 @@
 package controllers;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-
 import html.FileCleanup;
 import html.HtmlToPdf;
 import html.HtmlZip;
@@ -46,45 +43,47 @@ public class HtmlController extends SessionAwareController {
 
     @SubjectPresent
     public Result toHtmlZip(final String fileId) {
+        FileCleanup c = null;
         try {
             String h = html(fileId);
             if(h!=null) {
-                final FileCleanup c = new HtmlZip().toHtmlZip(filename(fileId), h,
+                 c = new HtmlZip().toHtmlZip(filename(fileId), h,
                         request().cookie("PLAY_SESSION").value());
-                return ok(new FileInputStream(c.result()) {
-                    @Override
-                    public void close() throws IOException {
-                      super.close();
-                      c.cleanup();
-                    }
-                  }).as("application/zip");
+                ctx().response().setHeader("Content-Disposition",
+                        "attachment; filename="+filename(fileId)+".zip");
+                return ok(c.result()).as("application/zip");
             } else {
                 return notFound("can not convert this file to html");
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if(c!= null) {
+                c.cleanup();
+            }
         }
     }
 
     @SubjectPresent
     public Result toPdf(final String fileId, String converter, String copts) {
+        FileCleanup c = null;
         try {
             String h = html(fileId);
             if(h!=null) {
-                final FileCleanup c = new HtmlToPdf().toPdf(filename(fileId), html(fileId),
+                c = new HtmlToPdf().toPdf(filename(fileId), html(fileId),
                         request().cookie("PLAY_SESSION").value(), converter, copts);
-                return ok(new FileInputStream(c.result()) {
-                    @Override
-                    public void close() throws IOException {
-                      super.close();
-                      c.cleanup();
-                    }
-                  }).as("application/pdf");
+                ctx().response().setHeader("Content-Disposition",
+                        "attachment; filename="+filename(fileId)+".pdf");
+                return ok(c.result()).as("application/pdf");
             } else {
                 return notFound("can not convert this file to pdf");
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if(c!= null) {
+                c.cleanup();
+            }
         }
     }
 

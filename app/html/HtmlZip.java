@@ -29,8 +29,6 @@ import com.google.common.io.Files;
 
 public class HtmlZip {
 
-    private static final String MISSING = "files/img_missing.png";
-
     public FileCleanup toHtmlZip(String name, String html, String playSession) {
         File destination = Files.createTempDir();
         toFolder(destination,
@@ -91,20 +89,9 @@ public class HtmlZip {
             String localPath;
             if(!srcMap.containsKey(imgSrc)) {
                 localPath = String.format("files/img%s_%s",
-                        Integer.toString(fc), getFilename(imgSrc));
-                if(download(imgSrc, localPath, destination, playSession)) {
-                    fc++;
-                } else {
-                    File fMissing = new File(destination, MISSING);
-                    if(!fMissing.exists()) {
-                        InputStream in = this.getClass().getResourceAsStream("missing.png");
-                        FileOutputStream out = new FileOutputStream(fMissing);
-                        IOUtils.copy(in, out);
-                        IOUtils.closeQuietly(out);
-                    }
-                    localPath = MISSING;
-                }
+                        Integer.toString(fc++), getFilename(imgSrc));
                 srcMap.put(imgSrc, localPath);
+                download(imgSrc, localPath, destination, playSession);
             } else {
                 localPath = srcMap.get(imgSrc);
             }
