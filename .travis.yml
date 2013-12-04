@@ -3,7 +3,11 @@ env:
   - PLAY_VERSION=2.2.1
 before_script:
   - wget http://downloads.typesafe.com/play/${PLAY_VERSION}/play-${PLAY_VERSION}.zip
-  - unzip -q play-${PLAY_VERSION}.zip 
+  - unzip -q play-${PLAY_VERSION}.zip
+  - sudo apt-get install python-virtualenv
+  - virtualenv --system-site-packages ./venv
+  - . ./venv/bin/activate
+  - pip -q install WeasyPrint
 script:
   - yes "q" | play-${PLAY_VERSION}/play jacoco:cover coveralls
   - curl -v --form json_file=@target/coveralls.json https://coveralls.io/api/v1/jobs || true
