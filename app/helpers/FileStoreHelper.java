@@ -31,7 +31,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.security.user.Authorizable;
 import org.apache.jackrabbit.api.security.user.Group;
 
+import play.Logger;
 import play.Play;
+import play.api.libs.MimeTypes;
 import service.GuiceInjectionPlugin;
 import service.filestore.FileStore;
 import service.filestore.roles.Admin;
@@ -42,9 +44,6 @@ import charts.builder.spreadsheet.XlsxDataSource;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedSet;
-
-import eu.medsea.mimeutil.MimeType;
-import eu.medsea.mimeutil.MimeUtil2;
 
 public class FileStoreHelper {
 
@@ -439,10 +438,14 @@ public class FileStoreHelper {
   }
 
   private String getMimetype(String filename) {
-      MimeUtil2 mimeUtils = new MimeUtil2();
-      mimeUtils.registerMimeDetector("eu.medsea.mimeutil.detector.ExtensionMimeDetector");
-      MimeType m = MimeUtil2.getMostSpecificMimeType(mimeUtils.getMimeTypes(filename));
-      return m!=null?m.toString():null;
+      final scala.Option<String> guessed =
+              MimeTypes.forFileName(filename);
+      if(guessed.nonEmpty()) {
+          return guessed.get();
+      } else {
+          Logger.warn(String.format("unable to determine mimetype for filename %s", filename));
+          return "application/octet-stream";
+      }
   }
 
   protected FileStore fileStore() {

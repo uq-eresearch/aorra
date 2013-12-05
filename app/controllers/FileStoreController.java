@@ -712,12 +712,11 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   protected String getMimeType(MultipartFormData.FilePart filePart) {
-    if (filePart.getContentType().equals("application/octet-stream")) {
+      // prefer guessed mimetypes to fix an issue with xlsx file upload with firefox
+      // configure mimetypes in application.conf
       final scala.Option<String> guessed =
-          MimeTypes.forFileName(filePart.getFilename());
-      return guessed.nonEmpty() ? guessed.get() : "application/octet-stream";
-    }
-    return filePart.getContentType();
+        MimeTypes.forFileName(filePart.getFilename());
+      return guessed.nonEmpty() ? guessed.get() : filePart.getContentType();
   }
 
   protected Result notFoundOfRequestedType() {

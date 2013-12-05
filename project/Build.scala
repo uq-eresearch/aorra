@@ -34,8 +34,6 @@ object ApplicationBuild extends Build {
     "tyrex" % "tyrex" % "1.0.1", // JNDI provider for CRSH Jackrabbit access
     "com.feth" %% "play-authenticate" % "0.5.0-SNAPSHOT",
     "com.typesafe" %% "play-plugins-mailer" % "2.1-RC2",
-    "eu.medsea.mimeutil" % "mime-util" % "2.1.3"
-      exclude("org.slf4j", "slf4j-log4j12"),
     "org.apache.tika" % "tika-parsers" % "1.3",
     "org.jsoup" % "jsoup" % "1.7.2" % "test",
     "com.icegreen" % "greenmail" % "1.3.1b" % "test",
