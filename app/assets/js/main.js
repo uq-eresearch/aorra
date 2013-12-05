@@ -18,7 +18,6 @@ requirejs.config({
       'jquery.ckeditor': '../ckeditor/adapters/jquery',
       'jquery.hotkeys': 'lib/jquery.hotkeys',
       'jquery.bootstrap-wysiwyg': 'lib/bootstrap-wysiwyg',
-      'jquery.ui': '//code.jquery.com/ui/1.10.3/jquery-ui',
       'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',

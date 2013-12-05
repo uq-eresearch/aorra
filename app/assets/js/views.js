@@ -174,6 +174,7 @@ define([
               content: "\uf07b",
               'font-family': "FontAwesome"
             },
+            'jquery.ui': '//code.jquery.com/ui/1.10.3/jquery-ui',
             expanded: {
               content: "\uf07c",
               'font-family': "FontAwesome"
@@ -2036,13 +2037,12 @@ define([
       var $main = this.ui.main;
       var $sidebarPanel = $sidebar.find('.panel');
       $sidebar.on('click', '.panel-heading', function(e) {
-        var dt = 500;
-        $sidebar.toggleClass('col-md-4 col-md-1', dt);
+        $sidebar.toggleClass('col-md-4 col-md-1');
         if ($sidebarPanel.hasClass('collapsed')) {
-          $main.toggleClass('col-md-8 col-md-11', dt * 0.9);
-          _.delay(function() { $sidebarPanel.removeClass('collapsed'); }, dt);
+          $main.toggleClass('col-md-8 col-md-11');
+          $sidebarPanel.removeClass('collapsed');
         } else {
-          $main.toggleClass('col-md-8 col-md-11', dt);
+          $main.toggleClass('col-md-8 col-md-11');
           $sidebarPanel.addClass('collapsed');
         }
       });
