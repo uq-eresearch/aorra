@@ -1,5 +1,7 @@
 package controllers;
 
+import static helpers.FileStoreHelper.XLSX_MIME_TYPE;
+import static helpers.FileStoreHelper.XLS_MIME_TYPE;
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
 import static play.test.Helpers.callAction;
@@ -12,8 +14,6 @@ import static test.AorraTestUtils.asAdminUser;
 import static test.AorraTestUtils.asAdminUserSession;
 import static test.AorraTestUtils.fileStore;
 import static test.AorraTestUtils.loggedInRequest;
-import static helpers.FileStoreHelper.XLS_MIME_TYPE;
-import static helpers.FileStoreHelper.XLSX_MIME_TYPE;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -22,15 +22,11 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import models.User;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,19 +37,17 @@ import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 
 import play.api.mvc.Call;
-import play.mvc.HandlerRef;
 import play.libs.F;
 import play.libs.Json;
+import play.mvc.HandlerRef;
 import play.mvc.Http;
 import play.mvc.Result;
-import play.mvc.SimpleResult;
 import play.test.FakeRequest;
 import service.filestore.FileStore;
 import charts.representations.Format;
-import scala.concurrent.Await;
-import scala.concurrent.Future;
-import scala.concurrent.duration.Duration;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -65,7 +59,7 @@ public class ChartTest {
   };
 
   private static final String[] LAND_PS_CHARTS = new String[] {
-    "horticulture_ps","sugarcane_ps","grains_ps"
+    "horticulture_ps","sugarcane_ps"
   };
 
   @Test
