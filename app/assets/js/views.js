@@ -1376,8 +1376,12 @@ define([
     },
     fetchData: function() {
       $.get(this.model.downloadUrl(), _.bind(function(data) {
-        this._content = data;
-      }, this)).done(_.bind(this.render, this));
+        var changed = data != this._content;
+        if (changed) {
+          this._content = data;
+          this.render();
+        }
+      }, this));
     },
     serializeData: function() {
       return {
@@ -1433,61 +1437,69 @@ define([
         $.get(file.url() + '/charts?format='+svgOrPng, callback);
       }
     },
+    _setupCKEditor: function() {
+      this.ui.html.ckeditor({
+        extraPlugins: 'aorrafigure'
+      }); // Initialize with CKEditor
+      var fileIdInit = _.bind(function(e) {
+        var elementObj = e.data;
+        var $element = $('#'+elementObj.domId);
+        this._fileIdAutocomplete = new FileIdAutocomplete({
+          el: $element.find('input').get(0),
+          model: file
+        });
+        this._fileIdAutocomplete.on('file:selected', _.bind(function(file) {
+          var fileType = typeFromMimeType(file.get('mime'));
+          switch (fileType) {
+          case 'spreadsheet':
+            this.trigger('chartFile:selected', file)
+            break;
+          case 'image':
+            this.trigger('imageFile:selected', file)
+            break;
+          }
+        }, this));
+        this._fileIdAutocomplete.render();
+      }, this);
+      var chartUrlInit = _.bind(function(e) {
+        var elementObj = e.data;
+        this.on('chartFile:selected', function(file) {
+          var populateSelect = function(charts) {
+            elementObj.clear();
+            _(charts).each(function(chart) {
+              elementObj.add(chart.type+" - "+chart.region, chart.url);
+            });
+          }
+          this.getCharts(file, function(data) {
+            populateSelect(data.charts);
+          });
+        });
+        this.on('imageFile:selected', function(file) {
+          elementObj.clear();
+          elementObj.add(file.get('name'), file.downloadUrl());
+        });
+      }, this);
+      this.ui.html.ckeditor().editor.on(
+          'aorrafigure_fileId:loaded', fileIdInit);
+      this.ui.html.ckeditor().editor.on(
+          'aorrafigure_imageUrl:loaded', chartUrlInit);
+    },
     onRender: function() {
       var file = this.model;
       if (this.editable()) {
         var save = _.bind(function() {
+          var oldContent = this._content;
+          this._content = this.getContent();
           $.ajax(this.model.uploadUrl(), {
             type: 'POST',
             contentType: 'text/html',
-            data: this.getContent()
+            data: this._content,
+            onFailure: _.bind(function() {
+              this._content = oldContent;
+            }, this)
           });
         }, this);
-        this.ui.html.ckeditor({
-          extraPlugins: 'aorrafigure'
-        }); // Initialize with CKEditor
-        var fileIdInit = _.bind(function(e) {
-          var elementObj = e.data;
-          var $element = $('#'+elementObj.domId);
-          this._fileIdAutocomplete = new FileIdAutocomplete({
-            el: $element.find('input').get(0),
-            model: file
-          });
-          this._fileIdAutocomplete.on('file:selected', _.bind(function(file) {
-            var fileType = typeFromMimeType(file.get('mime'));
-            switch (fileType) {
-            case 'spreadsheet':
-              this.trigger('chartFile:selected', file)
-              break;
-            case 'image':
-              this.trigger('imageFile:selected', file)
-              break;
-            }
-          }, this));
-          this._fileIdAutocomplete.render();
-        }, this);
-        var chartUrlInit = _.bind(function(e) {
-          var elementObj = e.data;
-          this.on('chartFile:selected', function(file) {
-            var populateSelect = function(charts) {
-              elementObj.clear();
-              _(charts).each(function(chart) {
-                elementObj.add(chart.type+" - "+chart.region, chart.url);
-              });
-            }
-            this.getCharts(file, function(data) {
-              populateSelect(data.charts);
-            });
-          });
-          this.on('imageFile:selected', function(file) {
-            elementObj.clear();
-            elementObj.add(file.get('name'), file.downloadUrl());
-          });
-        }, this);
-        this.ui.html.ckeditor().editor.on(
-            'aorrafigure_fileId:loaded', fileIdInit);
-        this.ui.html.ckeditor().editor.on(
-            'aorrafigure_imageUrl:loaded', chartUrlInit);
+        this._setupCKEditor();
         var htmlUpdated =
           _.bind(this.triggerMethod, this, 'html:update')
         var plainTextPasteHandler = _.bind(function(f) {

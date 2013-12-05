@@ -635,6 +635,11 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
+    public String getName() {
+      return entity.getVersion();
+    }
+
+    @Override
     public FileStore.Folder getParent() {
       throw new NotImplementedException();
     }

@@ -11,7 +11,11 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
@@ -356,6 +360,12 @@ public final class FileStoreController extends SessionAwareController {
           final FileStore.File file,
           final FileStore.File version)
           throws RepositoryException, IOException {
+        if (versionName.equals("latest")) {
+          return seeOther(
+              controllers.routes.FileStoreController.downloadFile(
+                  file.getIdentifier(),
+                  version.getName()));
+        }
         final String authorName = version.getAuthor() != null ?
             version.getAuthor().getName() : "unknown";
         final String versionStamp =
@@ -365,6 +375,8 @@ public final class FileStoreController extends SessionAwareController {
         final String filename = file.getName().replaceAll(
             "(\\.?[^\\.]+$)", versionStamp + "$1" );
         ctx().response().setContentType(version.getMimeType());
+        ctx().response().setHeader("Last-Modified",
+            asHttpDate(version.getModificationTime()));
         ctx().response().setHeader("Content-Disposition",
             "attachment; filename="+encodeQuery(filename));
         return ok(version.getData());
@@ -709,6 +721,13 @@ public final class FileStoreController extends SessionAwareController {
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  protected static String asHttpDate(final Calendar calendar) {
+    final SimpleDateFormat dateFormat = new SimpleDateFormat(
+        "EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    return dateFormat.format(calendar.getTime());
   }
 
   protected String getMimeType(MultipartFormData.FilePart filePart) {
