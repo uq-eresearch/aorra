@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
@@ -57,7 +56,6 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
             new ImmutableMap.Builder<ChartType, String>()
                 .put(ChartType.HORTICULTURE_PS, "horticulture")
                 .put(ChartType.SUGARCANE_PS, "sugarcane")
-                .put(ChartType.GRAINS_PS, "grains")
                 .build();
 
     private static final ImmutableMap<Region, Integer> ROWS =
@@ -73,7 +71,7 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
 
     public LandPracticeSystemsBuilder() {
         super(Lists.newArrayList(ChartType.HORTICULTURE_PS,
-                ChartType.SUGARCANE_PS, ChartType.GRAINS_PS));
+                ChartType.SUGARCANE_PS));
     }
 
     @Override
@@ -99,8 +97,16 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
             public Drawable getChart() {
               return LandPracticeSystems.createChart(
                   createDataset(datasource, type, region),
-                  type.getLabel() + " - " + region.getProperName(),
+                  title(),
                   new Dimension(750, 500));
+            }
+
+            private String title() {
+                if(type == ChartType.SUGARCANE_PS && region == Region.FITZROY) {
+                    return "Grains Practice Systems - " + region.getProperName();
+                } else {
+                    return type.getLabel() + " - " + region.getProperName();
+                }
             }
 
             @Override

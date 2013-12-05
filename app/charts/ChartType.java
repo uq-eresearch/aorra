@@ -13,7 +13,6 @@ public enum ChartType {
     GRAZING_PS ("Grazing Practice Systems"),
     HORTICULTURE_PS ("Horticulture Practice Systems"),
     SUGARCANE_PS ("Sugarcane Practice Systems"),
-    GRAINS_PS ("Grains Practice Systems"),
     TSA("Trends in seagrass abundance"),
     GROUNDCOVER("Groundcover"),
     GROUNDCOVER_BELOW_50("Groundcover below 50%"),
