@@ -1384,7 +1384,6 @@ define([
       }, this));
     },
     serializeData: function() {
-      console.log(this._content.length, (new Error).stack);
       return {
         content: this._content,
         editable: this.editable()
@@ -1489,10 +1488,15 @@ define([
       var file = this.model;
       if (this.editable()) {
         var save = _.bind(function() {
+          var oldContent = this._content;
+          this._content = this.getContent();
           $.ajax(this.model.uploadUrl(), {
             type: 'POST',
             contentType: 'text/html',
-            data: this.getContent()
+            data: this._content,
+            onFailure: _.bind(function() {
+              this._content = oldContent;
+            }, this)
           });
         }, this);
         this._setupCKEditor();
