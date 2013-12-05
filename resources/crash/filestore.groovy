@@ -64,6 +64,22 @@ class filestore {
       })
     }
 
+    @Usage("move (rename) files or directories")
+    @Command
+    void mv(
+      @Required(true)
+      @Argument String src,
+      @Required(true)
+      @Argument String dest) {
+      def filestore = fileStore()
+      sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) {
+          def fsh = new FileStoreHelper(session, out);
+          fsh.mv(src, dest);
+        }
+      })
+    }
+
   @Usage("print tree of filestore structure")
   @Command
   void tree(
