@@ -9,211 +9,213 @@ html, body {
   height: 100%;
 }
 
+
 /* We nest the imports so that we can reuse them inside CKEditor
  * by adding the "nested-bootstrap" class. 
  */
-*, .nested-bootstrap {
+.nested-bootstrap {
   /* Using Bootstrap & Font Awesome */
-  @import 'lib/_font-awesome.less';
-  @import 'lib/_bootstrap.less';
-  @import 'lib/_typeahead.js-bootstrap.less';
+  @import 'lib/bootstrap/bootstrap.less';
+  @import 'lib/font-awesome.less';
+  @import 'lib/typeahead.js-bootstrap.less';
+}
 
-  /* Make short labels easily selectable */
-  span.glyphtree-node-label {
-  	display: inline-block;
-  	margin-left: 5px;
-  	width: 100%; /* Fill to the right border */
+.nested-bootstrap;
+
+/* Make short labels easily selectable */
+span.glyphtree-node-label {
+	display: inline-block;
+	margin-left: 5px;
+	width: 100%; /* Fill to the right border */
+}
+
+/* How labels should look when focused */
+span.glyphtree-node-label:focus {
+	outline: 0;
+	font-weight: bold;
+}
+
+/* Encourage glyphtree icon & label to stay on same line */
+.glyphtree-node {
+  white-space: nowrap;
+  .glyphtree-node-icon, .glyphtree-node-label {
+    display: inline-block;
+    vertical-align: top;
+    white-space: normal;
   }
+}
 
-  /* How labels should look when focused */
-  span.glyphtree-node-label:focus {
-  	outline: 0;
-  	font-weight: bold;
+.glyphtree-tree {
+  padding-left: 15px;
+}
+
+.chart-list {
+	margin-top: 5px;
+}
+
+.version-row > td {
+  vertical-align: middle !important;
+}
+
+#markdown-html, #html-tab, #html-diff-tab {
+	border: dashed 1px #dddddd;
+	.html-toolbar {
+	  padding: 5px;
+	}
+	.html-pane, .diff-pane {
+	  padding: 5px;
+		figure {
+		  padding: 1em;
+      text-align: center;
+      border-top: dotted 1px #eeeeee;
+      border-bottom: dotted 1px #eeeeee;
+	    img {
+	      display: block;
+	      width: 90%;
+	      margin-left: auto;
+	      margin-right: auto;
+	    }
+      figcaption {
+        margin-top: 1em;
+      }
+		}
+	}
+	.diff-pane {
+  ins {
+    background-color: #eeffee;
+    * {
+      background-color: #eeffee;
+    }
+    color: #468847;
+      img {
+        opacity: 0.5;
+      }
   }
-
-  /* Encourage glyphtree icon & label to stay on same line */
-  .glyphtree-node {
-    white-space: nowrap;
-    .glyphtree-node-icon, .glyphtree-node-label {
-      display: inline-block;
-      vertical-align: top;
-      white-space: normal;
+  del {
+      background-color: #ffeeee;
+      * {
+        background-color: #ffeeee;
+      }
+    color: #b94a48;
+    img {
+      opacity: 0.5;
     }
   }
+	}
+}
 
-  .glyphtree-tree {
-    padding-left: 15px;
-  }
+#markdown-source .source-pane {
+  padding: 5px;
+  width: 100%;
+  min-height: 15em;
+}
 
-  .chart-list {
-  	margin-top: 5px;
-  }
-  
-  .version-row > td {
-    vertical-align: middle !important;
-  }
+#markdown-diff .diff-pane {
+  padding: 5px;
+  width: 100%;
+  min-height: 15em;
+  white-space: pre-wrap;
+}
 
-  #markdown-html, #html-tab, #html-diff-tab {
-  	border: dashed 1px #dddddd;
-  	.html-toolbar {
-  	  padding: 5px;
-  	}
-  	.html-pane, .diff-pane {
-  	  padding: 5px;
-  		figure {
-  		  padding: 1em;
-        text-align: center;
-        border-top: dotted 1px #eeeeee;
-        border-bottom: dotted 1px #eeeeee;
-  	    img {
-  	      display: block;
-  	      width: 90%;
-  	      margin-left: auto;
-  	      margin-right: auto;
-  	    }
-        figcaption {
-          margin-top: 1em;
-        }
-  		}
-  	}
-  	.diff-pane {
-		  ins {
-		    background-color: #eeffee;
-		    * {
-		      background-color: #eeffee;
-		    }
-		    color: #468847;
-        img {
-          opacity: 0.5;
-        }
-		  }
-		  del {
-        background-color: #ffeeee;
-        * {
-          background-color: #ffeeee;
-        }
-		    color: #b94a48;
-		    img {
-		      opacity: 0.5;
-		    }
-		  }
-  	}
-  }
+#nav-back.hidden {
+  display: none;
+}
 
-  #markdown-source .source-pane {
-    padding: 5px;
-    width: 100%;
-    min-height: 15em;
-  }
+#nav-back {
+  display: none;
+}
 
-  #markdown-diff .diff-pane {
-    padding: 5px;
-    width: 100%;
-    min-height: 15em;
-    white-space: pre-wrap;
-  }
+/* Ensure that there's a space between icon and text */
+.btn i + span {
+  padding-left: 1ex;
+}
 
-  #nav-back.hidden {
-    display: none;
+/* Remove default bottom margin, and prevent wrapping inside widget */
+.counter-button {
+	margin-bottom: 0;
+	white-space: nowrap;
+	.active {
+	  border-color: #cccccc;
+	}
+}
+
+/* Allow white-space to control wrapping */
+.counter-button {
+  width: 5em;
+}
+
+/* Fix alignment of buttons */
+.region-buttons li .view {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.green-text {
+  color: #468847;
+}
+
+.red-text {
+	color: #b94a48;
+}
+
+@media @phone {
+	#notifications-nav {
+	  .navbar-toggle();
+    margin-top: 4px;
+    top: 0px;
+    right: 20px;
+    border: 0;
+    padding: 0;
   }
 
   #nav-back {
+    margin-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+@media @desktop {
+	.sidebar-panel {
+	  cursor: pointer;
+	  overflow: hidden;
+	  &.collapsed {
+	    float: left;
+	    width: 45px;
+	    .panel-heading {
+	      height: 500px;
+	      .title-text {
+	        display: none;
+	      }
+	    }
+	    .panel-body {
+	      display: none;
+	    }
+	  }
+	}
+}
+
+@media @not-desktop {
+
+  #nav-back {
+    display: block;
+    li {
+      width: 60px;
+    }
+  }
+
+  #sidebar, #main {
     display: none;
   }
 
-  /* Ensure that there's a space between icon and text */
-  .btn i + span {
-    padding-left: 1ex;
+  #sidebar.active, #main.active {
+    display: block;
   }
 
-  /* Remove default bottom margin, and prevent wrapping inside widget */
-  .counter-button {
-  	margin-bottom: 0;
-  	white-space: nowrap;
-  	.active {
-  	  border-color: #cccccc;
-  	}
-  }
-
-  /* Allow white-space to control wrapping */
-  .counter-button {
-    width: 5em;
-  }
-
-  /* Fix alignment of buttons */
-  .region-buttons li .view {
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-  .clickable {
-    cursor: pointer;
-  }
-
-  .green-text {
-    color: #468847;
-  }
-
-  .red-text {
-  	color: #b94a48;
-  }
-
-  @media @phone {
-  	#notifications-nav {
-  	  .navbar-toggle();
-      margin-top: 4px;
-      top: 0px;
-      right: 20px;
-      border: 0;
-      padding: 0;
-    }
-
-    #nav-back {
-      margin-left: 0;
-      margin-top: 0;
-      margin-bottom: 0;
-    }
-  }
-
-  @media @desktop {
-  	.sidebar-panel {
-  	  cursor: pointer;
-  	  overflow: hidden;
-  	}
-
-  	.sidebar-panel.collapsed {
-  	  float: left;
-  	  width: 45px;
-  	  .panel-heading {
-  	    height: 500px;
-  	    .title-text {
-  	      display: none;
-  	    }
-  	  }
-  	  .panel-body {
-  	    display: none;
-  	  }
-  	}
-  }
-
-  @media @not-desktop {
-
-    #nav-back {
-      display: block;
-      li {
-        width: 60px;
-      }
-    }
-
-    #sidebar, #main {
-      display: none;
-    }
-
-    #sidebar.active, #main.active {
-      display: block;
-    }
-
-  }
 }
 
 html.hero-page {

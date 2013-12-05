@@ -78,6 +78,9 @@ object ApplicationBuild extends Build {
       dependencies = appDependencies, settings = s).settings(
     version <<= version in ThisBuild,
     unmanagedResourceDirectories in Compile += file("resources"),
+    lessEntryPoints <<= (sourceDirectory in Compile)(base => (
+      (base / "assets" / "stylesheets" * "*.less")
+    )),
     // Produce scala object that knows the app version
     sourceGenerators in Compile <+= (sourceManaged in Compile, version) map { (dir, v) =>
       val file = dir / "helpers" / "AppVersion.scala"
