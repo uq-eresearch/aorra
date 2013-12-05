@@ -722,7 +722,7 @@ public final class FileStoreController extends SessionAwareController {
 
   protected Result notFoundOfRequestedType() {
     final NotFoundMessage nf = NotFoundMessage.from(request().acceptedTypes());
-    return notFound(nf.inputStream()).as(nf.mimeType());
+    return notFound(nf.bytes()).as(nf.mimeType());
   }
 
 }

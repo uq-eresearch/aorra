@@ -2,12 +2,14 @@ package controllers
 
 import play.api.http.MediaRange
 import scala.collection.JavaConversions.asScalaBuffer
+import org.apache.commons.io.IOUtils.toByteArray
 
 case class NotFoundMessage(val mimeType: String, resourcePath: String) {
 
   def inputStream: java.io.InputStream =
     getClass.getResourceAsStream(resourcePath)
 
+  def bytes: Array[Byte] = toByteArray(inputStream)
 }
 
 object NotFoundMessage {
