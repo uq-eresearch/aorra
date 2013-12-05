@@ -20,6 +20,8 @@ public class AorraSvgGraphics2D extends SVGGraphics2D {
 
     private final String SCRIPT_NAME = "tooltip.js";
 
+    private boolean inject = false;
+
     public AorraSvgGraphics2D(Document domFactory,
             ImageHandler imageHandler,
             ExtensionHandler extensionHandler,
@@ -30,7 +32,7 @@ public class AorraSvgGraphics2D extends SVGGraphics2D {
     @Override
     public Element getRoot(Element svgRoot) {
         svgRoot = super.getRoot(svgRoot);
-        if(svgRoot != null && SVG_SVG_TAG.equals(svgRoot.getTagName())) {
+        if(svgRoot != null && SVG_SVG_TAG.equals(svgRoot.getTagName()) && inject) {
             injectTooltip(svgRoot);
         }
         return svgRoot;
@@ -67,6 +69,7 @@ public class AorraSvgGraphics2D extends SVGGraphics2D {
     }
 
     private Element addTooltip(Element svgElement, String tooltip) {
+        inject = true;
         svgElement.setAttributeNS(null, SVG_ONMOUSEMOVE_ATTRIBUTE,
                 "showTooltip(evt, '"+StringEscapeUtils.escapeJavaScript(tooltip)+"')");
         svgElement.setAttributeNS(null, SVG_ONMOUSEOUT_ATTRIBUTE, "hideTooltip(evt)");
