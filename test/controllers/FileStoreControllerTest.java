@@ -1030,23 +1030,33 @@ public class FileStoreControllerTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         final FileStore.Manager fm = fileStore().getManager(session);
+        final FileStore.File file =
+            fm.getRoot().createFile("test file.txt", "text/plain",
+                new ByteArrayInputStream("Some content.".getBytes()));
         {
-          final FileStore.File file =
-              fm.getRoot().createFile("test file.txt", "text/plain",
-                  new ByteArrayInputStream("Some content.".getBytes()));
-          for (String versionString : new String[] {"1.0", "latest"}) {
-            final Result result = callAction(
-                controllers.routes.ref.FileStoreController.downloadFile(
-                    file.getIdentifier(),
-                    versionString),
-                newRequest.withHeader("Accept", "text/plain"));
-            assertThat(status(result)).isEqualTo(200);
-            assertThat(contentType(result)).isEqualTo("text/plain");
-            assertThat(header("Cache-Control", result))
-              .isEqualTo("max-age=0, must-revalidate");
-            assertThat(header("Content-Disposition", result))
-              .startsWith("attachment; filename=test%20file");
-          }
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.downloadFile(
+                  file.getIdentifier(),
+                  "latest"),
+              newRequest.withHeader("Accept", "text/plain"));
+          assertThat(status(result)).isEqualTo(303);
+          assertThat(header("Location", result)).isEqualTo(
+              controllers.routes.FileStoreController.downloadFile(
+                  file.getIdentifier(), "1.0").url());
+        }
+        {
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.downloadFile(
+                  file.getIdentifier(),
+                  "1.0"),
+              newRequest.withHeader("Accept", "text/plain"));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("text/plain");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          assertThat(header("Last-Modified", result)).isNotNull();
+          assertThat(header("Content-Disposition", result))
+            .startsWith("attachment; filename=test%20file");
         }
         {
           final String notFoundId = UUID.randomUUID().toString();
