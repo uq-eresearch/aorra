@@ -685,7 +685,6 @@ public class FileStoreImpl implements FileStore {
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final Event event = Events.delete(this);
       if (entity.getVersion().equals(file.getLatestVersionName())) {
         final List<models.filestore.File> versions =
             getDAO().getVersionListById(file.getIdentifier());
@@ -696,6 +695,7 @@ public class FileStoreImpl implements FileStore {
             versions.get(versions.size()-2).getVersion(), true);
       }
       getDAO().removeVersionById(file.getIdentifier(), entity.getVersion());
+      final Event event = Events.update(this.file);
       eventManagerImpl.tell(event);
       file.reload();
     }
