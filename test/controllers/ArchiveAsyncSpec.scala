@@ -105,7 +105,7 @@ class ArchiveAsyncSpec extends Specification {
           filename.split("\\.").last
         }
 
-        filenamesByExt must haveKeys("csv", "docx", "emf", "html", "png", "svg")
+        filenamesByExt must haveKeys("csv", "emf", "pdf", "png", "svg")
 
         filenamesByExt.forall { case (k, v) =>
           v must haveSize(7)
@@ -160,7 +160,7 @@ class ArchiveAsyncSpec extends Specification {
           filename.split("\\.").last
         }
 
-        filenamesByExt must haveKeys("docx", "emf", "png", "svg")
+        filenamesByExt must haveKeys("emf", "pdf", "png", "svg")
 
         filenamesByExt.forall { case (k, v) =>
           v must haveSize(15)

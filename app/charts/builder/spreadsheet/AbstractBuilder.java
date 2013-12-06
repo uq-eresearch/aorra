@@ -48,24 +48,6 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       }
   }
 
-  protected String getCommentary(SpreadsheetDataSource datasource,
-      Region region) throws UnsupportedFormatException {
-    try {
-      for (int nRow = 0; nRow < Integer.MAX_VALUE; nRow++) {
-        final String k = datasource.select("Commentary", nRow, 0)
-            .asString();
-        final String v = datasource.select("Commentary", nRow, 1)
-            .asString();
-        if (k == null || v == null)
-          break;
-        if (region.getName().equals(k)) {
-          return (new PegDownProcessor()).markdownToHtml(v);
-        }
-      }
-    } catch (MissingDataException e) {}
-    throw new UnsupportedFormatException();
-  }
-
   protected Map<String, List<String>> getParameters(SpreadsheetDataSource datasource, ChartType type) {
       return Maps.newHashMap();
   }

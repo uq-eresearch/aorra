@@ -401,8 +401,7 @@ public class ChartTest {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       private final Format[] OTHER_FORMATS = new Format[] {
         Format.PNG,
-        Format.EMF,
-        Format.DOCX
+        Format.EMF
       };
 
       @Override
@@ -573,50 +572,6 @@ public class ChartTest {
           }
           assertThat(rowCount).isEqualTo(7);
           listReader.close();
-        }
-        return session;
-      }
-    });
-  }
-
-  @Test
-  public void commentary() {
-    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
-      @Override
-      public Session apply(
-          final Session session,
-          final User user,
-          final FakeRequest newRequest) throws Throwable {
-        // Marine chart CSV
-        {
-          final FileStore.File f = createMarineChartFile(session);
-          final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("marine", "html",
-                  ImmutableList.<String>of(f.getIdentifier())),
-              newRequest);
-          assertThat(status(result)).isEqualTo(200);
-          assertThat(contentType(result)).isEqualTo("text/html");
-          assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(contentAsString(result)).isEqualTo(
-            "<p>This is the <em>Great Barrier Reef</em> overview.</p>\n"+
-            "<ul>\n"+
-            "  <li>Write in Markdown</li>\n"+
-            "  <li>It's converted to HTML</li>\n"+
-            "</ul>");
-        }
-        {
-          final FileStore.File f = createTrackingTowardsTargetsChartFile(
-              session, "grazing");
-          final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("ttt_grazing",
-                  "html",
-                  ImmutableList.<String>of(f.getIdentifier())),
-              newRequest);
-          assertThat(status(result)).isEqualTo(200);
-          assertThat(contentType(result)).isEqualTo("text/html");
-          assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(contentAsString(result)).isEqualTo(
-            "<p><em>Nothing yet.</em></p>");
         }
         return session;
       }

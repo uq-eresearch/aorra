@@ -99,11 +99,6 @@ public class MarineBuilder extends AbstractBuilder {
           }
           return sw.toString();
         }
-
-        @Override
-        public String getCommentary() throws UnsupportedFormatException {
-          return thisBuilder.getCommentary(datasource, region);
-        }
       };
     } else {
       return null;

@@ -142,11 +142,6 @@ public class ProgressTableBuilder extends AbstractBuilder {
           }
           return sw.toString();
         }
-
-        @Override
-        public String getCommentary() throws UnsupportedFormatException {
-          return ProgressTableBuilder.this.getCommentary(datasource, region);
-        }
       };
     }
     return null;

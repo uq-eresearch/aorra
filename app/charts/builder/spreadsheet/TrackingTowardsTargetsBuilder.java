@@ -134,29 +134,6 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
           return sw.toString();
         }
 
-        @Override
-        public String getCommentary() throws UnsupportedFormatException {
-          final List<ChartType> cIdx = ImmutableList.copyOf(new ChartType[] {
-            ChartType.TTT_CANE_AND_HORT,
-            ChartType.TTT_GRAZING,
-            ChartType.TTT_NITRO_AND_PEST,
-            ChartType.TTT_SEDIMENT
-          });
-          try {
-            for (int nRow = 0; nRow < Integer.MAX_VALUE; nRow++) {
-              final String k = ds.select("Commentary", nRow, 0)
-                  .asString();
-              final String v = ds.select("Commentary", nRow,
-                  cIdx.indexOf(type) + 1).asString();
-              if (k == null || v == null)
-                break;
-              if (region.getName().equals(k)) {
-                return (new PegDownProcessor()).markdownToHtml(v);
-              }
-            }
-          } catch (MissingDataException e) {}
-          throw new UnsupportedFormatException();
-        }
       };
     }
     return null;

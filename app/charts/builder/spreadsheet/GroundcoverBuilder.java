@@ -55,7 +55,7 @@ public class GroundcoverBuilder extends AbstractBuilder {
                 List<Value> col1 = datasource.selectColumn(1);
                 return SpreadsheetDataSource.containsString(row0, "Region") &&
                         SpreadsheetDataSource.containsString(row0, "Type") &&
-                        SpreadsheetDataSource.containsString(row0, "AllYearMean") && 
+                        SpreadsheetDataSource.containsString(row0, "AllYearMean") &&
                         SpreadsheetDataSource.containsString(col1, "Catchment") &&
                         SpreadsheetDataSource.containsString(col1, "Region");
             }
@@ -126,11 +126,7 @@ public class GroundcoverBuilder extends AbstractBuilder {
               }
               return sw.toString();
             }
-
-            @Override
-            public String getCommentary() throws UnsupportedFormatException {
-                throw new UnsupportedFormatException();
-            }};
+        };
         return chart;
     }
 

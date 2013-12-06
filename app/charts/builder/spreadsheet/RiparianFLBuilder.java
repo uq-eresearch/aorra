@@ -34,7 +34,7 @@ public class RiparianFLBuilder extends AbstractBuilder {
     @Override
     public boolean canHandle(SpreadsheetDataSource datasource) {
         try {
-            return StringUtils.equalsIgnoreCase(TITLE, 
+            return StringUtils.equalsIgnoreCase(TITLE,
                     StringUtils.strip(datasource.select("B1").asString())) ||
                     StringUtils.equalsIgnoreCase(TITLE,
                     StringUtils.strip(datasource.select("L1").asString()));
@@ -106,10 +106,7 @@ public class RiparianFLBuilder extends AbstractBuilder {
                     return sw.toString();
                 }
 
-                @Override
-                public String getCommentary() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }};
+            };
         } else {
             return null;
         }

@@ -125,7 +125,7 @@ public class WetlandsLossBuilder extends AbstractBuilder {
                       DecimalFormat f = new DecimalFormat(".##");
                       for(int cat=0;cat<dataset.getColumnCount();cat++) {
                           csv.write(dataset.getColumnKey(cat), f.format(dataset.getValue(0, cat)),
-                              f.format(dataset.getValue(1, cat)), f.format(dataset.getValue(2, cat)), 
+                              f.format(dataset.getValue(1, cat)), f.format(dataset.getValue(2, cat)),
                               f.format(dataset.getValue(3, cat)));
                       }
                       csv.close();
@@ -136,10 +136,7 @@ public class WetlandsLossBuilder extends AbstractBuilder {
                     return sw.toString();
                 }
 
-                @Override
-                public String getCommentary() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }};
+            };
         } else {
             return null;
         }

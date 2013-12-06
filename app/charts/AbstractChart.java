@@ -58,22 +58,15 @@ public abstract class AbstractChart implements Chart {
 
   public abstract String getCSV() throws UnsupportedFormatException;
 
-  public abstract String getCommentary() throws UnsupportedFormatException;
-
   @Override
   public Representation outputAs(Format format)
       throws UnsupportedFormatException {
     switch (format) {
     case CSV:
       return format.createRepresentation(getCSV());
-    case DOCX:
-      return format.createRepresentation(
-          renderDOCX(getChart()));
     case EMF: // For embedding in Word documents
       return format.createRepresentation(
           renderEMF(getChart()));
-    case HTML:
-      return format.createRepresentation(getCommentary());
     case SVG:
       return format.createRepresentation(
           renderSVG(getChart(), queryDimensions));
@@ -90,7 +83,7 @@ public abstract class AbstractChart implements Chart {
     throw new Chart.UnsupportedFormatException();
   }
 
-protected byte[] renderPDF(Drawable d, Dimension dimensions) {
+  protected byte[] renderPDF(Drawable d, Dimension dimensions) {
     try {
         Document doc = toDocument(getDrawableDocument(d), dimensions);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -110,9 +103,9 @@ protected byte[] renderPDF(Drawable d, Dimension dimensions) {
     } catch(TranscoderException e) {
         throw new RuntimeException(e);
     }
-}
+  }
 
-protected String renderEPS(Drawable d, Dimension dimensions) {
+  protected String renderEPS(Drawable d, Dimension dimensions) {
     try {
         Document doc = toDocument(getDrawableDocument(d), dimensions);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -132,58 +125,6 @@ protected String renderEPS(Drawable d, Dimension dimensions) {
     } catch(TranscoderException e) {
         throw new RuntimeException(e);
     }
-}
-
-protected byte[] renderDOCX(Drawable d) {
-    final TemporaryFile tf = TemporaryFile$.MODULE$.apply("aorra_docx_", "");
-    try {
-      WordprocessingMLPackage wordMLPackage =
-          WordprocessingMLPackage.createPackage();
-      // Insert image
-      org.docx4j.wml.P p;
-      try {
-        Inline inline = BinaryPartAbstractImage
-            .createImagePart(wordMLPackage, renderEMF(d))
-            .createImageInline(null, null, 0, 1, false);
-        // From samples/ImageAdd.java in docx4j
-        // Now add the inline in w:p/w:r/w:drawing
-        org.docx4j.wml.ObjectFactory factory = Context.getWmlObjectFactory();
-        p = factory.createP();
-        org.docx4j.wml.R run = factory.createR();
-        p.getContent().add(run);
-        org.docx4j.wml.Drawing drawing = factory.createDrawing();
-        run.getContent().add(drawing);
-        drawing.getAnchorOrInline().add(inline);
-      } catch (Exception e) {
-        // Not really sure what could go wrong here
-        throw new RuntimeException(e);
-      }
-      wordMLPackage.getMainDocumentPart()
-        .getContent()
-        .add(p);
-      // Insert commentary
-      try {
-        final String xhtml = "<div>"+getCommentary()+"</div>";
-          wordMLPackage.getMainDocumentPart()
-            .getContent()
-            .addAll(XHTMLImporter.convert(xhtml, null, wordMLPackage));
-      } catch (UnsupportedFormatException e) {
-        // Skip commentary
-      }
-      wordMLPackage.save(tf.file());
-    } catch (InvalidFormatException e) {
-      throw new RuntimeException(e);
-    } catch (Docx4JException e) {
-      throw new RuntimeException(e);
-    }
-    final ByteArrayOutputStream os = new ByteArrayOutputStream();
-    try {
-      final InputStream is = new FileInputStream(tf.file());
-      IOUtils.copy(is, os);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return os.toByteArray();
   }
 
   protected byte[] renderEMF(Drawable d) {
