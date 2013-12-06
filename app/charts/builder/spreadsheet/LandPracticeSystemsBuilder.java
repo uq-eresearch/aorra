@@ -90,23 +90,20 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
         return new AbstractChart(dimensions) {
             @Override
             public ChartDescription getDescription() {
-              return new ChartDescription(type, region);
+              return new ChartDescription(type, region, title());
             }
 
             @Override
             public Drawable getChart() {
               return LandPracticeSystems.createChart(
                   createDataset(datasource, type, region),
-                  title(),
+                  title() + " - " + region.getProperName(),
                   new Dimension(750, 500));
             }
 
             private String title() {
-                if(type == ChartType.SUGARCANE_PS && region == Region.FITZROY) {
-                    return "Grains Practice Systems - " + region.getProperName();
-                } else {
-                    return type.getLabel() + " - " + region.getProperName();
-                }
+                return (type == ChartType.SUGARCANE_PS && region == Region.FITZROY)?
+                    "Grains Practice Systems":type.getLabel();
             }
 
             @Override

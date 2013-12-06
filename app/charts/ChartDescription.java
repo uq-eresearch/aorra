@@ -22,6 +22,11 @@ public class ChartDescription {
       this.region = checkNotNull(region);
     }
 
+    public ChartDescription(ChartType type, Region region, String title) {
+      this(type, region);
+      this.title = title;
+    }
+
     public ChartDescription(ChartType type, Region region, Map<String, ?> parameters) {
         this(type, region);
         this.parameters = parameters;
