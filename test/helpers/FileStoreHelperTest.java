@@ -335,7 +335,7 @@ public class FileStoreHelperTest {
         // Check output without permissions (null & false both work)
         for (final Boolean flag : new Boolean[] { null, false }) {
           // Check tree output from root
-          fsh.tree("", flag);
+          fsh.tree("", flag, false);
           assertThat(pwt.dump()).isEqualTo(
               "/ (root)\n"+
               "|-+ foo\n"+
@@ -343,16 +343,16 @@ public class FileStoreHelperTest {
               "|   |   |-- test.txt\n");
         }
         // Check tree output with permissons
-        fsh.tree("", true);
+        fsh.tree("", true, false);
         assertThat(pwt.dump()).isEqualTo(
             "/ (root)\n"+
             "|-+ foo {foo=NONE}\n"+
             "|   |-+ bar {foo=RO}\n"+
             "|   |   |-- test.txt\n");
         // Check some things we can't do
-        fsh.tree("/foo/bar/test.txt", false);
+        fsh.tree("/foo/bar/test.txt", false, false);
         assertThat(pwt.dump()).isEqualTo("/foo/bar/test.txt is a file\n");
-        fsh.tree("/doesnotexist", false);
+        fsh.tree("/doesnotexist", false, false);
         assertThat(pwt.dump()).isEqualTo("no such folder /doesnotexist\n");
         return session;
       }
