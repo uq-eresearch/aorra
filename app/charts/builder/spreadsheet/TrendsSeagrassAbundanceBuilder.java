@@ -153,7 +153,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
       return new AbstractChart(dimensions) {
         @Override
         public ChartDescription getDescription() {
-          return new ChartDescription(type, region, parameters);
+          return new ChartDescription(type, region, parameters, "TSA at "+subregion.getLabel());
         }
 
         @Override

@@ -15,6 +15,8 @@ public class ChartDescription {
 
     private Map<String, ?> parameters = Maps.newHashMap();
 
+    private String title;
+
     public ChartDescription(ChartType type, Region region) {
       this.type = checkNotNull(type);
       this.region = checkNotNull(region);
@@ -25,12 +27,21 @@ public class ChartDescription {
         this.parameters = parameters;
     }
 
+    public ChartDescription(ChartType type, Region region, Map<String, ?> parameters, String title) {
+        this(type, region, parameters);
+        this.title = title;
+    }
+
     public ChartType getType() {
       return type;
     }
 
     public Region getRegion() {
       return region;
+    }
+
+    public String getTitle() {
+        return title!=null?title:type.getLabel();
     }
 
     public Object getParameter(String name) {
@@ -51,6 +62,10 @@ public class ChartDescription {
           sb.append(String.format("[%s-%s]",
               e.getKey(), e.getValue().toString()));
         }
+      }
+      if(title!=null) {
+          sb.append("-");
+          sb.append(title);
       }
       return sb.toString();
     }

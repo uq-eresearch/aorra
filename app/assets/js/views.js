@@ -1017,7 +1017,7 @@ define([
       var makeChartAttrs = function(region) {
         return function(c, i) {
           return _(c).extend({
-            title: c.type,
+            title: c.title,
             slug: _.template("<%=v.type%>-<%=v.region%>-<%=v.uniqueId%>",
               {
                 type: _s.slugify(c.type),
