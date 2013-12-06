@@ -17,13 +17,11 @@ requirejs.config({
       'jquery.bootstrap': 'lib/bootstrap',
       'jquery.ckeditor': '../ckeditor/adapters/jquery',
       'jquery.hotkeys': 'lib/jquery.hotkeys',
-      'jquery.bootstrap-wysiwyg': 'lib/bootstrap-wysiwyg',
       'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
       'q': '//cdnjs.cloudflare.com/ajax/libs/q.js/0.9.6/q.min',
-      'to-markdown': 'lib/to-markdown',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
       'underscore': '//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min',
       'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',
@@ -65,10 +63,6 @@ requirejs.config({
       },
       'jquery.ui': {
         deps: ['jquery'],
-        exports: 'jQuery'
-      },
-      'jquery.bootstrap-wysiwyg': {
-        deps: ['jquery', 'jquery.hotkeys'],
         exports: 'jQuery'
       },
       'FileAPI': {
