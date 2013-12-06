@@ -113,10 +113,7 @@ public class WetlandsRemaingBuilder extends AbstractBuilder {
                     return sw.toString();
                 }
 
-                @Override
-                public String getCommentary() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }};
+            };
         } else {
             return null;
         }

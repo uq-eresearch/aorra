@@ -86,7 +86,6 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
       return null;
     }
     final DefaultCategoryDataset dataset = createDataset(datasource, region);
-    final AbstractBuilder thisBuilder = this;
     final Chart chart = new AbstractChart(dimensions) {
       @Override
       public ChartDescription getDescription() {
@@ -115,11 +114,6 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
           throw new RuntimeException(e);
         }
         return sw.toString();
-      }
-
-      @Override
-      public String getCommentary() throws UnsupportedFormatException {
-        return thisBuilder.getCommentary(datasource, region);
       }
     };
     return chart;

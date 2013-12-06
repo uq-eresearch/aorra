@@ -25,7 +25,7 @@ public class ChartBuilderTest {
   @Test
   public void format() {
     for (final ChartType ct : ChartType.values()) {
-      for (final Format f : new Format[]{Format.CSV, Format.DOCX, Format.EMF}) {
+      for (final Format f : new Format[]{Format.CSV, Format.EMF}) {
         format(ct, f);
       }
     }

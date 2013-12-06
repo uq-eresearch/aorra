@@ -34,7 +34,7 @@ public class RiparianFLTBuilder extends AbstractBuilder {
         try {
             return StringUtils.equalsIgnoreCase(TITLE,
                     StringUtils.strip(datasource.select("B1").asString()));
-            
+
         } catch(MissingDataException e) {}
         return false;
     }
@@ -68,7 +68,7 @@ public class RiparianFLTBuilder extends AbstractBuilder {
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
             final Region region, Dimension queryDimensions) {
-        
+
         if(setupDataSource(datasource, region)) {
             final CategoryDataset dataset = getDataset(datasource);
             return new AbstractChart(queryDimensions) {
@@ -105,10 +105,7 @@ public class RiparianFLTBuilder extends AbstractBuilder {
                     return sw.toString();
                 }
 
-                @Override
-                public String getCommentary() throws UnsupportedFormatException {
-                    throw new UnsupportedFormatException();
-                }};
+            };
         } else {
             return null;
         }

@@ -201,11 +201,7 @@ public class LoadsBuilder extends AbstractBuilder {
               }
               return sw.toString();
             }
-
-            @Override
-            public String getCommentary() throws UnsupportedFormatException {
-                throw new UnsupportedFormatException();
-            }};
+        };
     }
 
     private Chart buildLoads(final SpreadsheetDataSource datasource, final ChartType type,
@@ -262,10 +258,7 @@ public class LoadsBuilder extends AbstractBuilder {
               return sw.toString();
             }
 
-            @Override
-            public String getCommentary() throws UnsupportedFormatException {
-                throw new UnsupportedFormatException();
-            }};
+        };
     }
 
     private CategoryDataset getRegionsDataset(SpreadsheetDataSource ds,

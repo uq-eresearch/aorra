@@ -4,9 +4,7 @@ import java.io.UnsupportedEncodingException;
 
 public enum Format {
   CSV ("text/csv"),
-  DOCX ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
   EMF ("image/x-emf"),
-  HTML ("text/html"),
   PNG ("image/png"),
   SVG ("image/svg+xml"),
   EPS ("image/x-eps"),

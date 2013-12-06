@@ -114,11 +114,6 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
         }
         return sw.toString();
       }
-
-      @Override
-      public String getCommentary() throws UnsupportedFormatException {
-        return thisBuilder.getCommentary(datasource, region);
-      }
     };
     return chart;
   }
