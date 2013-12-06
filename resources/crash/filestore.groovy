@@ -186,6 +186,21 @@ class filestore {
       })
   }
 
+  @Usage("show file/folder information")
+  @Command
+  String info(
+    @Required(true)
+    @Usage("path or id of file/folder")
+    @Argument
+    String pathOrId) {
+    sessionFactory().inSession(new Function<Session, String>() {
+        public String apply(Session session) {
+            def fsh = new FileStoreHelper(session, out);
+            fsh.printInfo(pathOrId);
+        }
+      })
+  }
+
   private JcrSessionFactory sessionFactory() {
     return GuiceInjectionPlugin.getInjector(application())
                                .getInstance(JcrSessionFactory.class);

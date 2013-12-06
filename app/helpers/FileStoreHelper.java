@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
@@ -426,6 +427,30 @@ public class FileStoreHelper {
       }
     }
     return b.build();
+  }
+
+  public void printInfo(final String pathOrId) throws RepositoryException {
+      FileStore.FileOrFolder f = null;
+      try {
+          f = fileStore().getManager(session).getByIdentifier(pathOrId);
+      } catch(IllegalArgumentException e) {}
+      if(f == null) {
+          f = fileStore().getManager(session).getFileOrFolder(pathOrId);
+      }
+      if(f != null) {
+          out.println(f.getPath());
+          out.println("id " + f.getIdentifier());
+          if(f instanceof FileStore.File) {
+              FileStore.File file = (FileStore.File)f;
+              out.println("author "+file.getAuthor().getName()+" - "+file.getAuthor().getEmail());
+              out.println("mimetype "+file.getMimeType());
+              out.println("modification time "+new SimpleDateFormat(
+                  "EEE, d MMM yyyy HH:mm:ss zzzz").format(file.getModificationTime().getTime()));
+          }
+          out.println("depth "+f.getDepth());
+      } else {
+          out.println(String.format("file or folder %s not found", pathOrId));
+      }
   }
 
   private FileStore.File getFile(FileStore.Folder folder, String name) throws RepositoryException {
