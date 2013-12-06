@@ -2,6 +2,7 @@ package service.filestore;
 
 import jackrabbit.AorraAccessManager;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
@@ -93,26 +94,28 @@ public class FileStoreImpl implements FileStore {
       @Override
       public Session apply(Session session) {
         try {
-          final FolderDAO dao = new FolderDAO(session, jcrom);
-          if (dao.get(FILE_STORE_PATH) == null) {
-            final models.filestore.Folder entity =
-                new models.filestore.Folder(null, FILE_STORE_NODE_NAME);
-            final String path =
-                FILE_STORE_PATH.replaceFirst(FILE_STORE_NODE_NAME+"$", "");
-            Logger.debug("Creating new filestore root at "+path);
-            dao.create(path, entity);
-            ((FileStoreImpl.Folder) getManager(session).getRoot())
-              .resetPermissions();
-          }
+          ensureRootExists(session);
           return session;
-        } catch (PathNotFoundException e) {
-          throw new RuntimeException(e);
         } catch (RepositoryException e) {
           throw new RuntimeException(e);
         }
       }
-    });
 
+      private void ensureRootExists(Session session) throws RepositoryException {
+        final FolderDAO dao = new FolderDAO(session, jcrom);
+        if (dao.get(FILE_STORE_PATH) == null) {
+          final models.filestore.Folder entity =
+              new models.filestore.Folder(null, FILE_STORE_NODE_NAME);
+          final String path =
+              FILE_STORE_PATH.replaceFirst(FILE_STORE_NODE_NAME+"$", "");
+          Logger.debug("Creating new filestore root at "+path);
+          dao.create(path, entity);
+          ((FileStoreImpl.Folder) getManager(session).getRoot())
+            .resetPermissions();
+        }
+      }
+
+    });
   }
 
   /* (non-Javadoc)
