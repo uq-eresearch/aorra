@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.UUID;
 
 import javax.jcr.RepositoryException;
@@ -21,10 +21,12 @@ import models.Notification;
 import models.User;
 
 import org.apache.commons.lang.NotImplementedException;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.junit.Test;
 
 import com.google.common.io.ByteStreams;
@@ -380,7 +382,7 @@ public class JsonBuilderTest {
     }
 
     @Override
-    public SortedMap<String, FileStore.File> getVersions()
+    public SortedSet<FileStore.File> getVersions()
         throws RepositoryException {
       throw new NotImplementedException();
     }

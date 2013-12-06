@@ -1,35 +1,24 @@
 package helpers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
-import java.util.Map;
 
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ContentHandlerDecorator;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import scala.Tuple2;
-import play.Logger;
 import play.Play;
+import scala.Tuple2;
 import service.GuiceInjectionPlugin;
 import service.filestore.FileStore;
 
@@ -98,14 +87,14 @@ public class ExtractionHelper {
     return new Tuple2<ContentHandler,Metadata>(handler, metadata);
   }
 
-  private FileStore.File getVersion(String version, FileStore.File file)
+  private FileStore.File getVersion(String versionName, FileStore.File file)
       throws RepositoryException {
-    final Map<String, FileStore.File> versions = file.getVersions();
-    if (versions.containsKey(version)) {
-      return versions.get(version);
-    } else {
-      return file;
+    for (FileStore.File version : file.getVersions()) {
+      if (version.getName().equals(versionName)) {
+        return version;
+      }
     }
+    return file;
   }
 
   protected FileStore fileStore() {

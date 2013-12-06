@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
@@ -463,11 +464,10 @@ public class FileStoreTest {
             f = (FileStore.File) fileStoreImpl
                 .getManager(session)
                 .getFileOrFolder("/"+filename);
-            final SortedMap<String, FileStore.File> versions = f.getVersions();
+            final SortedSet<FileStore.File> versions = f.getVersions();
             i = 1;
-            for (final String versionName : versions.keySet()) {
-              final FileStore.File v = versions.get(versionName);
-              assertThat(versionName).isEqualTo(String.format("1.%d", i-1));
+            for (final FileStore.File v : versions) {
+              assertThat(v.getName()).isEqualTo(String.format("1.%d", i-1));
               assertThat(ByteStreams.toByteArray(v.getData()))
                 .isEqualTo(getSomeContent(i).getBytes());
               i++;

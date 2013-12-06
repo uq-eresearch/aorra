@@ -8,6 +8,7 @@ import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,6 +40,7 @@ import models.filestore.FolderDAO;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.jackrabbit.api.security.user.Group;
 import org.apache.jackrabbit.core.security.principal.EveryonePrincipal;
 import org.apache.jackrabbit.spi.Path;
@@ -66,6 +68,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -583,18 +586,29 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
-    public SortedMap<String, service.filestore.FileStore.File> getVersions()
+    public SortedSet<service.filestore.FileStore.File> getVersions()
         throws RepositoryException {
-      final ImmutableSortedMap.Builder<String,FileStore.File> b =
-          ImmutableSortedMap.<String,FileStore.File>naturalOrder();
+      final Comparator<FileStore.File> c = new Comparator<FileStore.File>() {
+        @Override
+        public int compare(service.filestore.FileStore.File o1,
+            service.filestore.FileStore.File o2) {
+          return new CompareToBuilder()
+              .append(o1.getModificationTime(), o2.getModificationTime())
+              .append(o1.getName(), o2.getName())
+              .toComparison();
+        }
+      };
+      final ImmutableSortedSet.Builder<FileStore.File> b =
+          ImmutableSortedSet.<FileStore.File>orderedBy(c);
       final List<models.filestore.File> versions =
           getDAO().getVersionListById(entity.getId());
       models.filestore.File lastVersion = null;
       for (models.filestore.File version : versions) {
-        if (version.containsSameDataAs(lastVersion))
-          continue;
-        b.put(version.getVersion(), new FileVersion(this,
-            version, filestoreManager, eventManagerImpl));
+        if (lastVersion == null ||
+            !version.getDigest().equals(lastVersion.getDigest())) {
+          b.add(new FileVersion(this,
+              version, filestoreManager, eventManagerImpl));
+        }
         lastVersion = version;
       }
       return b.build();
@@ -659,7 +673,7 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
-    public SortedMap<String, service.filestore.FileStore.File> getVersions() {
+    public SortedSet<service.filestore.FileStore.File> getVersions() {
       throw new NotImplementedException();
     }
 

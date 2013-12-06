@@ -500,13 +500,11 @@ public final class FileStoreController extends SessionAwareController {
         final ObjectNode json = Json.newObject();
         {
           final ArrayNode aNode = json.putArray("versions");
-          for (String versionName : file.getVersions().keySet()) {
-            final FileStore.File version =
-                file.getVersions().get(versionName);
+          for (FileStore.File version : file.getVersions()) {
             final User author = version.getAuthor();
             final ObjectNode versionInfo = Json.newObject();
             versionInfo.put("id", version.getIdentifier());
-            versionInfo.put("name", versionName);
+            versionInfo.put("name", version.getName());
             if (author != null) {
               final ObjectNode authorInfo = Json.newObject();
               authorInfo.put("name", author.getName());
@@ -667,12 +665,13 @@ public final class FileStoreController extends SessionAwareController {
       @Override
       public final Result apply(Session session, FileStore.File file)
           throws Throwable {
-        final Map<String, FileStore.File> versions = file.getVersions();
         if (versionName.equals("latest")) {
           return operation.apply(session, file, file.getLatestVersion());
         }
-        if (versions.containsKey(versionName)) {
-          return operation.apply(session, file, versions.get(versionName));
+        for (FileStore.File version : file.getVersions()) {
+          if (version.getName().equals(versionName)) {
+            return operation.apply(session, file, version);
+          }
         }
         return notFound(versionName + " is not a valid version for this file.");
       }

@@ -32,10 +32,13 @@ import com.google.common.collect.Range;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jackrabbit.api.security.user.Group;
+import org.apache.jackrabbit.core.version.VersionSelector;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.junit.Test;
 
 import play.api.mvc.AnyContentAsText;
@@ -600,12 +603,14 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
           final JsonNode content = Json.parse(contentAsString(result));
           assertThat(content.has("versions")).isTrue();
+          final FileStore.File firstVersion = file.getVersions().first();
           for (JsonNode version : (ArrayNode) content.get("versions")) {
             assertThat(version.has("id")).isTrue();
             assertThat(version.get("id").asText()).isEqualTo(
-                file.getVersions().get("1.0").getIdentifier());
+                firstVersion.getIdentifier());
             assertThat(version.has("name")).isTrue();
-            assertThat(version.get("name").asText()).isEqualTo("1.0");
+            assertThat(version.get("name").asText()).isEqualTo(
+                firstVersion.getName());
             assertThat(version.has("author")).isFalse();
             assertThat(version.has("timestamp")).isTrue();
           }

@@ -4,7 +4,7 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
+import java.util.SortedSet;
 
 import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
@@ -131,7 +131,7 @@ public interface FileStore {
 
     File getLatestVersion() throws RepositoryException;
 
-    SortedMap<String,File> getVersions() throws RepositoryException;
+    SortedSet<File> getVersions() throws RepositoryException;
 
     File update(String mime, InputStream data) throws RepositoryException;
 
