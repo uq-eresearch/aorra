@@ -45,6 +45,119 @@ import com.google.common.collect.Sets;
 public class FileStoreHelperTest {
 
   @Test
+  public void mvFolder() {
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        fsh.mkdir("/foo", false);
+        String barId = fsh.mkdir("/bar", false).getIdentifier();
+        assertThat(fm.getFileOrFolder("/foo/bar")).isNull();
+        fsh.mv("bar", "foo");
+        assertThat(fm.getFileOrFolder("/foo/bar")).isNotNull();
+        assertThat(barId).isEqualTo(fm.getFileOrFolder("/foo/bar").getIdentifier());
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void mvFile() {
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        fsh.mkdir("/foo", false);
+        FileStore.File f = fm.getRoot().createFile("test.xml",
+            "application/xml", new ByteArrayInputStream("<root></root>".getBytes()));
+        assertThat(fm.getFileOrFolder("/test.xml")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/test.xml")).isNull();
+        fsh.mv("/test.xml", "/foo");
+        assertThat(fm.getFileOrFolder("/test.xml")).isNull();
+        assertThat(fm.getFileOrFolder("/foo/test.xml")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/test.xml").getIdentifier()).isEqualTo(f.getIdentifier());
+        fsh.mv("/foo/test.xml", "/");
+        assertThat(fm.getFileOrFolder("/test.xml")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/test.xml")).isNull();
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void mvRename() {
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        fsh.mkdir("/foo", false);
+        String barId = fsh.mkdir("/bar", false).getIdentifier();
+        assertThat(fm.getFileOrFolder("/bar")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/baz")).isNull();
+        fsh.mv("bar", "foo/baz");
+        assertThat(fm.getFileOrFolder("/bar")).isNull();
+        assertThat(fm.getFileOrFolder("/foo/baz")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/baz").getIdentifier()).isEqualTo(barId);
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void mvWhenFolderExists() {
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        fsh.mkdir("/foo", false);
+        fsh.mkdir("/bar", false).getIdentifier();
+        fsh.mkdir("/foo/bar", false).getIdentifier();
+        assertThat(fm.getFileOrFolder("/bar")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/bar")).isNotNull();
+        assertThat(fm.getFileOrFolder("/bar").getIdentifier()).isNotEqualTo(
+            fm.getFileOrFolder("/foo/bar").getIdentifier());
+        fsh.mv("bar", "foo");
+        assertThat(fm.getFileOrFolder("/bar")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/bar")).isNotNull();
+        assertThat(fm.getFileOrFolder("/bar").getIdentifier()).isNotEqualTo(
+            fm.getFileOrFolder("/foo/bar").getIdentifier());
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void mvRenameWhenFileExists() {
+    helperTest(
+        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
+      @Override
+      public Session apply(final Session session,
+          final FileStoreHelper fsh,
+          final FileStore.Manager fm) throws Throwable {
+        FileStore.Folder foo = fsh.mkdir("/foo", false);
+        fm.getRoot().createFile("bar.xml",
+            "application/xml", new ByteArrayInputStream("<root>bar</root>".getBytes()));
+        foo.createFile("test.xml",
+            "application/xml", new ByteArrayInputStream("<root>test</root>".getBytes()));
+        assertThat(fm.getFileOrFolder("/bar.xml")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/test.xml")).isNotNull();
+        fsh.mv("bar.xml", "foo/test.xml");
+        assertThat(fm.getFileOrFolder("/bar.xml")).isNotNull();
+        assertThat(fm.getFileOrFolder("/foo/test.xml")).isNotNull();
+        return null;
+      }
+    });
+  }
+
+  @Test
   public void mkdirSingle() {
     helperTest(
         new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
