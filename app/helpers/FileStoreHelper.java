@@ -276,7 +276,8 @@ public class FileStoreHelper {
       return null;
   }
 
-  private String format(FileStore.FileOrFolder f, boolean isFolder, boolean showPerms) throws RepositoryException {
+  private String format(FileStore.FileOrFolder f, boolean isFolder,
+          boolean showPerms, boolean ids) throws RepositoryException {
       StringBuilder sb = new StringBuilder();
       for(int i = 0;i<f.getDepth()-1;i++) {
           sb.append("|   ");
@@ -298,25 +299,28 @@ public class FileStoreHelper {
               sb.append(((FileStore.Folder)f).getGroupPermissions().toString());
           }
       }
-
+      if(ids) {
+          sb.append(" [");
+          sb.append(f.getIdentifier());
+          sb.append("]");
+      }
       return sb.toString();
   }
 
-  private void tree(final FileStore.Folder folder, boolean showPerms) throws RepositoryException {
-    out.println(format(folder, true, showPerms));
+  private void tree(final FileStore.Folder folder,
+          boolean showPerms, boolean ids) throws RepositoryException {
+    out.println(format(folder, true, showPerms, ids));
     for(FileStore.Folder f: folder.getFolders()) {
-        tree(f, showPerms);
+        tree(f, showPerms, ids);
     }
     for(FileStore.File f : folder.getFiles()) {
-        out.println(format(f, false, showPerms));
+        out.println(format(f, false, showPerms, ids));
     }
   }
 
-  public void tree(final String path, Boolean showPerms) throws RepositoryException {
-      boolean permissions = false;
-      if(showPerms != null) {
-          permissions = showPerms.booleanValue();
-      }
+  public void tree(final String path, Boolean showPerms, Boolean showIds) throws RepositoryException {
+      boolean permissions = showPerms != null?showPerms.booleanValue():false;
+      boolean ids = showIds != null?showIds.booleanValue():false;
       FileStore.Manager m = fileStore().getManager(session);
       FileStore.FileOrFolder f = m.getFileOrFolder(StringUtils.isBlank(path) ? "/" : path);
       if (f == null) {
@@ -324,7 +328,7 @@ public class FileStoreHelper {
       } else if (f instanceof FileStore.File) {
         out.println(String.format("%s is a file", path));
       } else {
-        tree((FileStore.Folder) f, permissions);
+        tree((FileStore.Folder) f, permissions, ids);
       }
   }
 
@@ -442,10 +446,20 @@ public class FileStoreHelper {
           out.println("id " + f.getIdentifier());
           if(f instanceof FileStore.File) {
               FileStore.File file = (FileStore.File)f;
-              out.println("author "+file.getAuthor().getName()+" - "+file.getAuthor().getEmail());
+              out.print("author ");
+              if(file.getAuthor() != null) {
+                  out.println(file.getAuthor().getName()+" - "+file.getAuthor().getEmail());
+              } else {
+                  out.println("unknown");
+              }
               out.println("mimetype "+file.getMimeType());
-              out.println("modification time "+new SimpleDateFormat(
-                  "EEE, d MMM yyyy HH:mm:ss zzzz").format(file.getModificationTime().getTime()));
+              out.print("modification time ");
+              if(file.getModificationTime()!= null) {
+                  out.println(new SimpleDateFormat(
+                          "EEE, d MMM yyyy HH:mm:ss zzzz").format(file.getModificationTime().getTime()));
+              } else {
+                  out.println("unknown");
+              }
           }
           out.println("depth "+f.getDepth());
       } else {

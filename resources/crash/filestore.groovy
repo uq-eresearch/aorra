@@ -84,13 +84,14 @@ class filestore {
   @Command
   void tree(
       @Usage("only show tree below folder") @Argument String path,
-      @Usage("show permissions") @Option(names=["p", "perms"]) Boolean showPerms
+      @Usage("show permissions") @Option(names=["p", "perms"]) Boolean showPerms,
+      @Usage("show ids") @Option(names=["i", "ids"]) Boolean showIds
       ) {
     def filestore = fileStore()
     sessionFactory().inSession(new Function<Session, String>() {
         public String apply(Session session) {
             def fsh = new FileStoreHelper(session, out);
-            fsh.tree((String)path, showPerms);
+            fsh.tree((String)path, showPerms, showIds);
         }
       })
   }
