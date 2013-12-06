@@ -601,6 +601,9 @@ public class FileStoreControllerTest {
           final JsonNode content = Json.parse(contentAsString(result));
           assertThat(content.has("versions")).isTrue();
           for (JsonNode version : (ArrayNode) content.get("versions")) {
+            assertThat(version.has("id")).isTrue();
+            assertThat(version.get("id").asText()).isEqualTo(
+                file.getVersions().get("1.0").getIdentifier());
             assertThat(version.has("name")).isTrue();
             assertThat(version.get("name").asText()).isEqualTo("1.0");
             assertThat(version.has("author")).isFalse();

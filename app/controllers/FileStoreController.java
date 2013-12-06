@@ -505,6 +505,7 @@ public final class FileStoreController extends SessionAwareController {
                 file.getVersions().get(versionName);
             final User author = version.getAuthor();
             final ObjectNode versionInfo = Json.newObject();
+            versionInfo.put("id", version.getIdentifier());
             versionInfo.put("name", versionName);
             if (author != null) {
               final ObjectNode authorInfo = Json.newObject();
