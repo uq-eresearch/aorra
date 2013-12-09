@@ -37,6 +37,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
@@ -543,13 +544,15 @@ public final class FileStoreController extends SessionAwareController {
             versionInfo.put("name", version.getName());
             if (author != null) {
               final ObjectNode authorInfo = Json.newObject();
+              authorInfo.put("id", author.getId());
               authorInfo.put("name", author.getName());
               authorInfo.put("email", author.getEmail());
               versionInfo.put("author", authorInfo);
             }
             versionInfo.put("timestamp",
-                DateFormatUtils.ISO_DATETIME_FORMAT.format(
-                    version.getModificationTime()));
+                ISO8601Utils.format(
+                    version.getModificationTime().getTime(), false,
+                    TimeZone.getDefault()));
             aNode.add(versionInfo);
           }
         }

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import javax.jcr.RepositoryException;
@@ -177,7 +178,8 @@ public class JsonBuilderTest {
       .isEqualTo(notification.getMessage());
     assertThat(json.get("timestamp")).isNotNull();
     assertThat(json.get("timestamp").asText()).isEqualTo(
-        ISO8601Utils.format(notification.getCreated()));
+        ISO8601Utils.format(notification.getCreated(),
+            true, TimeZone.getDefault()));
   }
 
 

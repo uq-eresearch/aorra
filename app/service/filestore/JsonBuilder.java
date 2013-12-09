@@ -1,6 +1,7 @@
 package service.filestore;
 
 import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import javax.jcr.RepositoryException;
 
@@ -33,7 +34,10 @@ public class JsonBuilder {
     json.put("id", notification.getId());
     json.put("message", notification.getMessage());
     json.put("read", notification.isRead());
-    json.put("timestamp", ISO8601Utils.format(notification.getCreated()));
+    json.put("timestamp",
+        ISO8601Utils.format(
+            notification.getCreated(), true,
+            TimeZone.getDefault()));
     return json;
   }
 
@@ -94,8 +98,6 @@ public class JsonBuilder {
 
   public ObjectNode toJsonShallow(final FileStore.File file)
       throws RepositoryException {
-    final SimpleDateFormat iso8601 = new SimpleDateFormat(
-        "yyyy-MM-dd'T'HH:mm:ss.SZ");
     final ObjectNode json = JsonNodeFactory.instance.objectNode();
     json.put("id", file.getIdentifier());
     json.put("name", file.getName());
@@ -105,7 +107,10 @@ public class JsonBuilder {
     json.put("type", "file");
     json.put("parent", file.getParent().getIdentifier());
     json.put("accessLevel", file.getAccessLevel().toString());
-    json.put("modified", iso8601.format(file.getModificationTime().getTime()));
+    json.put("modified",
+        ISO8601Utils.format(
+            file.getModificationTime().getTime(), true,
+            TimeZone.getDefault()));
     return json;
   }
 
