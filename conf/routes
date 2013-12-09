@@ -46,7 +46,7 @@ DELETE  /folder/:folderId               @controllers.FileStoreController.delete(
 
 GET     /file/:fileId                   @controllers.FileStoreController.showFile(fileId: String)
 PUT     /file/:fileId                   @controllers.FileStoreController.modifyFile(fileId: String)
-GET     /file/:fileId/info              @controllers.FileStoreController.fileInfo(fileId: String)
+GET     /file/:fileId/versions          @controllers.FileStoreController.versionList(fileId: String)
 POST    /file/:fileId/versions/new      @controllers.FileStoreController.updateFile(fileId)
 GET     /file/:fileId/versions/:vn      @controllers.FileStoreController.downloadFile(fileId, vn)
 DELETE  /file/:fileId/versions/:vn      @controllers.FileStoreController.deleteVersion(fileId, vn)

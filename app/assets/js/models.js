@@ -116,37 +116,9 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
     initialize: function(attributes, options) {
       this.file = options.file;
     },
-    // Reverse sort by time
-    comparator: function(a,b) {
-      if (a.get('timestamp') < b.get('timestamp')) { return 1; }
-      if (a.get('timestamp') > b.get('timestamp')) { return -1; }
-      return 0;
-    },
     model: VersionInfo,
     url: function() {
       return this.file.url() + '/versions';
-    }
-  });
-
-  var FileInfo = Backbone.Model.extend({
-    initialize: function(attributes, options) {
-      this.file = options.file;
-      this.set('versions', this.versionList());
-    },
-    parse: function(response) {
-      this.versionList().reset(response.versions);
-      response.versions = this.versionList();
-      response.dummy = new Date(); // ensure change triggers
-      return response;
-    },
-    versionList: function() {
-      if (_.isUndefined(this._versionList)) {
-        this._versionList = new VersionList([], {file: this.file});
-      }
-      return this._versionList;
-    },
-    url: function() {
-      return this.file.url() + "/info";
     }
   });
   
@@ -174,11 +146,11 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
     uploadUrl: function() {
       return this.url()+'/versions/new';
     },
-    info: function() {
-      if (_.isUndefined(this._infoModel)) {
-        this._infoModel = new FileInfo({}, {file: this});
+    versions: function() {
+      if (_.isUndefined(this._versionCollection)) {
+        this._versionCollection = new VersionList([], { file: this });
       }
-      return this._infoModel;
+      return this._versionCollection;
     },
     comments: function() {
       if (_.isUndefined(this._commentCollection)) {
@@ -259,7 +231,6 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
 
   return {
     File: File,
-    FileInfo: FileInfo,
     FileOrFolder: FileOrFolder,
     FileStore: FileStore,
     Folder: Folder,

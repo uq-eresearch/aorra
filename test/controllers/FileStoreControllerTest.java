@@ -109,9 +109,9 @@ public class FileStoreControllerTest {
         {
           final String id = UUID.randomUUID().toString();
           final Call call =
-              controllers.routes.FileStoreController.fileInfo(id);
+              controllers.routes.FileStoreController.versionList(id);
           assertThat(call.method()).isEqualTo("GET");
-          assertThat(call.url()).isEqualTo("/file/"+id+"/info");
+          assertThat(call.url()).isEqualTo("/file/"+id+"/versions");
         }
         {
           final String id = UUID.randomUUID().toString();
@@ -574,7 +574,7 @@ public class FileStoreControllerTest {
   }
 
   @Test
-  public void getFileInfoJSON() {
+  public void getVersionListJSON() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override
       public Session apply(
@@ -584,7 +584,7 @@ public class FileStoreControllerTest {
         final FileStore.Manager fm = fileStore().getManager(session);
         {
           final Result result = callAction(
-              controllers.routes.ref.FileStoreController.fileInfo(
+              controllers.routes.ref.FileStoreController.versionList(
                   fm.getRoot().getIdentifier()),
               newRequest.withHeader("Accept", "application/json"));
           assertThat(status(result)).isEqualTo(400);
@@ -594,17 +594,15 @@ public class FileStoreControllerTest {
               fm.getRoot().createFile("test.txt", "text/plain",
                   new ByteArrayInputStream("Some content.".getBytes()));
           final Result result = callAction(
-              controllers.routes.ref.FileStoreController.fileInfo(
+              controllers.routes.ref.FileStoreController.versionList(
                   file.getIdentifier()),
               newRequest.withHeader("Accept", "application/json"));
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
           assertThat(charset(result)).isEqualTo("utf-8");
           assertThat(header("Cache-Control", result)).isEqualTo("max-age=0, must-revalidate");
-          final JsonNode content = Json.parse(contentAsString(result));
-          assertThat(content.has("versions")).isTrue();
           final FileStore.File firstVersion = file.getVersions().first();
-          for (JsonNode version : (ArrayNode) content.get("versions")) {
+          for (JsonNode version : Json.parse(contentAsString(result))) {
             assertThat(version.has("id")).isTrue();
             assertThat(version.get("id").asText()).isEqualTo(
                 firstVersion.getIdentifier());

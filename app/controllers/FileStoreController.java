@@ -529,32 +529,29 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result fileInfo(final String fileId) {
+  public Result versionList(final String fileId) {
     return fileBasedResult(fileId, new FileOp() {
       @Override
       public final Result apply(final Session session, final FileStore.File file)
           throws RepositoryException {
-        final ObjectNode json = Json.newObject();
-        {
-          final ArrayNode aNode = json.putArray("versions");
-          for (FileStore.File version : file.getVersions()) {
-            final User author = version.getAuthor();
-            final ObjectNode versionInfo = Json.newObject();
-            versionInfo.put("id", version.getIdentifier());
-            versionInfo.put("name", version.getName());
-            if (author != null) {
-              final ObjectNode authorInfo = Json.newObject();
-              authorInfo.put("id", author.getId());
-              authorInfo.put("name", author.getName());
-              authorInfo.put("email", author.getEmail());
-              versionInfo.put("author", authorInfo);
-            }
-            versionInfo.put("timestamp",
-                ISO8601Utils.format(
-                    version.getModificationTime().getTime(), false,
-                    TimeZone.getDefault()));
-            aNode.add(versionInfo);
+        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+        for (FileStore.File version : file.getVersions()) {
+          final User author = version.getAuthor();
+          final ObjectNode versionInfo = Json.newObject();
+          versionInfo.put("id", version.getIdentifier());
+          versionInfo.put("name", version.getName());
+          if (author != null) {
+            final ObjectNode authorInfo = Json.newObject();
+            authorInfo.put("id", author.getId());
+            authorInfo.put("name", author.getName());
+            authorInfo.put("email", author.getEmail());
+            versionInfo.put("author", authorInfo);
           }
+          versionInfo.put("timestamp",
+              ISO8601Utils.format(
+                  version.getModificationTime().getTime(), false,
+                  TimeZone.getDefault()));
+          json.add(versionInfo);
         }
         return ok(json).as("application/json; charset=utf-8");
       }

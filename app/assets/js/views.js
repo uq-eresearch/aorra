@@ -33,6 +33,16 @@ define([
     }
   };
 
+  var reverseAppend = function(collectionView, itemView, index){
+    var container = collectionView.$(collectionView.itemViewContainer);
+    var children = container.children();
+    if (children.size() <= index) {
+      container.prepend(itemView.el);
+    } else {
+      children.eq(index).after(itemView.el);
+    }
+  };
+
   var typeFromMimeType = function(mimeType) {
     var mimeTypePatterns = [
       { pattern: /^image/, type: 'image' },
@@ -536,7 +546,7 @@ define([
       var data = _(this.model.toJSON()).extend({
         downloadUrl: this.model.url()
       });
-      if (this.model != this.model.collection.last()) {
+      if (this.model != this.model.collection.first()) {
         data = _(data).extend({
           canCompare: true,
           canDelete: this.options.canDelete
@@ -635,15 +645,7 @@ define([
       this._users = options.users;
       this.collection.fetch();
     },
-    appendHtml: function(collectionView, itemView, index){
-      var container = collectionView.$(collectionView.itemViewContainer);
-      var children = container.children();
-      if (children.size() <= index) {
-        container.prepend(itemView.el);
-      } else {
-        children.eq(index).after(itemView.el);
-      }
-    },
+    appendHtml: reverseAppend,
     emptyView: Backbone.Marionette.ItemView.extend({
       template: function() {
         return '<p>No comments yet</p>';
@@ -677,9 +679,8 @@ define([
         App.vent.trigger("nav:file:diff", file, view.model);
       });
       this._users = options.users;
-      this.collection = this.model.versionList();
       this.render();
-      this.model.fetch();
+      this.collection.fetch();
     },
     itemView: VersionView,
     itemViewOptions: function(model, index) {
@@ -689,6 +690,7 @@ define([
       };
     },
     itemViewContainer: 'tbody',
+    appendHtml: reverseAppend,
     emptyView: Backbone.Marionette.ItemView.extend({
       template: function() {
         return '<tr><td><em>Loading version information...</em></td></tr>';
@@ -1449,7 +1451,7 @@ define([
     },
     getVersionsView: function() {
       return new VersionsView({
-        model: this.model.info(),
+        collection: this.model.versions(),
         file: this.model,
         users: this._users
       })
@@ -1652,21 +1654,21 @@ define([
     },
     initialize: function(attrs) {
       var versionName = attrs.versionName;
-      var info = this.model.info();
-      info.fetch().done(_.bind(function() {
-        this.version = info.versionList().findWhere({ name: versionName });
+      var versions = this.model.versions();
+      versions.fetch().done(_.bind(function() {
+        this.version = versions.findWhere({ name: versionName });
         this.render();
       }, this));
     },
     serializeData: function() {
       var model = this.model;
       var version = this.version;
-      var versionList = model.info().versionList();
+      var versionList = model.versions();
       var idxOf = _.bind(versionList.indexOf, versionList);
       // Only show earlier versions
       var otherVersions = _.invoke(
         versionList.filter(function(m) {
-          return idxOf(version) < idxOf(m);
+          return idxOf(version) > idxOf(m);
         }), 'toJSON');
       return {
         backUrl: model.displayUrl(),
@@ -1691,7 +1693,7 @@ define([
       if (!_.isObject(this.version)) { return; }
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       var onSelectChange = _.bind(function(e) {
-        var versionList = this.model.info().versionList();
+        var versionList = this.model.versions();
         var otherVersion = versionList.findWhere({ name: $(e.target).val() });
         this.diff.show(new DiffView(otherVersion, this.version));
       }, this);
