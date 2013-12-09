@@ -370,6 +370,8 @@ public final class FileStoreController extends SessionAwareController {
                   file.getIdentifier(),
                   version.getIdentifier()));
         }
+        // Versions don't change, so they can be cached privately for a week
+        ctx().response().setHeader("Cache-Control", "max-age=604800, private");
         // Check if we can send a 304 Not Modified
         if (!ifNoneMatch(version)) {
           return status(304);

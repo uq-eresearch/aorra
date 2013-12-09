@@ -1066,8 +1066,7 @@ public class FileStoreControllerTest {
           assertThat(header("ETag", result))
             .isEqualTo(file.getDigest().substring(0, 16));
           assertThat(header("Cache-Control", result))
-            .isEqualTo("max-age=0, must-revalidate");
-          //.isEqualTo("max-age=604800, private");
+            .isEqualTo("max-age=604800, private");
           assertThat(header("Last-Modified", result)).isNotNull();
           assertThat(header("Content-Disposition", result))
             .startsWith("attachment; filename=test%20file");
