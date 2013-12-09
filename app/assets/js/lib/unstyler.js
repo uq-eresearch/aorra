@@ -1,4 +1,3 @@
-//@ sourceMappingURL=unstyler.map
 /*!
 # Copyright (c) 2013 The University of Queensland
 # (UQ ITEE e-Research Group)
