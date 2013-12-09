@@ -1287,7 +1287,7 @@ define([
         var $element = $('#'+elementObj.domId);
         this._fileIdAutocomplete = new FileIdAutocomplete({
           el: $element.find('input').get(0),
-          model: file
+          model: this.model
         });
         this._fileIdAutocomplete.on('file:selected', _.bind(function(file) {
           var fileType = typeFromMimeType(file.get('mime'));

@@ -111,6 +111,7 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
       return this.collection.url() + '/' + this.get('name');
     }
   });
+  
   var VersionList = Backbone.Collection.extend({
     initialize: function(attributes, options) {
       this.file = options.file;
@@ -123,7 +124,7 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
     },
     model: VersionInfo,
     url: function() {
-      return this.file.url() + '/version';
+      return this.file.url() + '/versions';
     }
   });
 
@@ -168,10 +169,10 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
   var File = FileOrFolder.extend({
     urlRoot: '/file',
     downloadUrl: function() {
-      return this.url()+'/version/latest';
+      return this.url()+'/versions/latest';
     },
     uploadUrl: function() {
-      return this.url()+'/version/new';
+      return this.url()+'/versions/new';
     },
     info: function() {
       if (_.isUndefined(this._infoModel)) {
