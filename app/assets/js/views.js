@@ -1694,7 +1694,7 @@ define([
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       var onSelectChange = _.bind(function(e) {
         var versionList = this.model.versions();
-        var otherVersion = versionList.findWhere({ name: $(e.target).val() });
+        var otherVersion = versionList.get($(e.target).val());
         this.diff.show(new DiffView(otherVersion, this.version));
       }, this);
       var $select = this.$el.find('select');

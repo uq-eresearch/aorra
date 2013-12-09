@@ -83,7 +83,6 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
   });
 
   var VersionInfo = Backbone.Model.extend({
-    idAttribute: "name",
     // Return a promise of a text summary
     textSummary: function() {
       var deferred = $.Deferred();
