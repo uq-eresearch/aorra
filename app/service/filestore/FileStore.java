@@ -129,6 +129,8 @@ public interface FileStore {
 
     String getMimeType();
 
+    String getDigest();
+
     File getLatestVersion() throws RepositoryException;
 
     SortedSet<File> getVersions() throws RepositoryException;

@@ -92,6 +92,8 @@ public class JsonBuilderTest {
       assertThat(json.get("mime")).isNotNull();
       assertThat(json.get("mime").asText()).isEqualTo(file1.getMimeType());
       assertThat(json.get("data")).isNull();
+      assertThat(json.get("sha512")).isNotNull();
+      assertThat(json.get("sha512").asText()).isEqualTo(file1.getDigest());
       assertThat(json.get("accessLevel")).isNotNull();
       assertThat(json.get("accessLevel").asText()).isEqualTo("RO");
       assertThat(json.get("modified")).isNotNull();
@@ -369,6 +371,11 @@ public class JsonBuilderTest {
     @Override
     public void delete() {
       // Do nothing
+    }
+
+    @Override
+    public String getDigest() {
+      return "not really a digest";
     }
 
     @Override

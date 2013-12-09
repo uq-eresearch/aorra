@@ -376,6 +376,10 @@ public final class FileStoreController extends SessionAwareController {
         final String filename = file.getName().replaceAll(
             "(\\.?[^\\.]+$)", versionStamp + "$1" );
         ctx().response().setContentType(version.getMimeType());
+        if (!version.getDigest().isEmpty()) {
+          ctx().response().setHeader("ETag",
+              version.getDigest().substring(0, 16));
+        }
         ctx().response().setHeader("Last-Modified",
             asHttpDate(version.getModificationTime()));
         ctx().response().setHeader("Content-Disposition",

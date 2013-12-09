@@ -544,6 +544,11 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
+    public String getDigest() {
+      return entity.getDigest();
+    }
+
+    @Override
     public boolean equals(final Object other) {
       if (other == null)
         return false;

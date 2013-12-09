@@ -101,6 +101,7 @@ public class JsonBuilder {
     json.put("name", file.getName());
     json.put("path", file.getPath());
     json.put("mime", file.getMimeType());
+    json.put("sha512", file.getDigest());
     json.put("type", "file");
     json.put("parent", file.getParent().getIdentifier());
     json.put("accessLevel", file.getAccessLevel().toString());
