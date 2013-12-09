@@ -360,11 +360,12 @@ public final class FileStoreController extends SessionAwareController {
           final FileStore.File file,
           final FileStore.File version)
           throws RepositoryException, IOException {
-        if (versionName.equals("latest")) {
+        if (versionName.equals("latest") ||
+            versionName.equals(version.getName())) {
           return seeOther(
               controllers.routes.FileStoreController.downloadFile(
                   file.getIdentifier(),
-                  version.getName()));
+                  version.getIdentifier()));
         }
         final String authorName = version.getAuthor() != null ?
             version.getAuthor().getName() : "unknown";
@@ -659,21 +660,22 @@ public final class FileStoreController extends SessionAwareController {
 
   public Result versionBasedResult(
       final String fileId,
-      final String versionName,
+      final String versionId,
       final FileVersionOp operation) {
     return fileBasedResult(fileId, new FileOp() {
       @Override
       public final Result apply(Session session, FileStore.File file)
           throws Throwable {
-        if (versionName.equals("latest")) {
+        if (versionId.equals("latest")) {
           return operation.apply(session, file, file.getLatestVersion());
         }
         for (FileStore.File version : file.getVersions()) {
-          if (version.getName().equals(versionName)) {
+          if (version.getIdentifier().equals(versionId) ||
+              version.getName().equals(versionId)) {
             return operation.apply(session, file, version);
           }
         }
-        return notFound(versionName + " is not a valid version for this file.");
+        return notFound(versionId + " is not a valid version for this file.");
       }
     });
   }

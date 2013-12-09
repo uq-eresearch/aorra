@@ -1041,7 +1041,7 @@ public class FileStoreControllerTest {
         final FileStore.File file =
             fm.getRoot().createFile("test file.txt", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
-        {
+        for (String versionName : new String[]{"1.0", "latest"}) {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.downloadFile(
                   file.getIdentifier(),
@@ -1050,13 +1050,14 @@ public class FileStoreControllerTest {
           assertThat(status(result)).isEqualTo(303);
           assertThat(header("Location", result)).isEqualTo(
               controllers.routes.FileStoreController.downloadFile(
-                  file.getIdentifier(), "1.0").url());
+                  file.getIdentifier(),
+                  file.getVersions().first().getIdentifier()).url());
         }
         {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.downloadFile(
                   file.getIdentifier(),
-                  "1.0"),
+                  file.getVersions().first().getIdentifier()),
               newRequest.withHeader("Accept", "text/plain"));
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("text/plain");
@@ -1068,7 +1069,7 @@ public class FileStoreControllerTest {
         }
         {
           final String notFoundId = UUID.randomUUID().toString();
-          for (String versionString : new String[] {"1.0", "latest"}) {
+          for (String versionString : new String[]{"1.0", "latest"}) {
             final Result defaultResult = callAction(
                 controllers.routes.ref.FileStoreController.downloadFile(
                     notFoundId,
