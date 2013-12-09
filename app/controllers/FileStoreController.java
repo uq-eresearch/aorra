@@ -11,8 +11,10 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -29,6 +31,7 @@ import models.UserDAO;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.jackrabbit.api.security.user.Group;
+import org.apache.jackrabbit.webdav.util.HttpDateFormat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -367,6 +370,10 @@ public final class FileStoreController extends SessionAwareController {
                   file.getIdentifier(),
                   version.getIdentifier()));
         }
+        // Check if we can send a 304 Not Modified
+        if (!ifNoneMatch(version)) {
+          return status(304);
+        }
         final String authorName = version.getAuthor() != null ?
             version.getAuthor().getName() : "unknown";
         final String versionStamp =
@@ -386,6 +393,28 @@ public final class FileStoreController extends SessionAwareController {
             "attachment; filename="+encodeQuery(filename));
         return ok(version.getData());
       }
+
+      private boolean ifNoneMatch(FileStore.File version) {
+        String etag = request().getHeader("If-None-Match");
+        if (etag == null) {
+          // RFC2616 allows us to check ifModifiedSince now
+          return ifModifiedSince(version);
+        }
+        return !version.getDigest().startsWith(etag);
+      }
+
+      private boolean ifModifiedSince(FileStore.File version) {
+        String lastModified = request().getHeader("If-Modified-Since");
+        if (lastModified == null)
+          return true;
+        try {
+          return version.getModificationTime()
+              .after(fromHttpDate(lastModified));
+        } catch (ParseException e) {
+          return true;
+        }
+      }
+
     });
   }
 
@@ -729,11 +758,19 @@ public final class FileStoreController extends SessionAwareController {
     }
   }
 
+  private static final SimpleDateFormat httpDateFormat = new SimpleDateFormat(
+      "EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+
   protected static String asHttpDate(final Calendar calendar) {
-    final SimpleDateFormat dateFormat = new SimpleDateFormat(
-        "EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-    return dateFormat.format(calendar.getTime());
+    httpDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    return httpDateFormat.format(calendar.getTime());
+  }
+
+  protected static Calendar fromHttpDate(final String timeStr)
+      throws ParseException {
+    final Calendar cal = Calendar.getInstance();
+    cal.setTime(httpDateFormat.parse(timeStr));
+    return cal;
   }
 
   protected String getMimeType(MultipartFormData.FilePart filePart) {

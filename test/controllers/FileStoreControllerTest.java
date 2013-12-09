@@ -1041,6 +1041,7 @@ public class FileStoreControllerTest {
         final FileStore.File file =
             fm.getRoot().createFile("test file.txt", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
+        // Aliases should redirect
         for (String versionName : new String[]{"1.0", "latest"}) {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.downloadFile(
@@ -1053,6 +1054,7 @@ public class FileStoreControllerTest {
                   file.getIdentifier(),
                   file.getVersions().first().getIdentifier()).url());
         }
+        // UUID should send content
         {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.downloadFile(
@@ -1069,6 +1071,19 @@ public class FileStoreControllerTest {
           assertThat(header("Last-Modified", result)).isNotNull();
           assertThat(header("Content-Disposition", result))
             .startsWith("attachment; filename=test%20file");
+          // ETag & Last Modified tests
+          for (String[] headerData : new String[][]{
+            new String[]{"If-None-Match", header("ETag", result)},
+            new String[]{"If-Modified-Since", header("Last-Modified", result)}
+          }){
+            final Result notModifiedResult = callAction(
+                controllers.routes.ref.FileStoreController.downloadFile(
+                    file.getIdentifier(),
+                    file.getVersions().first().getIdentifier()),
+                newRequest.withHeader("Accept", "text/plain")
+                  .withHeader(headerData[0], headerData[1]));
+            assertThat(status(notModifiedResult)).isEqualTo(304);
+          }
         }
         {
           final String notFoundId = UUID.randomUUID().toString();
