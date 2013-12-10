@@ -30,13 +30,6 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
 
   public abstract boolean canHandle(SpreadsheetDataSource datasource);
 
-  @Override
-  public boolean canHandle(DataSource datasource, ChartType type) {
-    return ((type == null || types.contains(type)) &&
-        (datasource instanceof SpreadsheetDataSource) &&
-        canHandle((SpreadsheetDataSource) datasource));
-  }
-
   public Chart build(SpreadsheetDataSource datasource, ChartType type,
       Region region, Dimension queryDimensions) {
       throw new RuntimeException("override me");
@@ -65,15 +58,18 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       List<Region> regions, Map<String, String> parameters) {
     List<Chart> charts = Lists.newArrayList();
     if (datasource instanceof SpreadsheetDataSource) {
-      // FIXME remove dimension parameter
-      charts.addAll(build((SpreadsheetDataSource) datasource, type,
-          regions, new Dimension(0,0), parameters));
+      for(int i = 0; i<((SpreadsheetDataSource)datasource).sheets();i++) {
+        SpreadsheetDataSource ds = ((SpreadsheetDataSource)datasource).toSheet(i);
+        if(canHandle(ds)) {
+          charts.addAll(build(ds, type, regions, parameters));
+        }
+      }
     }
     return charts;
   }
 
   private List<Chart> build(SpreadsheetDataSource datasource, ChartType type,
-      List<Region> regions, Dimension queryDimensions, Map<String, String> parameters) {
+      List<Region> regions, Map<String, String> parameters) {
     checkNotNull(regions, "Regions can be empty, but not null.");
     Map<String, List<String>> m = Maps.newHashMap();
     Map<String, List<String>> supportedParameters = getParameters(datasource, type);
@@ -89,26 +85,16 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     final List<Region> r =
         regions.isEmpty() ? asList(Region.values()) : regions;
     final List<Chart> charts = Lists.newLinkedList();
-    for (ChartPermutation p : ChartPermutations.apply(t, r, m)) {
+    for (Object o : ChartPermutations.apply(t, r, m)) {
+      ChartPermutation p = (ChartPermutation)o;
+      // FIXME remove dimension parameter
       final Chart chart = build(datasource, p.chartType(), p.region(),
-          queryDimensions, p.javaParams());
+          new Dimension(), p.javaParams());
       if (chart != null) {
         charts.add(chart);
       }
     }
     return charts;
   }
-
-  /*
-  private boolean setupDataSource(SpreadsheetDataSource datasource) {
-      for(int i=0;i<datasource.sheets();i++) {
-          datasource.setDefaultSheet(i);
-          if(canHandle(datasource)) {
-              return true;
-          }
-      }
-      return false;
-  }
-  */
 
 }

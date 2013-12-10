@@ -56,6 +56,8 @@ public class RiparianFLTBuilder extends AbstractBuilder {
     }
 
     private boolean setupDataSource(SpreadsheetDataSource ds, Region region) {
+//      FIXME setup datasource
+      /*
         for(int i=0;i<ds.sheets();i++) {
             ds.setDefaultSheet(i);
             if(canHandle(ds) && matchesRegion(ds, region)) {
@@ -63,6 +65,8 @@ public class RiparianFLTBuilder extends AbstractBuilder {
             }
         }
         return false;
+        */
+      return false;
     }
 
     @Override

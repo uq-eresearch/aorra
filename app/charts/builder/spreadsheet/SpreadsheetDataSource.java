@@ -28,7 +28,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   private FormulaEvaluator evaluator;
   
-  private int defaultSheet = 0;
+  private final int defaultSheet;
 
   private static class SpreadsheetCellValue implements Value {
 
@@ -163,6 +163,16 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   }
 
+  public SpreadsheetDataSource() {
+    defaultSheet = 0;
+  }
+
+  SpreadsheetDataSource(Workbook workbook, FormulaEvaluator evaluator, int defaultSheet) {
+    this.workbook = workbook;
+    this.evaluator = evaluator;
+    this.defaultSheet = defaultSheet;
+  }
+
   void init(Workbook workbook, FormulaEvaluator evaluator) {
     this.workbook = workbook;
     this.evaluator = evaluator;
@@ -268,15 +278,15 @@ public abstract class SpreadsheetDataSource implements DataSource {
       return workbook.getNumberOfSheets();
   }
 
-  public void setDefaultSheet(int sheet) {
-      defaultSheet = sheet;
-  }
+  public abstract SpreadsheetDataSource toSheet(int sheet);
 
-  public void setDefaultSheet(String sheetname) {
-      Sheet s = getSheet(sheetname);
-      if(s!= null) {
-          setDefaultSheet(workbook.getSheetIndex(s));
-      }
+  public SpreadsheetDataSource toSheet(String sheetname) {
+    Sheet s = getSheet(sheetname);
+    if(s!= null) {
+      return toSheet(workbook.getSheetIndex(s));
+    } else {
+      return null;
+    }
   }
 
   public String getDefaultSheet() {
@@ -331,6 +341,14 @@ public abstract class SpreadsheetDataSource implements DataSource {
           }
       }
       return false;
+  }
+
+  Workbook workbook() {
+    return workbook;
+  }
+
+  FormulaEvaluator evaluator() {
+    return evaluator;
   }
 
 }

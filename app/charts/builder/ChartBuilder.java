@@ -50,7 +50,9 @@ public class ChartBuilder {
       throw new RuntimeException("cache load");
     }
     for(CacheEntry entry : clist) {
-      result.add(entry.chart());
+      if(entry.chart() != null) {
+        result.add(entry.chart());
+      }
     }
     System.out.println("result size: "+result.size());
     return result;
@@ -64,9 +66,7 @@ public class ChartBuilder {
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
       try {
-        if (builder.canHandle(datasource, type)) {
-            result.addAll(builder.build(datasource, type, regions, parameters));
-        }
+        result.addAll(builder.build(datasource, type, regions, parameters));
       } catch(Exception e) {
           e.printStackTrace();
       }

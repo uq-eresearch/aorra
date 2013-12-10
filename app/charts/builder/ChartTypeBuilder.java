@@ -9,8 +9,6 @@ import charts.Region;
 
 public interface ChartTypeBuilder {
 
-  boolean canHandle(DataSource datasource, ChartType type);
-
   List<Chart> build(
       DataSource datasource,
       ChartType type,
