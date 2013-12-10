@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import service.EventManager;
+import service.OrderedEvent;
 import charts.Chart;
 import charts.ChartDescription;
 import charts.ChartType;
@@ -13,7 +15,10 @@ import charts.Region;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
+@Singleton
 public class ChartCache {
 
   public static class Key {
@@ -125,11 +130,21 @@ public class ChartCache {
 
   private Map<String, List<CacheEntry>> cache = Maps.newHashMap();
 
+  private EventManager eventManager;
+
+  private String lastEventId;
+
+  @Inject
+  public ChartCache(EventManager eventManager) {
+    this.eventManager = eventManager;
+  }
+
   public synchronized void noCharts(String id) {
     add(id, null);
   }
 
   public synchronized void add(String id, Chart chart) {
+    cleanup();
     List<CacheEntry> clist = cache.get(id);
     if(clist == null) {
       System.out.println("adding clist for "+id);
@@ -155,13 +170,9 @@ public class ChartCache {
     }
   }
 
-  public synchronized void invalidate(String id) {
-    System.out.println("invalidate "+id);
-    //TODO
-  }
-
   public synchronized List<CacheEntry> get(String id, ChartType type, List<Region> regions,
       Map<String, String> parameters) {
+    cleanup();
     List<CacheEntry> clist = cache.get(id);
     if(clist == null) {
       System.out.println("XXX cache miss");
@@ -177,4 +188,20 @@ public class ChartCache {
     return result;
   }
 
+  private void cleanup() {
+    if(this.eventManager == null) {
+      System.out.println("XXX no event manager");
+      return;
+    }
+//    if(lastEventId == null) {
+//      lastEventId = eventManager.getLastEventId();
+//      System.out.println("XXX init last event id "+lastEventId);
+//    }
+    for(OrderedEvent evt : eventManager.getSince(lastEventId)) {
+      System.out.println("XXX ccache event "+evt.toString());
+    }
+    lastEventId = eventManager.getLastEventId();
+    System.out.println("XXX last event id "+lastEventId);
+    System.out.println("done cleanup");
+  }
 }

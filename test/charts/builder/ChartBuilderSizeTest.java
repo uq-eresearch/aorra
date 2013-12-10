@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class ChartBuilderSizeTest {
 
-  private final static ChartBuilder chartBuilder = new ChartBuilder();
+  private final static ChartBuilder chartBuilder = new ChartBuilder(new ChartCache(null));
 
   private final static DataSourceFactory dsf = new DataSourceFactory() {
     @Override

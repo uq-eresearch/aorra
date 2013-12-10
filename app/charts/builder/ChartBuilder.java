@@ -16,6 +16,7 @@ import charts.builder.ChartCache.CacheEntry;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
@@ -23,7 +24,12 @@ public class ChartBuilder {
 
   private final List<ChartTypeBuilder> builders = detectBuilders();
 
-  private final ChartCache cache = new ChartCache();
+  private final ChartCache cache;
+
+  @Inject
+  public ChartBuilder(ChartCache cache) {
+    this.cache = cache;
+  }
 
   public List<Chart> getCharts(String id, DataSourceFactory dsf, ChartType type,
       List<Region> regions, Map<String, String> parameters) throws Exception {
