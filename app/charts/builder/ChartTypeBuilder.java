@@ -1,6 +1,5 @@
 package charts.builder;
 
-import java.awt.Dimension;
 import java.util.List;
 import java.util.Map;
 
@@ -10,14 +9,13 @@ import charts.Region;
 
 public interface ChartTypeBuilder {
 
-  boolean canHandle(ChartType type, List<DataSource> datasources);
+  boolean canHandle(DataSource datasource, ChartType type);
 
   List<Chart> build(
-      List<DataSource> datasources,
+      DataSource datasource,
       ChartType type,
       List<Region> regions,
-      Dimension dimension,
       Map<String, String> parameters);
-  
-  Map<String, List<String>> getParameters(List<DataSource> datasources, ChartType type);
+
+  Map<String, List<String>> getParameters(DataSource datasource, ChartType type);
 }

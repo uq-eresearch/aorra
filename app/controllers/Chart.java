@@ -71,9 +71,9 @@ public class Chart extends SessionAwareController {
         return datasources.get(0);
       }};
     final List<charts.Chart> charts =
+        // FIXME chart parameters
         chartBuilder.getCharts(ids.get(0), dsf, null, getRegions(request().queryString()),
             Collections.<String, String>emptyMap());
-    //getQueryDimensions(request().queryString())
     final ObjectNode json = Json.newObject();
     final ArrayNode aNode = json.putArray("charts");
     for (charts.Chart chart : charts) {
@@ -104,8 +104,10 @@ public class Chart extends SessionAwareController {
     return multipleFileCharts(format, ImmutableList.of(id));
   }
 
+  //FIXME chart parameters
   private Map<String, String> getParameters(List<DataSource> datasources, ChartType type) {
       Map<String, String> parameters = Maps.newHashMap();
+      /*
       Map<String, List<String>> supported = chartBuilder.getParameters(datasources, type);
       for(String key : supported.keySet()) {
           String values[] = request().queryString().get(key);
@@ -113,6 +115,7 @@ public class Chart extends SessionAwareController {
               parameters.put(key, values[0]);
           }
       }
+      */
       return parameters;
   }
 
@@ -146,7 +149,6 @@ public class Chart extends SessionAwareController {
 //        getQueryDimensions(request().queryString()), getParameters(datasources, type));
       
     // FIXME parameters
-    // getQueryDimensions(request().queryString())
     final List<charts.Chart> charts = chartBuilder.getCharts(ids.get(0), dsf, type,
         getRegions(request().queryString()), new HashMap<String, String>());
     for (charts.Chart chart : charts) {

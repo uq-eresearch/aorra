@@ -30,6 +30,13 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
 
   public abstract boolean canHandle(SpreadsheetDataSource datasource);
 
+  @Override
+  public boolean canHandle(DataSource datasource, ChartType type) {
+    return ((type == null || types.contains(type)) &&
+        (datasource instanceof SpreadsheetDataSource) &&
+        canHandle((SpreadsheetDataSource) datasource));
+  }
+
   public Chart build(SpreadsheetDataSource datasource, ChartType type,
       Region region, Dimension queryDimensions) {
       throw new RuntimeException("override me");
@@ -49,40 +56,18 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   }
 
   @Override
-  public Map<String, List<String>> getParameters(List<DataSource> datasources, ChartType type) {
-      Map<String, List<String>> result = Maps.newHashMap();
-      for(DataSource ds : datasources) {
-          if(setupDataSource((SpreadsheetDataSource)ds)) {
-              result.putAll(getParameters((SpreadsheetDataSource)ds, type));
-          }
-      }
-      return result;
+  public Map<String, List<String>> getParameters(DataSource datasource, ChartType type) {
+    return getParameters((SpreadsheetDataSource)datasource, type);
   }
 
   @Override
-  public boolean canHandle(ChartType type, List<DataSource> datasources) {
-    if (type == null || types.contains(type)) {
-      for (DataSource ds : datasources) {
-        if ((ds instanceof SpreadsheetDataSource)
-            && setupDataSource((SpreadsheetDataSource) ds)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  @Override
-  public List<Chart> build(List<DataSource> datasources, ChartType type,
-      List<Region> regions, Dimension queryDimensions, Map<String, String> parameters) {
+  public List<Chart> build(DataSource datasource, ChartType type,
+      List<Region> regions, Map<String, String> parameters) {
     List<Chart> charts = Lists.newArrayList();
-    for (DataSource datasource : datasources) {
-      if (datasource instanceof SpreadsheetDataSource) {
-        if (setupDataSource((SpreadsheetDataSource) datasource)) {
-          charts.addAll(build((SpreadsheetDataSource) datasource, type,
-              regions, queryDimensions, parameters));
-        }
-      }
+    if (datasource instanceof SpreadsheetDataSource) {
+      // FIXME remove dimension parameter
+      charts.addAll(build((SpreadsheetDataSource) datasource, type,
+          regions, new Dimension(0,0), parameters));
     }
     return charts;
   }
@@ -114,6 +99,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     return charts;
   }
 
+  /*
   private boolean setupDataSource(SpreadsheetDataSource datasource) {
       for(int i=0;i<datasource.sheets();i++) {
           datasource.setDefaultSheet(i);
@@ -123,5 +109,6 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       }
       return false;
   }
+  */
 
 }

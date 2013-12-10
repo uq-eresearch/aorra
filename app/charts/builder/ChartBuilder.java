@@ -2,7 +2,6 @@ package charts.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.awt.Dimension;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,7 +18,6 @@ import charts.builder.ChartCache.CacheEntry;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.inject.Singleton;
 
 @Singleton
@@ -35,7 +33,7 @@ public class ChartBuilder {
     List<CacheEntry> clist = cache.get(id, type, regions, parameters);
     if(clist == null) {
       DataSource datasource = dsf.getDataSource(id);
-      List<Chart> charts = getCharts(Collections.singletonList(datasource),
+      List<Chart> charts = getCharts(datasource,
           null, Collections.<Region>emptyList(), parameters);
       if(charts.isEmpty()) {
         System.out.println("no charts");
@@ -58,17 +56,16 @@ public class ChartBuilder {
     return result;
   }
 
-  public List<Chart> getCharts(List<DataSource> datasources,
-          ChartType type,
-          List<Region> regions,
-          Map<String, String> parameters) {
+  private List<Chart> getCharts(DataSource datasource,
+      ChartType type,
+      List<Region> regions,
+      Map<String, String> parameters) {
     checkNotNull(parameters);
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
       try {
-        if (builder.canHandle(type, datasources)) {
-          // FIXME dimension
-            result.addAll(builder.build(datasources, type, regions, new Dimension(0,0), parameters));
+        if (builder.canHandle(datasource, type)) {
+            result.addAll(builder.build(datasource, type, regions, parameters));
         }
       } catch(Exception e) {
           e.printStackTrace();
@@ -88,14 +85,15 @@ public class ChartBuilder {
     return result;
   }
 
-  public List<Chart> getCharts(List<DataSource> datasources,
+  // FIXME chart parameters
+  private List<Chart> getCharts(DataSource datasource,
       List<Region> regions) {
-    return getCharts(datasources, null, regions,
+    return getCharts(datasource, null, regions,
         Collections.<String,String>emptyMap());
   }
 
-  public Map<String, List<String>> getParameters(List<DataSource> datasources,
-      ChartType type) {
+  /*
+  public Map<String, List<String>> getParameters(DataSource datasource, ChartType type) {
     Map<String, List<String>> result = Maps.newHashMap();
     for (ChartTypeBuilder builder : builders) {
       if (builder.canHandle(type, datasources)) {
@@ -104,6 +102,7 @@ public class ChartBuilder {
     }
     return result;
   }
+  */
 
   private static List<ChartTypeBuilder> detectBuilders() {
     final ImmutableList.Builder<ChartTypeBuilder> b =
