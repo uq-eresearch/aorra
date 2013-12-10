@@ -18,8 +18,8 @@ import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
-import charts.builder.Value;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.Value;
 import charts.graphics.WetlandsRemaing;
 
 public class WetlandsRemaingBuilder extends AbstractBuilder {
@@ -64,23 +64,10 @@ public class WetlandsRemaingBuilder extends AbstractBuilder {
         }
     }
 
-    private boolean setupDataSource(SpreadsheetDataSource ds, Region region) {
-//      FIXME setup datasource
-      /*
-        for(int i=0;i<ds.sheets();i++) {
-            ds.setDefaultSheet(i);
-            if(canHandle(ds) && matchesRegion(ds, region)) {
-                return true;
-            }
-        }
-        */
-        return false;
-    }
-
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
             final Region region, Dimension queryDimensions) {
-        if(setupDataSource(datasource, region)) {
+        if(canHandle(datasource) && matchesRegion(datasource, region)) {
             final CategoryDataset dataset = getDataset(datasource);
             return new AbstractChart(queryDimensions) {
 
