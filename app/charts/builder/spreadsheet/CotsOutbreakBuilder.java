@@ -6,7 +6,6 @@ import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.time.TimeSeries;
@@ -22,7 +21,6 @@ import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
-import charts.Chart.UnsupportedFormatException;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.CotsOutbreak;
 
@@ -79,7 +77,6 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       return null;
     }
     final TimeSeriesCollection dataset = createDataset(datasource);
-    final AbstractBuilder thisBuilder = this;
     final Chart chart = new AbstractChart(dimensions) {
       @Override
       public ChartDescription getDescription() {

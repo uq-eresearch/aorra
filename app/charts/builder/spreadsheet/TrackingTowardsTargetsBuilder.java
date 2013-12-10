@@ -11,7 +11,6 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.pegdown.PegDownProcessor;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 

@@ -3,7 +3,6 @@ package charts.builder.spreadsheet;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.DefaultCategoryDataset;
