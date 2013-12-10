@@ -22,8 +22,14 @@ public class ChartBuilderTest {
 
   private final static ChartBuilder chartBuilder = new ChartBuilder();
 
+  private final static DataSourceFactory dsf = new DataSourceFactory() {
+    @Override
+    public DataSource getDataSource(String id) throws Exception {
+      return getDatasource(ChartType.valueOf(id));
+    }};
+
   @Test
-  public void format() {
+  public void format() throws Exception {
     for (final ChartType ct : ChartType.values()) {
       for (final Format f : new Format[]{Format.CSV, Format.EMF}) {
         format(ct, f);
@@ -31,18 +37,18 @@ public class ChartBuilderTest {
     }
   }
 
-  public void format(ChartType chartType, Format format) {
+  public void format(ChartType chartType, Format format) throws Exception {
     final List<charts.Chart> charts = chartBuilder.getCharts(
-        asList(getDatasource(chartType)),
+        chartType.name(), 
+        dsf,
         chartType,
         asList(getDefaultTestingRegion(chartType)),
-        new Dimension(0, 0),
         Collections.<String, String>emptyMap());
     assertThat(charts).as("No chart generated for "+chartType).isNotEmpty();
     final charts.Chart chart = charts.get(0);
     assertThat(chart.getDescription().getType()).isEqualTo(chartType);
     try {
-      chart.outputAs(format);
+      chart.outputAs(format, new Dimension(0,0));
     } catch (UnsupportedFormatException ufe) {
       fail(chartType+" should support "+format+" output.");
     }
