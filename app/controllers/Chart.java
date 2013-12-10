@@ -6,6 +6,8 @@ import helpers.FileStoreHelper;
 
 import java.awt.Dimension;
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,8 +16,6 @@ import javax.jcr.Session;
 
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jcrom.Jcrom;
 
 import play.libs.F;
@@ -31,9 +31,12 @@ import charts.ChartType;
 import charts.Region;
 import charts.builder.ChartBuilder;
 import charts.builder.DataSource;
+import charts.builder.DataSourceFactory;
 import charts.representations.Format;
 import charts.representations.Representation;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -57,12 +60,20 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result multipleFileCharts(final String format, final List<String> ids) {
-    final List<DataSource> datasources = getDatasourcesFromIDs(ids);
+  public Result multipleFileCharts(final String format, final List<String> ids) throws Exception {
+    if(ids.size() > 1) {
+      throw new Exception("currently only supporting single file charts");
+    }
+    DataSourceFactory dsf = new DataSourceFactory() {
+      @Override
+      public DataSource getDataSource(String id) throws Exception {
+        final List<DataSource> datasources = getDatasourcesFromIDs(Collections.singletonList(id));
+        return datasources.get(0);
+      }};
     final List<charts.Chart> charts =
-        chartBuilder.getCharts(datasources,
-            getRegions(request().queryString()),
-            getQueryDimensions(request().queryString()));
+        chartBuilder.getCharts(ids.get(0), dsf, null, getRegions(request().queryString()),
+            Collections.<String, String>emptyMap());
+    //getQueryDimensions(request().queryString())
     final ObjectNode json = Json.newObject();
     final ArrayNode aNode = json.putArray("charts");
     for (charts.Chart chart : charts) {
@@ -89,7 +100,7 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result singleFileCharts(final String format, final String id) {
+  public Result singleFileCharts(final String format, final String id) throws Exception {
     return multipleFileCharts(format, ImmutableList.of(id));
   }
 
@@ -107,7 +118,7 @@ public class Chart extends SessionAwareController {
 
   @SubjectPresent
   public Result multipleFileChart(final String chartType,
-      final String formatStr, final List<String> ids) {
+      final String formatStr, final List<String> ids) throws Exception {
     final ChartType type;
     final Format format;
     try {
@@ -120,13 +131,27 @@ public class Chart extends SessionAwareController {
     } catch (IllegalArgumentException e) {
       return notFound("unknown chart format: " + formatStr);
     }
-    final List<DataSource> datasources = getDatasourcesFromIDs(ids);
-    final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
-        type, getRegions(request().queryString()),
-        getQueryDimensions(request().queryString()), getParameters(datasources, type));
+    if(ids.size() > 1) {
+      throw new Exception("currently only supporting single file charts");
+    }
+    DataSourceFactory dsf = new DataSourceFactory() {
+      @Override
+      public DataSource getDataSource(String id) throws Exception {
+        final List<DataSource> datasources = getDatasourcesFromIDs(Collections.singletonList(id));
+        return datasources.get(0);
+      }};
+//    final List<DataSource> datasources = getDatasourcesFromIDs(ids);
+//    final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
+//        type, getRegions(request().queryString()),
+//        getQueryDimensions(request().queryString()), getParameters(datasources, type));
+      
+    // FIXME parameters
+    // getQueryDimensions(request().queryString())
+    final List<charts.Chart> charts = chartBuilder.getCharts(ids.get(0), dsf, type,
+        getRegions(request().queryString()), new HashMap<String, String>());
     for (charts.Chart chart : charts) {
       try {
-        final Representation r = chart.outputAs(format);
+        final Representation r = chart.outputAs(format, getQueryDimensions(request().queryString()));
         return ok(r.getContent()).as(r.getContentType());
       } catch (charts.Chart.UnsupportedFormatException e) {
         continue;
@@ -137,7 +162,7 @@ public class Chart extends SessionAwareController {
 
   @SubjectPresent
   public Result singleFileChart(final String chartType, final String formatStr,
-      final String id) {
+      final String id) throws Exception {
     return multipleFileChart(chartType, formatStr, ImmutableList.of(id));
   }
 

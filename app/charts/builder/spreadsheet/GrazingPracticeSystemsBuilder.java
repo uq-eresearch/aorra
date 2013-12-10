@@ -60,7 +60,6 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
   public Chart build(final SpreadsheetDataSource datasource,
       final ChartType type, final Region region,
       final Dimension dimensions) {
-    final AbstractBuilder thisBuilder = this;
     return new AbstractChart(dimensions) {
       @Override
       public ChartDescription getDescription() {

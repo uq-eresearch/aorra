@@ -16,7 +16,7 @@ public interface ChartTypeBuilder {
       List<DataSource> datasources,
       ChartType type,
       List<Region> regions,
-      Dimension dimensions,
+      Dimension dimension,
       Map<String, String> parameters);
   
   Map<String, List<String>> getParameters(List<DataSource> datasources, ChartType type);

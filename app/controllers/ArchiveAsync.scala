@@ -53,6 +53,8 @@ class ArchiveAsync @Inject() (
 
   protected def addChartFilesToArchive(
     user: CacheableUser, id: String)(zos: ZipOutputStream) {
+    // FIXME
+    /*
     val cb = new ChartBuilder
     inSession(user) { session =>
       for (
@@ -61,7 +63,8 @@ class ArchiveAsync @Inject() (
         chart <- cb.getCharts(
             Seq(datasource), Region.values.toSeq, new Dimension);
         f <- Format.values;
-        data <- Try(chart.outputAs(f).getContent()) // skip if unsupported
+        // FIXME dimension
+        data <- Try(chart.outputAs(f, new Dimension(0,0)).getContent()) // skip if unsupported
       ) {
         val filepath = "%s/%s-%s.%s".format(
           id,
@@ -73,6 +76,7 @@ class ArchiveAsync @Inject() (
         zos.closeEntry
       }
     }
+    */
   }
 
   protected def inSession[A](user: CacheableUser)(f: Session => A): A =

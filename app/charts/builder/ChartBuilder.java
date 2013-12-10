@@ -15,6 +15,7 @@ import play.Logger;
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
+import charts.builder.ChartCache.CacheEntry;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -26,17 +27,48 @@ public class ChartBuilder {
 
   private final List<ChartTypeBuilder> builders = detectBuilders();
 
+  private final ChartCache cache = new ChartCache();
+
+  public List<Chart> getCharts(String id, DataSourceFactory dsf, ChartType type,
+      List<Region> regions, Map<String, String> parameters) throws Exception {
+    final List<Chart> result = Lists.newLinkedList();
+    List<CacheEntry> clist = cache.get(id, type, regions, parameters);
+    if(clist == null) {
+      DataSource datasource = dsf.getDataSource(id);
+      List<Chart> charts = getCharts(Collections.singletonList(datasource),
+          null, Collections.<Region>emptyList(), parameters);
+      if(charts.isEmpty()) {
+        System.out.println("no charts");
+        cache.noCharts(id);
+      } else {
+        System.out.println(charts.size()+" charts");
+        for(Chart chart : charts) {
+          cache.add(id, chart);
+        }
+      }
+      clist = cache.get(id, type, regions, parameters);
+    }
+    if(clist == null) {
+      throw new RuntimeException("cache load");
+    }
+    for(CacheEntry entry : clist) {
+      result.add(entry.chart());
+    }
+    System.out.println("result size: "+result.size());
+    return result;
+  }
+
   public List<Chart> getCharts(List<DataSource> datasources,
           ChartType type,
           List<Region> regions,
-          Dimension dimensions,
           Map<String, String> parameters) {
     checkNotNull(parameters);
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
       try {
         if (builder.canHandle(type, datasources)) {
-            result.addAll(builder.build(datasources, type, regions, dimensions, parameters));
+          // FIXME dimension
+            result.addAll(builder.build(datasources, type, regions, new Dimension(0,0), parameters));
         }
       } catch(Exception e) {
           e.printStackTrace();
@@ -57,9 +89,8 @@ public class ChartBuilder {
   }
 
   public List<Chart> getCharts(List<DataSource> datasources,
-      List<Region> regions,
-      Dimension dimensions) {
-    return getCharts(datasources, null, regions, dimensions,
+      List<Region> regions) {
+    return getCharts(datasources, null, regions,
         Collections.<String,String>emptyMap());
   }
 

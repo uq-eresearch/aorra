@@ -143,7 +143,7 @@ public class LoadsBuilder extends AbstractBuilder {
     }
 
     public Chart buildLoadRegions(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Dimension queryDimensions, final Map<String, ?> parameters ) {
+            final Region region, final Dimension queryDimensions, final Map<String, String> parameters ) {
         final String period = (String)parameters.get(PERIOD);
         if(StringUtils.isBlank(period)) {
             return null;
@@ -205,7 +205,7 @@ public class LoadsBuilder extends AbstractBuilder {
     }
 
     private Chart buildLoads(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension queryDimensions, final Map<String, ?> parameters) {
+            final Region region, Dimension queryDimensions, final Map<String, String> parameters) {
         final String period = (String)parameters.get(PERIOD);
         if(StringUtils.isBlank(period)) {
             return null;

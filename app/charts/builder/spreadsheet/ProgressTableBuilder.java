@@ -98,6 +98,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
       throw new RuntimeException(e);
     }
     if (region == Region.GBR || type == ChartType.PROGRESS_TABLE_REGION) {
+      final ProgressTable pt = new ProgressTable(ds);
       return new AbstractChart(dimensions) {
         @Override
         public ChartDescription getDescription() {
@@ -106,7 +107,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
 
         @Override
         public Drawable getChart() {
-          return new ProgressTable(ds);
+          return pt;
         }
 
         @Override

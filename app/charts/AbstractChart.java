@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -23,32 +22,20 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.fop.render.ps.EPSTranscoder;
 import org.apache.fop.svg.PDFTranscoder;
-import org.docx4j.convert.in.xhtml.XHTMLImporter;
-import org.docx4j.dml.wordprocessingDrawing.Inline;
-import org.docx4j.jaxb.Context;
-import org.docx4j.openpackaging.exceptions.Docx4JException;
-import org.docx4j.openpackaging.exceptions.InvalidFormatException;
-import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
-import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import play.api.libs.Files.TemporaryFile;
-import play.api.libs.Files.TemporaryFile$;
 import charts.representations.Format;
 import charts.representations.Representation;
 
 public abstract class AbstractChart implements Chart {
 
-  private final Dimension queryDimensions;
-
   private String svgDocument = null;
 
   public AbstractChart(Dimension queryDimensions) {
-    this.queryDimensions = queryDimensions;
+    //FIXME remove queryDimensions parameter
   }
 
   @Override
@@ -59,7 +46,7 @@ public abstract class AbstractChart implements Chart {
   public abstract String getCSV() throws UnsupportedFormatException;
 
   @Override
-  public Representation outputAs(Format format)
+  public Representation outputAs(Format format, Dimension queryDimensions)
       throws UnsupportedFormatException {
     switch (format) {
     case CSV:
