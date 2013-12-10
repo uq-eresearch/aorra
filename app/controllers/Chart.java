@@ -7,7 +7,6 @@ import helpers.FileStoreHelper;
 import java.awt.Dimension;
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,9 +70,7 @@ public class Chart extends SessionAwareController {
         return datasources.get(0);
       }};
     final List<charts.Chart> charts =
-        // FIXME chart parameters
-        chartBuilder.getCharts(ids.get(0), dsf, null, getRegions(request().queryString()),
-            Collections.<String, String>emptyMap());
+      chartBuilder.getCharts(ids.get(0), dsf, null, getRegions(request().queryString()), null);
     final ObjectNode json = Json.newObject();
     final ArrayNode aNode = json.putArray("charts");
     for (charts.Chart chart : charts) {
@@ -104,18 +101,13 @@ public class Chart extends SessionAwareController {
     return multipleFileCharts(format, ImmutableList.of(id));
   }
 
-  //FIXME chart parameters
-  private Map<String, String> getParameters(List<DataSource> datasources, ChartType type) {
+  private Map<String, String> getParameters() {
       Map<String, String> parameters = Maps.newHashMap();
-      /*
-      Map<String, List<String>> supported = chartBuilder.getParameters(datasources, type);
-      for(String key : supported.keySet()) {
-          String values[] = request().queryString().get(key);
-          if(values != null && values.length > 0) {
-              parameters.put(key, values[0]);
-          }
+      for(Map.Entry<String, String[]> me : request().queryString().entrySet()) {
+        if(me.getValue() != null && me.getValue().length > 0) {
+          parameters.put(me.getKey(), me.getValue()[0]);
+        }
       }
-      */
       return parameters;
   }
 
@@ -143,14 +135,8 @@ public class Chart extends SessionAwareController {
         final List<DataSource> datasources = getDatasourcesFromIDs(Collections.singletonList(id));
         return datasources.get(0);
       }};
-//    final List<DataSource> datasources = getDatasourcesFromIDs(ids);
-//    final List<charts.Chart> charts = chartBuilder.getCharts(datasources,
-//        type, getRegions(request().queryString()),
-//        getQueryDimensions(request().queryString()), getParameters(datasources, type));
-      
-    // FIXME parameters
     final List<charts.Chart> charts = chartBuilder.getCharts(ids.get(0), dsf, type,
-        getRegions(request().queryString()), new HashMap<String, String>());
+        getRegions(request().queryString()), getParameters());
     for (charts.Chart chart : charts) {
       try {
         final Representation r = chart.outputAs(format, getQueryDimensions(request().queryString()));

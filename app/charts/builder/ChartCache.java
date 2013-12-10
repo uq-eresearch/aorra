@@ -77,21 +77,18 @@ public class ChartCache {
     public boolean matches(String id, ChartType type, List<Region> regions,
         Map<String, String> parameters) {
       if(!StringUtils.equals(id, this.id)) {
-        //System.out.println("match id failed");
         return false;
       }
       if(type != null && type != this.type) {
-        //System.out.println("match type failed");
         return false;
       }
       if(regions != null && !regions.isEmpty() && !regions.contains(region)) {
-        //System.out.println("match region failed");
         return false;
       }
       if(parameters != null && this.parameters != null) {
         for(Map.Entry<String, String> me: parameters.entrySet()) {
-          if(!StringUtils.equals(me.getValue(), this.parameters.get(me.getKey()))) {
-            //System.out.println("match parameters failed on "+me.getKey());
+          if(this.parameters.containsKey(me.getKey()) &&
+              !StringUtils.equals(me.getValue(), this.parameters.get(me.getKey()))) {
             return false;
           }
         }

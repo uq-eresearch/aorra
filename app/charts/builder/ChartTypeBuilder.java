@@ -15,5 +15,4 @@ public interface ChartTypeBuilder {
       List<Region> regions,
       Map<String, String> parameters);
 
-  Map<String, List<String>> getParameters(DataSource datasource, ChartType type);
 }

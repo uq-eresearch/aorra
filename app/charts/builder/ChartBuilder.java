@@ -1,7 +1,5 @@
 package charts.builder;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,7 +32,7 @@ public class ChartBuilder {
     if(clist == null) {
       DataSource datasource = dsf.getDataSource(id);
       List<Chart> charts = getCharts(datasource,
-          null, Collections.<Region>emptyList(), parameters);
+          null, Collections.<Region>emptyList(), null);
       if(charts.isEmpty()) {
         System.out.println("no charts");
         cache.noCharts(id);
@@ -62,7 +60,6 @@ public class ChartBuilder {
       ChartType type,
       List<Region> regions,
       Map<String, String> parameters) {
-    checkNotNull(parameters);
     final List<Chart> result = Lists.newLinkedList();
     for (final ChartTypeBuilder builder : builders) {
       try {
@@ -84,25 +81,6 @@ public class ChartBuilder {
     });
     return result;
   }
-
-  // FIXME chart parameters
-  private List<Chart> getCharts(DataSource datasource,
-      List<Region> regions) {
-    return getCharts(datasource, null, regions,
-        Collections.<String,String>emptyMap());
-  }
-
-  /*
-  public Map<String, List<String>> getParameters(DataSource datasource, ChartType type) {
-    Map<String, List<String>> result = Maps.newHashMap();
-    for (ChartTypeBuilder builder : builders) {
-      if (builder.canHandle(type, datasources)) {
-        result.putAll(builder.getParameters(datasources, type));
-      }
-    }
-    return result;
-  }
-  */
 
   private static List<ChartTypeBuilder> detectBuilders() {
     final ImmutableList.Builder<ChartTypeBuilder> b =

@@ -48,8 +48,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       return Maps.newHashMap();
   }
 
-  @Override
-  public Map<String, List<String>> getParameters(DataSource datasource, ChartType type) {
+  protected Map<String, List<String>> getParameters(DataSource datasource, ChartType type) {
     return getParameters((SpreadsheetDataSource)datasource, type);
   }
 
