@@ -3,9 +3,7 @@ package charts.builder.spreadsheet;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Map;
 
-import org.pegdown.PegDownProcessor;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
@@ -17,15 +15,12 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource;
 import charts.builder.DataSource.MissingDataException;
-import charts.builder.Value;
 import charts.graphics.BeerCoaster;
 import charts.graphics.BeerCoaster.Category;
 import charts.graphics.BeerCoaster.Condition;
 import charts.graphics.BeerCoaster.Indicator;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Table.Cell;
 
 public class MarineBuilder extends AbstractBuilder {
 
@@ -63,7 +58,6 @@ public class MarineBuilder extends AbstractBuilder {
       final ChartType type,
       final Region region, final Dimension dimensions) {
     final BeerCoaster beercoaster = getDrawable(datasource, region);
-    final AbstractBuilder thisBuilder = this;
     if (beercoaster != null) {
       return new AbstractChart(dimensions) {
         @Override
