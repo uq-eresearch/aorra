@@ -32,7 +32,7 @@ CKEDITOR.plugins.add('aorrafigure', {
         }
       },
 
-      allowedContent : 'figure; figcaption; img[!src]',
+      allowedContent : 'figure; figcaption; img[!src]{width}',
 
       requiredContent : 'figure',
 
