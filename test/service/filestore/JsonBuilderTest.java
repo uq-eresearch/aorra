@@ -418,11 +418,6 @@ public class JsonBuilderTest {
     }
 
     @Override
-    public File getLatestVersion() throws RepositoryException {
-      throw new NotImplementedException();
-    }
-
-    @Override
     public void rename(String newName) throws RepositoryException {
       throw new NotImplementedException();
     }
