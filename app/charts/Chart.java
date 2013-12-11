@@ -1,6 +1,7 @@
 package charts;
 
 import java.awt.Dimension;
+import java.util.Date;
 
 import charts.representations.Format;
 import charts.representations.Representation;
@@ -14,5 +15,7 @@ public interface Chart {
 
   public Representation outputAs(Format format, Dimension queryDimension)
       throws UnsupportedFormatException;
+
+  public Date created();
 
 }

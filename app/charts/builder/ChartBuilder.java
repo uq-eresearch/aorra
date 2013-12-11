@@ -40,10 +40,8 @@ public class ChartBuilder {
       List<Chart> charts = getCharts(datasource,
           null, Collections.<Region>emptyList(), null);
       if(charts.isEmpty()) {
-        System.out.println("no charts");
         cache.noCharts(id);
       } else {
-        System.out.println(charts.size()+" charts");
         for(Chart chart : charts) {
           cache.add(id, chart);
         }
@@ -58,7 +56,6 @@ public class ChartBuilder {
         result.add(entry.chart());
       }
     }
-    System.out.println("result size: "+result.size());
     return result;
   }
 

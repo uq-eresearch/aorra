@@ -147,7 +147,6 @@ public class ChartCache {
     cleanup();
     List<CacheEntry> clist = cache.get(id);
     if(clist == null) {
-      System.out.println("adding clist for "+id);
       clist = Lists.newArrayList();
       cache.put(id, clist);
     }
@@ -160,13 +159,10 @@ public class ChartCache {
       while(ceIter.hasNext()) {
         CacheEntry ce = ceIter.next();
         if(ce.key().equals(k)) {
-          System.out.println("removing duplicate");
           ceIter.remove();
         }
       }
-      System.out.println("adding "+k.toString());
       clist.add(new CacheEntry(k, chart));
-      System.out.println("clist size "+clist.size());
     }
   }
 
@@ -175,11 +171,9 @@ public class ChartCache {
     cleanup();
     List<CacheEntry> clist = cache.get(id);
     if(clist == null) {
-      System.out.println("XXX cache miss");
       return null;
     }
     List<CacheEntry> result = Lists.newArrayList();
-    System.out.println("XXX cache hit, found clist for "+id);
     for(CacheEntry ce : clist) {
       if(ce.key().matches(id, type, regions, parameters)) {
         result.add(ce);
@@ -189,19 +183,14 @@ public class ChartCache {
   }
 
   private void cleanup() {
-    if(this.eventManager == null) {
-      System.out.println("XXX no event manager");
-      return;
+    if(eventManager != null) {
+      for(OrderedEvent evt : eventManager.getSince(lastEventId)) {
+        if(StringUtils.startsWith(evt.event().type, "file:")) {
+          cache.clear();
+          break;
+        }
+      }
+      lastEventId = eventManager.getLastEventId();
     }
-//    if(lastEventId == null) {
-//      lastEventId = eventManager.getLastEventId();
-//      System.out.println("XXX init last event id "+lastEventId);
-//    }
-    for(OrderedEvent evt : eventManager.getSince(lastEventId)) {
-      System.out.println("XXX ccache event "+evt.toString());
-    }
-    lastEventId = eventManager.getLastEventId();
-    System.out.println("XXX last event id "+lastEventId);
-    System.out.println("done cleanup");
   }
 }

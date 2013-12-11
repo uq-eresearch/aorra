@@ -1,5 +1,13 @@
 package controllers;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
+
 import javax.jcr.Session;
 
 import models.CacheableUser;
@@ -30,6 +38,27 @@ public abstract class SessionAwareController extends Controller {
 
   protected <A extends Object> A inUserSession(final F.Function<Session, A> f) {
     return sessionFactory.inSession(getUser().getJackrabbitUserId(), f);
+  }
+
+  private static final SimpleDateFormat httpDateFormat = new SimpleDateFormat(
+      "EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+
+  protected static String asHttpDate(final Calendar calendar) {
+    httpDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    return httpDateFormat.format(calendar.getTime());
+  }
+
+  protected static String asHttpDate(final Date date) {
+    GregorianCalendar c = new GregorianCalendar();
+    c.setTime(date);
+    return asHttpDate(c);
+  }
+
+  protected static Calendar fromHttpDate(final String timeStr)
+      throws ParseException {
+    final Calendar cal = Calendar.getInstance();
+    cal.setTime(httpDateFormat.parse(timeStr));
+    return cal;
   }
 
 }

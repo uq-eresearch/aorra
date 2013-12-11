@@ -7,6 +7,7 @@ import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Date;
 
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -31,6 +32,8 @@ import charts.representations.Format;
 import charts.representations.Representation;
 
 public abstract class AbstractChart implements Chart {
+
+  private Date created = new Date();
 
   private String svgDocument = null;
 
@@ -245,5 +248,10 @@ public abstract class AbstractChart implements Chart {
         new CharArrayReader(svg.toCharArray()));
     scaleSvg(doc, dimensions);
     return doc;
+  }
+
+  @Override 
+  public Date created() {
+    return created;
   }
 }

@@ -760,21 +760,6 @@ public final class FileStoreController extends SessionAwareController {
     }
   }
 
-  private static final SimpleDateFormat httpDateFormat = new SimpleDateFormat(
-      "EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-
-  protected static String asHttpDate(final Calendar calendar) {
-    httpDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-    return httpDateFormat.format(calendar.getTime());
-  }
-
-  protected static Calendar fromHttpDate(final String timeStr)
-      throws ParseException {
-    final Calendar cal = Calendar.getInstance();
-    cal.setTime(httpDateFormat.parse(timeStr));
-    return cal;
-  }
-
   protected String getMimeType(MultipartFormData.FilePart filePart) {
       // prefer guessed mimetypes to fix an issue with xlsx file upload with firefox
       // configure mimetypes in application.conf

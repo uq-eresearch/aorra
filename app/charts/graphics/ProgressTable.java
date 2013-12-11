@@ -105,7 +105,6 @@ public class ProgressTable implements Drawable {
   private final Box box;
 
   public ProgressTable(Dataset dataset) {
-    System.out.println("XXX creating new Progresstable");
     try {
       final Resolver resolver = new Resolver() {
         @Override
@@ -125,8 +124,6 @@ public class ProgressTable implements Drawable {
           new StringReader(render(dataset.columns, dataset.rows).toString()))));
     } catch (Exception e) {
       throw new RuntimeException(e);
-    } finally {
-      System.out.println("XXX DONE creating new Progresstable");
     }
   }
 
