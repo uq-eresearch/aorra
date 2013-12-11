@@ -49,7 +49,6 @@ import charts.representations.Format;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class ChartTest {
@@ -71,21 +70,8 @@ public class ChartTest {
           final User user,
           final FakeRequest newRequest) throws Throwable {
         {
-          final Call call = controllers.routes.Chart.multipleFileCharts("svg",
-              ImmutableList.<String>of());
-          assertThat(call.method()).isEqualTo("GET");
-          assertThat(call.url()).isEqualTo("/charts?format=svg");
-        }
-        {
-          final Call call = controllers.routes.Chart.multipleFileChart("marine",
-              "svg",
-              ImmutableList.<String>of());
-          assertThat(call.method()).isEqualTo("GET");
-          assertThat(call.url()).isEqualTo("/charts/marine.svg");
-        }
-        {
           final String randomUUID = UUID.randomUUID().toString();
-          final Call call = controllers.routes.Chart.singleFileCharts("svg",
+          final Call call = controllers.routes.Chart.charts("svg",
               randomUUID);
           assertThat(call.method()).isEqualTo("GET");
           assertThat(call.url()).isEqualTo(String.format(
@@ -93,7 +79,7 @@ public class ChartTest {
         }
         {
           final String randomUUID = UUID.randomUUID().toString();
-          final Call call = controllers.routes.Chart.singleFileChart("marine",
+          final Call call = controllers.routes.Chart.chart("marine",
               "svg", randomUUID);
           assertThat(call.method()).isEqualTo("GET");
           assertThat(call.url()).isEqualTo(String.format(
@@ -114,10 +100,8 @@ public class ChartTest {
           final FakeRequest newRequest) throws Throwable {
         final FileStore.File f = createMarineChartFile(session);
         final HandlerRef[] calls = new HandlerRef[] {
-          controllers.routes.ref.Chart.multipleFileCharts("svg",
-              ImmutableList.<String>of(f.getIdentifier())),
-          controllers.routes.ref.Chart.singleFileCharts("svg",
-              f.getIdentifier())
+          controllers.routes.ref.Chart.charts("svg",
+              f.getIdentifier()),
         };
         for (HandlerRef call : calls) {
           final Result result = callAction(call, newRequest);
@@ -147,42 +131,6 @@ public class ChartTest {
   }
 
   @Test
-  public void multiFileCharts() {
-    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
-      @Override
-      public Session apply(
-          final Session session,
-          final User user,
-          final FakeRequest newRequest) throws Throwable {
-        final FileStore.File f1 = createMarineChartFile(session);
-        final FileStore.File f2 = createCOTOutbreakChartFile(session);
-        final Result result = callAction(
-            controllers.routes.ref.Chart.multipleFileCharts("svg",
-                ImmutableList.<String>of(
-                    f1.getIdentifier(), f2.getIdentifier())),
-                newRequest);
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result))
-          .isEqualTo("max-age=0, must-revalidate");
-        final JsonNode json = Json.parse(contentAsString(result));
-        assertThat(json.has("charts")).isTrue();
-        assertThat(json.get("charts").isArray()).isTrue();
-        assertThat(json.get("charts")).hasSize(8);
-        for (JsonNode chartJson : (ArrayNode) json.get("charts")) {
-          assertThat(chartJson.isObject()).as("chart is object").isTrue();
-          assertThat(chartJson.has("type")).as("has type").isTrue();
-          assertThat(chartJson.has("region")).as("has region").isTrue();
-          assertThat(chartJson.has("url")).as("has region").isTrue();
-          assertThat(chartJson.get("url").asText()).contains("svg");
-        }
-        return session;
-      }
-    });
-  }
-
-  @Test
   public void getNoCharts() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override
@@ -198,8 +146,8 @@ public class ChartTest {
         // Try with file that isn't a spreadsheet
         {
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileCharts("svg",
-                  ImmutableList.<String>of(f.getIdentifier())),
+              controllers.routes.ref.Chart.charts("svg",
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
@@ -214,8 +162,8 @@ public class ChartTest {
         // Try with folder
         {
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileCharts("svg",
-                  ImmutableList.<String>of(folder.getIdentifier())),
+              controllers.routes.ref.Chart.charts("svg",
+                  folder.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
@@ -267,9 +215,7 @@ public class ChartTest {
           final FileStore.File f,
           final FakeRequest newRequest) {
         final HandlerRef[] calls = new HandlerRef[] {
-            controllers.routes.ref.Chart.multipleFileChart(chartType, "svg",
-                ImmutableList.<String>of(f.getIdentifier())),
-            controllers.routes.ref.Chart.singleFileChart(chartType, "svg",
+            controllers.routes.ref.Chart.chart(chartType, "svg",
                 f.getIdentifier())
           };
         for (HandlerRef call : calls) {
@@ -303,8 +249,8 @@ public class ChartTest {
         }
         final String qs = Joiner.on("&").join(pairs);
         final Result result = callAction(
-            controllers.routes.ref.Chart.multipleFileChart(chartType, "svg",
-                ImmutableList.<String>of(f.getIdentifier())),
+            controllers.routes.ref.Chart.chart(chartType, "svg",
+                f.getIdentifier()),
             loggedInRequest(new FakeRequest("GET", "?"+qs), httpSession));
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/svg+xml");
@@ -357,7 +303,7 @@ public class ChartTest {
           final List<String> pairs) {
         final String qs = Joiner.on("&").join(pairs);
         final Result result = callAction(
-            controllers.routes.ref.Chart.singleFileChart("marine", "svg",
+            controllers.routes.ref.Chart.chart("marine", "svg",
                 fileId),
             loggedInRequest(new FakeRequest("GET", "?"+qs), httpSession));
         assertThat(status(result)).isEqualTo(200);
@@ -379,15 +325,15 @@ public class ChartTest {
         final FileStore.File f = createMarineChartFile(session);
         {
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("unknown", "svg",
-                  ImmutableList.<String>of(f.getIdentifier())),
+              controllers.routes.ref.Chart.chart("unknown", "svg",
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(404);
         }
         {
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("marine",
-                  "unknown", ImmutableList.<String>of(f.getIdentifier())),
+              controllers.routes.ref.Chart.chart("marine",
+                  "unknown", f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(404);
         }
@@ -421,9 +367,9 @@ public class ChartTest {
           final FakeRequest newRequest) {
         for (Format format : OTHER_FORMATS) {
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart(chartType,
+              controllers.routes.ref.Chart.chart(chartType,
                   format.name(),
-                  ImmutableList.<String>of(f.getIdentifier())),
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo(format.getMimeType());
@@ -444,8 +390,8 @@ public class ChartTest {
         {
           final FileStore.File f = createMarineChartFile(session);
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("marine", "csv",
-                  ImmutableList.<String>of(f.getIdentifier())),
+              controllers.routes.ref.Chart.chart("marine", "csv",
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("text/csv");
@@ -468,9 +414,9 @@ public class ChartTest {
         {
           final FileStore.File f = createCOTOutbreakChartFile(session);
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("cots_outbreak",
+              controllers.routes.ref.Chart.chart("cots_outbreak",
                   "csv",
-                  ImmutableList.<String>of(f.getIdentifier())),
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("text/csv");
@@ -496,9 +442,9 @@ public class ChartTest {
         {
           final FileStore.File f = createAnnualRainfallChartFile(session);
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("annual_rainfall",
+              controllers.routes.ref.Chart.chart("annual_rainfall",
                   "csv",
-                  ImmutableList.<String>of(f.getIdentifier())),
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("text/csv");
@@ -536,9 +482,9 @@ public class ChartTest {
           };
           final FileStore.File f = createProgressTableChartFile(session);
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("progress_table",
+              controllers.routes.ref.Chart.chart("progress_table",
                   "csv",
-                  ImmutableList.<String>of(f.getIdentifier())),
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("text/csv");
@@ -590,16 +536,16 @@ public class ChartTest {
         // Invalid type
         {
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("foobar", "svg",
-                  ImmutableList.<String>of(f.getIdentifier())),
+              controllers.routes.ref.Chart.chart("foobar", "svg",
+                  f.getIdentifier()),
               newRequest);
           assertThat(status(result)).isEqualTo(404);
         }
         // Missing path
         {
           final Result result = callAction(
-              controllers.routes.ref.Chart.multipleFileChart("marine", "svg",
-                  ImmutableList.<String>of(UUID.randomUUID().toString())),
+              controllers.routes.ref.Chart.chart("marine", "svg",
+                  UUID.randomUUID().toString()),
               newRequest);
           assertThat(status(result)).isEqualTo(404);
         }

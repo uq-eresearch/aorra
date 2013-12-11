@@ -37,7 +37,6 @@ import charts.representations.Representation;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -50,6 +49,12 @@ public class Chart extends SessionAwareController {
 
   private final ChartBuilder chartBuilder;
 
+  private final DataSourceFactory dsf = new DataSourceFactory() {
+    @Override
+    public DataSource getDataSource(String id) throws Exception {
+      return getDatasourcesFromID(id);
+  }};
+
   @Inject
   public Chart(final JcrSessionFactory sessionFactory, final Jcrom jcrom,
       final CacheableUserProvider sessionHandler, final FileStore fileStore,
@@ -60,18 +65,9 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result multipleFileCharts(final String format, final List<String> ids) throws Exception {
-    if(ids.size() > 1) {
-      throw new Exception("currently only supporting single file charts");
-    }
-    DataSourceFactory dsf = new DataSourceFactory() {
-      @Override
-      public DataSource getDataSource(String id) throws Exception {
-        final List<DataSource> datasources = getDatasourcesFromIDs(Collections.singletonList(id));
-        return datasources.get(0);
-      }};
+  public Result charts(final String format, String id) throws Exception {
     final List<charts.Chart> charts =
-      chartBuilder.getCharts(ids.get(0), dsf, null, getRegions(request().queryString()), null);
+      chartBuilder.getCharts(id, dsf, null, getRegions(request().queryString()), null);
     final ObjectNode json = Json.newObject();
     final ArrayNode aNode = json.putArray("charts");
     for (charts.Chart chart : charts) {
@@ -84,10 +80,7 @@ public class Chart extends SessionAwareController {
           chartNode.put(pname, desc.getParameter(pname).toString());
       }
       try {
-        chartNode.put("url",
-            ids.size() == 1
-            ? buildUrl(chart, format, ids.get(0))
-            : buildUrl(chart, format, ids));
+        chartNode.put("url", buildUrl(chart, format, id));
       } catch (UnsupportedEncodingException e) {
         // Not going to happen
         throw new RuntimeException(e);
@@ -95,11 +88,6 @@ public class Chart extends SessionAwareController {
       aNode.add(chartNode);
     }
     return ok(json).as("application/json; charset=utf-8");
-  }
-
-  @SubjectPresent
-  public Result singleFileCharts(final String format, final String id) throws Exception {
-    return multipleFileCharts(format, ImmutableList.of(id));
   }
 
   private Map<String, String> getParameters() {
@@ -113,8 +101,8 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result multipleFileChart(final String chartType,
-      final String formatStr, final List<String> ids) throws Exception {
+  public Result chart(final String chartType,
+      final String formatStr, final String id) throws Exception {
     final ChartType type;
     final Format format;
     try {
@@ -127,16 +115,7 @@ public class Chart extends SessionAwareController {
     } catch (IllegalArgumentException e) {
       return notFound("unknown chart format: " + formatStr);
     }
-    if(ids.size() > 1) {
-      throw new Exception("currently only supporting single file charts");
-    }
-    DataSourceFactory dsf = new DataSourceFactory() {
-      @Override
-      public DataSource getDataSource(String id) throws Exception {
-        final List<DataSource> datasources = getDatasourcesFromIDs(Collections.singletonList(id));
-        return datasources.get(0);
-      }};
-    final List<charts.Chart> charts = chartBuilder.getCharts(ids.get(0), dsf, type,
+    final List<charts.Chart> charts = chartBuilder.getCharts(id, dsf, type,
         getRegions(request().queryString()), getParameters());
     for (charts.Chart chart : charts) {
       try {
@@ -164,22 +143,9 @@ public class Chart extends SessionAwareController {
     return true;
   }
 
-  @SubjectPresent
-  public Result singleFileChart(final String chartType, final String formatStr,
-      final String id) throws Exception {
-    return multipleFileChart(chartType, formatStr, ImmutableList.of(id));
-  }
-
-  private String buildUrl(charts.Chart chart, String format,
-      List<String> ids) throws UnsupportedEncodingException {
-    return buildUrl(controllers.routes.Chart.multipleFileChart(
-            chart.getDescription().getType().toString().toLowerCase(),
-            format, ids), chart);
-  }
-
   private String buildUrl(charts.Chart chart, String format, String id)
       throws UnsupportedEncodingException {
-    return buildUrl(controllers.routes.Chart.singleFileChart(
+    return buildUrl(controllers.routes.Chart.chart(
             chart.getDescription().getType().toString().toLowerCase(),
             format, id), chart);
   }
@@ -199,14 +165,13 @@ public class Chart extends SessionAwareController {
       return l;
   }
 
-  private List<DataSource> getDatasourcesFromIDs(
-      final List<String> ids) {
-    return inUserSession(new F.Function<Session, List<DataSource>>() {
+  private DataSource getDatasourcesFromID(final String id) {
+    return inUserSession(new F.Function<Session, DataSource>() {
       @Override
-      public final List<DataSource> apply(Session session) throws Exception {
+      public final DataSource apply(Session session) throws Exception {
         final List<DataSource> datasources = Lists.newArrayList(
-            getDatasourcesFromIDs(fileStore, session, ids).values());
-        return datasources;
+            getDatasourcesFromIDs(fileStore, session, Collections.singletonList(id)).values());
+        return datasources.isEmpty()?null:datasources.get(0);
       }
     });
   }

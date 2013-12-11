@@ -65,12 +65,10 @@ GET     /logout                     com.feth.play.module.pa.controllers.Authenti
 GET     /authenticate/:provider     com.feth.play.module.pa.controllers.Authenticate.authenticate(provider: String)
 GET     /authenticate/:provider/denied     @controllers.Application.oAuthDenied(provider: String)
 
-GET    /charts                      @controllers.Chart.multipleFileCharts(format: String ?= "png", id: java.util.List[String])
-GET    /charts/:chart.:format       @controllers.Chart.multipleFileChart(chart, format, id: java.util.List[String])
 GET    /folder/:folderId/charts.zip @controllers.ArchiveAsync.chartArchive(folderId: String)
 GET    /file/:fileId/charts.zip     @controllers.ArchiveAsync.chartArchive(fileId: String)
-GET    /file/:fileId/charts         @controllers.Chart.singleFileCharts(format: String ?= "png", fileId)
-GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.singleFileChart(chart, format, fileId)
+GET    /file/:fileId/charts         @controllers.Chart.charts(format: String ?= "png", fileId)
+GET    /file/:fileId/charts/:chart.:format       @controllers.Chart.chart(chart, format, fileId)
 
 GET    /file/:fileId/html           @controllers.HtmlController.toHtml(fileId)
 GET    /file/:fileId/htmlzip        @controllers.HtmlController.toHtmlZip(fileId)
