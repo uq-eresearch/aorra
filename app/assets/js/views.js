@@ -1089,18 +1089,26 @@ define([
     },
     render: function() {
       var files = this.model.collection.where({ type: 'file' });
-      this.$el.typeahead({
-        name: 'files',
-        valueKey: 'id',
-        local: _(files).map(function(m){
-          return _.defaults(m.toJSON(), {
-            tokens: [m.id, m.get('name')]
-          });
-        }),
-        template: function(datum) {
-          return templates.render('file_typeahead', datum);
-        }
-      });
+      var initFileTypeAhead = _.bind(function() {
+        this.$el.typeahead('destroy');
+        this.$el.typeahead({
+          // LocalStorage is triggered by 'name', and cannot be active for
+          // list updates to show.
+          //name: 'files',
+          valueKey: 'id',
+          local: _(files).map(function(m){
+            return _.defaults(m.toJSON(), {
+              tokens: [m.id, m.get('name')]
+            });
+          }),
+          template: function(datum) {
+            return templates.render('file_typeahead', datum);
+          }
+        });
+      }, this);
+      initFileTypeAhead();
+      this.listenTo(this.model.collection,
+          'add change remove', initFileTypeAhead);
       // Compensate for typeahead DOM changes
       $('.twitter-typeahead, .tt-dropdown-menu').css('min-width', '100%');
       this.$el.siblings('.tt-hint')
