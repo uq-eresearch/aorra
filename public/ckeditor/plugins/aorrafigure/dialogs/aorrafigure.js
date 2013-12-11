@@ -33,6 +33,15 @@ CKEDITOR.dialog.add('aorrafigure', function(editor) {
           widget.setData('imageUrl', this.getValue());
         },
         validate: CKEDITOR.dialog.validate.notEmpty("A chart must be selected")
+      },{
+        id: 'width',
+        label: 'Width',
+        type: 'select',
+        items: [['100%'], ['90%'], ['80%'], ['70%'], ['60%'],
+                 ['50%'], ['40%'], ['30%'], ['20%'], ['10%']],
+        commit: function(widget) {
+          widget.setData('width', this.getValue());
+        }
       }]
     }]
   };
