@@ -24,15 +24,15 @@ html, body {
 
 /* Make short labels easily selectable */
 span.glyphtree-node-label {
-	display: inline-block;
-	margin-left: 5px;
-	width: 100%; /* Fill to the right border */
+  display: inline-block;
+  margin-left: 5px;
+  width: 100%; /* Fill to the right border */
 }
 
 /* How labels should look when focused */
 span.glyphtree-node-label:focus {
-	outline: 0;
-	font-weight: bold;
+  outline: 0;
+  font-weight: bold;
 }
 
 /* Encourage glyphtree icon & label to stay on same line */
@@ -50,7 +50,7 @@ span.glyphtree-node-label:focus {
 }
 
 .chart-list {
-	margin-top: 5px;
+  margin-top: 5px;
 }
 
 .version-row > td {
@@ -58,50 +58,58 @@ span.glyphtree-node-label:focus {
 }
 
 #markdown-html, #html-tab, #html-diff-tab {
-	border: dashed 1px #dddddd;
-	.html-toolbar {
-	  padding: 5px;
-	}
-	.html-pane, .diff-pane {
-	  padding: 5px;
-		figure {
-		  padding: 1em;
+  border: dashed 1px #dddddd;
+  .html-toolbar {
+    padding: 5px;
+  }
+  .html-pane, .diff-pane {
+    padding: 5px;
+    figure {
+      padding: 1em;
       text-align: center;
       border-top: dotted 1px #eeeeee;
       border-bottom: dotted 1px #eeeeee;
-	    img {
-	      display: block;
-	      width: 90%;
-	      margin-left: auto;
-	      margin-right: auto;
-	    }
+      img {
+        display: block;
+        width: 90%;
+        margin-left: auto;
+        margin-right: auto;
+      }
       figcaption {
         margin-top: 1em;
       }
-		}
-	}
-	.diff-pane {
-  ins {
-    background-color: #eeffee;
-    * {
-      background-color: #eeffee;
     }
-    color: #468847;
+    /* Smaller heading fonts for editor */
+    h1, h2, h3 {
+      margin-top: (@line-height-computed / 2);
+      margin-bottom: (@line-height-computed / 3);
+    }
+    h1 { font-size: @font-size-h2; }
+    h2 { font-size: @font-size-h3; }
+    h3 { font-size: @font-size-h4; }
+  }
+  .diff-pane {
+	  ins {
+	    background-color: #eeffee;
+	    * {
+	      background-color: #eeffee;
+	    }
+	    color: #468847;
       img {
         opacity: 0.5;
       }
-  }
-  del {
+	  }
+	  del {
       background-color: #ffeeee;
       * {
         background-color: #ffeeee;
       }
-    color: #b94a48;
-    img {
-      opacity: 0.5;
-    }
+	    color: #b94a48;
+	    img {
+	      opacity: 0.5;
+	    }
+	  }
   }
-	}
 }
 
 #markdown-source .source-pane {
@@ -132,11 +140,11 @@ span.glyphtree-node-label:focus {
 
 /* Remove default bottom margin, and prevent wrapping inside widget */
 .counter-button {
-	margin-bottom: 0;
-	white-space: nowrap;
-	.active {
-	  border-color: #cccccc;
-	}
+  margin-bottom: 0;
+  white-space: nowrap;
+  .active {
+    border-color: #cccccc;
+  }
 }
 
 /* Allow white-space to control wrapping */
@@ -159,12 +167,12 @@ span.glyphtree-node-label:focus {
 }
 
 .red-text {
-	color: #b94a48;
+  color: #b94a48;
 }
 
 @media @phone {
-	#notifications-nav {
-	  .navbar-toggle();
+  #notifications-nav {
+    .navbar-toggle();
     margin-top: 4px;
     top: 0px;
     right: 20px;
@@ -180,23 +188,23 @@ span.glyphtree-node-label:focus {
 }
 
 @media @desktop {
-	.sidebar-panel {
-	  cursor: pointer;
-	  overflow: hidden;
-	  &.collapsed {
-	    float: left;
-	    width: 45px;
-	    .panel-heading {
-	      height: 500px;
-	      .title-text {
-	        display: none;
-	      }
-	    }
-	    .panel-body {
-	      display: none;
-	    }
-	  }
-	}
+  .sidebar-panel {
+    cursor: pointer;
+    overflow: hidden;
+    &.collapsed {
+      float: left;
+      width: 45px;
+      .panel-heading {
+        height: 500px;
+        .title-text {
+          display: none;
+        }
+      }
+      .panel-body {
+        display: none;
+      }
+    }
+  }
 }
 
 @media @not-desktop {
