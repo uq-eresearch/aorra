@@ -80,12 +80,12 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource datasource, ChartType type,
-      final Region region, Dimension dimensions) {
+      final Region region) {
     if (!ROW.containsKey(region)) {
       return null;
     }
     final DefaultCategoryDataset dataset = createDataset(datasource, region);
-    final Chart chart = new AbstractChart(dimensions) {
+    final Chart chart = new AbstractChart() {
       @Override
       public ChartDescription getDescription() {
         return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);

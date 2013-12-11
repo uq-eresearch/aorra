@@ -106,12 +106,12 @@ public class MarineTrendsBuilder extends AbstractBuilder {
   @Override
   public Chart
       build(final SpreadsheetDataSource datasource, final ChartType type,
-          final Region region, final Dimension queryDimensions) {
+          final Region region) {
     if (type == MARINE_CT
         && (region == Region.CAPE_YORK || region == Region.BURNETT_MARY)) {
       return null;
     } else {
-      return new AbstractChart(queryDimensions) {
+      return new AbstractChart() {
 
         @Override
         public ChartDescription getDescription() {

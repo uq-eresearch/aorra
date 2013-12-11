@@ -1,6 +1,5 @@
 package charts.builder.spreadsheet;
 
-import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 
@@ -56,10 +55,10 @@ public class MarineBuilder extends AbstractBuilder {
   @Override
   public Chart build(final SpreadsheetDataSource datasource,
       final ChartType type,
-      final Region region, final Dimension dimensions) {
+      final Region region) {
     final BeerCoaster beercoaster = getDrawable(datasource, region);
     if (beercoaster != null) {
-      return new AbstractChart(dimensions) {
+      return new AbstractChart() {
         @Override
         public ChartDescription getDescription() {
           return new ChartDescription(ChartType.MARINE, region);

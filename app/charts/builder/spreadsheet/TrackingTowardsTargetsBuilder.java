@@ -72,9 +72,9 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource ds, final ChartType type,
-      final Region region, Dimension dimensions) {
+      final Region region) {
     if (region == Region.GBR) {
-      return new AbstractChart(dimensions) {
+      return new AbstractChart() {
 
         @Override
         public ChartDescription getDescription() {

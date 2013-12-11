@@ -88,10 +88,10 @@ public class WetlandsLossBuilder extends AbstractBuilder {
 
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension queryDimensions) {
+            final Region region) {
         if(canHandle(datasource) && matchesRegion(datasource, region)) {
             final CategoryDataset dataset = getDataset(datasource);
-            return new AbstractChart(queryDimensions) {
+            return new AbstractChart() {
 
                 @Override
                 public ChartDescription getDescription() {

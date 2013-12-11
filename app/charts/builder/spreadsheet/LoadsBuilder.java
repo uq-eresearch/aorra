@@ -132,18 +132,18 @@ public class LoadsBuilder extends AbstractBuilder {
 
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension queryDimensions, final Map<String, String> parameters) {
+            final Region region, final Map<String, String> parameters) {
         if(type == LOADS) {
-            return buildLoads(datasource, type, region, queryDimensions, parameters);
+            return buildLoads(datasource, type, region, parameters);
         } else if(region == Region.GBR) {
-            return buildLoadRegions(datasource, type, region, queryDimensions, parameters);
+            return buildLoadRegions(datasource, type, region, parameters);
         } else {
             return null;
         }
     }
 
     public Chart buildLoadRegions(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Dimension queryDimensions, final Map<String, String> parameters ) {
+            final Region region, final Map<String, String> parameters ) {
         final String period = (String)parameters.get(PERIOD);
         if(StringUtils.isBlank(period)) {
             return null;
@@ -152,7 +152,7 @@ public class LoadsBuilder extends AbstractBuilder {
         if(indicator == null) {
             throw new RuntimeException(String.format("chart type %s not implemented", type.name()));
         }
-        return new AbstractChart(queryDimensions) {
+        return new AbstractChart() {
 
             @Override
             public ChartDescription getDescription() {
@@ -205,12 +205,12 @@ public class LoadsBuilder extends AbstractBuilder {
     }
 
     private Chart buildLoads(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension queryDimensions, final Map<String, String> parameters) {
+            final Region region, final Map<String, String> parameters) {
         final String period = (String)parameters.get(PERIOD);
         if(StringUtils.isBlank(period)) {
             return null;
         }
-        return new AbstractChart(queryDimensions) {
+        return new AbstractChart() {
 
             @Override
             public ChartDescription getDescription() {

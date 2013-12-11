@@ -86,11 +86,11 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
 
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Dimension dimensions) {
+            final Region region) {
         if(region == Region.CAPE_YORK) {
             return null;
         }
-        return new AbstractChart(dimensions) {
+        return new AbstractChart() {
             @Override
             public ChartDescription getDescription() {
               return new ChartDescription(type, region, title());

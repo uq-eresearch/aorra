@@ -3,7 +3,6 @@ package charts.builder.spreadsheet;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 
-import java.awt.Dimension;
 import java.util.List;
 import java.util.Map;
 
@@ -31,14 +30,14 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   public abstract boolean canHandle(SpreadsheetDataSource datasource);
 
   public Chart build(SpreadsheetDataSource datasource, ChartType type,
-      Region region, Dimension queryDimensions) {
+      Region region) {
       throw new RuntimeException("override me");
   }
 
   public Chart build(SpreadsheetDataSource datasource, ChartType type,
-          Region region, Dimension queryDimensions, Map<String, String> parameters) {
+          Region region, Map<String, String> parameters) {
       if(parameters.isEmpty()) {
-          return build(datasource, type, region, queryDimensions);
+          return build(datasource, type, region);
       } else {
           throw new RuntimeException("override me");
       }
@@ -86,9 +85,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     final List<Chart> charts = Lists.newLinkedList();
     for (Object o : ChartPermutations.apply(t, r, m)) {
       ChartPermutation p = (ChartPermutation)o;
-      // FIXME remove dimension parameter
-      final Chart chart = build(datasource, p.chartType(), p.region(),
-          new Dimension(), p.javaParams());
+      final Chart chart = build(datasource, p.chartType(), p.region(), p.javaParams());
       if (chart != null) {
         charts.add(chart);
       }

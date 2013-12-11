@@ -55,9 +55,9 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource datasource,
-      final ChartType type, final Region region, Dimension queryDimensions) {
+      final ChartType type, final Region region) {
     if (region == Region.GBR) {
-      return new AbstractChart(queryDimensions) {
+      return new AbstractChart() {
 
         @Override
         public ChartDescription getDescription() {

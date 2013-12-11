@@ -1,6 +1,5 @@
 package charts.builder.spreadsheet;
 
-import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
@@ -89,7 +88,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-      final Region region, Dimension dimensions) {
+      final Region region) {
     final ProgressTable.Dataset ds;
     try {
       ds = getDataset(datasource, type==ChartType.PROGRESS_TABLE_REGION?region:null);
@@ -99,7 +98,7 @@ public class ProgressTableBuilder extends AbstractBuilder {
     }
     if (region == Region.GBR || type == ChartType.PROGRESS_TABLE_REGION) {
       final ProgressTable pt = new ProgressTable(ds);
-      return new AbstractChart(dimensions) {
+      return new AbstractChart() {
         @Override
         public ChartDescription getDescription() {
           return new ChartDescription(type, region);

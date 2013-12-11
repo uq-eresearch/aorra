@@ -37,10 +37,6 @@ public abstract class AbstractChart implements Chart {
 
   private String svgDocument = null;
 
-  public AbstractChart(Dimension queryDimensions) {
-    //FIXME remove queryDimensions parameter
-  }
-
   @Override
   public abstract ChartDescription getDescription();
 

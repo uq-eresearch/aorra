@@ -65,7 +65,7 @@ public class GroundcoverBuilder extends AbstractBuilder {
 
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, Dimension dimension) {
+            final Region region) {
         if(!ROWS.containsKey(region)) {
             return null;
         }
@@ -77,7 +77,7 @@ public class GroundcoverBuilder extends AbstractBuilder {
                 !StringUtils.equalsIgnoreCase(datasource.getDefaultSheet(), GCB50_SHEETNAME)) {
             return null;
         }
-        Chart chart = new AbstractChart(dimension) {
+        Chart chart = new AbstractChart() {
 
             @Override
             public ChartDescription getDescription() {

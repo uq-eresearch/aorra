@@ -72,12 +72,12 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final SpreadsheetDataSource datasource, ChartType type,
-      final Region region, Dimension dimensions) {
+      final Region region) {
     if (!region.equals(Region.GBR)) {
       return null;
     }
     final TimeSeriesCollection dataset = createDataset(datasource);
-    final Chart chart = new AbstractChart(dimensions) {
+    final Chart chart = new AbstractChart() {
       @Override
       public ChartDescription getDescription() {
         return new ChartDescription(ChartType.COTS_OUTBREAK, region);

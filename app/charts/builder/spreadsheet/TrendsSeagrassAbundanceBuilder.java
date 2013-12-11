@@ -141,8 +141,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
 
     @Override
   public Chart build(final SpreadsheetDataSource ds, final ChartType type,
-      final Region region, Dimension dimensions,
-      final Map<String, String> parameters) {
+      final Region region, final Map<String, String> parameters) {
     final Subregion subregion = getSubregion(ds, parameters);
     if (subregion == null) {
       return null;
@@ -150,7 +149,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
     if (subregion.getRegion() == region) {
       final CategoryDataset dataset = createDataset(ds, subregion);
       final String title = getTitle(subregion);
-      return new AbstractChart(dimensions) {
+      return new AbstractChart() {
         @Override
         public ChartDescription getDescription() {
           return new ChartDescription(type, region, parameters, "TSA at "+subregion.getLabel());
