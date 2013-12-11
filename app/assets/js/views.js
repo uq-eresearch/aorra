@@ -1456,7 +1456,10 @@ define([
       displayToggle: '.display-toggle'
     },
     updatedOnServer: function() {
-      // TODO: Update name and timestamp
+      var name = this.model.get('name');
+      this.ui.nameSpan.text(name);
+      this.ui.nameField.val(name);
+      // TODO: Update modification time
     },
     getContentView: function() {
       return OnlineEditorView.create(this.model, this._users);
