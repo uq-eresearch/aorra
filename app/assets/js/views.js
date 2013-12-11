@@ -1038,7 +1038,6 @@ define([
         };
       };
       return {
-        zip: this.model.url() + '/charts.zip',
         regions: _.chain(this._charts).groupBy('region')
         .map(function(charts, region) {
           var common = { title: region, slug: _s.slugify(region) };
@@ -1530,6 +1529,8 @@ define([
       if (this.model.get('mime') == 'text/html') {
         formats['HTML Zip'] = this.model.url()+"/htmlzip";
         formats['PDF'] = this.model.url()+"/pdf";
+      } else if (typeFromMimeType(this.model.get('mime')) == 'spreadsheet') {
+        formats['Charts'] = this.model.url()+'/charts.zip';
       }
       return formats;
     },
