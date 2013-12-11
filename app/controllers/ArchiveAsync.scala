@@ -3,16 +3,12 @@ package controllers
 import java.awt.Dimension
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.mapAsScalaMap
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.util.Try
-
 import org.jcrom.Jcrom
-
 import com.google.inject.Inject
-
 import ScalaSecured.isAuthenticated
 import charts.Region
 import charts.builder.ChartBuilder
@@ -25,11 +21,15 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import play.api.mvc.EssentialAction
 import play.libs.F
+import charts.builder.DataSourceFactory
+import charts.builder.DataSource
+import java.util.Collection
 
 class ArchiveAsync @Inject() (
   val jcrom: Jcrom,
   val filestore: service.filestore.FileStore,
-  val sessionFactory: service.JcrSessionFactory)
+  val sessionFactory: service.JcrSessionFactory,
+  val chartBuilder: ChartBuilder)
   extends Controller {
 
   def chartArchive(id: String): EssentialAction = isAuthenticated { user =>
@@ -53,18 +53,19 @@ class ArchiveAsync @Inject() (
 
   protected def addChartFilesToArchive(
     user: CacheableUser, id: String)(zos: ZipOutputStream) {
-    // FIXME
-    /*
-    val cb = new ChartBuilder
     inSession(user) { session =>
+      val dsf = new DataSourceFactory {
+        def getDataSource(id: String) : DataSource = {
+          controllers.Chart.getDataSource(filestore, session, id)
+        }
+      }
       for (
-        (file, datasource) <-
-            getDatasourcesFromIDs(filestore, session, Seq(id));
-        chart <- cb.getCharts(
-            Seq(datasource), Region.values.toSeq, new Dimension);
+        file <- 
+            controllers.Chart.getFilesFromID(filestore, session, id);
+        chart <- chartBuilder.getCharts(
+            file.getIdentifier(), dsf, null, Region.values.toSeq, null);
         f <- Format.values;
-        // FIXME dimension
-        data <- Try(chart.outputAs(f, new Dimension(0,0)).getContent()) // skip if unsupported
+        data <- Try(chart.outputAs(f, new Dimension).getContent()) // skip if unsupported
       ) {
         val filepath = "%s/%s-%s.%s".format(
           id,
@@ -76,7 +77,7 @@ class ArchiveAsync @Inject() (
         zos.closeEntry
       }
     }
-    */
+    
   }
 
   protected def inSession[A](user: CacheableUser)(f: Session => A): A =

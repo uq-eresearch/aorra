@@ -7,6 +7,7 @@ import helpers.FileStoreHelper;
 import java.awt.Dimension;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -174,6 +175,36 @@ public class Chart extends SessionAwareController {
         return datasources.isEmpty()?null:datasources.get(0);
       }
     });
+  }
+
+  public static List<FileStore.File> getFilesFromID(
+      FileStore fileStore, Session session, String id) throws Exception {
+    final FileStoreHelper fsh = new FileStoreHelper(session);
+    final List<FileStore.File> files = Lists.newLinkedList();
+    final FileStore.Manager fm = fileStore.getManager(session);
+    FileStore.FileOrFolder fof = fm.getByIdentifier(id);
+    if (fof instanceof FileStore.File) {
+      files.add((FileStore.File) fof);
+    } else if (fof instanceof FileStore.Folder) {
+      files.addAll(fsh.listFilesInFolder((FileStore.Folder) fof));
+    }
+    return files;
+  }
+
+  public static DataSource getDataSource(FileStore fileStore,
+      Session session, String id) throws Exception {
+    final FileStoreHelper fsh = new FileStoreHelper(session);
+    final FileStore.Manager fm = fileStore.getManager(session);
+    FileStore.FileOrFolder fof = fm.getByIdentifier(id);
+    if (fof instanceof FileStore.File) {
+      Collection<DataSource>  c = fsh.getDatasources(Collections.singletonList((FileStore.File) fof)).values();
+      if(!c.isEmpty()) {
+        return c.iterator().next();
+      }
+    } else if (fof instanceof FileStore.Folder) {
+      throw new RuntimeException("folder");
+    }
+    return null;
   }
 
   public static Map<FileStore.File, DataSource> getDatasourcesFromIDs(
