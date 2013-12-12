@@ -11,8 +11,10 @@ CKEDITOR.plugins.add('aorrafigure', {
 
       data: function() {
         var imageUrl = this.data.imageUrl;
+        var width = this.data.width;
         var img = this.element.findOne("img");
         if (img && imageUrl) {
+          img.setAttribute('style', "width: "+width);
           img.setAttribute('src', imageUrl);
         }
       },
@@ -30,7 +32,7 @@ CKEDITOR.plugins.add('aorrafigure', {
         }
       },
 
-      allowedContent : 'figure; figcaption; img[!src]',
+      allowedContent : 'figure; figcaption; img[!src]{width}',
 
       requiredContent : 'figure',
 

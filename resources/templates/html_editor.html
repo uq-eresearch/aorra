@@ -1,20 +1,31 @@
 <div class="tabbable">
   {{#editable}}
   <div>
-    <p class="pull-right text-muted">
+    <p class="pull-left text-muted">
     Use <code>ctrl + right click</code> to correct spelling.
     </p>
-    <div class="pull-left">
-      <button class="btn btn-primary save">
-      Save Changes
-      </button>
+    <div class="pull-right">
+      <div class="btn-toolbar" role="toolbar">
+        <div class="btn-group">
+          <button class="btn btn-default js-reset">Revert</button>
+        </div>
+      	<div class="btn-group">
+          <button class="btn btn-primary js-save">Save Changes</button>
+        </div>
+      </div>
     </div>
     <div class="clearfix"></div>
     <br/>
   </div>
   <ul class="nav nav-tabs nav-justified">
     <li class="active">
-      <a href="#html-tab" data-toggle="tab">HTML</a>
+      <a href="#html-tab" data-toggle="tab">
+      HTML
+      <span class="label label-warning js-outofdate"
+        title="modifications are based on a previous version">
+        out of date
+      </span>
+      </a>
     </li>
     <li>
       <a href="#html-diff-tab" data-toggle="tab">Compare Differences</a>
@@ -23,11 +34,11 @@
   {{/editable}}
   <div class="tab-content">
     <div class="tab-pane active" id="html-tab">
-      <div class="html-pane" {{#editable}}contenteditable="true" spellcheck="true"{{/editable}}>{{{html}}}</div>
+      <div class="html-pane" {{#editable}}contenteditable="true" spellcheck="true"{{/editable}}></div>
     </div>
     {{#editable}}
     <div class="tab-pane" id="html-diff-tab">
-      <div class="diff-pane">{{{html}}}</div>
+      <div class="diff-pane"></div>
     </div>
     {{/editable}}
   </div>

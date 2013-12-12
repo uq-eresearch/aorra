@@ -1,6 +1,8 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
 /*global _: false, define: false, window: false */
-define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
+define(
+    ['backbone', 'backbone.localstorage', 'q', 'cryptojs-md5'], 
+    function(Backbone, LocalStorage, Q, CryptoJS) {
   'use strict';
 
   var Avatar = function(options) {
@@ -106,14 +108,27 @@ define(['backbone', 'q', 'cryptojs-md5'], function(Backbone, Q, CryptoJS) {
         email: this.get('author').email
       }));
     },
-    url: function() {
-      return this.collection.url() + '/' + this.get('name');
+    content: function() {
+      var fileId = this.collection.file.id;
+      var versionId = this.id;
+      return Q($.get(this.url())).then(function(data) {
+        return {
+          fileId: fileId,
+          versionId: versionId,
+          data: data,
+          md5: CryptoJS.MD5(data).toString()
+        };
+      });
     }
   });
   
   var VersionList = Backbone.Collection.extend({
     initialize: function(attributes, options) {
       this.file = options.file;
+      // When a version is deleted, it changes the file
+      this.listenTo(this.file, 'sync', _.bind(function() {
+        this.fetch();
+      }, this));
     },
     model: VersionInfo,
     url: function() {

@@ -6,19 +6,24 @@ define([
         'templates',
         'underscore',
         'underscore.string',
+        'q',
         'moment',
         'diff_match_patch',
         'glyphtree',
         'jquery.bootstrap',
         'backbone',
         'marionette',
+        'backbone.localstorage',
         'marked',
         'unstyler',
         'htmldiff',
+        'cryptojs-md5',
         'FileAPI',
         'jquery.ckeditor',
         'typeahead'
-        ], function(App, models, templates, _, _s, moment, DiffMatchPatch, glyphtree, $, Backbone, Marionette, marked, unstyle, htmldiff) {
+        ], function(App, models, templates, _, _s, Q, moment, DiffMatchPatch,
+            glyphtree, $, Backbone, Marionette, LocalStorage, marked,
+            unstyle, htmldiff, CryptoJS) {
   'use strict';
 
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
@@ -679,6 +684,7 @@ define([
         App.vent.trigger("nav:file:diff", file, view.model);
       });
       this._users = options.users;
+      window.versions = this.collection;
       this.render();
       this.collection.fetch();
     },
@@ -1032,7 +1038,6 @@ define([
         };
       };
       return {
-        zip: this.model.url() + '/charts.zip',
         regions: _.chain(this._charts).groupBy('region')
         .map(function(charts, region) {
           var common = { title: region, slug: _s.slugify(region) };
@@ -1065,94 +1070,6 @@ define([
       });
     }
   });
-
-  var ChartSelector = Backbone.Marionette.Layout.extend({
-    tagName: 'span',
-    ui: {
-      toolbarButton: '.btn-insert-chart',
-      input: 'input',
-      chartList: '.chart-list'
-    },
-    renderChartList: function() {
-      this.ui.chartList.html(templates.render('chart_list', {
-        charts: this._charts
-      }));
-    },
-    getCharts: function(datum) {
-      var $input = this.ui.input;
-      var filesAndFolders = this.model.collection;
-      var onSuccess = _.bind(function(data) {
-        this._charts = data.charts;
-        this.renderChartList();
-      }, this);
-      var fileId = $input.val();
-      var file = filesAndFolders.findWhere({type: 'file', id: fileId});
-      if (_.isObject(file)) {
-        $.get(file.url() + '/charts?format='+svgOrPng, onSuccess);
-      }
-    },
-    initTypeahead: function() {
-      this.ui.input.typeahead({
-        name: 'files',
-        valueKey: 'id',
-        local: _(this.model.collection.where({ type: 'file' })).map(function(m){
-          return _.defaults(m.toJSON(), {
-            tokens: [m.id, m.get('name')]
-          });
-        }),
-        template: function(datum) {
-          return templates.render('file_typeahead', datum);
-        }
-      });
-      // Compensate for typeahead DOM changes
-      $('.twitter-typeahead, .tt-dropdown-menu').css('min-width', '100%');
-      // Connect events to select file
-      var selectFile = _.bind(function() {
-        this.getCharts();
-        this.ui.input.blur();
-      }, this);
-      this.ui.input.on('typeahead:selected', selectFile);
-      this.ui.input.on('typeahead:autocompleted', selectFile);
-    },
-    destroyTypeahead: function() {
-      this.ui.input.typeahead('destroy');
-    },
-    onRender: function() {
-      var $insertChartContent = this.$el.find('.insert-chart-content').hide();
-      this.ui.toolbarButton.popover({
-        'html': true,
-        'placement': 'bottom',
-        'content': function() {
-          return $insertChartContent.show();
-        }
-      });
-      // All events on popup content are detached when hiding the popup,
-      // so init typeahead when popup shows and destroy it on hide.
-      this.ui.toolbarButton.on('shown.bs.popover', _.bind(function() {
-        this.initTypeahead();
-        this.ui.input.focus();
-      }, this));
-      this.ui.toolbarButton.on('hide.bs.popover',
-          _.bind(this.destroyTypeahead, this));
-      // Emit an event when the chart is selected
-      this.$el.on('click', '.chart-list a', _.bind(function(e) {
-        var chart = _(this._charts).findWhere({url: $(e.target).data('url')});
-        if (_.isObject(chart)) {
-          this.trigger('chart:selected', chart);
-        }
-        this.ui.toolbarButton.popover('hide');
-        return false;
-      }, this));
-    },
-    serializeData: function() {
-      return {
-        charts: this._charts
-      };
-    },
-    template: function(serialized_model) {
-      return templates.render('chart_selector', serialized_model);
-    }
-  });
   
   var FileIdAutocomplete = Backbone.View.extend({
     tagName: 'input',
@@ -1171,18 +1088,26 @@ define([
     },
     render: function() {
       var files = this.model.collection.where({ type: 'file' });
-      this.$el.typeahead({
-        name: 'files',
-        valueKey: 'id',
-        local: _(files).map(function(m){
-          return _.defaults(m.toJSON(), {
-            tokens: [m.id, m.get('name')]
-          });
-        }),
-        template: function(datum) {
-          return templates.render('file_typeahead', datum);
-        }
-      });
+      var initFileTypeAhead = _.bind(function() {
+        this.$el.typeahead('destroy');
+        this.$el.typeahead({
+          // LocalStorage is triggered by 'name', and cannot be active for
+          // list updates to show.
+          //name: 'files',
+          valueKey: 'id',
+          local: _(files).map(function(m){
+            return _.defaults(m.toJSON(), {
+              tokens: [m.id, m.get('name')]
+            });
+          }),
+          template: function(datum) {
+            return templates.render('file_typeahead', datum);
+          }
+        });
+      }, this);
+      initFileTypeAhead();
+      this.listenTo(this.model.collection,
+          'add change remove', initFileTypeAhead);
       // Compensate for typeahead DOM changes
       $('.twitter-typeahead, .tt-dropdown-menu').css('min-width', '100%');
       this.$el.siblings('.tt-hint')
@@ -1202,7 +1127,7 @@ define([
   
   var HtmlEditor = Backbone.Marionette.Layout.extend({
     modelEvents: {
-      "sync": "fetchData"
+      "sync": "updatedOnServer"
     },
     regions: {
       chartSelector: '.chart-selector'
@@ -1210,42 +1135,103 @@ define([
     ui: {
       diff: '.diff-pane',
       html: '.html-pane',
-      save: 'button.save'
+      save: 'button.js-save',
+      reset: 'button.js-reset',
+      outofdate: '.label.js-outofdate'
     },
     initialize: function(options) {
-      this._content = '';
-      this._users = this.options.users;
-      this.fetchData();
-    },
-    fetchData: function() {
-      $.get(this.model.downloadUrl(), _.bind(function(data) {
-        var changed = data != this._content;
-        if (changed) {
-          this._content = data;
-          this.render();
+      var setupPromises = [
+        this._updateServerContentCache(),
+        this._setupWorkingStorage()
+      ];
+      Q.all(setupPromises).then(_.bind(function() {
+        // Initialize working copy if none exists
+        if (this._getWorkingCopy() == null || 
+            !this._getWorkingCopy().isModified()) {
+          this._setWorkingCopy(this._serverContentCache);
         }
-      }, this));
+        this._contentLoaded = true;
+        this.render();
+        this.triggerMethod('html:loaded');
+      }, this)).done();
+      // Keep user cache
+      this._users = this.options.users;
+    },
+    updatedOnServer: function() {
+      // Update cache and then trigger UI update
+      this._updateServerContentCache()
+        .then(_.bind(this.triggerMethod, this, 'html:loaded'))
+        .then(_.bind(this.triggerMethod, this, 'html:update'));
+    },
+    _updateServerContentCache: function() {
+      var versions = this.model.versions();
+      return Q(versions.fetch()).then(function() {
+          return versions.last().content();
+        }).then(_.bind(function(content) {
+          this._serverContentCache = content;
+          return content;
+        }, this));
+    },
+    _setupWorkingStorage: function() {
+      this.localStorage = new (Backbone.Collection.extend({
+        localStorage: new LocalStorage("HtmlEditor-"+this.model.id)
+      }));
+      // When working copy data changes, trigger update to other elements
+      this.localStorage.on('change',
+          _.bind(this.triggerMethod, this, 'html:update'));
+      return Q(this.localStorage.fetch());
+    },
+    _getWorkingCopy: function() {
+      var mine = this.localStorage.get('mine');
+      if (!mine) {
+        return null;
+      }
+      var content = mine.get('content');
+      content.isModified = function() {
+        return CryptoJS.MD5(content.data).toString() != content.md5;
+      };
+      return content;
+    },
+    _setWorkingCopy: function(content) {
+      var mine = this.localStorage.get('mine');
+      if (mine) {
+        mine.set('content', content);
+      } else {
+        this.localStorage.add({
+          id: 'mine',
+          content: content
+        });
+      }
+      this.localStorage.get('mine').save();
+      this.triggerMethod('html:loaded');
+    },
+    _updateWorkingCopy: function(data) {
+      var mine = this.localStorage.get('mine');
+      if (mine) {
+        mine.set('content',
+            _({ data: data }).defaults(mine.get('content')));
+        mine.save();
+      }
+    },
+    _resetWorkingCopy: function() {
+      this._setWorkingCopy(this._serverContentCache);
     },
     serializeData: function() {
-      return {
-        content: this._content,
-        editable: this.editable()
-      };
+      return { editable: this.editable() };
     },
     template: function(obj) {
       return templates.render('html_editor', {
-        html: unstyle(obj.content),
         editable: obj.editable
       });
     },
-    flags: function() {
+    _flags: function() {
       return this._users.flags()['edit'];
     },
     editable: function() {
       if (this.model.get('accessLevel') != 'RW') {
         return false;
       }
-      var flags = this.flags().filter(_.bind(function(f) {
+      var flags = this._flags().filter(_.bind(function(f) {
         return f.get('targetId') == this.model.id;
       }, this));
       return flags.length == 1 && _(flags).any(_.bind(function(m) {
@@ -1254,26 +1240,56 @@ define([
     },
     _watchEditFlags: function() {
       if (this._watchingFlags) { return; }
-      this.flags().on('add remove', _.bind(function(f) {
+      this._flags().on('add remove', _.bind(function(f) {
         if (f.get('targetId') == this.model.id) {
           this.render();
         }
       }, this));
       this._watchingFlags = true;
     },
+    onHtmlLoaded: function() {
+      if (this._contentLoaded) {
+        if (this.ui.html.editor) {
+          // Editor
+          this._setEditorContent(this._getWorkingCopy().data);
+        } else {
+          // Viewer
+          this.ui.html.html(this._serverContentCache.data);
+        }
+        this.toggleOutOfDate();
+      }
+    },
     onHtmlUpdate: function() {
-      this.updateDiff();
-      this.toggleSave();
+      if (this._contentLoaded) {
+        this.updateDiff();
+        this.toggleSave();
+      }
     },
     updateDiff: function() {
-      this.ui.diff.html(htmldiff(this._content, this.getContent()));
+      var workingCopy = this._getWorkingCopy();
+      if (workingCopy) {
+        this.ui.diff.html(htmldiff(
+            this._serverContentCache.data, workingCopy.data));
+      }
     },
-    getContent: function() {
-      return this.ui.html.editor.getData();
+    _setEditorContent: function(html, callback) {
+      return this.ui.html.editor.setData(html, callback);
+    },
+    toggleOutOfDate: function() {
+      var workingCopy = this._getWorkingCopy();
+      if (workingCopy && 
+          workingCopy.versionId != this._serverContentCache.versionId) {
+        this.ui.outofdate.show();
+      } else {
+        this.ui.outofdate.hide();
+      }
     },
     toggleSave: function() {
-      var content = this.getContent();
-      this.ui.save.prop("disabled", this._content == content);
+      var workingCopy = this._getWorkingCopy();
+      if (workingCopy) {
+        this.ui.save.prop("disabled", !workingCopy.isModified());
+        this.ui.reset.prop("disabled", !workingCopy.isModified())
+      }
     },
     getCharts: function(file, callback) {
       if (_.isObject(file)) {
@@ -1326,48 +1342,40 @@ define([
           'aorrafigure_fileId:loaded', fileIdInit);
       this.ui.html.ckeditor().editor.on(
           'aorrafigure_imageUrl:loaded', chartUrlInit);
+      this.ui.html.ckeditor().editor.on(
+          'change', _.debounce(_.bind(function(evt) {
+            this._updateWorkingCopy(evt.editor.getData());
+          }, this), 500));
+      this.triggerMethod('html:loaded');
     },
     onRender: function() {
       var file = this.model;
       if (this.editable()) {
         var save = _.bind(function() {
-          var oldContent = this._content;
-          this._content = this.getContent();
+          this.ui.html.ckeditor().editor.setReadOnly(true);
           $.ajax(this.model.uploadUrl(), {
             type: 'POST',
             contentType: 'text/html',
-            data: this._content,
-            onFailure: _.bind(function() {
-              this._content = oldContent;
+            data: this._getWorkingCopy().data,
+            success: _.bind(function() {
+              var afterUpdate = _.bind(function() {
+                this._resetWorkingCopy();
+                this.ui.html.ckeditor().editor.setReadOnly(false);
+              }, this);
+              this._updateServerContentCache().then(afterUpdate).done();
+            }, this),
+            failure: _.bind(function() {
+              this.ui.html.ckeditor().editor.setReadOnly(false);
             }, this)
           });
         }, this);
         this._setupCKEditor();
-        var htmlUpdated =
-          _.bind(this.triggerMethod, this, 'html:update')
-        var plainTextPasteHandler = _.bind(function(f) {
-          return _.bind(function(e) {
-            // cancel paste
-            e.preventDefault();
-            // get text representation of clipboard
-            var cb = e.originalEvent.clipboardData;
-            var html = cb.getData("text/html") || cb.getData("text/plain");
-            var cleanHtml = unstyle(html);
-            return f(cleanHtml);
-          }, this);
-        }, this);
-        this.ui.html.on('keyup', htmlUpdated);
-        this.ui.html.on("paste", plainTextPasteHandler(function(text) {
-          document.execCommand("insertHTML", false, text);
-        }));
         this.ui.save.on('click', save);
-        var selector = new ChartSelector({ model: this.model });
-        this.chartSelector.show(selector);
-        selector.on('chart:selected', _.bind(function(chart) {
-          this.ui.html.append(templates.render('chart_with_caption', chart));
-          htmlUpdated();
-        }, this));
-        this.ui.save.prop("disabled", true);
+        this.ui.reset.on('click', _.bind(this._resetWorkingCopy, this));
+        this.triggerMethod('html:update');
+      } else {
+        this.triggerMethod('html:loaded');
+        this.triggerMethod('html:update');
       }
       this._watchEditFlags();
     }
@@ -1399,7 +1407,7 @@ define([
 
   var FileView = FileOrFolderView.extend({
     modelEvents: {
-      "sync": "render"
+      "sync": "updatedOnServer"
     },
     initialize: function(options) {
       this._users = options.users;
@@ -1445,6 +1453,12 @@ define([
       nameSpan: 'span.name',
       nameField: 'input.name',
       displayToggle: '.display-toggle'
+    },
+    updatedOnServer: function() {
+      var name = this.model.get('name');
+      this.ui.nameSpan.text(name);
+      this.ui.nameField.val(name);
+      // TODO: Update modification time
     },
     getContentView: function() {
       return OnlineEditorView.create(this.model, this._users);
@@ -1515,6 +1529,8 @@ define([
       if (this.model.get('mime') == 'text/html') {
         formats['HTML Zip'] = this.model.url()+"/htmlzip";
         formats['PDF'] = this.model.url()+"/pdf";
+      } else if (typeFromMimeType(this.model.get('mime')) == 'spreadsheet') {
+        formats['Charts'] = this.model.url()+'/charts.zip';
       }
       return formats;
     },

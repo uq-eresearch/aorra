@@ -90,7 +90,7 @@ public class FileStoreTest {
             assertThat(file).isNotEqualTo(folder);
             assertThat(file).isEqualTo(folder.getFileOrFolder("test"));
             // Versions are different to files
-            assertThat(file).isNotEqualTo(file.getLatestVersion());
+            assertThat(file).isNotEqualTo(file.getVersions().last());
             return folder.getIdentifier();
           }
         });

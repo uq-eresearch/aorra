@@ -17,6 +17,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.TimeZone;
 
 import javax.jcr.AccessDeniedException;
@@ -701,10 +702,11 @@ public final class FileStoreController extends SessionAwareController {
       @Override
       public final Result apply(Session session, FileStore.File file)
           throws Throwable {
+        final SortedSet<FileStore.File> versions = file.getVersions();
         if (versionId.equals("latest")) {
-          return operation.apply(session, file, file.getLatestVersion());
+          return operation.apply(session, file, versions.last());
         }
-        for (FileStore.File version : file.getVersions()) {
+        for (FileStore.File version : versions) {
           if (version.getIdentifier().equals(versionId) ||
               version.getName().equals(versionId)) {
             return operation.apply(session, file, version);

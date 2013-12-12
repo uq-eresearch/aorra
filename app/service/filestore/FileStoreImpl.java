@@ -579,18 +579,6 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
-    public FileStore.File getLatestVersion()
-        throws RepositoryException {
-      return new FileVersion(this,
-          getDAO().getVersion(rawPath(), entity.getLatestVersion()),
-          filestoreManager, eventManagerImpl);
-    }
-
-    protected String getLatestVersionName() {
-      return entity.getLatestVersion();
-    }
-
-    @Override
     public SortedSet<service.filestore.FileStore.File> getVersions()
         throws RepositoryException {
       final Comparator<FileStore.File> c = new Comparator<FileStore.File>() {
@@ -672,12 +660,6 @@ public class FileStoreImpl implements FileStore {
     }
 
     @Override
-    public FileStore.File getLatestVersion()
-        throws RepositoryException {
-      throw new NotImplementedException();
-    }
-
-    @Override
     public SortedSet<service.filestore.FileStore.File> getVersions() {
       throw new NotImplementedException();
     }
@@ -685,8 +667,7 @@ public class FileStoreImpl implements FileStore {
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final Event event = Events.delete(this);
-      if (entity.getVersion().equals(file.getLatestVersionName())) {
+      if (entity.getVersion().equals(file.entity.getLatestVersion())) {
         final List<models.filestore.File> versions =
             getDAO().getVersionListById(file.getIdentifier());
         if (versions.size() < 2) {
@@ -696,6 +677,7 @@ public class FileStoreImpl implements FileStore {
             versions.get(versions.size()-2).getVersion(), true);
       }
       getDAO().removeVersionById(file.getIdentifier(), entity.getVersion());
+      final Event event = Events.update(this.file);
       eventManagerImpl.tell(event);
       file.reload();
     }

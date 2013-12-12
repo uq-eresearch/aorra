@@ -131,8 +131,6 @@ public interface FileStore {
 
     String getDigest();
 
-    File getLatestVersion() throws RepositoryException;
-
     SortedSet<File> getVersions() throws RepositoryException;
 
     File update(String mime, InputStream data) throws RepositoryException;
