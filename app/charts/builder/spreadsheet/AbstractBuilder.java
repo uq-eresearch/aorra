@@ -27,14 +27,14 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     this.types = types;
   }
 
-  public abstract boolean canHandle(SpreadsheetDataSource datasource);
+  protected abstract boolean canHandle(SpreadsheetDataSource datasource);
 
-  public Chart build(SpreadsheetDataSource datasource, ChartType type,
+  protected Chart build(SpreadsheetDataSource datasource, ChartType type,
       Region region) {
       throw new RuntimeException("override me");
   }
 
-  public Chart build(SpreadsheetDataSource datasource, ChartType type,
+  protected Chart build(SpreadsheetDataSource datasource, ChartType type,
           Region region, Map<String, String> parameters) {
       if(parameters.isEmpty()) {
           return build(datasource, type, region);
@@ -55,11 +55,13 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   public List<Chart> build(DataSource datasource, ChartType type,
       List<Region> regions, Map<String, String> parameters) {
     List<Chart> charts = Lists.newArrayList();
-    if (datasource instanceof SpreadsheetDataSource) {
-      for(int i = 0; i<((SpreadsheetDataSource)datasource).sheets();i++) {
-        SpreadsheetDataSource ds = ((SpreadsheetDataSource)datasource).toSheet(i);
-        if(canHandle(ds)) {
-          charts.addAll(build(ds, type, regions, parameters));
+    if((type == null) || types.contains(type)) {
+      if (datasource instanceof SpreadsheetDataSource) {
+        for(int i = 0; i<((SpreadsheetDataSource)datasource).sheets();i++) {
+          SpreadsheetDataSource ds = ((SpreadsheetDataSource)datasource).toSheet(i);
+          if(canHandle(ds)) {
+            charts.addAll(build(ds, type, regions, parameters));
+          }
         }
       }
     }

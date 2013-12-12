@@ -20,7 +20,7 @@ import charts.representations.Format;
 
 public class ChartBuilderTest {
 
-  private final static ChartBuilder chartBuilder = new ChartBuilder(new ChartCache(null));
+  private final static ChartBuilder chartBuilder = new DefaultChartBuilder();
 
   private final static DataSourceFactory dsf = new DataSourceFactory() {
     @Override

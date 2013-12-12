@@ -9,7 +9,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import models.User;
-import notification.NotificationManager;
 
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jcrom.Jcrom;
@@ -26,6 +25,8 @@ import service.filestore.CommentStoreImpl;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
+import charts.builder.CachedChartBuilder;
+import charts.builder.ChartBuilder;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -104,6 +105,9 @@ public class GuiceInjectionPlugin extends Plugin {
         });
         bind(CacheableUserProvider.class)
           .to(CacheableUserProviderImpl.class)
+          .in(Singleton.class);
+        bind(ChartBuilder.class)
+          .to(CachedChartBuilder.class)
           .in(Singleton.class);
       }
     };
