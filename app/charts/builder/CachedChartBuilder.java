@@ -1,22 +1,15 @@
 package charts.builder;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-import play.Play;
-import service.EventManager;
-import service.OrderedEvent;
+import play.libs.F;
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,10 +25,17 @@ public class CachedChartBuilder implements ChartBuilder {
   }
 
   @Override
-  public synchronized List<Chart> getCharts(String id, DataSourceFactory dsf,
+  public List<Chart> getCharts(String id, DataSourceFactory dsf,
       ChartType type, List<Region> regions, Map<String, String> parameters)
           throws Exception {
-    return filter(chartCache.getCharts(id, dsf) , type, regions, parameters);
+    final F.Either<Exception, List<Chart>> possiblyCharts =
+        chartCache.getCharts(id, dsf);
+    if (possiblyCharts.right.isDefined()) {
+      final List<Chart> charts = possiblyCharts.right.get();
+      return filter(charts, type, regions, parameters);
+    } else {
+      throw possiblyCharts.left.get();
+    }
   }
 
   private List<Chart> filter(List<Chart> charts, ChartType type,

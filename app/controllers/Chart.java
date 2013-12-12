@@ -50,12 +50,6 @@ public class Chart extends SessionAwareController {
 
   private final ChartBuilder chartBuilder;
 
-  private final DataSourceFactory dsf = new DataSourceFactory() {
-    @Override
-    public DataSource getDataSource(String id) throws Exception {
-      return getDatasourcesFromID(id);
-  }};
-
   @Inject
   public Chart(final JcrSessionFactory sessionFactory, final Jcrom jcrom,
       final CacheableUserProvider sessionHandler, final FileStore fileStore,
@@ -68,7 +62,8 @@ public class Chart extends SessionAwareController {
   @SubjectPresent
   public Result charts(final String format, String id) throws Exception {
     final List<charts.Chart> charts =
-      chartBuilder.getCharts(id, dsf, null, getRegions(request().queryString()), null);
+      chartBuilder.getCharts(id, getDataSourceFactory(), null,
+          getRegions(request().queryString()), null);
     final ObjectNode json = Json.newObject();
     final ArrayNode aNode = json.putArray("charts");
     for (charts.Chart chart : charts) {
@@ -116,7 +111,8 @@ public class Chart extends SessionAwareController {
     } catch (IllegalArgumentException e) {
       return notFound("unknown chart format: " + formatStr);
     }
-    final List<charts.Chart> charts = chartBuilder.getCharts(id, dsf, type,
+    final List<charts.Chart> charts = chartBuilder.getCharts(id,
+        getDataSourceFactory(), type,
         getRegions(request().queryString()), getParameters());
     for (charts.Chart chart : charts) {
       try {
@@ -166,15 +162,23 @@ public class Chart extends SessionAwareController {
       return l;
   }
 
-  private DataSource getDatasourcesFromID(final String id) {
-    return inUserSession(new F.Function<Session, DataSource>() {
+  private DataSourceFactory getDataSourceFactory() {
+    final String userId = getUser().getJackrabbitUserId();
+    return new DataSourceFactory() {
       @Override
-      public final DataSource apply(Session session) throws Exception {
-        final List<DataSource> datasources = Lists.newArrayList(
-            getDatasourcesFromIDs(fileStore, session, Collections.singletonList(id)).values());
-        return datasources.isEmpty()?null:datasources.get(0);
+      public DataSource getDataSource(final String id) throws Exception {
+        return sessionFactory.inSession(userId,
+            new F.Function<Session, DataSource>() {
+          @Override
+          public final DataSource apply(Session session) throws Exception {
+            final List<DataSource> datasources = Lists.newArrayList(
+                getDatasourcesFromIDs(fileStore, session,
+                    Collections.singletonList(id)).values());
+            return datasources.isEmpty()?null:datasources.get(0);
+          }
+        });
       }
-    });
+    };
   }
 
   public static List<FileStore.File> getFilesFromID(

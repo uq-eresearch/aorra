@@ -28,10 +28,12 @@ import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
 import akka.actor.TypedActor;
 import akka.actor.TypedProps;
+import akka.japi.Creator;
 import charts.builder.CachedChartBuilder;
 import charts.builder.ChartBuilder;
 import charts.builder.ChartCache;
 import charts.builder.ChartCacheImpl;
+import charts.builder.DefaultChartBuilder;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -119,15 +121,8 @@ public class GuiceInjectionPlugin extends Plugin {
         bind(CacheableUserProvider.class)
           .to(CacheableUserProviderImpl.class)
           .in(Singleton.class);
-        bind(ChartBuilder.class)
-          .to(CachedChartBuilder.class)
-          .in(Singleton.class);
-        bind(ChartCache.class)
-          .to(ChartCacheImpl.class)
-          .in(Singleton.class);
       }
     };
-
     final Module pluginModule = new AbstractModule() {
       @Override
       protected void configure() {}
@@ -142,8 +137,37 @@ public class GuiceInjectionPlugin extends Plugin {
         return application.plugin(JackrabbitEmailPasswordAuthProvider.class);
       }
     };
-    return Guice.createInjector(
+    final Injector intermediateInjector = Guice.createInjector(
         eventManagerModule, pluginModule, sessionModule);
+
+
+    final Module chartBuilderModule = new AbstractModule() {
+      @Override
+      protected void configure() {
+        final Creator<ChartCache> ccc = new Creator<ChartCache>() {
+          private static final long serialVersionUID = 1L;
+
+          @Override
+          public ChartCache create() {
+            final EventManager em =
+                intermediateInjector.getInstance(EventManager.class);
+            final DefaultChartBuilder dcb = new DefaultChartBuilder();
+            return new ChartCacheImpl(dcb, em);
+          }
+        };
+        final ChartCache cc =
+          TypedActor.get(Akka.system()).typedActorOf(
+              new TypedProps<ChartCache>(
+                  ChartCache.class, ccc));
+        bind(ChartCache.class).toInstance(cc);
+        bind(ChartBuilder.class)
+          .to(CachedChartBuilder.class)
+          .in(Singleton.class);
+      }
+    };
+
+
+    return intermediateInjector.createChildInjector(chartBuilderModule);
   }
 
   private void registerRepoInJNDI(Repository repo) {
