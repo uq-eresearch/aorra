@@ -48,21 +48,6 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     this.fileStore = fileStore;
     this.flagStore = flagStore;
     this.jcrom = jcrom;
-    updateUserModels();
-  }
-
-  // Handle old users without notifications by resaving the model
-  private void updateUserModels() {
-    Logger.debug("Updating user models");
-    sessionFactory.inSession(new F.Function<Session, Session>() {
-      @Override
-      public Session apply(Session session) {
-        UserDAO dao = new UserDAO(session, jcrom);
-        for (User u : dao.list())
-          dao.update(u);
-        return session;
-      }
-    });
   }
 
   @Override

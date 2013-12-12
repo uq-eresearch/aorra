@@ -2,7 +2,6 @@ package service.filestore;
 
 import jackrabbit.AorraAccessManager;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.security.Principal;
@@ -16,7 +15,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -24,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemExistsException;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.LockException;
@@ -52,27 +49,24 @@ import org.jcrom.util.NodeFilter;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
-import play.libs.Akka;
 import play.libs.F.Function;
 import service.EventManager;
-import service.EventManagerImpl;
-import service.JcrSessionFactory;
 import service.EventManager.Event;
+import service.JcrSessionFactory;
 import service.filestore.roles.Admin;
-import akka.actor.TypedActor;
-import akka.actor.TypedProps;
 
 import com.google.common.base.Joiner;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
+@Singleton
 public class FileStoreImpl implements FileStore {
 
   public static final String FILE_STORE_PATH = "/filestore";
@@ -80,19 +74,17 @@ public class FileStoreImpl implements FileStore {
       StringUtils.stripStart(FILE_STORE_PATH, "/");
   public static final String FILE_STORE_NAME = "AORRA";
 
-  private final EventManager eventManagerImpl;
+  private final EventManager eventManager;
   private final Jcrom jcrom;
 
   @Inject
   public FileStoreImpl(
       final JcrSessionFactory sessionFactory,
-      final Jcrom jcrom) {
+      final Jcrom jcrom,
+      final EventManager eventManager) {
     this.jcrom = jcrom;
+    this.eventManager = eventManager;
     Logger.debug(this+" - Creating file store.");
-    eventManagerImpl =
-        TypedActor.get(Akka.system()).typedActorOf(
-            new TypedProps<EventManagerImpl>(
-                EventManager.class, EventManagerImpl.class));
     sessionFactory.inSession(new Function<Session, Session>() {
       @Override
       public Session apply(Session session) {
@@ -126,7 +118,7 @@ public class FileStoreImpl implements FileStore {
    */
   @Override
   public Manager getManager(final Session session) {
-    return new Manager(session, jcrom, eventManagerImpl);
+    return new Manager(session, jcrom, eventManager);
   }
 
   /* (non-Javadoc)
@@ -134,7 +126,7 @@ public class FileStoreImpl implements FileStore {
    */
   @Override
   public EventManager getEventManager() {
-    return eventManagerImpl;
+    return eventManager;
   }
 
   public static class Manager implements FileStore.Manager {

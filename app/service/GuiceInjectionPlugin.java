@@ -16,6 +16,7 @@ import org.jcrom.Jcrom;
 import play.Application;
 import play.Plugin;
 import play.api.libs.JNDI;
+import play.libs.Akka;
 import play.libs.F;
 import providers.CacheableUserProvider;
 import providers.CacheableUserProviderImpl;
@@ -25,6 +26,8 @@ import service.filestore.CommentStoreImpl;
 import service.filestore.FileStore;
 import service.filestore.FileStoreImpl;
 import service.filestore.FlagStore;
+import akka.actor.TypedActor;
+import akka.actor.TypedProps;
 import charts.builder.CachedChartBuilder;
 import charts.builder.ChartBuilder;
 
@@ -70,6 +73,16 @@ public class GuiceInjectionPlugin extends Plugin {
         cfgStr(ConfigConsts.CONF_JCR_USERID),
         cfgStr(ConfigConsts.CONF_JCR_PASSWORD).toCharArray());
     registerRepoInJNDI(Jcr.getRepository());
+    final Module eventManagerModule = new AbstractModule() {
+      @Override
+      protected void configure() {
+        final EventManager em =
+          TypedActor.get(Akka.system()).typedActorOf(
+              new TypedProps<EventManagerImpl>(
+                  EventManager.class, EventManagerImpl.class));
+        bind(EventManager.class).toInstance(em);
+      }
+    };
     final JcrSessionFactory sessionFactory = new JcrSessionFactory() {
       @Override
       public Session newAdminSession() {
@@ -88,11 +101,9 @@ public class GuiceInjectionPlugin extends Plugin {
       protected void configure() {
         bind(Jcrom.class).toInstance(jcrom);
         bind(JcrSessionFactory.class).toInstance(sessionFactory);
-        {
-          final FileStore fs = new FileStoreImpl(sessionFactory, jcrom);
-          bind(FileStore.class).toInstance(fs);
-          bind(EventManager.class).toInstance(fs.getEventManager());
-        }
+        bind(FileStore.class)
+          .to(FileStoreImpl.class)
+          .asEagerSingleton();
         sessionFactory.inSession(new F.Function<Session, Session>() {
           @Override
           public Session apply(Session session) throws Throwable {
@@ -126,7 +137,8 @@ public class GuiceInjectionPlugin extends Plugin {
         return application.plugin(JackrabbitEmailPasswordAuthProvider.class);
       }
     };
-    return Guice.createInjector(pluginModule, sessionModule);
+    return Guice.createInjector(
+        eventManagerModule, pluginModule, sessionModule);
   }
 
   private void registerRepoInJNDI(Repository repo) {
@@ -143,6 +155,7 @@ public class GuiceInjectionPlugin extends Plugin {
     jcrom.map(User.class);
     jcrom.map(models.Comment.class);
     jcrom.map(models.Flag.class);
+    jcrom.map(models.Notification.class);
     jcrom.map(models.filestore.File.class);
     jcrom.map(models.filestore.Folder.class);
     return jcrom;
