@@ -30,6 +30,8 @@ import akka.actor.TypedActor;
 import akka.actor.TypedProps;
 import charts.builder.CachedChartBuilder;
 import charts.builder.ChartBuilder;
+import charts.builder.ChartCache;
+import charts.builder.ChartCacheImpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -119,6 +121,9 @@ public class GuiceInjectionPlugin extends Plugin {
           .in(Singleton.class);
         bind(ChartBuilder.class)
           .to(CachedChartBuilder.class)
+          .in(Singleton.class);
+        bind(ChartCache.class)
+          .to(ChartCacheImpl.class)
           .in(Singleton.class);
       }
     };

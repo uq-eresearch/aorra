@@ -24,60 +24,18 @@ import com.google.inject.Singleton;
 @Singleton
 public class CachedChartBuilder implements ChartBuilder {
 
-  private Cache<String, List<Chart>> cache = CacheBuilder
-      .newBuilder()
-      .maximumSize(maxsize())
-      .removalListener(new RemovalListener<String, List<Chart>>() {
-        @Override
-        public void onRemoval(RemovalNotification<String, List<Chart>> entry) {
-          System.out.println(String.format("XXX removing %s charts for id %s from cache",
-              entry.getValue().size(), entry.getKey()));
-        }})
-      .build();
-
-  private ChartBuilder chartBuilder;
-
-  private EventManager eventManager;
-
-  private String lastEventId;
+  private final ChartCache chartCache;
 
   @Inject
-  public CachedChartBuilder(DefaultChartBuilder chartBuilder, EventManager eventManager) {
-    this.chartBuilder = chartBuilder;
-    this.eventManager = eventManager;
-  }
-
-  private int maxsize() {
-    return Play.application().configuration().getInt("application.ccmaxsize", 100);
-  }
-
-  private void cleanup() {
-    if(eventManager != null) {
-      for(OrderedEvent evt : eventManager.getSince(lastEventId)) {
-        if(StringUtils.startsWith(evt.event().type, "file:")) {
-          System.out.println(String.format("XXX evt type %s id %s",
-              evt.event().type, evt.event().info("id")));
-          String id = evt.event().info("id");
-          if(id != null) {
-            cache.invalidate(id);
-          }
-        }
-      }
-      lastEventId = eventManager.getLastEventId();
-    }
+  public CachedChartBuilder(ChartCache chartCache) {
+    this.chartCache = chartCache;
   }
 
   @Override
   public synchronized List<Chart> getCharts(String id, DataSourceFactory dsf,
       ChartType type, List<Region> regions, Map<String, String> parameters)
           throws Exception {
-    cleanup();
-    List<Chart> clist = cache.getIfPresent(id);
-    if(clist == null) {
-      clist = chartBuilder.getCharts(id, dsf, null, Collections.<Region>emptyList(), null);
-      cache.put(id, clist);
-    }
-    return filter(clist, type, regions, parameters);
+    return filter(chartCache.getCharts(id, dsf) , type, regions, parameters);
   }
 
   private List<Chart> filter(List<Chart> charts, ChartType type,
