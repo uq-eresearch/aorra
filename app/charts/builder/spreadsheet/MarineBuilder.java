@@ -46,7 +46,7 @@ public class MarineBuilder extends AbstractBuilder {
   private boolean isMarineSpreadsheet(DataSource datasource) {
     try {
       return "MARINE SUMMARY".equalsIgnoreCase(
-          datasource.select("Summary!B18").getValue());
+          datasource.select("B18").getValue());
     } catch (MissingDataException e) {
       return false;
     }
