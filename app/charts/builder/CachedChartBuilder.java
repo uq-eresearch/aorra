@@ -15,6 +15,8 @@ import charts.Region;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -25,6 +27,12 @@ public class CachedChartBuilder implements ChartBuilder {
   private Cache<String, List<Chart>> cache = CacheBuilder
       .newBuilder()
       .maximumSize(maxsize())
+      .removalListener(new RemovalListener<String, List<Chart>>() {
+        @Override
+        public void onRemoval(RemovalNotification<String, List<Chart>> entry) {
+          System.out.println(String.format("XXX removing %s charts for id %s from cache",
+              entry.getValue().size(), entry.getKey()));
+        }})
       .build();
 
   private ChartBuilder chartBuilder;
@@ -47,8 +55,12 @@ public class CachedChartBuilder implements ChartBuilder {
     if(eventManager != null) {
       for(OrderedEvent evt : eventManager.getSince(lastEventId)) {
         if(StringUtils.startsWith(evt.event().type, "file:")) {
-          cache.invalidateAll();
-          break;
+          System.out.println(String.format("XXX evt type %s id %s",
+              evt.event().type, evt.event().info("id")));
+          String id = evt.event().info("id");
+          if(id != null) {
+            cache.invalidate(id);
+          }
         }
       }
       lastEventId = eventManager.getLastEventId();
