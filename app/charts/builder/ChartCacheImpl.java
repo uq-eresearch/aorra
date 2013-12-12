@@ -22,32 +22,42 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.cache.Weigher;
 import com.google.inject.Inject;
 
 public class ChartCacheImpl implements ChartCache {
 
   private final DefaultChartBuilder chartBuilder;
 
-  private final Cache<String, List<Chart>> cache = CacheBuilder
-      .newBuilder()
-      .maximumSize(maxsize())
+  private final Cache<String, List<Chart>> cache = CacheBuilder.newBuilder()
+      .maximumWeight(maxSize())
+      .weigher(new Weigher<String, List<Chart>>() {
+        @Override
+        public int weigh(String k, List<Chart> charts) {
+          return charts.size();
+        }
+      })
       .removalListener(new RemovalListener<String, List<Chart>>() {
         @Override
         public void onRemoval(RemovalNotification<String, List<Chart>> entry) {
           Logger.debug(String.format("Removing %s charts for id %s from cache",
               entry.getValue().size(), entry.getKey()));
-        }})
+        }
+      })
       .build();
 
-  public ChartCacheImpl(DefaultChartBuilder chartBuilder, EventManager eventManager) {
+  public ChartCacheImpl(DefaultChartBuilder chartBuilder,
+      EventManager eventManager) {
     this.chartBuilder = chartBuilder;
-    final ChartCache cc = TypedActor.<ChartCache>self();
+    final ChartCache cc = TypedActor.<ChartCache> self();
     final EventReceiver er = new EventReceiver() {
       @Override
-      public void end() {}
+      public void end() {
+      }
 
       @Override
-      public void end(Throwable e) {}
+      public void end(Throwable e) {
+      }
 
       @Override
       public void push(OrderedEvent oe) {
@@ -60,8 +70,9 @@ public class ChartCacheImpl implements ChartCache {
     eventManager.tell(EventReceiverMessage.add(er, null));
   }
 
-  private int maxsize() {
-    return Play.application().configuration().getInt("application.ccmaxsize", 100);
+  private int maxSize() {
+    return Play.application().configuration()
+        .getInt("application.ccmaxsize", 100);
   }
 
   @Override
@@ -70,10 +81,11 @@ public class ChartCacheImpl implements ChartCache {
   }
 
   @Override
-  public F.Either<Exception, List<Chart>> getCharts(String id, DataSourceFactory dsf) {
+  public F.Either<Exception, List<Chart>> getCharts(String id,
+      DataSourceFactory dsf) {
     try {
       List<Chart> clist = cache.getIfPresent(id);
-      if(clist == null) {
+      if (clist == null) {
         clist = actuallyGetCharts(id, dsf);
         cache.put(id, clist);
       }
@@ -83,7 +95,9 @@ public class ChartCacheImpl implements ChartCache {
     }
   }
 
-  private List<Chart> actuallyGetCharts(String id, DataSourceFactory dsf) throws Exception {
-    return chartBuilder.getCharts(id, dsf, null, Collections.<Region>emptyList(), null);
+  private List<Chart> actuallyGetCharts(String id, DataSourceFactory dsf)
+      throws Exception {
+    return chartBuilder.getCharts(id, dsf, null,
+        Collections.<Region> emptyList(), null);
   }
 }
