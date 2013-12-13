@@ -11,4 +11,6 @@ public interface ChartCache {
 
   public Future<List<Chart>> getCharts(String id, DataSourceFactory dsf);
 
+  public void update(String fileId, List<Chart> charts);
+
 }
