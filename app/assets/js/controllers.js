@@ -46,6 +46,9 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
       c.listenTo(App.vent, "nav:password:change", function() {
         c.changePassword();
       });
+      c.listenTo(App.vent, "nav:search", function(searchTerm) {
+        c.search(searchTerm);
+      });
     },
     _buildFileTree: function() {
       var fileTree = new views.FileTree();
@@ -187,6 +190,21 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
         this.trigger('showFileDiff', file);
       }
       this._setMainActive();
+    },
+    search: function(searchTerm) {
+      var layout = this._layout;
+      this.showLoading();
+      var searchResults = new (Backbone.Collection.extend({
+        url: '/search?q='+searchTerm
+      }));
+      searchResults.fetch().then(_.bind(function() {
+        layout.main.show(new views.SearchView({
+          collection: searchResults,
+          filestore: this._fs,
+          searchTerm: searchTerm
+        }));
+        this._setMainActive();
+      }, this));
     },
     _setMainActive: function() {
       var layout = this._layout;

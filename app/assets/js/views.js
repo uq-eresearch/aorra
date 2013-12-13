@@ -67,20 +67,55 @@ define([
     }
     return 'file';
   };
+  
+  var SearchBox = Marionette.ItemView.extend({
+    ui: {
+      searchTerm: '.js-search-term',
+      submitButton: '.js-submit'
+    },
+    onSubmit: function() {
+      App.vent.trigger("nav:search", this.ui.searchTerm.val());
+    },
+    serializeData: function() {
+      return {};
+    },
+    template: function(data) {
+      return templates.render('search_box', data);
+    },
+    onRender: function(data) {
+      var submit = _.bind(this.triggerMethod, this, 'submit');
+      this.ui.searchTerm.on('keyup', function(evt) {
+        if (evt.which == 13) {
+          submit();
+        }
+      });
+      this.ui.submitButton.on('click', submit)
+    }
+  });
 
-  var FileTree = Backbone.View.extend({
+  var FileTree = Marionette.Layout.extend({
     tagName: "div",
+    regions: {
+      search: '.js-search'
+    },
+    ui: {
+      filetree: '.js-filetree',
+      hint: '.js-hint'
+    },
     initialize: function() {
-      this._hint$el =
-        $('<p><i class="fa fa-arrow-up"></i> Click to Expand</p>')
-          .addClass('alert alert-info');
+      this._searchBox = new SearchBox();
     },
-    render: function() {
+    template: function() {
+      return templates.render('file_tree', {});
+    },
+    onBeforeRender: function() {
       this.tree().element.detach();
-      this.$el.append(this.tree().element);
-      this.$el.append(this._hint$el);
     },
-    close: function() {
+    onRender: function() {
+      this.search.show(this._searchBox);
+      this.ui.filetree.append(this.tree().element);
+    },
+    onBeforeClose: function() {
       this.tree().element.detach();
     },
     _getNode: function(nodeOrId) {
@@ -99,7 +134,7 @@ define([
       _.each(nodes.reverse(), function(n) {
         if (!n.isLeaf()) { n.expand(); }
       });
-      this._hint$el.hide();
+      this.ui.hint.hide();
     },
     expand: function(nodeOrId) {
       var n = this._getNode(nodeOrId);
@@ -116,7 +151,7 @@ define([
       this.tree().collapseAll();
     },
     _buildTree: function() {
-      var tree = glyphtree($('<div/>'), this.options);
+      var tree = glyphtree($('<div/>'), this.glyphtreeOptions);
       var selectHandler = _.bind(function(event, node) {
         // Emit select event
         if (node.type == 'folder') {
@@ -140,10 +175,11 @@ define([
         createTooltip(e, node);
         $(e.currentTarget).tooltip(e.type == 'mouseenter' ? 'show' : 'hide');
       };
-      var $hint = this._hint$el;
+      var hint = _.bind(function() { return this.ui.hint; }, this);
       var toggleHint = function(e) {
         var isClosed = function(node) { return !node.isExpanded(); };
-        $hint.toggle(_.all(tree.nodes(), isClosed));
+        console.log(hint(), _.all(tree.nodes(), isClosed));
+        hint().toggle(_.all(tree.nodes(), isClosed));
       };
       tree.events.label.click = [selectHandler];
       tree.events.icon.click.push(toggleHint);
@@ -157,7 +193,7 @@ define([
       }
       return this._tree;
     },
-    options: {
+    glyphtreeOptions: {
       startExpanded: false,
       typeResolver: function(struct) {
         if (struct.type == 'folder') {
@@ -1880,6 +1916,42 @@ define([
     }
   });
 
+  var SearchResult = Marionette.ItemView.extend({
+    triggers: {
+      'click .js-result': 'file:select'
+    },
+    onFileSelect: function() {
+      App.vent.trigger('nav:file:show', this.options.file);
+    },
+    serializeData: function() {
+      var searchTerm = this.options.searchTerm;
+      var fileJson = this.options.file ? this.options.file.toJSON() : {};
+      var highlightedExcerpt = this.model.get('excerpt')
+        .replace(searchTerm, '<strong>'+searchTerm+'</strong>')
+      return _(fileJson).chain().extend(this.model.toJSON()).extend({
+        excerpt: highlightedExcerpt
+      }).value();
+    },
+    template: function(data) {
+      return templates.render('search_result', data);
+    }
+  });
+  
+  var SearchView = Marionette.CollectionView.extend({
+    itemView: SearchResult,
+    emptyView: Marionette.ItemView.extend({
+      template: function() {
+        return "<p>No files found.</p>";
+      }
+    }),
+    itemViewOptions: function(m) {
+      return {
+        file: this.options.filestore.get(m.id),
+        searchTerm: this.options.searchTerm
+      };
+    }
+  });
+
   var AppLayout = Backbone.Marionette.Layout.extend({
     regions: {
       main: "#main",
@@ -1931,6 +2003,7 @@ define([
     FolderView: FolderView,
     NotificationsNavView: NotificationsNavView,
     NotificationsView: NotificationsView,
+    SearchView: SearchView,
     StartView: StartView,
     UserAvatar: UserAvatar,
     UserMenu: UserMenu
