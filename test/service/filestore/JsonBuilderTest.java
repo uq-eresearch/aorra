@@ -16,6 +16,7 @@ import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 
 import models.Notification;
@@ -34,6 +35,7 @@ import com.google.common.io.ByteStreams;
 
 import service.filestore.FileStore.File;
 import service.filestore.FileStore.FileOrFolder;
+import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
 
 public class JsonBuilderTest {
@@ -305,6 +307,12 @@ public class JsonBuilderTest {
     public void reload() {
     }
 
+    @Override
+    public void move(Folder destination) throws ItemExistsException,
+        RepositoryException {
+      // Do nothing
+    }
+
   }
 
   private class TestFile implements FileStore.File {
@@ -420,6 +428,12 @@ public class JsonBuilderTest {
     @Override
     public void rename(String newName) throws RepositoryException {
       throw new NotImplementedException();
+    }
+
+    @Override
+    public void move(Folder destination) throws ItemExistsException,
+        RepositoryException {
+      // Do nothing
     }
 
   }

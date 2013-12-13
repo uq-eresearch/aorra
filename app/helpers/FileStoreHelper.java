@@ -212,68 +212,21 @@ public class FileStoreHelper {
   }
 
   public void  mv(final String srcPath, final String destPath) throws RepositoryException {
-      FileStore.FileOrFolder src = fileStore().getManager(session).getFileOrFolder(srcPath);
-      if(src == null) {
-          out.println(String.format("file or folder %s not found", srcPath));
-          return;
-      }
-      String srcAbsPath = rawPath(srcPath);
-      FileStore.FileOrFolder dest = fileStore().getManager(session).getFileOrFolder(destPath);
-      if(dest != null) {
-          if(dest instanceof FileStore.Folder) {
-              String destAbsPath;
-              if(src instanceof FileStore.Folder) {
-                  destAbsPath = rawPath(destPath)+"/folders/"+src.getName();
-              } else {
-                  destAbsPath = rawPath(destPath)+"/files/"+src.getName();
-              }
-              FileStore.FileOrFolder test = ((FileStore.Folder) dest).getFileOrFolder(src.getName());
-              if(test!=null) {
-                  out.println(String.format(
-                      "destination folder already has a child with with name %s", src.getName()));
-              } else {
-                  session.move(srcAbsPath, destAbsPath);
-              }
-          } else {
-              out.println(String.format("destination path must be a folder or file already exists, %s", destPath));
-          }
-      } else {
-          File f = new File(StringUtils.startsWith(destPath, "/")?destPath:"/"+destPath);
-          String parent = f.getParent();
-          dest = fileStore().getManager(session).getFileOrFolder(parent);
-          if(dest != null) {
-              if(dest instanceof FileStore.Folder) {
-                  String destAbsPath;
-                  if(src instanceof FileStore.Folder) {
-                      destAbsPath = rawPath(parent)+"/folders/"+f.getName();
-                  } else {
-                      destAbsPath = rawPath(parent)+"/files/"+f.getName();
-                  }
-                  FileStore.FileOrFolder test = ((FileStore.Folder) dest).getFileOrFolder(f.getName());
-                  if(test!=null) {
-                      out.println(String.format(
-                          "destination folder already has a child with name %s", src.getName()));
-                  } else {
-                      session.move(srcAbsPath, destAbsPath);
-                  }
-              } else {
-                  out.println(String.format("destination not a folder %s", destPath));
-              }
-          } else {
-              out.println(String.format("destination not found for %s", destPath));
-          }
-      }
-  }
-
-  private String rawPath(String path) throws RepositoryException {
-      FileStore.FileOrFolder f = fileStore().getManager(session).getFileOrFolder(path);
-      if(f != null) {
-          Node node = session.getNodeByIdentifier(f.getIdentifier());
-          if(node != null) {
-              return node.getPath();
-          }
-      }
-      return null;
+    FileStore.FileOrFolder src = fileStore().getManager(session).getFileOrFolder(srcPath);
+    if(src == null) {
+        out.println(String.format("file or folder %s not found", srcPath));
+        return;
+    }
+    FileStore.FileOrFolder dest = fileStore().getManager(session).getFileOrFolder(destPath);
+    if(dest == null) {
+      out.println(String.format("destination folder %s not found", destPath));
+      return;
+    }
+    if(dest instanceof FileStore.Folder) {
+      src.move((FileStore.Folder)dest);
+    } else {
+      out.println(String.format("destination %s not a folder", destPath));
+    }
   }
 
   private String format(FileStore.FileOrFolder f, boolean isFolder,

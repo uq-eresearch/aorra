@@ -491,6 +491,13 @@ public class FileStoreImpl implements FileStore {
       return filestoreManager.getFolderDAO();
     }
 
+    @Override
+    public void move(service.filestore.FileStore.Folder destination)
+        throws ItemExistsException, RepositoryException {
+      move(destination, "folders");
+      eventManagerImpl.tell(Events.move(this));
+    }
+
   }
 
   public static class File extends NodeWrapper<models.filestore.File> implements FileStore.File {
@@ -621,6 +628,12 @@ public class FileStoreImpl implements FileStore {
           + getPath() + "]";
     }
 
+    @Override
+    public void move(FileStore.Folder destination)
+        throws ItemExistsException, RepositoryException {
+      move(destination, "files");
+      eventManagerImpl.tell(Events.move(this));
+    }
   }
 
   protected static class FileVersion extends File {
@@ -836,6 +849,18 @@ public class FileStoreImpl implements FileStore {
       getDAO().update(entity, new NodeFilter(0));
       // We cache the path, so it has to be updated
       updatePath();
+    }
+
+    protected void move(FileStore.Folder destination, String subfolder)
+        throws ItemExistsException, RepositoryException {
+      if(getParent() == null) {
+        throw new RepositoryException("Can't move root folder.");
+      }
+      Folder dest = ((Folder)destination);
+      dest.ensureDoesNotExist(entity.getName());
+      String destAbsPath = String.format("%s/%s", dest.rawPath(), subfolder);
+      getDAO().move(entity, destAbsPath);
+      destination.reload();
     }
 
     public abstract JcrDAO<T> getDAO();

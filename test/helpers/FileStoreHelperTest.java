@@ -24,6 +24,7 @@ import java.util.SortedSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import javax.jcr.ItemExistsException;
 import javax.jcr.Session;
 
 import models.GroupManager;
@@ -89,27 +90,6 @@ public class FileStoreHelperTest {
   }
 
   @Test
-  public void mvRename() {
-    helperTest(
-        new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
-      @Override
-      public Session apply(final Session session,
-          final FileStoreHelper fsh,
-          final FileStore.Manager fm) throws Throwable {
-        fsh.mkdir("/foo", false);
-        String barId = fsh.mkdir("/bar", false).getIdentifier();
-        assertThat(fm.getFileOrFolder("/bar")).isNotNull();
-        assertThat(fm.getFileOrFolder("/foo/baz")).isNull();
-        fsh.mv("bar", "foo/baz");
-        assertThat(fm.getFileOrFolder("/bar")).isNull();
-        assertThat(fm.getFileOrFolder("/foo/baz")).isNotNull();
-        assertThat(fm.getFileOrFolder("/foo/baz").getIdentifier()).isEqualTo(barId);
-        return null;
-      }
-    });
-  }
-
-  @Test
   public void mvWhenFolderExists() {
     helperTest(
         new F.Function3<Session,FileStoreHelper,FileStore.Manager,Session>() {
@@ -118,13 +98,18 @@ public class FileStoreHelperTest {
           final FileStoreHelper fsh,
           final FileStore.Manager fm) throws Throwable {
         fsh.mkdir("/foo", false);
-        fsh.mkdir("/bar", false).getIdentifier();
-        fsh.mkdir("/foo/bar", false).getIdentifier();
+        fsh.mkdir("/bar", false);
+        fsh.mkdir("/foo/bar", false);
         assertThat(fm.getFileOrFolder("/bar")).isNotNull();
         assertThat(fm.getFileOrFolder("/foo/bar")).isNotNull();
         assertThat(fm.getFileOrFolder("/bar").getIdentifier()).isNotEqualTo(
             fm.getFileOrFolder("/foo/bar").getIdentifier());
-        fsh.mv("bar", "foo");
+        try {
+          fsh.mv("bar", "foo");
+          fail("Should have thrown ItemExistsException");
+        } catch (ItemExistsException e) {
+          assertThat(e.getMessage()).contains("bar");
+        }
         assertThat(fm.getFileOrFolder("/bar")).isNotNull();
         assertThat(fm.getFileOrFolder("/foo/bar")).isNotNull();
         assertThat(fm.getFileOrFolder("/bar").getIdentifier()).isNotEqualTo(

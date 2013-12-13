@@ -64,7 +64,7 @@ class filestore {
       })
     }
 
-    @Usage("move (rename) files or directories")
+    @Usage("move files or directories")
     @Command
     void mv(
       @Required(true)

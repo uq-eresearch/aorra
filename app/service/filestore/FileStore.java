@@ -95,6 +95,8 @@ public interface FileStore {
      */
     Permission getAccessLevel() throws RepositoryException;
 
+    void move(Folder destination) throws ItemExistsException, RepositoryException;
+
   }
 
   static interface Folder extends FileOrFolder {
@@ -171,6 +173,16 @@ public interface FileStore {
     public static Event delete(FileStore.Folder folder)
         throws RepositoryException {
       return new EventManager.Event("folder:delete", nodeInfo(folder));
+    }
+
+    public static Event move(FileStore.File file)
+        throws RepositoryException {
+      return new EventManager.Event("file:move", nodeInfo(file));
+    }
+
+    public static Event move(FileStore.Folder folder)
+        throws RepositoryException {
+      return new EventManager.Event("folder:move", nodeInfo(folder));
     }
 
     private static Map<String, String> nodeInfo(FileStore.Folder folder) {
