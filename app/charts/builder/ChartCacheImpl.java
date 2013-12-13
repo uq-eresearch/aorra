@@ -117,6 +117,6 @@ public class ChartCacheImpl implements ChartCache {
 
   private int maxSize() {
     return Play.application().configuration()
-        .getInt("application.ccmaxsize", 100);
+        .getInt("application.chartCache.size", 100);
   }
 }
