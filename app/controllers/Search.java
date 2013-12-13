@@ -1,6 +1,7 @@
 package controllers;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.jcrom.Jcrom;
 
 import play.libs.F;
@@ -26,6 +28,7 @@ import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -70,6 +73,20 @@ public class Search extends SessionAwareController {
     public String getType() {
       return type;
     }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other instanceof SearchResult) {
+        return getId().equals(((SearchResult) other).getId());
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      return getId().hashCode();
+    }
+
   }
 
   @Inject
@@ -92,7 +109,7 @@ public class Search extends SessionAwareController {
       @Override
       public final List<SearchResult> apply(Session session) throws Exception {
         Map<String, SearchResult> srMap = Maps.newHashMap();
-        List<SearchResult> slist = Lists.newArrayList();
+        LinkedHashSet<SearchResult> slist = new LinkedHashSet<SearchResult>();
         ValueFactory vf = session.getValueFactory();
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         // How do we get the excerpt with JCR_SQL2?
@@ -119,7 +136,7 @@ public class Search extends SessionAwareController {
           }
         }
         searchFilename(session, slist, q);
-        return slist;
+        return ImmutableList.copyOf(slist);
       }
 
       @SuppressWarnings("deprecation")
@@ -132,7 +149,7 @@ public class Search extends SessionAwareController {
                 javax.jcr.query.Query.SQL).execute().getRows();
       }
 
-      private void searchFilename(Session session, List<SearchResult> slist,
+      private void searchFilename(Session session, Set<SearchResult> slist,
           String q) throws Exception {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(
@@ -142,20 +159,12 @@ public class Search extends SessionAwareController {
         query.bindValue("query", vf.createValue("%" + q + "%"));
         QueryResult result = query.execute();
         RowIterator iter = result.getRows();
-        final Set<String> seen = new HashSet<String>();
-        for (SearchResult r : slist) {
-          seen.add(r.id);
-        }
         while (iter.hasNext()) {
           Row row = iter.nextRow();
           Node n = row.getNode().getParent().getParent();
-          if (seen.contains(n.getIdentifier())) {
-            continue;
-          }
           SearchResult sr = new SearchResult(n.getIdentifier(), row.getScore(),
               n.getPath(), "filename");
           slist.add(sr);
-          seen.add(n.getIdentifier());
         }
       }
     });
