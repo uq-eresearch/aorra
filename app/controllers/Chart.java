@@ -60,7 +60,10 @@ public class Chart extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result charts(final String format, String id) throws Exception {
+  public Result charts(final String format, final String id) throws Exception {
+    if (!fileIsAccessible(id)) {
+      return notFound();
+    }
     final List<charts.Chart> charts =
       chartBuilder.getCharts(id, null,
           getRegions(request().queryString()), null);
@@ -99,6 +102,9 @@ public class Chart extends SessionAwareController {
   @SubjectPresent
   public Result chart(final String chartType,
       final String formatStr, final String id) throws Exception {
+    if (!fileIsAccessible(id)) {
+      return notFound();
+    }
     final ChartType type;
     final Format format;
     try {
@@ -129,6 +135,17 @@ public class Chart extends SessionAwareController {
       }
     }
     return notFound();
+  }
+
+  private boolean fileIsAccessible(final String id) {
+    return inUserSession(new F.Function<Session, Boolean>() {
+      @Override
+      public Boolean apply(Session session) throws Throwable {
+        final FileStore.FileOrFolder fof = fileStore.getManager(session)
+            .getByIdentifier(id);
+        return fof != null && fof instanceof FileStore.File;
+      }
+    });
   }
 
   private boolean modified(charts.Chart chart) throws ParseException {

@@ -165,15 +165,7 @@ public class ChartTest {
               controllers.routes.ref.Chart.charts("svg",
                   folder.getIdentifier()),
               newRequest);
-          assertThat(status(result)).isEqualTo(200);
-          assertThat(contentType(result)).isEqualTo("application/json");
-          assertThat(charset(result)).isEqualTo("utf-8");
-          assertThat(header("Cache-Control", result))
-            .isEqualTo("max-age=0, must-revalidate");
-          final JsonNode json = Json.parse(contentAsString(result));
-          assertThat(json.has("charts")).isTrue();
-          assertThat(json.get("charts").isArray()).isTrue();
-          assertThat(json.get("charts")).hasSize(0);
+          assertThat(status(result)).isEqualTo(404);
         }
         return session;
       }
