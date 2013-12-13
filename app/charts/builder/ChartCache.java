@@ -9,7 +9,7 @@ public interface ChartCache {
 
   public void cleanup(String fileId);
 
-  public Future<List<Chart>> getCharts(String id, DataSourceFactory dsf);
+  public Future<List<Chart>> getCharts(String id);
 
   public void update(String fileId, List<Chart> charts);
 

@@ -15,16 +15,24 @@ import charts.Region;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
 public class DefaultChartBuilder implements ChartBuilder {
 
   private final List<ChartTypeBuilder> builders = detectBuilders();
+  private final DataSourceFactory dataSourceFactory;
 
-  public List<Chart> getCharts(String id, DataSourceFactory dsf, ChartType type,
+  @Inject
+  public DefaultChartBuilder(DataSourceFactory dsf) {
+    this.dataSourceFactory = dsf;
+  }
+
+  @Override
+  public List<Chart> getCharts(String id,  ChartType type,
       List<Region> regions, Map<String, String> parameters) throws Exception {
-    DataSource datasource = dsf.getDataSource(id);
+    DataSource datasource = dataSourceFactory.getDataSource(id);
     return getCharts(datasource, type, regions, parameters);
   }
 

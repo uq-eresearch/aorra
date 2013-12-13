@@ -29,10 +29,10 @@ public class CachedChartBuilder implements ChartBuilder {
   }
 
   @Override
-  public List<Chart> getCharts(String id, DataSourceFactory dsf,
+  public List<Chart> getCharts(String id,
       ChartType type, List<Region> regions, Map<String, String> parameters)
           throws Exception {
-    final Future<List<Chart>> futureCharts = chartCache.getCharts(id, dsf);
+    final Future<List<Chart>> futureCharts = chartCache.getCharts(id);
     // We leverage Await.result() here to throw any exception that the actor
     // may have encountered.
     final List<Chart> charts = Await.result(futureCharts, timeout.duration());

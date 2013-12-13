@@ -13,7 +13,6 @@ import ScalaSecured.isAuthenticated
 import charts.Region
 import charts.builder.ChartBuilder
 import charts.representations.Format
-import controllers.Chart.getDatasourcesFromIDs
 import javax.jcr.Session
 import models.CacheableUser
 import play.api.libs.iteratee.Enumerator
@@ -54,16 +53,10 @@ class ArchiveAsync @Inject() (
   protected def addChartFilesToArchive(
     user: CacheableUser, id: String)(zos: ZipOutputStream) {
     inSession(user) { session =>
-      val dsf = new DataSourceFactory {
-        def getDataSource(id: String) : DataSource = {
-          controllers.Chart.getDataSource(filestore, session, id)
-        }
-      }
       for (
-        file <- 
-            controllers.Chart.getFilesFromID(filestore, session, id);
+        file <- controllers.Chart.getFilesFromID(filestore, session, id);
         chart <- chartBuilder.getCharts(
-            file.getIdentifier(), dsf, null, Region.values.toSeq, null);
+            file.getIdentifier(), null, Region.values.toSeq, null);
         f <- Format.values;
         data <- Try(chart.outputAs(f, new Dimension).getContent()) // skip if unsupported
       ) {
@@ -77,7 +70,7 @@ class ArchiveAsync @Inject() (
         zos.closeEntry
       }
     }
-    
+
   }
 
   protected def inSession[A](user: CacheableUser)(f: Session => A): A =

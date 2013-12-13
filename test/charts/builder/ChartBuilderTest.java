@@ -1,5 +1,6 @@
 package charts.builder;
 
+import static charts.builder.ChartBuilderTest.getDatasource;
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -20,13 +21,13 @@ import charts.representations.Format;
 
 public class ChartBuilderTest {
 
-  private final static ChartBuilder chartBuilder = new DefaultChartBuilder();
-
-  private final static DataSourceFactory dsf = new DataSourceFactory() {
-    @Override
-    public DataSource getDataSource(String id) throws Exception {
-      return getDatasource(ChartType.valueOf(id));
-    }};
+  private final static ChartBuilder chartBuilder = new DefaultChartBuilder(
+      new DataSourceFactory() {
+        @Override
+        public DataSource getDataSource(String id) throws Exception {
+          return getDatasource(ChartType.valueOf(id));
+        }
+      });
 
   @Test
   public void format() throws Exception {
@@ -39,8 +40,7 @@ public class ChartBuilderTest {
 
   public void format(ChartType chartType, Format format) throws Exception {
     final List<charts.Chart> charts = chartBuilder.getCharts(
-        chartType.name(), 
-        dsf,
+        chartType.name(),
         chartType,
         asList(getDefaultTestingRegion(chartType)),
         Collections.<String, String>emptyMap());

@@ -33,7 +33,9 @@ import charts.builder.CachedChartBuilder;
 import charts.builder.ChartBuilder;
 import charts.builder.ChartCache;
 import charts.builder.ChartCacheImpl;
+import charts.builder.DataSourceFactory;
 import charts.builder.DefaultChartBuilder;
+import charts.builder.FileStoreDataSourceFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -121,6 +123,9 @@ public class GuiceInjectionPlugin extends Plugin {
         bind(CacheableUserProvider.class)
           .to(CacheableUserProviderImpl.class)
           .in(Singleton.class);
+        bind(DataSourceFactory.class)
+          .to(FileStoreDataSourceFactory.class)
+          .in(Singleton.class);
       }
     };
     final Module pluginModule = new AbstractModule() {
@@ -139,8 +144,6 @@ public class GuiceInjectionPlugin extends Plugin {
     };
     final Injector intermediateInjector = Guice.createInjector(
         eventManagerModule, pluginModule, sessionModule);
-
-
     final Module chartBuilderModule = new AbstractModule() {
       @Override
       protected void configure() {
@@ -151,7 +154,8 @@ public class GuiceInjectionPlugin extends Plugin {
           public ChartCache create() {
             final EventManager em =
                 intermediateInjector.getInstance(EventManager.class);
-            final DefaultChartBuilder dcb = new DefaultChartBuilder();
+            final DefaultChartBuilder dcb = new DefaultChartBuilder(
+                intermediateInjector.getInstance(DataSourceFactory.class));
             return new ChartCacheImpl(dcb, em);
           }
         };
@@ -165,8 +169,6 @@ public class GuiceInjectionPlugin extends Plugin {
           .in(Singleton.class);
       }
     };
-
-
     return intermediateInjector.createChildInjector(chartBuilderModule);
   }
 

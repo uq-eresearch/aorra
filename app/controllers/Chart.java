@@ -62,7 +62,7 @@ public class Chart extends SessionAwareController {
   @SubjectPresent
   public Result charts(final String format, String id) throws Exception {
     final List<charts.Chart> charts =
-      chartBuilder.getCharts(id, getDataSourceFactory(), null,
+      chartBuilder.getCharts(id, null,
           getRegions(request().queryString()), null);
     final ObjectNode json = Json.newObject();
     final ArrayNode aNode = json.putArray("charts");
@@ -112,8 +112,7 @@ public class Chart extends SessionAwareController {
       return notFound("unknown chart format: " + formatStr);
     }
     final List<charts.Chart> charts = chartBuilder.getCharts(id,
-        getDataSourceFactory(), type,
-        getRegions(request().queryString()), getParameters());
+        type, getRegions(request().queryString()), getParameters());
     for (charts.Chart chart : charts) {
       try {
         if(!modified(chart)) {
@@ -121,7 +120,8 @@ public class Chart extends SessionAwareController {
         }
       } catch(Exception e) {}
       try {
-        final Representation r = chart.outputAs(format, getQueryDimensions(request().queryString()));
+        final Representation r = chart.outputAs(format,
+            getQueryDimensions(request().queryString()));
         ctx().response().setHeader("Last-Modified", asHttpDate(chart.created()));
         return ok(r.getContent()).as(r.getContentType());
       } catch (charts.Chart.UnsupportedFormatException e) {
@@ -155,30 +155,13 @@ public class Chart extends SessionAwareController {
 
   private List<BasicNameValuePair> getParameters(charts.Chart chart) {
       List<BasicNameValuePair> l = Lists.newArrayList();
-      l.add(new BasicNameValuePair("region", chart.getDescription().getRegion().getName()));
+      l.add(new BasicNameValuePair("region",
+          chart.getDescription().getRegion().getName()));
       for(String pname : chart.getDescription().getParameterNames()) {
-          l.add(new BasicNameValuePair(pname, chart.getDescription().getParameter(pname).toString()));
+          l.add(new BasicNameValuePair(pname,
+              chart.getDescription().getParameter(pname).toString()));
       }
       return l;
-  }
-
-  private DataSourceFactory getDataSourceFactory() {
-    final String userId = getUser().getJackrabbitUserId();
-    return new DataSourceFactory() {
-      @Override
-      public DataSource getDataSource(final String id) throws Exception {
-        return sessionFactory.inSession(userId,
-            new F.Function<Session, DataSource>() {
-          @Override
-          public final DataSource apply(Session session) throws Exception {
-            final List<DataSource> datasources = Lists.newArrayList(
-                getDatasourcesFromIDs(fileStore, session,
-                    Collections.singletonList(id)).values());
-            return datasources.isEmpty()?null:datasources.get(0);
-          }
-        });
-      }
-    };
   }
 
   public static List<FileStore.File> getFilesFromID(
@@ -193,38 +176,6 @@ public class Chart extends SessionAwareController {
       files.addAll(fsh.listFilesInFolder((FileStore.Folder) fof));
     }
     return files;
-  }
-
-  public static DataSource getDataSource(FileStore fileStore,
-      Session session, String id) throws Exception {
-    final FileStoreHelper fsh = new FileStoreHelper(session);
-    final FileStore.Manager fm = fileStore.getManager(session);
-    FileStore.FileOrFolder fof = fm.getByIdentifier(id);
-    if (fof instanceof FileStore.File) {
-      Collection<DataSource>  c = fsh.getDatasources(Collections.singletonList((FileStore.File) fof)).values();
-      if(!c.isEmpty()) {
-        return c.iterator().next();
-      }
-    } else if (fof instanceof FileStore.Folder) {
-      throw new RuntimeException("folder");
-    }
-    return null;
-  }
-
-  public static Map<FileStore.File, DataSource> getDatasourcesFromIDs(
-      FileStore fileStore, Session session, List<String> ids) throws Exception {
-    final FileStoreHelper fsh = new FileStoreHelper(session);
-    final List<FileStore.File> files = Lists.newLinkedList();
-    final FileStore.Manager fm = fileStore.getManager(session);
-    for (String id : ids) {
-      FileStore.FileOrFolder fof = fm.getByIdentifier(id);
-      if (fof instanceof FileStore.File) {
-        files.add((FileStore.File) fof);
-      } else if (fof instanceof FileStore.Folder) {
-        files.addAll(fsh.listFilesInFolder((FileStore.Folder) fof));
-      }
-    }
-    return fsh.getDatasources(files);
   }
 
   protected static Set<String> getValues(Map<String, String[]> m, String key) {

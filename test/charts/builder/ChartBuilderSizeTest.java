@@ -30,13 +30,13 @@ import com.google.common.collect.ImmutableMap;
 
 public class ChartBuilderSizeTest {
 
-  private final static ChartBuilder chartBuilder = new DefaultChartBuilder();
-
-  private final static DataSourceFactory dsf = new DataSourceFactory() {
-    @Override
-    public DataSource getDataSource(String id) throws Exception {
-      return getDatasource(ChartType.valueOf(id));
-    }};
+  private final static ChartBuilder chartBuilder = new DefaultChartBuilder(
+      new DataSourceFactory() {
+        @Override
+        public DataSource getDataSource(String id) throws Exception {
+          return getDatasource(ChartType.valueOf(id));
+        }
+      });
 
   @Test
   public void svgAndPngChartSize() throws Exception {
@@ -65,7 +65,7 @@ public class ChartBuilderSizeTest {
     }
     {
       try {
-        final charts.Chart chart = chartBuilder.getCharts(chartType.name(), dsf, chartType, 
+        final charts.Chart chart = chartBuilder.getCharts(chartType.name(), chartType,
             regions, parameters).get(0);
         Element svg = getSvgRoot(chart, new Dimension());
         String[] viewBox = svg.attr("viewBox").split(" ");
@@ -78,7 +78,7 @@ public class ChartBuilderSizeTest {
       }
     }
     {
-      final charts.Chart chart = chartBuilder.getCharts(chartType.name(), dsf, chartType, regions,
+      final charts.Chart chart = chartBuilder.getCharts(chartType.name(), chartType, regions,
           parameters).get(0);
       Element svg = getSvgRoot(chart, new Dimension(0, 127));
       assertThat(svg.attr("width"))
@@ -88,7 +88,7 @@ public class ChartBuilderSizeTest {
       checkDimensionsMatch(chartType, svg, getPngImage(chart, new Dimension(0, 127)));
     }
     {
-      final charts.Chart chart = chartBuilder.getCharts(chartType.name(), dsf, chartType, regions,
+      final charts.Chart chart = chartBuilder.getCharts(chartType.name(), chartType, regions,
           parameters).get(0);
       Element svg = getSvgRoot(chart, new Dimension(383, 0));
       assertThat(svg.attr("width")).isEqualTo("383");
@@ -98,7 +98,7 @@ public class ChartBuilderSizeTest {
       checkDimensionsMatch(chartType, svg, getPngImage(chart, new Dimension(383, 0)));
     }
     {
-      final charts.Chart chart = chartBuilder.getCharts(chartType.name(), dsf, chartType, regions,
+      final charts.Chart chart = chartBuilder.getCharts(chartType.name(), chartType, regions,
           parameters).get(0);
       Element svg = getSvgRoot(chart, new Dimension(383, 127));
       assertThat(svg.attr("width")).isEqualTo("383");

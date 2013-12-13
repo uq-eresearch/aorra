@@ -72,14 +72,13 @@ public class ChartCacheImpl implements ChartCache {
   }
 
   @Override
-  public Future<List<Chart>> getCharts(final String id,
-      final DataSourceFactory dsf) {
+  public Future<List<Chart>> getCharts(final String id) {
     // Check the cache
     final List<Chart> clist = cache.getIfPresent(id);
     final F.Promise<List<Chart>> promisedCharts;
     if (clist == null) {
       // Charts will need to be created, so get promise to be fulfilled
-      promisedCharts = getPromiseOfCharts(id, dsf);
+      promisedCharts = getPromiseOfCharts(id);
     } else {
       // Create a promise with the value already fulfilled
       promisedCharts = F.Promise.pure(clist);
@@ -94,14 +93,12 @@ public class ChartCacheImpl implements ChartCache {
     cache.put(fileId, charts);
   }
 
-  private List<Chart> actuallyGetCharts(String id, DataSourceFactory dsf)
-      throws Exception {
-    return chartBuilder.getCharts(id, dsf, null,
-        Collections.<Region> emptyList(), null);
+  private List<Chart> actuallyGetCharts(String id) throws Exception {
+    return chartBuilder.getCharts(id, null,
+        Collections.<Region>emptyList(), null);
   }
 
-  private F.Promise<List<Chart>> getPromiseOfCharts(final String id,
-      final DataSourceFactory dsf) {
+  private F.Promise<List<Chart>> getPromiseOfCharts(final String id) {
     // Get reference to ourself, so we can update the cache asynchronously
     final ChartCache self = TypedActor.self();
     // Create a promise based on an asynchronous operation
@@ -109,7 +106,7 @@ public class ChartCacheImpl implements ChartCache {
       @Override
       public List<Chart> apply() throws Throwable {
         // Get the charts (non-modifying operation)
-        final List<Chart> charts = actuallyGetCharts(id, dsf);
+        final List<Chart> charts = actuallyGetCharts(id);
         // Schedule update of self with new cache value
         self.update(id, charts);
         // Fulfil promise with charts

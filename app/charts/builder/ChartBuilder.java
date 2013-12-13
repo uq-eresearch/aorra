@@ -9,7 +9,7 @@ import charts.Region;
 
 public interface ChartBuilder {
 
-  public List<Chart> getCharts(String id, DataSourceFactory dsf, ChartType type,
+  public List<Chart> getCharts(String id, ChartType type,
       List<Region> regions, Map<String, String> parameters) throws Exception;
 
 }
