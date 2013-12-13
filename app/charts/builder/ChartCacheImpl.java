@@ -3,17 +3,14 @@ package charts.builder;
 import java.util.Collections;
 import java.util.List;
 
-import notification.Notifier;
-
-import org.apache.commons.lang3.StringUtils;
-
 import play.Logger;
 import play.Play;
 import play.libs.F;
+import scala.concurrent.Future;
 import service.EventManager;
-import service.OrderedEvent;
 import service.EventManager.EventReceiver;
 import service.EventManager.EventReceiverMessage;
+import service.OrderedEvent;
 import akka.actor.TypedActor;
 import charts.Chart;
 import charts.Region;
@@ -23,7 +20,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.cache.Weigher;
-import com.google.inject.Inject;
 
 public class ChartCacheImpl implements ChartCache {
 
@@ -81,18 +77,20 @@ public class ChartCacheImpl implements ChartCache {
   }
 
   @Override
-  public F.Either<Exception, List<Chart>> getCharts(String id,
+  public Future<List<Chart>> getCharts(String id,
       DataSourceFactory dsf) {
+    F.Promise<List<Chart>> promisedCharts;
     try {
       List<Chart> clist = cache.getIfPresent(id);
       if (clist == null) {
         clist = actuallyGetCharts(id, dsf);
         cache.put(id, clist);
       }
-      return F.Either.Right(clist);
+      promisedCharts = F.Promise.pure(clist);
     } catch (Exception e) {
-      return F.Either.Left(e);
+      promisedCharts = F.Promise.throwing(e);
     }
+    return promisedCharts.wrapped();
   }
 
   private List<Chart> actuallyGetCharts(String id, DataSourceFactory dsf)

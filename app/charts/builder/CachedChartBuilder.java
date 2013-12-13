@@ -5,7 +5,10 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-import play.libs.F;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.duration.Duration;
+import akka.util.Timeout;
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
@@ -17,6 +20,7 @@ import com.google.inject.Singleton;
 @Singleton
 public class CachedChartBuilder implements ChartBuilder {
 
+  private final Timeout timeout = new Timeout(Duration.create(60, "seconds"));
   private final ChartCache chartCache;
 
   @Inject
@@ -28,14 +32,11 @@ public class CachedChartBuilder implements ChartBuilder {
   public List<Chart> getCharts(String id, DataSourceFactory dsf,
       ChartType type, List<Region> regions, Map<String, String> parameters)
           throws Exception {
-    final F.Either<Exception, List<Chart>> possiblyCharts =
-        chartCache.getCharts(id, dsf);
-    if (possiblyCharts.right.isDefined()) {
-      final List<Chart> charts = possiblyCharts.right.get();
-      return filter(charts, type, regions, parameters);
-    } else {
-      throw possiblyCharts.left.get();
-    }
+    final Future<List<Chart>> futureCharts = chartCache.getCharts(id, dsf);
+    // We leverage Await.result() here to throw any exception that the actor
+    // may have encountered.
+    final List<Chart> charts = Await.result(futureCharts, timeout.duration());
+    return filter(charts, type, regions, parameters);
   }
 
   private List<Chart> filter(List<Chart> charts, ChartType type,
