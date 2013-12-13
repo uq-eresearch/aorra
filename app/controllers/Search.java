@@ -1,7 +1,9 @@
 package controllers;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -140,12 +142,20 @@ public class Search extends SessionAwareController {
         query.bindValue("query", vf.createValue("%" + q + "%"));
         QueryResult result = query.execute();
         RowIterator iter = result.getRows();
+        final Set<String> seen = new HashSet<String>();
+        for (SearchResult r : slist) {
+          seen.add(r.id);
+        }
         while (iter.hasNext()) {
           Row row = iter.nextRow();
           Node n = row.getNode().getParent().getParent();
+          if (seen.contains(n.getIdentifier())) {
+            continue;
+          }
           SearchResult sr = new SearchResult(n.getIdentifier(), row.getScore(),
               n.getPath(), "filename");
           slist.add(sr);
+          seen.add(n.getIdentifier());
         }
       }
     });
