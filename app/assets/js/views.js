@@ -1917,8 +1917,13 @@ define([
   });
 
   var SearchResult = Marionette.ItemView.extend({
+    tagName: 'a',
+    className: 'list-group-item',
+    attributes: {
+      href: '#'
+    },
     triggers: {
-      'click .js-result': 'file:select'
+      'click': 'file:select'
     },
     onFileSelect: function() {
       App.vent.trigger('nav:file:show', this.options.file);
@@ -1938,6 +1943,7 @@ define([
   });
   
   var SearchView = Marionette.CollectionView.extend({
+    className: "list-group",
     itemView: SearchResult,
     emptyView: Marionette.ItemView.extend({
       template: function() {
