@@ -1535,7 +1535,6 @@ define([
       buttons: '.region-buttons',
       display: '.region-display',
       info: '.region-info',
-      move: '.region-move',
       upload: '.region-upload'
     },
     triggers: {
@@ -1645,13 +1644,9 @@ define([
           new DownloadButtonView({
             formats: this.downloadFormats()
           }),
+          this.isAdmin() ? new MoveButton({ model: this.model }) : null,
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
-        if (this.isAdmin()) {
-          this.move.show(new MoveButton({
-            model: this.model
-          }));
-        }
       } else {
         this.buttons.show(new ButtonToolbarView([
           new WatchingButtonView({
