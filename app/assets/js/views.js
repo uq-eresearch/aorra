@@ -833,18 +833,25 @@ define([
     }
   });
 
-  var FileMoveButton = Marionette.ItemView.extend({
+  var MoveButton = Marionette.ItemView.extend({
     ui: {
       button: 'button'
     },
     template: function(data) {
-      return templates.render('file_move_button', {});
+      return templates.render('move_button', {});
     },
     onDestinationList: function() {
       var $destinationSelect = this.$('select.js-folders');
       $destinationSelect.empty();
       var filestore = this.model.collection;
       var folders = filestore.where({type: 'folder'});
+      if (this.model.get('type') == 'folder') {
+        var thisId = this.model.id;
+        // Filter out self
+        folders = _(folders).reject(function(m) {
+          return m.id == thisId;
+        })
+      }
       _(folders).each(function(folder) {
         var $option = $('<option/>')
           .attr('value', folder.id)
@@ -856,11 +863,11 @@ define([
       var $modal = this.$('.modal');
       var $destinationSelect = this.$('select.js-folders');
       var folderId = $destinationSelect.val();
-      var thisFileId = this.model.id;
+      var thisId = this.model.id;
       this.model.set('parent', folderId);
       Q(this.model.save()).then(function() {
         $modal.modal('hide');
-        App.vent('nav:file:show', thisFileId);
+        App.vent('nav:file:show', thisId);
       }).fail(_.bind(function() {
         this.$('.js-select').button('reset');
       }, this));
@@ -1056,6 +1063,8 @@ define([
               'Generated charts': this.model.url()+"/charts.zip"
             }
           }),
+          this.isAdmin() && this.model.get('path') != '/' ?
+              new MoveButton({ model: this.model }) : null,
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
@@ -1635,7 +1644,7 @@ define([
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
         if (this.isAdmin()) {
-          this.move.show(new FileMoveButton({
+          this.move.show(new MoveButton({
             model: this.model
           }));
         }
