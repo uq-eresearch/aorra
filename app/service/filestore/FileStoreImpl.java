@@ -494,8 +494,9 @@ public class FileStoreImpl implements FileStore {
     @Override
     public void move(service.filestore.FileStore.Folder destination)
         throws ItemExistsException, RepositoryException {
+      FileStore.Folder formerParent = this.getParent();
       move(destination, "folders");
-      eventManagerImpl.tell(Events.move(this));
+      eventManagerImpl.tell(Events.move(this, formerParent, destination));
     }
 
   }
@@ -631,8 +632,9 @@ public class FileStoreImpl implements FileStore {
     @Override
     public void move(FileStore.Folder destination)
         throws ItemExistsException, RepositoryException {
+      FileStore.Folder formerParent = this.getParent();
       move(destination, "files");
-      eventManagerImpl.tell(Events.move(this));
+      eventManagerImpl.tell(Events.move(this, formerParent, destination));
     }
   }
 

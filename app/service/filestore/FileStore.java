@@ -10,14 +10,13 @@ import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import models.User;
 import service.EventManager;
 import service.EventManager.Event;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
-
-import models.User;
 
 public interface FileStore {
 
@@ -175,14 +174,27 @@ public interface FileStore {
       return new EventManager.Event("folder:delete", nodeInfo(folder));
     }
 
-    public static Event move(FileStore.File file)
+    public static Event move(FileStore.File file,
+        FileStore.Folder formerParent,
+        FileStore.Folder newParent)
         throws RepositoryException {
-      return new EventManager.Event("file:move", nodeInfo(file));
+      return move("file", file, formerParent, newParent);
     }
 
-    public static Event move(FileStore.Folder folder)
+    public static Event move(FileStore.Folder folder,
+        FileStore.Folder formerParent,
+        FileStore.Folder newParent)
         throws RepositoryException {
-      return new EventManager.Event("folder:move", nodeInfo(folder));
+      return move("folder", folder, formerParent, newParent);
+    }
+
+    private static Event move(String type,
+        FileStore.FileOrFolder f,
+        FileStore.Folder formerParent,
+        FileStore.Folder newParent) throws RepositoryException {
+      return new EventManager.Event(type+":move", ImmutableMap.of("id", f.getIdentifier(),
+          "formerParent", formerParent.getIdentifier(),
+          "newParent", newParent.getIdentifier()));
     }
 
     private static Map<String, String> nodeInfo(FileStore.Folder folder) {

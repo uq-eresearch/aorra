@@ -12,10 +12,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TimeZone;
@@ -25,38 +21,26 @@ import javax.jcr.ItemExistsException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
-import models.GroupManager;
 import models.Flag;
+import models.GroupManager;
 import models.User;
 import models.UserDAO;
 
-import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.security.user.Group;
-import org.apache.jackrabbit.webdav.util.HttpDateFormat;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.ISO8601Utils;
-
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
 import play.Logger;
 import play.api.http.MediaRange;
 import play.api.libs.MimeTypes;
-import play.api.mvc.AnyContentAsRaw;
-import play.api.mvc.AnyContentAsText;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
-import service.EventManager;
 import service.JcrSessionFactory;
-import service.EventManager.Event;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
 import service.filestore.FileStore.Permission;
@@ -65,6 +49,11 @@ import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.ISO8601Utils;
 import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
@@ -289,7 +278,18 @@ public final class FileStoreController extends SessionAwareController {
         final JsonBuilder jb = new JsonBuilder();
         final JsonNode params = ctx().request().body().asJson();
         try {
-          f.rename(params.get("name").asText());
+          if(!StringUtils.equals(f.getName(), params.get("name").asText())) {
+            f.rename(params.get("name").asText());
+          } else if(!StringUtils.equals(
+              f.getParent().getIdentifier(), params.get("parent").asText())) {
+            final FileStore.Manager fm = fileStoreImpl.getManager(session);
+            FileStore.FileOrFolder fof = fm.getByIdentifier(params.get("parent").asText());
+            if(fof instanceof FileStore.Folder) {
+              f.move((Folder)fof);
+            } else {
+              return badRequest("new parent is not a folder or null");
+            }
+          }
           return ok(jb.toJsonShallow(f));
         } catch (ItemExistsException e) {
           return badRequest(e.getMessage());
