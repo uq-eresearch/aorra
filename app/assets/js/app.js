@@ -80,7 +80,9 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
         });
       }
     });
-    App.vent.on("feed:folder:update feed:file:update", function(id) {
+    App.vent.on(
+        "feed:folder:update feed:file:update feed:folder:move feed:file:move",
+        function(id) {
       var fof = fs.get(id);
       if (fof) { fof.fetch(); }
     });

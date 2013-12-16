@@ -927,6 +927,9 @@ define([
   var BreadcrumbView = Backbone.Marionette.CollectionView.extend({
     tagName: 'ol',
     className: 'breadcrumb',
+    modelEvents: {
+      'change:parent': 'repopulate'
+    },
     itemView: BreadcrumbItemView,
     itemViewOptions: function(model, index) {
       if (this.collection.size() - 1 == index) {
@@ -934,17 +937,22 @@ define([
       }
     },
     initialize: function() {
-      this.collection = this._createParentFoldersCollection();
+      this.collection = new models.FileStore();
+      this.repopulate();
     },
-    _createParentFoldersCollection: function() {
+    repopulate: function() {
+      this._populateParentFoldersCollection(this.collection);
+    },
+    _populateParentFoldersCollection: function(parentCollection) {
       var collection = this.model.collection;
-      var parentFolders = new models.FileStore();
+      var parentFolders = [];
       var m = this.model;
       while (m != null) {
         parentFolders.unshift(m);
         m = collection.get(m.get('parent'));
       }
-      return parentFolders;
+      parentCollection.reset(parentFolders);
+      return parentCollection;
     }
   });
 

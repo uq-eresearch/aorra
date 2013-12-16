@@ -61,7 +61,7 @@ define(['backbone'], function(Backbone) {
               trigger('ping', event.data);
             });
             _.each(['folder', 'file', 'flag', 'notification'], function(t) {
-              _.each(['create', 'update', 'delete'], function(n) {
+              _.each(['create', 'update', 'move', 'delete'], function(n) {
                 var eventName = t+":"+n;
                 es.addEventListener(eventName, function(event) {
                   // Ensure that notifications always follow the UI events

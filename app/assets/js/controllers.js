@@ -85,7 +85,13 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
           f();
         });
         fileTree.listenTo(fs, 'change', function(m) {
-          fileTree.tree().update(m.asNodeStruct(), m.get('parent'));
+          var node = fileTree.tree().find(m.id);
+          if (node.parent() && node.parent().id != m.get('parent')) {
+            node.remove();
+            fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+          } else {
+            fileTree.tree().update(m.asNodeStruct());
+          }
         });
         fileTree.listenTo(fs, 'remove', function(m) {
           fileTree.tree().remove(m.get('id'));
