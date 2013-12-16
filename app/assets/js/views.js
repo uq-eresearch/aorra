@@ -845,6 +845,10 @@ define([
       $destinationSelect.empty();
       var filestore = this.model.collection;
       var folders = filestore.where({type: 'folder'});
+      // Filter out current parent
+      folders = _(folders).reject(_.bind(function(m) {
+        return m.id == this.model.get('parent');
+      }, this));
       if (this.model.get('type') == 'folder') {
         var thisId = this.model.id;
         // Filter out self
