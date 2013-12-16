@@ -954,9 +954,8 @@ define([
    * Simple container view which can contain a number of other views or DOM
    * elements, and render each one in an inline list.
    */
-  var InlineListView = Backbone.View.extend({
-    tagName: 'ul',
-    className: 'list-inline',
+  var ButtonToolbarView = Backbone.View.extend({
+    className: 'btn-toolbar',
     els: [],
     container: new Backbone.ChildViewContainer(),
     initialize: function(viewsAndEls) {
@@ -971,7 +970,7 @@ define([
     },
     render: function() {
       this.$el.empty().append(_.map(this.els, function(el) {
-        return $('<li/>').append(el);
+        return $('<div class="btn-group"/>').append(el);
       }));
       this.container.apply('render');
     }
@@ -1046,7 +1045,7 @@ define([
             model: this.model
           }));
         }
-        this.buttons.show(new InlineListView([
+        this.buttons.show(new ButtonToolbarView([
           new WatchingButtonView({
             collection: this._users,
             targetId: this.model.id
@@ -1060,7 +1059,7 @@ define([
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
       } else {
-        this.buttons.show(new InlineListView([
+        this.buttons.show(new ButtonToolbarView([
           new DownloadButtonView({
             formats: {
               'All files': this.model.url()+"/archive",
@@ -1621,7 +1620,7 @@ define([
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       if (this.model.get('accessLevel') == 'RW') {
-        this.buttons.show(new InlineListView([
+        this.buttons.show(new ButtonToolbarView([
           new WatchingButtonView({
             collection: this._users,
             targetId: this.model.id
@@ -1641,7 +1640,7 @@ define([
           }));
         }
       } else {
-        this.buttons.show(new InlineListView([
+        this.buttons.show(new ButtonToolbarView([
           new WatchingButtonView({
             collection: this._users,
             targetId: this.model.id
