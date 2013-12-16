@@ -861,7 +861,9 @@ define([
       Q(this.model.save()).then(function() {
         $modal.modal('hide');
         App.vent('nav:file:show', thisFileId);
-      });
+      }).fail(_.bind(function() {
+        this.$('.js-select').button('reset');
+      }, this));
     },
     onRender: function() {
       var $modal = this.$('.modal').modal({ show: false });
