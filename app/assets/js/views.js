@@ -868,11 +868,10 @@ define([
       var $modal = this.$('.modal');
       var $destinationSelect = this.$('select.js-folders');
       var folderId = $destinationSelect.val();
-      var thisId = this.model.id;
       Q(this.model.save({ parent: folderId })).then(_.bind(function() {
         // Once the modal is closed, reshow file in new location
         $modal.one('hidden.bs.modal', _.bind(function() {
-          App.vent.trigger('nav:file:show', this.model);
+          App.vent.trigger('nav:'+this.model.get('type')+':show', this.model);
         }, this));
         $modal.modal('hide');
       }, this)).fail(_.bind(function() {
@@ -1000,7 +999,7 @@ define([
 
   var FolderView = FileOrFolderView.extend({
     modelEvents: {
-      "sync": "render"
+      "sync": "updatedOnServer"
     },
     initialize: function(options) {
       this._users = options.users;
@@ -1031,6 +1030,11 @@ define([
     ui: {
       nameSpan: 'span.name',
       nameField: 'input.name'
+    },
+    updatedOnServer: function() {
+      var name = this.model.get('name');
+      this.ui.nameSpan.text(name);
+      this.ui.nameField.val(name);
     },
     onFocusName: function() {
       if (this.isAdmin()) {
