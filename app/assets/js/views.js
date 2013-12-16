@@ -832,7 +832,52 @@ define([
       this.$el.html(html);
     }
   });
-  
+
+  var FileMoveButton = Marionette.ItemView.extend({
+    ui: {
+      button: 'button'
+    },
+    template: function(data) {
+      return templates.render('file_move_button', {});
+    },
+    onDestinationList: function() {
+      var $destinationSelect = this.$('select.js-folders');
+      $destinationSelect.empty();
+      var filestore = this.model.collection;
+      var folders = filestore.where({type: 'folder'});
+      _(folders).each(function(folder) {
+        var $option = $('<option/>')
+          .attr('value', folder.id)
+          .text(folder.get('path'));
+        $destinationSelect.append($option);
+      });
+    },
+    onDestinationSelected: function() {
+      var $modal = this.$('.modal');
+      var $destinationSelect = this.$('select.js-folders');
+      var folderId = $destinationSelect.val();
+      var thisFileId = this.model.id;
+      this.model.set('parent', folderId);
+      Q(this.model.save()).then(function() {
+        $modal.modal('hide');
+        App.vent('nav:file:show', thisFileId);
+      });
+    },
+    onRender: function() {
+      var $modal = this.$('.modal').modal({ show: false });
+      $modal.on('show.bs.modal', _.bind(function (e) {
+        this.triggerMethod('destination:list');
+      }, this));
+      this.ui.button.on('click', function() {
+        $modal.modal('show');
+      });
+      this.$('.js-select').on('click', _.bind(function (e) {
+        $(e.target).button('loading');
+        this.triggerMethod('destination:selected');
+      }, this));
+    }
+  });
+
   var BreadcrumbItemView = Backbone.Marionette.ItemView.extend({
     tagName: 'li',
     triggers: {
@@ -1475,7 +1520,8 @@ define([
       breadcrumbs: '.region-breadcrumbs',
       buttons: '.region-buttons',
       display: '.region-display',
-      info:   '.region-info',
+      info: '.region-info',
+      move: '.region-move',
       upload: '.region-upload'
     },
     triggers: {
@@ -1587,6 +1633,9 @@ define([
           }),
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
+        this.move.show(new FileMoveButton({
+          model: this.model
+        }));
       } else {
         this.buttons.show(new InlineListView([
           new WatchingButtonView({
