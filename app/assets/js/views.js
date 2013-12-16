@@ -178,7 +178,6 @@ define([
       var hint = _.bind(function() { return this.ui.hint; }, this);
       var toggleHint = function(e) {
         var isClosed = function(node) { return !node.isExpanded(); };
-        console.log(hint(), _.all(tree.nodes(), isClosed));
         hint().toggle(_.all(tree.nodes(), isClosed));
       };
       tree.events.label.click = [selectHandler];
@@ -870,11 +869,13 @@ define([
       var $destinationSelect = this.$('select.js-folders');
       var folderId = $destinationSelect.val();
       var thisId = this.model.id;
-      this.model.set('parent', folderId);
-      Q(this.model.save()).then(function() {
+      Q(this.model.save({ parent: folderId })).then(_.bind(function() {
+        // Once the modal is closed, reshow file in new location
+        $modal.one('hidden.bs.modal', _.bind(function() {
+          App.vent.trigger('nav:file:show', this.model);
+        }, this));
         $modal.modal('hide');
-        App.vent('nav:file:show', thisId);
-      }).fail(_.bind(function() {
+      }, this)).fail(_.bind(function() {
         this.$('.js-select').button('reset');
       }, this));
     },
