@@ -24,21 +24,9 @@ import models.Flag;
 import models.GroupManager;
 import models.User;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Range;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jackrabbit.api.security.user.Group;
-import org.apache.jackrabbit.core.version.VersionSelector;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.junit.Test;
 
 import play.api.mvc.AnyContentAsText;
@@ -54,6 +42,15 @@ import service.filestore.FlagStore;
 import service.filestore.FlagStore.FlagType;
 import service.filestore.JsonBuilder;
 import service.filestore.roles.Admin;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 
 public class FileStoreControllerTest {
 
@@ -472,25 +469,50 @@ public class FileStoreControllerTest {
         // Modifying a folder with files inside provides a better test
         folder.createFile("test.txt", "text/plain",
             new ByteArrayInputStream("Some content.".getBytes()));
-        ObjectNode json = Json.newObject();
-        json.put("id", folder.getIdentifier());
-        json.put("name", "second name");
-        final Result result = callAction(
-            controllers.routes.ref.FileStoreController.modifyFolder(
-                folder.getIdentifier()),
-            newRequest.withJsonBody(json));
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result))
-          .isEqualTo("max-age=0, must-revalidate");
-        final FileStore.Folder expectedFolder = (FileStore.Folder)
-            fm.getFileOrFolder("/second name");
-        assertThat(expectedFolder).isNotNull();
-        final String expectedContent = (new JsonBuilder())
-            .toJsonShallow(expectedFolder, false)
-            .toString();
-        assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        {
+          ObjectNode json = Json.newObject();
+          json.put("id", folder.getIdentifier());
+          json.put("name", "second name");
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.modifyFolder(
+                  folder.getIdentifier()),
+              newRequest.withJsonBody(json));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          final FileStore.Folder expectedFolder = (FileStore.Folder)
+              fm.getFileOrFolder("/second name");
+          assertThat(expectedFolder).isNotNull();
+          final String expectedContent = (new JsonBuilder())
+              .toJsonShallow(expectedFolder, false)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        }
+        // folder move test
+        {
+          final FileStore.Folder newfolder = fm.getRoot().createFolder("new folder");
+          ObjectNode json = Json.newObject();
+          json.put("id", folder.getIdentifier());
+          json.put("parent", newfolder.getIdentifier());
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.modifyFolder(
+                  folder.getIdentifier()),
+              newRequest.withJsonBody(json));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          final FileStore.Folder expectedFolder = (FileStore.Folder)
+              fm.getFileOrFolder("/new folder/second name");
+          assertThat(expectedFolder).isNotNull();
+          final String expectedContent = (new JsonBuilder())
+              .toJsonShallow(expectedFolder, false)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+        }
         return session;
       }
     });
@@ -509,26 +531,53 @@ public class FileStoreControllerTest {
             fm.getRoot().createFile("test.txt", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
         assertThat(file.getVersions()).hasSize(1);
-        ObjectNode json = Json.newObject();
-        json.put("id", file.getIdentifier());
-        json.put("name", "renamed file.txt");
-        final Result result = callAction(
-            controllers.routes.ref.FileStoreController.modifyFile(
-                file.getIdentifier()),
-            newRequest.withJsonBody(json));
-        assertThat(status(result)).isEqualTo(200);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result))
-          .isEqualTo("max-age=0, must-revalidate");
-        final FileStore.File expectedFile = (FileStore.File)
-            fm.getFileOrFolder("/renamed file.txt");
-        assertThat(expectedFile).isNotNull();
-        final String expectedContent = (new JsonBuilder())
-            .toJsonShallow(expectedFile)
-            .toString();
-        assertThat(contentAsString(result)).isEqualTo(expectedContent);
-        assertThat(file.getVersions()).hasSize(1);
+        // file rename test
+        {
+          ObjectNode json = Json.newObject();
+          json.put("id", file.getIdentifier());
+          json.put("name", "renamed file.txt");
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.modifyFile(
+                  file.getIdentifier()),
+              newRequest.withJsonBody(json));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          final FileStore.File expectedFile = (FileStore.File)
+              fm.getFileOrFolder("/renamed file.txt");
+          assertThat(expectedFile).isNotNull();
+          final String expectedContent = (new JsonBuilder())
+              .toJsonShallow(expectedFile)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+          assertThat(file.getVersions()).hasSize(1);
+        }
+        // file move test
+        {
+          FileStore.Folder testFolder = fm.getRoot().createFolder("new folder");
+          ObjectNode json = Json.newObject();
+          json.put("id", file.getIdentifier());
+          json.put("parent", testFolder.getIdentifier());
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.modifyFile(
+                  file.getIdentifier()),
+              newRequest.withJsonBody(json));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          final FileStore.File expectedFile = (FileStore.File)
+              fm.getFileOrFolder("/new folder/renamed file.txt");
+          assertThat(expectedFile).isNotNull();
+          final String expectedContent = (new JsonBuilder())
+              .toJsonShallow(expectedFile)
+              .toString();
+          assertThat(contentAsString(result)).isEqualTo(expectedContent);
+          assertThat(file.getVersions()).hasSize(1);
+        }
         return session;
       }
     });
@@ -1044,7 +1093,7 @@ public class FileStoreControllerTest {
           final Result result = callAction(
               controllers.routes.ref.FileStoreController.downloadFile(
                   file.getIdentifier(),
-                  "latest"),
+                  versionName),
               newRequest.withHeader("Accept", "text/plain"));
           assertThat(status(result)).isEqualTo(303);
           assertThat(header("Location", result)).isEqualTo(
