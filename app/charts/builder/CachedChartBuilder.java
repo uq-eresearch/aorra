@@ -3,7 +3,7 @@ package charts.builder;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
+import javax.annotation.Nullable;
 
 import scala.concurrent.Await;
 import scala.concurrent.Future;
@@ -13,7 +13,9 @@ import charts.Chart;
 import charts.ChartType;
 import charts.Region;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -50,13 +52,14 @@ public class CachedChartBuilder implements ChartBuilder {
         if(regions != null && !regions.isEmpty() && !regions.contains(chart.getDescription().getRegion())) {
           continue;
         }
-        Map<String, String> cparams = chart.getDescription().getParameters();
+        final Map<String, String> cparams = chart.getDescription().getParameters();
         if(parameters != null && cparams != null) {
-          for(Map.Entry<String, String> me: parameters.entrySet()) {
-            if(cparams.containsKey(me.getKey()) &&
-                !StringUtils.equals(me.getValue(), cparams.get(me.getKey()))) {
-              continue;
-            }
+          if(!Maps.difference(Maps.filterKeys(parameters, new Predicate<String>() {
+            @Override
+            public boolean apply(@Nullable String key) {
+              return cparams.containsKey(key);
+            }}), cparams).areEqual()) {
+            continue;
           }
         }
         filtered.add(chart);
