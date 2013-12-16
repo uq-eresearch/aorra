@@ -846,7 +846,9 @@ define([
       var folders = filestore.where({type: 'folder'});
       // Filter out current parent
       folders = _(folders).reject(_.bind(function(m) {
-        return m.id == this.model.get('parent');
+        return m == this.model ||
+          m.id == this.model.get('parent') ||
+          _(m.ancestors()).contains(this.model);
       }, this));
       if (this.model.get('type') == 'folder') {
         var thisId = this.model.id;
@@ -943,18 +945,12 @@ define([
       this.repopulate();
     },
     repopulate: function() {
-      this._populateParentFoldersCollection(this.collection);
+      this._populateCollection(this.collection);
     },
-    _populateParentFoldersCollection: function(parentCollection) {
-      var collection = this.model.collection;
-      var parentFolders = [];
-      var m = this.model;
-      while (m != null) {
-        parentFolders.unshift(m);
-        m = collection.get(m.get('parent'));
-      }
-      parentCollection.reset(parentFolders);
-      return parentCollection;
+    _populateCollection: function(breadcrumbCollection) {
+      var folders = this.model.ancestors().concat([this.model]);
+      breadcrumbCollection.reset(folders);
+      return breadcrumbCollection;
     }
   });
 

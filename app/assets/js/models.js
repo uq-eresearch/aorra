@@ -47,6 +47,17 @@ define(
           mimeType: this.get('mime')
         }
       };
+    },
+    ancestors: function() {
+      var collection = this.collection;
+      var parentModel = function(m) { return collection.get(m.get('parent')); };
+      var ancestors = [];
+      var m = parentModel(this);
+      while (m != null) {
+        ancestors.unshift(m);
+        m = parentModel(m);
+      }
+      return ancestors;
     }
   });
 
