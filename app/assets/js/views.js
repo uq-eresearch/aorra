@@ -1635,9 +1635,11 @@ define([
           }),
           this.isAdmin() ? new DeleteButtonView({ model: this.model }) : null
         ]));
-        this.move.show(new FileMoveButton({
-          model: this.model
-        }));
+        if (this.isAdmin()) {
+          this.move.show(new FileMoveButton({
+            model: this.model
+          }));
+        }
       } else {
         this.buttons.show(new InlineListView([
           new WatchingButtonView({
