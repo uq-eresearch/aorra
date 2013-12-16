@@ -258,10 +258,8 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session, FileStore.Folder f)
           throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
-        final JsonNode params = ctx().request().body().asJson();
         try {
-          f.rename(params.get("name").asText());
-          return ok(jb.toJsonShallow(f, false));
+          return ok(jb.toJsonShallow((FileStore.Folder)modify(session, f), false));
         } catch (ItemExistsException e) {
           return badRequest(e.getMessage());
         }
@@ -276,26 +274,36 @@ public final class FileStoreController extends SessionAwareController {
       public final Result apply(Session session, FileStore.File f)
           throws RepositoryException {
         final JsonBuilder jb = new JsonBuilder();
-        final JsonNode params = ctx().request().body().asJson();
         try {
-          if(!StringUtils.equals(f.getName(), params.get("name").asText())) {
-            f.rename(params.get("name").asText());
-          } else if(!StringUtils.equals(
-              f.getParent().getIdentifier(), params.get("parent").asText())) {
-            final FileStore.Manager fm = fileStoreImpl.getManager(session);
-            FileStore.FileOrFolder fof = fm.getByIdentifier(params.get("parent").asText());
-            if(fof instanceof FileStore.Folder) {
-              f.move((Folder)fof);
-            } else {
-              return badRequest("new parent is not a folder or null");
-            }
-          }
-          return ok(jb.toJsonShallow(f));
+          return ok(jb.toJsonShallow((FileStore.File)modify(session, f)));
         } catch (ItemExistsException e) {
           return badRequest(e.getMessage());
         }
       }
     });
+  }
+
+  private FileStore.FileOrFolder modify(Session session, FileStore.FileOrFolder f) throws RepositoryException {
+    final FileStore.Manager fm = fileStoreImpl.getManager(session);
+    String newName = getParamAsString("name");
+    String newParent = getParamAsString("parent");
+    if(newName != null && !StringUtils.equals(f.getName(), newName)) {
+      f.rename(newName);
+    } else if(newParent != null && !StringUtils.equals(
+        f.getParent().getIdentifier(), newParent)) {
+      FileStore.FileOrFolder fof = fm.getByIdentifier(newParent);
+      if(fof instanceof FileStore.Folder) {
+        f.move((Folder)fof);
+      } else {
+        throw new RuntimeException("new parent is not a folder or null");
+      }
+    }
+    return fm.getByIdentifier(f.getIdentifier());
+  }
+
+  private String getParamAsString(String name) {
+    final JsonNode params = ctx().request().body().asJson();
+    return ((params!=null)&&(params.get(name)!=null))?params.get(name).asText():null;
   }
 
   @SubjectPresent
