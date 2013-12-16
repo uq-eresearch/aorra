@@ -835,7 +835,7 @@ define([
 
   var MoveButton = Marionette.ItemView.extend({
     ui: {
-      button: 'button'
+      button: '.js-open'
     },
     template: function(data) {
       return templates.render('move_button', {});
@@ -856,12 +856,14 @@ define([
           return m.id == thisId;
         })
       }
-      _(folders).each(function(folder) {
-        var $option = $('<option/>')
-          .attr('value', folder.id)
-          .text(folder.get('path'));
-        $destinationSelect.append($option);
-      });
+      _(folders).chain()
+        .sortBy(function(v) { return v.get('path'); })
+        .each(function(folder) {
+          var $option = $('<option/>')
+            .attr('value', folder.id)
+            .text(folder.get('path'));
+          $destinationSelect.append($option);
+        });
     },
     onDestinationSelected: function() {
       var $modal = this.$('.modal');
