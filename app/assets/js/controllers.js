@@ -89,6 +89,9 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
           if (node.parent() && node.parent().id != m.get('parent')) {
             node.remove();
             fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+            _(m.decendants()).each(function(m) {
+              fileTree.tree().add(m.asNodeStruct(), m.get('parent'));
+            });
           } else {
             fileTree.tree().update(m.asNodeStruct());
           }

@@ -58,6 +58,13 @@ define(
         m = parentModel(m);
       }
       return ancestors;
+    },
+    decendants: function() {
+      var decendants = this.collection.where({ parent: this.id });
+      var flatMap = _.compose(_.flatten, _.map);
+      return decendants.concat(flatMap(decendants, function(m) {
+        return m.decendants();
+      }));
     }
   });
 
