@@ -1,0 +1,11 @@
+<h2>
+  {{^isEditing}}
+  <span class="name"
+    {{#canRename}}style="cursor: pointer" title="Click to rename"{{/canRename}}>
+    {{name}}
+  </span>
+  {{/isEditing}}
+  {{#isEditing}}
+  <input class="name" value="{{name}}"/>
+  {{/isEditing}}
+</h2>

@@ -994,10 +994,51 @@ define([
     }
   });
 
-  var FolderView = FileOrFolderView.extend({
+  var FileOrFolderNameView = Marionette.ItemView.extend({
     modelEvents: {
-      "sync": "updatedOnServer"
+      "sync": "render"
     },
+    triggers: {
+      'click span.name': 'focus:name',
+      'blur input.name': 'blur:name'
+    },
+    ui: {
+      nameSpan: 'span.name',
+      nameField: 'input.name'
+    },
+    onFocusName: function() {
+      if (this.options.isAdmin) {
+        this._isEditing = true;
+        this.render();
+        this.ui.nameField.focus();
+      }
+    },
+    onBlurName: function() {
+      this.model.save({ name: this.ui.nameField.val() })
+        .error(_.bind(this.model.fetch, this.model));
+      this._isEditing = false;
+      this.render();
+    },
+    serializeData: function() {
+      return _(this.model.toJSON()).extend({
+        canRename: this.options.isAdmin,
+        isEditing: this._isEditing
+      });
+    },
+    template: function(data) {
+      return templates.render('fof_name_view', data);
+    },
+    onRender: function() {
+      this.ui.nameField.keyup(function(event) {
+        // on Enter key
+        if (event.which == 13) {
+          $(event.target).blur();
+        }
+      });
+    }
+  });
+
+  var FolderView = FileOrFolderView.extend({
     initialize: function(options) {
       this._users = options.users;
     },
@@ -1016,46 +1057,17 @@ define([
     regions: {
       breadcrumbs: '.region-breadcrumbs',
       buttons: '.region-buttons',
+      name: '.region-name',
       upload: '.region-upload',
       mkdir: '.region-mkdir',
       permissions: '.region-permissions'
     },
-    triggers: {
-      'click span.name': 'focus:name',
-      'blur input.name': 'blur:name'
-    },
-    ui: {
-      nameSpan: 'span.name',
-      nameField: 'input.name'
-    },
-    updatedOnServer: function() {
-      var name = this.model.get('name');
-      this.ui.nameSpan.text(name);
-      this.ui.nameField.val(name);
-    },
-    onFocusName: function() {
-      if (this.isAdmin()) {
-        this.ui.nameSpan.hide();
-        this.ui.nameField.show();
-        this.ui.nameField.keyup(function(event) {
-          // on Enter key
-          if (event.which == 13) {
-            $(event.target).blur();
-          }
-        });
-        this.ui.nameField.focus();
-      }
-    },
-    onBlurName: function() {
-      if (this.isAdmin()) {
-        this.model.set("name", this.ui.nameField.val());
-        this.ui.nameSpan.show();
-        this.ui.nameField.hide();
-        this.model.save().error(_.bind(this.model.fetch, this.model));
-      }
-    },
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
+      this.name.show(new FileOrFolderNameView({
+        model: this.model,
+        isAdmin: this.isAdmin()
+      }));
       if (this.model.get('accessLevel') == 'RW') {
         this.upload.show(new FileUploadView({
           type: 'folder',
@@ -1519,6 +1531,7 @@ define([
     initialize: function(options) {
       this._users = options.users;
       // Cache views at the instance level
+      this.getNameView = _.memoize(this.getNameView);
       this.getContentView = _.memoize(this.getContentView);
       this.getVersionsView = _.memoize(this.getVersionsView);
       this.getCommentsView = _.memoize(this.getCommentsView);
@@ -1547,25 +1560,25 @@ define([
       buttons: '.region-buttons',
       display: '.region-display',
       info: '.region-info',
+      name: '.region-name',
       upload: '.region-upload'
     },
     triggers: {
-      'click span.name': 'focus:name',
       'click .show-content a': 'display:content',
       'click .show-versions a': 'display:versions',
-      'click .show-comments a': 'display:comments',
-      'blur input.name': 'blur:name'
+      'click .show-comments a': 'display:comments'
     },
     ui: {
-      nameSpan: 'span.name',
-      nameField: 'input.name',
       displayToggle: '.display-toggle'
     },
     updatedOnServer: function() {
-      var name = this.model.get('name');
-      this.ui.nameSpan.text(name);
-      this.ui.nameField.val(name);
       // TODO: Update modification time
+    },
+    getNameView: function() {
+      return new FileOrFolderNameView({
+        model: this.model,
+        isAdmin: this.isAdmin()
+      });
     },
     getContentView: function() {
       return OnlineEditorView.create(this.model, this._users);
@@ -1575,14 +1588,14 @@ define([
         collection: this.model.versions(),
         file: this.model,
         users: this._users
-      })
+      });
     },
     getCommentsView: function() {
       return new CommentsView({
         collection: this.model.comments(),
         file: this.model,
         users: this._users
-      })
+      });
     },
     onDisplayContent: function() {
       this.display.show(this.getContentView());
@@ -1608,27 +1621,6 @@ define([
       this.ui.displayToggle.find('li').removeClass('active');
       this.ui.displayToggle.find('li.show-comments').addClass('active');
     },
-    onFocusName: function() {
-      if (this.isAdmin()) {
-        this.ui.nameSpan.hide();
-        this.ui.nameField.show();
-        this.ui.nameField.keyup(function(event) {
-          // on Enter key
-          if (event.which == 13) {
-            $(event.target).blur();
-          }
-        });
-        this.ui.nameField.focus();
-      }
-    },
-    onBlurName: function() {
-      if (this.isAdmin()) {
-        this.model.set("name", this.ui.nameField.val());
-        this.ui.nameSpan.show();
-        this.ui.nameField.hide();
-        this.model.save().error(_.bind(this.model.fetch, this.model));
-      }
-    },
     downloadFormats: function() {
       var formats = {
         "Original": this.model.downloadUrl()
@@ -1643,6 +1635,7 @@ define([
     },
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
+      this.name.show(this.getNameView());
       if (this.model.get('accessLevel') == 'RW') {
         this.buttons.show(new ButtonToolbarView([
           new WatchingButtonView({
