@@ -1,6 +1,5 @@
 package controllers;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,6 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.jcrom.Jcrom;
 
 import play.libs.F;
@@ -29,7 +27,6 @@ import service.JcrSessionFactory;
 import service.filestore.FileStore;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
@@ -89,10 +86,12 @@ public class Search extends SessionAwareController {
 
   }
 
+  private final FileStore fileStore;
   @Inject
   public Search(final JcrSessionFactory sessionFactory, final Jcrom jcrom,
       final CacheableUserProvider sessionHandler, final FileStore fileStore) {
     super(sessionFactory, jcrom, sessionHandler);
+    this.fileStore = fileStore;
   }
 
   @SubjectPresent
@@ -151,9 +150,11 @@ public class Search extends SessionAwareController {
 
       private void searchFilename(Session session, Set<SearchResult> slist,
           String q) throws Exception {
+        FileStore.Manager fm = fileStore.getManager(session);
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(
-            "SELECT * FROM [nt:file] WHERE localname() LIKE $query",
+            "SELECT * FROM [nt:unstructured] as file " +
+            "WHERE localname() LIKE $query AND ISDESCENDANTNODE(file, '/filestore')",
             javax.jcr.query.Query.JCR_SQL2);
         ValueFactory vf = session.getValueFactory();
         query.bindValue("query", vf.createValue("%" + q + "%"));
@@ -161,10 +162,13 @@ public class Search extends SessionAwareController {
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
           Row row = iter.nextRow();
-          Node n = row.getNode().getParent().getParent();
-          SearchResult sr = new SearchResult(n.getIdentifier(), row.getScore(),
-              n.getPath(), "filename");
-          slist.add(sr);
+          Node n = row.getNode();
+          FileStore.FileOrFolder fof = fm.getByIdentifier(n.getIdentifier());
+          if(fof!= null) {
+            SearchResult sr = new SearchResult(n.getIdentifier(), row.getScore(),
+                fof.getPath(), "filename");
+            slist.add(sr);
+          }
         }
       }
     });
