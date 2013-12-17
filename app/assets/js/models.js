@@ -34,9 +34,6 @@ define(
   });
 
   var FileOrFolder = Backbone.Model.extend({
-    displayUrl: function() {
-      return this.url().replace(/^\//, '/#');
-    },
     asNodeStruct: function() {
       return {
         id: this.id,

@@ -1794,7 +1794,7 @@ define([
           return idxOf(version) > idxOf(m);
         }), 'toJSON');
       return {
-        backUrl: model.displayUrl(),
+        backUrl: model.url(),
         version: version ? version.toJSON() : null,
         otherVersions: otherVersions
       };
