@@ -52,6 +52,7 @@ define([
     var mimeTypePatterns = [
       { pattern: /^image/, type: 'image' },
       { pattern: /^text/, type: 'document' },
+      { pattern: /xhtml\+xml$/, type: 'document' },
       { pattern: /wordprocessingml\.document$/, type: 'document' },
       { pattern: /spreadsheetml\.sheet$/, type: 'spreadsheet' },
       { pattern: /vnd\.ms-excel$/, type: 'spreadsheet' }
