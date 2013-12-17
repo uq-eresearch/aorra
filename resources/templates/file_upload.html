@@ -1,4 +1,9 @@
+{{#exists}}
 <h3>Upload new version</h3>
+{{/exists}}
+{{^exists}}
+<h3>Upload file</h3>
+{{/exists}}
 
 <span class="js-fileapi-wrapper" style="position: relative;">
   <input type="file" name="files[]" {{#multiple}}multiple{{/multiple}} />

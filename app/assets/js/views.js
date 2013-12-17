@@ -296,7 +296,8 @@ define([
     },
     serializeData: function() {
       return {
-        multiple: this._multiple
+        multiple: this._multiple,
+        exists: this.options.type == 'file'
       };
     },
     template: function(data) {
