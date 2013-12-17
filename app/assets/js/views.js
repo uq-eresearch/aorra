@@ -26,6 +26,16 @@ define([
             unstyle, htmldiff, CryptoJS) {
   'use strict';
 
+  // Clock with ticks once a second, for periodic checks
+  var clock = (function() {
+    var emitter = _.extend({}, Backbone.Events);
+    emitter.on('tick', function() {
+      return _.delay(_.bind(emitter.trigger, emitter, 'tick'), 1000);
+    });
+    emitter.trigger('tick');
+    return emitter;
+  })();
+
   var svgOrPng = Modernizr.svg ? 'svg' : 'png';
 
   var formatTimestamp = function($n, delta) {
@@ -1500,7 +1510,7 @@ define([
     }
   });
 
-  var NoEditorView = Backbone.Marionette.ItemView.extend({
+  var NoEditorView = Marionette.ItemView.extend({
     template: function() {
       return templates.render('no_editor', {});
     }
@@ -1523,11 +1533,47 @@ define([
       return new NoEditorView();
     }
   };
+  
+  var FileInfoView = Marionette.ItemView.extend({
+    modelEvents: {
+      "sync": "render"
+    },
+    initialize: function() {
+      // Function to detect changes in "x somethings ago" display
+      var changeMonitor = (function(view) {
+        var check = function() {
+          var fromNow = view._dateTime().fromNow();
+          if (fromNow != check.last) {
+            check.last = fromNow;
+            view.render();
+          }
+        };
+        check.last = view._dateTime().fromNow();
+        return check;
+      })(this);
+      // Run on clock tick
+      this.listenTo(clock, 'tick', changeMonitor);
+    },
+    serializeData: function() {
+      var dt = this._dateTime();
+      return _(this.model.toJSON()).extend({
+        prettyModification: function() {
+          return dt.format('dddd, D MMMM YYYY @ h:mm:ss a');
+        },
+        sinceModification: function() {
+          return dt.fromNow();
+        }
+      });
+    },
+    _dateTime: function() {
+      return moment(this.model.get('modified'));
+    },
+    template: function(data) {
+      return templates.render('file_info_view', data);
+    }
+  });
 
   var FileView = FileOrFolderView.extend({
-    modelEvents: {
-      "sync": "updatedOnServer"
-    },
     initialize: function(options) {
       this._users = options.users;
       // Cache views at the instance level
@@ -1537,15 +1583,7 @@ define([
       this.getCommentsView = _.memoize(this.getCommentsView);
     },
     serializeData: function() {
-      var dt = moment(this.model.get('modified'));
       return _(this.model.toJSON()).extend({
-        prettyModification: function() {
-          return dt.format('dddd, D MMMM YYYY @ h:mm:ss a');
-        },
-        sinceModification: function() {
-          return dt.fromNow();
-        },
-        canRename: this.isAdmin(),
         url: this.model.url()
       });
     },
@@ -1570,9 +1608,6 @@ define([
     },
     ui: {
       displayToggle: '.display-toggle'
-    },
-    updatedOnServer: function() {
-      // TODO: Update modification time
     },
     getNameView: function() {
       return new FileOrFolderNameView({
@@ -1636,6 +1671,9 @@ define([
     onRender: function() {
       this.breadcrumbs.show(new BreadcrumbView({ model: this.model }));
       this.name.show(this.getNameView());
+      this.info.show(new FileInfoView({
+        model: this.model
+      }));
       if (this.model.get('accessLevel') == 'RW') {
         this.buttons.show(new ButtonToolbarView([
           new WatchingButtonView({
