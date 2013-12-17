@@ -129,7 +129,8 @@ public class Search extends SessionAwareController {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         // How do we get the excerpt with JCR_SQL2?
         Query query = queryManager.createQuery(
-            "SELECT * FROM [nt:resource] as s WHERE contains(s.*,$query)",
+            "SELECT * FROM [nt:resource] as s WHERE contains(s.*,$query) AND" +
+            " ISDESCENDANTNODE(s, '/filestore')",
             javax.jcr.query.Query.JCR_SQL2);
         query.bindValue("query", vf.createValue(q));
         QueryResult qr = query.execute();
