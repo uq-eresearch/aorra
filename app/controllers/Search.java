@@ -1,6 +1,7 @@
 package controllers;
 
-import java.util.LinkedHashSet;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 
+import org.apache.commons.lang.StringUtils;
 import org.jcrom.Jcrom;
 
 import play.libs.F;
@@ -26,8 +28,9 @@ import providers.CacheableUserProvider;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
@@ -107,8 +110,21 @@ public class Search extends SessionAwareController {
     return inUserSession(new F.Function<Session, List<SearchResult>>() {
       @Override
       public final List<SearchResult> apply(Session session) throws Exception {
+        Set<SearchResult> sresults = Sets.newHashSet();
+        sresults.addAll(searchContent(session, q));
+        sresults.addAll(searchFilename(session, q));
+        List<SearchResult> l = Lists.newArrayList(sresults);
+        Collections.sort(l, Collections.reverseOrder(new Comparator<SearchResult>() {
+          @Override
+          public int compare(SearchResult s0, SearchResult s1) {
+            return Double.compare(s0.getScore(), s1.getScore());
+          }}));
+        return l;
+      }
+
+      private Set<SearchResult> searchContent(Session session, String q) throws Exception {
         Map<String, SearchResult> srMap = Maps.newHashMap();
-        LinkedHashSet<SearchResult> slist = new LinkedHashSet<SearchResult>();
+        Set<SearchResult> result = Sets.newHashSet();
         ValueFactory vf = session.getValueFactory();
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         // How do we get the excerpt with JCR_SQL2?
@@ -116,14 +132,14 @@ public class Search extends SessionAwareController {
             "SELECT * FROM [nt:resource] as s WHERE contains(s.*,$query)",
             javax.jcr.query.Query.JCR_SQL2);
         query.bindValue("query", vf.createValue(q));
-        QueryResult result = query.execute();
-        RowIterator iter = result.getRows();
+        QueryResult qr = query.execute();
+        RowIterator iter = qr.getRows();
         while (iter.hasNext()) {
           Row row = iter.nextRow();
           Node n = row.getNode().getParent().getParent().getParent();
           SearchResult sr = new SearchResult(n.getIdentifier(), row.getScore(),
               "content");
-          slist.add(sr);
+          result.add(sr);
           srMap.put(row.getNode().getIdentifier(), sr);
         }
         iter = fulltextQuery(queryManager);
@@ -134,8 +150,7 @@ public class Search extends SessionAwareController {
             sr.setExcerpt(row.getValue("rep:excerpt(.)").getString());
           }
         }
-        searchFilename(session, slist, q);
-        return ImmutableList.copyOf(slist);
+        return result;
       }
 
       @SuppressWarnings("deprecation")
@@ -148,8 +163,8 @@ public class Search extends SessionAwareController {
                 javax.jcr.query.Query.SQL).execute().getRows();
       }
 
-      private void searchFilename(Session session, Set<SearchResult> slist,
-          String q) throws Exception {
+      private Set<SearchResult> searchFilename(Session session, String q) throws Exception {
+        Set<SearchResult> result = Sets.newHashSet();
         FileStore.Manager fm = fileStore.getManager(session);
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(
@@ -158,18 +173,26 @@ public class Search extends SessionAwareController {
             javax.jcr.query.Query.JCR_SQL2);
         ValueFactory vf = session.getValueFactory();
         query.bindValue("query", vf.createValue("%" + q + "%"));
-        QueryResult result = query.execute();
-        RowIterator iter = result.getRows();
+        QueryResult qr = query.execute();
+        RowIterator iter = qr.getRows();
         while (iter.hasNext()) {
           Row row = iter.nextRow();
           Node n = row.getNode();
           FileStore.FileOrFolder fof = fm.getByIdentifier(n.getIdentifier());
           if(fof!= null) {
+            String highlighted = StringUtils.join(new String[] {
+                StringUtils.substringBeforeLast(fof.getPath(), fof.getName()),
+                StringUtils.substringBefore(fof.getName(), q),
+                "<strong>",
+                q,
+                "</strong>",
+                StringUtils.substringAfter(fof.getName(), q)});
             SearchResult sr = new SearchResult(n.getIdentifier(), row.getScore(),
-                fof.getPath(), "filename");
-            slist.add(sr);
+                highlighted, "filename");
+            result.add(sr);
           }
         }
+        return result;
       }
     });
   }
