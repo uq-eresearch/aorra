@@ -2029,14 +2029,16 @@ define([
       'click': 'file:select'
     },
     onFileSelect: function() {
-      App.vent.trigger('nav:file:show', this.options.file);
+      var fileOrFolder = this.options.fileOrFolder;
+      App.vent.trigger('nav:'+fileOrFolder.get('type')+':show', fileOrFolder);
     },
     serializeData: function() {
       var searchTerm = this.options.searchTerm;
-      var fileJson = this.options.file ? this.options.file.toJSON() : {};
+      var fof = this.options.fileOrFolder;
+      var data = fof ? fof.toJSON() : {};
       var highlightedExcerpt = this.model.get('excerpt')
         .replace(searchTerm, '<strong>'+searchTerm+'</strong>')
-      return _(fileJson).chain().extend(this.model.toJSON()).extend({
+      return _(data).chain().extend(this.model.toJSON()).extend({
         excerpt: highlightedExcerpt
       }).value();
     },
@@ -2055,7 +2057,7 @@ define([
     }),
     itemViewOptions: function(m) {
       return {
-        file: this.options.filestore.get(m.id),
+        fileOrFolder: this.options.filestore.get(m.id),
         searchTerm: this.options.searchTerm
       };
     }
