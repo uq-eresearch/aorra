@@ -575,7 +575,11 @@ define([
       });
     },
     createHtmlDocument: function(name) {
-      // TODO: Implement
+      this.model.collection.create({
+        name: name,
+        mime: 'text/html',
+        parent: this.model.id
+      }, { wait: true });
     }
   });
 

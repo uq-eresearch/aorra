@@ -34,6 +34,7 @@ POST    /flags/:type                @controllers.FileStoreController.addFlag(typ
 GET     /flags/:type/:id            @controllers.FileStoreController.flagJson(type, id)
 DELETE  /flags/:type/:id            @controllers.FileStoreController.deleteFlag(type, id)
 
+POST    /folder/:folderId/folders       @controllers.FileStoreController.mkdir(folderId, mkdir: String)
 GET     /folder/:folderId               @controllers.FileStoreController.showFolder(folderId: String)
 PUT     /folder/:folderId               @controllers.FileStoreController.modifyFolder(folderId: String)
 GET     /folder/:folderId/permissions   @controllers.FileStoreController.groupPermissionList(folderId: String)
@@ -41,9 +42,9 @@ GET     /folder/:id/permissions/:group  @controllers.FileStoreController.groupPe
 POST    /folder/:folderId/permissions   @controllers.FileStoreController.permissionUpdate(folderId: String)
 GET     /folder/:folderId/archive       @controllers.FileStoreController.downloadFolder(folderId)
 POST    /folder/:folderId/files         @controllers.FileStoreController.uploadToFolder(folderId)
-POST    /folder/:folderId/folders       @controllers.FileStoreController.mkdir(folderId, mkdir: String)
 DELETE  /folder/:folderId               @controllers.FileStoreController.delete(folderId)
 
+POST    /file                           @controllers.FileStoreController.createFile()
 GET     /file/:fileId                   @controllers.FileStoreController.showFile(fileId: String)
 PUT     /file/:fileId                   @controllers.FileStoreController.modifyFile(fileId: String)
 GET     /file/:fileId/versions          @controllers.FileStoreController.versionList(fileId: String)

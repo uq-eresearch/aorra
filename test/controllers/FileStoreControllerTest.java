@@ -668,6 +668,66 @@ public class FileStoreControllerTest {
   }
 
   @Test
+  public void createFile() {
+    asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
+      @Override
+      public Session apply(
+          final Session session,
+          final User user,
+          final FakeRequest newRequest) throws Throwable {
+        final FileStore.Manager fm = fileStore().getManager(session);
+        // Check bad request behaviour
+        {
+          JsonNode emptyJson = JsonNodeFactory.instance.objectNode();
+          ObjectNode missingParent = JsonNodeFactory.instance.objectNode();
+          missingParent.put("name", "test.txt");
+          ObjectNode missingName = JsonNodeFactory.instance.objectNode();
+          missingName.put("parent", fm.getRoot().getIdentifier());
+          assertThat(status(sendJson(newRequest,emptyJson))).isEqualTo(400);
+          assertThat(status(sendJson(newRequest,missingParent))).isEqualTo(400);
+          assertThat(status(sendJson(newRequest,missingName))).isEqualTo(400);
+        }
+        // Check good request behaviour
+        {
+          ObjectNode missingMime = JsonNodeFactory.instance.objectNode();
+          missingMime.put("name", "missingMime.txt");
+          missingMime.put("parent", fm.getRoot().getIdentifier());
+          Result result = sendJson(newRequest, missingMime);
+          assertThat(status(result)).isEqualTo(201);
+          JsonNode json = Json.parse(contentAsString(result));
+          assertThat(json.has("id")).isTrue();
+          assertThat(json.has("name")).isTrue();
+          assertThat(json.get("name").asText()).isEqualTo("missingMime.txt");
+          assertThat(json.has("mime")).isTrue();
+          assertThat(json.get("mime").asText()).isEqualTo("text/plain");
+          assertThat(json.has("parent")).isTrue();
+        }
+        {
+          ObjectNode includingMime = JsonNodeFactory.instance.objectNode();
+          includingMime.put("name", "includingMime");
+          includingMime.put("mime", "text/html");
+          includingMime.put("parent", fm.getRoot().getIdentifier());
+          Result result = sendJson(newRequest, includingMime);
+          assertThat(status(result)).isEqualTo(201);
+          JsonNode json = Json.parse(contentAsString(result));
+          assertThat(json.has("id")).isTrue();
+          assertThat(json.has("name")).isTrue();
+          assertThat(json.get("name").asText()).isEqualTo("includingMime");
+          assertThat(json.has("mime")).isTrue();
+          assertThat(json.get("mime").asText()).isEqualTo("text/html");
+          assertThat(json.has("parent")).isTrue();
+        }
+        return session;
+      }
+      private Result sendJson(FakeRequest newRequest, JsonNode json) {
+        return callAction(
+            controllers.routes.ref.FileStoreController.createFile(),
+            newRequest.withJsonBody(json));
+      }
+    });
+  }
+
+  @Test
   public void uploadToFolder() {
     asAdminUser(new F.Function3<Session, User, FakeRequest, Session>() {
       @Override

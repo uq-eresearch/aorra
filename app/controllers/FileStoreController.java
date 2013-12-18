@@ -568,6 +568,31 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   @SubjectPresent
+  public Result createFile() {
+    final JsonNode params = ctx().request().body().asJson();
+    if (!params.has("name") || params.get("name").asText().isEmpty()) {
+      return badRequest("File must have a name");
+    }
+    if (!params.has("parent")) {
+      return badRequest("File must have a parent folder");
+    }
+    return folderBasedResult(params.get("parent").asText(), new FolderOp() {
+      @Override
+      public Result apply(Session session, Folder folder) throws Throwable {
+        final JsonBuilder jb = new JsonBuilder();
+        final String name = params.get("name").asText();
+        final String mimeType = params.has("mime") ?
+            params.get("mime").asText() : "application/octet-stream";
+        final FileStore.File file =
+            folder.createFile(name, getMimeType(name, mimeType),
+                new ByteArrayInputStream(new byte[]{}));
+        return created(jb.toJsonShallow(file))
+            .as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
   public Result updateFile(final String fileID) {
     final MultipartFormData body = request().body().asMultipartFormData();
     if (body == null || body.getFiles().size() != 1) {
@@ -771,11 +796,14 @@ public final class FileStoreController extends SessionAwareController {
   }
 
   protected String getMimeType(MultipartFormData.FilePart filePart) {
-      // prefer guessed mimetypes to fix an issue with xlsx file upload with firefox
-      // configure mimetypes in application.conf
-      final scala.Option<String> guessed =
-        MimeTypes.forFileName(filePart.getFilename());
-      return guessed.nonEmpty() ? guessed.get() : filePart.getContentType();
+    return getMimeType(filePart.getFilename(), filePart.getContentType());
+  }
+
+  protected String getMimeType(String filename, String defaultMimeType) {
+    // prefer guessed mimetypes to fix an issue with xlsx file upload with firefox
+    // configure mimetypes in application.conf
+    final scala.Option<String> guessed = MimeTypes.forFileName(filename);
+    return guessed.nonEmpty() ? guessed.get() : defaultMimeType;
   }
 
   protected Result notFoundOfRequestedType() {
