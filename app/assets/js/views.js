@@ -525,24 +525,37 @@ define([
     }
   });
 
-  var CreateFolderView = Backbone.Marionette.ItemView.extend({
+  var CreateNewView = Backbone.Marionette.ItemView.extend({
     triggers: {
       'submit form': 'form:submit'
     },
-    serializeData: function() {
-      return {
-        action: this.model.url() + "/folders"
-      };
+    ui: {
+      name: 'input[name="name"]',
+      type: 'select[name="type"]',
+      messages: '.js-messages'
     },
     template: function(serialized_model) {
-      return templates.render('create_folder', serialized_model);
+      return templates.render('create_new', {});
     },
     onFormSubmit: function() {
+      switch (this.ui.type.val()) {
+      case 'folder':
+        this.createFolder(this.ui.name.val());
+        break;
+      case 'html':
+        this.createHtmlDocument(this.ui.name.val());
+        break;
+      }
+      return false;
+    },
+    createFolder: function(name) {
       var fs = this.model.collection;
+      var $messages = this.ui.messages;
       var $form = this.$el.find('form');
+      var attrs = this.ui.name.clone().attr('name', 'mkdir').serialize();
       $.ajax({
-        method: $form.attr('method'),
-        url: $form.attr('action')+"?"+$form.serialize(),
+        method: 'POST',
+        url: this.model.url()+'/folders?'+attrs,
         success: function(folders) {
           // Add each returned folder
           _.each(folders, function(data) {
@@ -555,12 +568,14 @@ define([
                 data,
                 { variable: 'f'})
             }));
-            $form.find('.messages').append($alert);
+            $messages.append($alert);
             $alert.alert();
           });
         }
       });
-      return false;
+    },
+    createHtmlDocument: function(name) {
+      // TODO: Implement
     }
   });
 
@@ -1070,7 +1085,7 @@ define([
       buttons: '.region-buttons',
       name: '.region-name',
       upload: '.region-upload',
-      mkdir: '.region-mkdir',
+      create: '.region-create',
       permissions: '.region-permissions'
     },
     onRender: function() {
@@ -1085,7 +1100,7 @@ define([
           model: this.model,
           multiple: true
         }));
-        this.mkdir.show(new CreateFolderView({ model: this.model }));
+        this.create.show(new CreateNewView({ model: this.model }));
         if (this.isAdmin()) {
           this.permissions.show(new GroupPermissionsView({
             model: this.model
