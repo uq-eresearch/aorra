@@ -22,7 +22,7 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
   // Set up data:preloaded to be triggered
   App.addInitializer(function(options) {
     // Monitor each of the listed precursor events
-    var loadPrecursorEvents = ['filestore', 'users'];
+    var loadPrecursorEvents = ['filestore', 'groups', 'users'];
     var promises = _(loadPrecursorEvents).map(function(e) {
       var d = Q.defer();
       App.vent.on('data:preloaded:'+e, d.resolve);
@@ -56,7 +56,8 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
     var users = new models.Users({
       currentId: options.currentUserID
     });
-    window.users = users;
+    var groups = users.groups();
+    window.groups = groups;
     var fs = new models.FileStore();
     var notifications = new models.Notifications();
 

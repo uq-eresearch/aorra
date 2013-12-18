@@ -1,14 +1,17 @@
 package service.filestore;
 
-import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.TimeZone;
 
 import javax.jcr.RepositoryException;
+
+import org.apache.jackrabbit.api.security.user.Group;
 
 import models.Flag;
 import models.Notification;
 import models.User;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -111,6 +114,18 @@ public class JsonBuilder {
         ISO8601Utils.format(
             file.getModificationTime().getTime(), true,
             TimeZone.getDefault()));
+    return json;
+  }
+
+  public JsonNode toJson(Group group, List<User> members)
+      throws RepositoryException {
+    final ObjectNode json = Json.newObject();
+    json.put("id", group.getID());
+    json.put("name", group.getPrincipal().getName());
+    final ArrayNode memberIds = json.putArray("members");
+    for (User user : members) {
+      memberIds.add(user.getId());
+    }
     return json;
   }
 

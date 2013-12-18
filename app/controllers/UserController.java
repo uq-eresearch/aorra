@@ -1,10 +1,15 @@
 package controllers;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static service.filestore.roles.Admin.isAdmin;
+
+import java.util.Iterator;
+import java.util.List;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import models.GroupManager;
 import models.Notification;
 import models.NotificationDAO;
 import models.User;
@@ -15,6 +20,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import org.apache.jackrabbit.api.security.user.Authorizable;
+import org.apache.jackrabbit.api.security.user.Group;
 import org.jcrom.Jcrom;
 
 import play.libs.F;
@@ -51,6 +58,31 @@ public final class UserController extends SessionAwareController {
         final UserDAO dao = new UserDAO(session, jcrom);
         for (final User user : dao.list()) {
           json.add(jb.toJson(user, isAdmin(session, dao, user)));
+        }
+        return ok(json).as("application/json; charset=utf-8");
+      }
+    });
+  }
+
+  @SubjectPresent
+  public Result groupsJson() {
+    return inUserSession(new F.Function<Session, Result>() {
+      @Override
+      public final Result apply(Session session) throws RepositoryException {
+        final JsonBuilder jb = new JsonBuilder();
+        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
+        final GroupManager groupManager = new GroupManager(session);
+        for (final Group group : groupManager.list()) {
+          final UserDAO dao = new UserDAO(session, jcrom);
+          List<User> members = newArrayList();
+          Iterator<Authorizable> iter = group.getMembers();
+          while (iter.hasNext()) {
+            User user = dao.findByJackrabbitID(iter.next().getID());
+            if (user != null) {
+              members.add(user);
+            }
+          }
+          json.add(jb.toJson(group, members));
         }
         return ok(json).as("application/json; charset=utf-8");
       }

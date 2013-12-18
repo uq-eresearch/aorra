@@ -14,6 +14,7 @@ GET     /notifications              @controllers.FileStoreController.index
 GET     /reset-password             @controllers.Application.forgottenPassword
 POST    /reset-password             @controllers.Application.postForgottenPassword
 GET     /user                       @controllers.UserController.usersJson
+GET     /groups                     @controllers.UserController.groupsJson
 GET     /user/notifications         @controllers.UserController.notificationsJson
 GET     /user/notifications/:id     @controllers.UserController.getNotification(id)
 PUT     /user/notifications/:id     @controllers.UserController.putNotification(id)

@@ -14,6 +14,7 @@ define([
         'backbone',
         'marionette',
         'backbone.localstorage',
+        'backbone.projections',
         'marked',
         'unstyler',
         'htmldiff',
@@ -22,7 +23,8 @@ define([
         'jquery.ckeditor',
         'typeahead'
         ], function(App, models, templates, _, _s, Q, moment, DiffMatchPatch,
-            glyphtree, $, Backbone, Marionette, LocalStorage, marked,
+            glyphtree, $, Backbone, Marionette, LocalStorage,
+            BackboneProjections, marked,
             unstyle, htmldiff, CryptoJS) {
   'use strict';
 
