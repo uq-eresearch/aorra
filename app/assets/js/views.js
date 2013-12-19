@@ -1902,6 +1902,7 @@ define([
     triggers: {
       'click .js-notification-list': 'notification:list',
       'click .js-change-password': 'password:change',
+      'click .js-manage-groups': 'manage:groups',
       'click .js-back': 'back'
     },
     onBack: function() {
@@ -1913,8 +1914,16 @@ define([
     onPasswordChange: function() {
       App.vent.trigger('nav:password:change');
     },
-    template: function() {
-      return templates.render('user_menu', {});
+    onManageGroups: function() {
+      App.vent.trigger('nav:manage:groups');
+    },
+    serializeData: function() {
+      return {
+        isAdmin: this.options.currentUser.get('isAdmin')
+      };
+    },
+    template: function(data) {
+      return templates.render('user_menu', data);
     }
   });
 
@@ -2085,6 +2094,33 @@ define([
     }
   });
 
+  var GroupMembership = Marionette.CompositeView.extend({
+    template: function(data) {
+      return templates.render('group_membership', data);
+    }
+  });
+  
+  var GroupView = Marionette.CompositeView.extend({
+    itemView: GroupMembership,
+    itemViewContainer: '.js-memberships',
+    template: function(data) {
+      return templates.render('group', data);
+    }
+  });
+  
+  var ManageGroupsView = Marionette.CompositeView.extend({
+    itemView: GroupView,
+    itemViewContainer: '.js-groups',
+    itemViewOptions: function(m) {
+      return {
+        collection: m.members()
+      };
+    },
+    template: function(data) {
+      return templates.render('manage_groups', data);
+    }
+  });
+
   var AppLayout = Backbone.Marionette.Layout.extend({
     regions: {
       main: "#main",
@@ -2134,6 +2170,7 @@ define([
     FileDiffView: FileDiffView,
     FileTree: FileTree,
     FolderView: FolderView,
+    ManageGroupsView: ManageGroupsView,
     NotificationsNavView: NotificationsNavView,
     NotificationsView: NotificationsView,
     SearchView: SearchView,

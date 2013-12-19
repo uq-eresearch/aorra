@@ -46,6 +46,9 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
       c.listenTo(App.vent, "nav:password:change", function() {
         c.changePassword();
       });
+      c.listenTo(App.vent, "nav:manage:groups", function() {
+        c.manageGroups();
+      });
       c.listenTo(App.vent, "nav:search", function(searchTerm) {
         c.search(searchTerm);
       });
@@ -108,6 +111,11 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
       }
       return this._fileTree;
     },
+    getUserMenu: function() {
+      return new views.UserMenu({
+        currentUser: this._users.current()
+      });
+    },
     isShowingFileOrFolder: function(id) {
       var layout = this._layout;
       // Handle being on the deleted page already
@@ -131,15 +139,25 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
     },
     changePassword: function() {
       var layout = this._layout;
-      layout.ui.sidebarTitle.text('User Menu');
-      layout.sidebar.show(new views.UserMenu());
+      layout.ui.sidebarTitle.text('Messages & Settings');
+      layout.sidebar.show(this.getUserMenu());
       layout.main.show(new views.ChangePasswordView());
+      this._setMainActive();
+    },
+    manageGroups: function() {
+      var layout = this._layout;
+      layout.ui.sidebarTitle.text('Messages & Settings');
+      layout.sidebar.show(this.getUserMenu());
+      layout.main.show(new views.ManageGroupsView({
+        collection: this._users.groups()
+      }));
+      this._users.groups().fetch();
       this._setMainActive();
     },
     showNotifications: function() {
       var layout = this._layout;
-      layout.ui.sidebarTitle.text('User Menu');
-      layout.sidebar.show(new views.UserMenu());
+      layout.ui.sidebarTitle.text('Messages & Settings');
+      layout.sidebar.show(this.getUserMenu());
       layout.main.show(new views.NotificationsView({
         collection: this._notificationMessages
       }));

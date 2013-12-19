@@ -277,7 +277,7 @@ define(
       return this._flags;
     },
     groups: function() {
-      return new Groups([], {
+      return new Groups({
         users: this
       });
     }
