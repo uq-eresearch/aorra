@@ -2095,10 +2095,19 @@ define([
   });
 
   var GroupMembership = Marionette.CompositeView.extend({
+    triggers: {
+      'click .js-delete': 'delete'
+    },
     tagName: 'li',
     className: 'list-group-item',
     template: function(data) {
       return templates.render('group_membership', data);
+    },
+    onDelete: function() {
+      var group = this.options.group;
+      group.save(
+        { members: _.without(group.get('members'), this.model.id) },
+        { wait: true });
     }
   });
   
