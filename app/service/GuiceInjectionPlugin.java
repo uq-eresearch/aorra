@@ -46,6 +46,9 @@ import com.google.inject.Singleton;
 import com.wingnest.play2.jackrabbit.Jcr;
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 
+import email.Email;
+import email.EmailImpl;
+
 public class GuiceInjectionPlugin extends Plugin {
 
   private final Application application;
@@ -126,6 +129,7 @@ public class GuiceInjectionPlugin extends Plugin {
         bind(DataSourceFactory.class)
           .to(FileStoreDataSourceFactory.class)
           .in(Singleton.class);
+        bind(Email.class).to(EmailImpl.class);
       }
     };
     final Module pluginModule = new AbstractModule() {

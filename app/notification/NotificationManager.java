@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import play.Application;
+import play.Logger;
 import play.Play;
 import play.Plugin;
 import play.api.mvc.Call;
@@ -20,7 +21,11 @@ import com.google.inject.Module;
 
 public class NotificationManager extends Plugin {
 
+  private final static String NOTIFICATION_EMAILS = "application.notification.emails";
+
   private final Application application;
+
+  private EmailNotificationScheduler scheduler;
 
   public NotificationManager(Application application) {
     this.application = application;
@@ -28,18 +33,32 @@ public class NotificationManager extends Plugin {
 
   @Override
   public void onStart() {
-    TypedActor.get(Akka.system()).typedActorOf(
-      new TypedProps<NotifierImpl>(Notifier.class,
-        new Creator<NotifierImpl>() {
+    typedActor(Notifier.class, NotifierImpl.class);
+    if(application.configuration().getBoolean(
+        NOTIFICATION_EMAILS, Boolean.TRUE)) {
+      scheduler = new EmailNotificationScheduler(
+          typedActor(EmailNotifier.class, EmailNotifierImpl.class));
+      scheduler.start();
+    } else {
+      Logger.info(String.format(
+          "No notifications emails are send (%s is false)", NOTIFICATION_EMAILS));
+    }
+  }
+
+  private <T> T typedActor(final Class<T> iface, final Class <? extends T> impl) {
+    return TypedActor.get(Akka.system()).typedActorOf(
+        new TypedProps<T>(iface, new Creator<T>() {
           @Override
-          public NotifierImpl create() {
-            return injector().getInstance(NotifierImpl.class);
+          public T create() {
+            return injector().getInstance(impl);
           }
         }));
   }
 
   @Override
-  public void onStop() {}
+  public void onStop() {
+    scheduler.stop();
+  }
 
   private Injector injector() {
     return GuiceInjectionPlugin.getInjector(application)
