@@ -685,8 +685,7 @@ define([
       $textarea.focus();
     },
     onCommentEditEnd: function() {
-      this.model.set('message', this.$('textarea.js-message').val());
-      this.model.save();
+      this.model.save({ message: this.$('textarea.js-message').val() });
     },
     onRender: function() {
       formatTimestamp(this.ui.modified, true);
@@ -733,6 +732,7 @@ define([
         created: iso8601now,
         modified: iso8601now
       });
+      this.ui.newCommentText.val('');
     },
     textKeyUp: function(e) {
       // ctrl + enter
