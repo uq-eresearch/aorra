@@ -65,31 +65,6 @@ public final class UserController extends SessionAwareController {
   }
 
   @SubjectPresent
-  public Result groupsJson() {
-    return inUserSession(new F.Function<Session, Result>() {
-      @Override
-      public final Result apply(Session session) throws RepositoryException {
-        final JsonBuilder jb = new JsonBuilder();
-        final ArrayNode json = JsonNodeFactory.instance.arrayNode();
-        final GroupManager groupManager = new GroupManager(session);
-        for (final Group group : groupManager.list()) {
-          final UserDAO dao = new UserDAO(session, jcrom);
-          List<User> members = newArrayList();
-          Iterator<Authorizable> iter = group.getMembers();
-          while (iter.hasNext()) {
-            User user = dao.findByJackrabbitID(iter.next().getID());
-            if (user != null) {
-              members.add(user);
-            }
-          }
-          json.add(jb.toJson(group, members));
-        }
-        return ok(json).as("application/json; charset=utf-8");
-      }
-    });
-  }
-
-  @SubjectPresent
   public Result notificationsJson() {
     return inUserSession(new F.Function<Session, Result>() {
       @Override
