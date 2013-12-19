@@ -11,10 +11,6 @@ import models.User;
 import models.UserDAO;
 import notification.Notifier.Events;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-
 import org.jcrom.Jcrom;
 
 import play.libs.F;
@@ -23,9 +19,11 @@ import play.mvc.With;
 import providers.CacheableUserProvider;
 import service.EventManager;
 import service.JcrSessionFactory;
-import service.EventManager.Event;
 import service.filestore.JsonBuilder;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.inject.Inject;
 
 @With(UncacheableAction.class)

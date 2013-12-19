@@ -14,6 +14,7 @@ define([
         'backbone',
         'marionette',
         'backbone.localstorage',
+        'backbone.projections',
         'marked',
         'unstyler',
         'htmldiff',
@@ -22,7 +23,8 @@ define([
         'jquery.ckeditor',
         'typeahead'
         ], function(App, models, templates, _, _s, Q, moment, DiffMatchPatch,
-            glyphtree, $, Backbone, Marionette, LocalStorage, marked,
+            glyphtree, $, Backbone, Marionette, LocalStorage,
+            BackboneProjections, marked,
             unstyle, htmldiff, CryptoJS) {
   'use strict';
 
@@ -1900,6 +1902,7 @@ define([
     triggers: {
       'click .js-notification-list': 'notification:list',
       'click .js-change-password': 'password:change',
+      'click .js-manage-groups': 'manage:groups',
       'click .js-back': 'back'
     },
     onBack: function() {
@@ -1911,8 +1914,16 @@ define([
     onPasswordChange: function() {
       App.vent.trigger('nav:password:change');
     },
-    template: function() {
-      return templates.render('user_menu', {});
+    onManageGroups: function() {
+      App.vent.trigger('nav:manage:groups');
+    },
+    serializeData: function() {
+      return {
+        isAdmin: this.options.currentUser.get('isAdmin')
+      };
+    },
+    template: function(data) {
+      return templates.render('user_menu', data);
     }
   });
 
@@ -2083,6 +2094,119 @@ define([
     }
   });
 
+  var GroupMembership = Marionette.CompositeView.extend({
+    triggers: {
+      'click .js-delete': 'delete'
+    },
+    tagName: 'li',
+    className: 'list-group-item',
+    template: function(data) {
+      return templates.render('group_membership', data);
+    },
+    onDelete: function() {
+      var group = this.options.group;
+      group.save(
+        { members: _.without(group.get('members'), this.model.id) },
+        { wait: true });
+    }
+  });
+  
+  var GroupView = Marionette.CompositeView.extend({
+    triggers: {
+      'click .js-add-user-button': 'add:request',
+      'click .js-delete': 'delete:request',
+      'keyup .js-confirm-delete-name': 'delete:typing',
+      'click .js-confirm-delete': 'delete:confirm'
+    },
+    ui: {
+      addUserControls: '.js-add-user-controls',
+      addUserSelect: '.js-add-users-select',
+      confirmDelete: '.js-confirm-delete',
+      confirmDeleteModal: '.js-confirm-delete-modal',
+      confirmDeleteName: '.js-confirm-delete-name'
+    },
+    itemView: GroupMembership,
+    itemViewContainer: '.js-memberships',
+    itemViewOptions: function(m) {
+      return {
+        group: this.model
+      };
+    },
+    template: function(data) {
+      return templates.render('group', data);
+    },
+    onAddRequest: function() {
+      var $typeahead = this.ui.addUserSelect.typeahead({
+        // LocalStorage is triggered by 'name', and cannot be active for
+        // list updates to show.
+        //name: 'files',
+        valueKey: 'id',
+        local: this.options.users.map(function(m){
+          return _.defaults(m.toJSON(), {
+            tokens: [m.get('name'), m.get('email')]
+          });
+        }),
+        template: function(datum) {
+          return templates.render('user_typeahead', datum);
+        }
+      });
+      $typeahead.on('typeahead:selected', _.bind(function(e) {
+        var userId = $(e.target).val();
+        this.ui.addUserControls.find('.twitter-typeahead').typeahead('destroy');
+        this.model.save(
+          { members: _.union(this.model.get('members'), [userId]) },
+          { wait: true });
+        this.ui.addUserControls.hide();
+      }, this));
+      $typeahead.typeahead('setQuery', '');
+      this.ui.addUserControls.find('.twitter-typeahead').css('width', '100%');
+      this.ui.addUserControls.show();
+      $typeahead.focus();
+    },
+    onDeleteRequest: function() {
+      this.ui.confirmDeleteModal.modal();
+      this.ui.confirmDeleteName
+        .attr('placeholder', this.model.get("name"))
+        .val('');
+      this.ui.confirmDelete.prop('disabled', true);
+    },
+    onDeleteTyping: function() {
+      var match = this.ui.confirmDeleteName.val() == this.model.get("name");
+      this.ui.confirmDelete.prop('disabled', !match);
+    },
+    onDeleteConfirm: function() {
+      this.ui.confirmDelete.button('loading');
+      this.ui.confirmDeleteModal.modal('hide');
+      this.model.destroy({ wait: true });
+    }
+  });
+  
+  var ManageGroupsView = Marionette.CompositeView.extend({
+    triggers: {
+      'submit .js-create-form': 'group:create'
+    },
+    ui: {
+      createForm: '.js-create-form'
+    },
+    itemView: GroupView,
+    itemViewContainer: '.js-groups',
+    itemViewOptions: function(m) {
+      return {
+        collection: m.members(),
+        users: this.options.users
+      };
+    },
+    template: function(data) {
+      return templates.render('manage_groups', data);
+    },
+    onGroupCreate: function() {
+      var props = {
+        name: this.ui.createForm.find('[name="name"]').val()
+      };
+      this.collection.create(props, { wait: true });
+    }
+  });
+
   var AppLayout = Backbone.Marionette.Layout.extend({
     regions: {
       main: "#main",
@@ -2132,6 +2256,7 @@ define([
     FileDiffView: FileDiffView,
     FileTree: FileTree,
     FolderView: FolderView,
+    ManageGroupsView: ManageGroupsView,
     NotificationsNavView: NotificationsNavView,
     NotificationsView: NotificationsView,
     SearchView: SearchView,

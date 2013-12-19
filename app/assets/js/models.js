@@ -1,8 +1,8 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
 /*global _: false, define: false, window: false */
 define(
-    ['backbone', 'backbone.localstorage', 'q', 'cryptojs-md5'], 
-    function(Backbone, LocalStorage, Q, CryptoJS) {
+    ['backbone', 'backbone.localstorage', 'backbone.projections', 'q', 'cryptojs-md5'], 
+    function(Backbone, LocalStorage, Projections, Q, CryptoJS) {
   'use strict';
 
   var Avatar = function(options) {
@@ -225,6 +225,27 @@ define(
       return d1 > d2 ? -1 : 1;
     }
   });
+  
+  var Group = Backbone.Model.extend({
+    members: function() {
+      var collection = new Projections.Filtered(this.collection.options.users, {
+        filter: _.bind(function(user) {
+          return _(this.get('members')).contains(user.id);
+        }, this)
+      });
+      collection.listenTo(this, 'change:members',
+          _.bind(collection.update, collection));
+      return collection;
+    }
+  });
+
+  var Groups = ExtendedCollection.extend({
+    model: Group,
+    url: '/groups',
+    initialize: function(options) {
+      this.options = options;
+    }
+  });
 
   var User = Backbone.Model.extend({
     avatar: function(options) {
@@ -246,6 +267,7 @@ define(
         watch: new WatchFlags()
       };
       _.each(this._flags, function(c) { return c.fetch(); });
+      this.groups = _.memoize(_.bind(this.groups, this));
     },
     currentId: function() {
       return this.options.currentId;
@@ -255,6 +277,11 @@ define(
     },
     flags: function() {
       return this._flags;
+    },
+    groups: function() {
+      return new Groups({
+        users: this
+      });
     }
   });
 

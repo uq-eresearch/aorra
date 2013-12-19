@@ -8,6 +8,7 @@ requirejs.config({
     paths: {
       'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min',
       'backbone.localstorage': '//cdnjs.cloudflare.com/ajax/libs/backbone-localstorage.js/1.1.0/backbone.localStorage-min',
+      'backbone.projections': '//cdnjs.cloudflare.com/ajax/libs/backbone.projections/1.0.0/backbone.projections.min',
       'ckeditor': '../ckeditor/ckeditor',
       'cryptojs-md5': 'lib/cryptojs-md5',
       'diff_match_patch': 'lib/diff_match_patch',
