@@ -2095,20 +2095,54 @@ define([
   });
 
   var GroupMembership = Marionette.CompositeView.extend({
+    tagName: 'li',
+    className: 'list-group-item',
     template: function(data) {
       return templates.render('group_membership', data);
     }
   });
   
   var GroupView = Marionette.CompositeView.extend({
+    triggers: {
+      'click .js-delete': 'delete:request',
+      'keyup .js-confirm-delete-name': 'delete:typing',
+      'click .js-confirm-delete': 'delete:confirm'
+    },
+    ui: {
+      confirmDelete: '.js-confirm-delete',
+      confirmDeleteModal: '.js-confirm-delete-modal',
+      confirmDeleteName: '.js-confirm-delete-name'
+    },
     itemView: GroupMembership,
     itemViewContainer: '.js-memberships',
     template: function(data) {
       return templates.render('group', data);
+    },
+    onDeleteRequest: function() {
+      this.ui.confirmDeleteModal.modal();
+      this.ui.confirmDeleteName
+        .attr('placeholder', this.model.get("name"))
+        .val('');
+      this.ui.confirmDelete.prop('disabled', true);
+    },
+    onDeleteTyping: function() {
+      var match = this.ui.confirmDeleteName.val() == this.model.get("name");
+      this.ui.confirmDelete.prop('disabled', !match);
+    },
+    onDeleteConfirm: function() {
+      this.ui.confirmDelete.button('loading');
+      this.ui.confirmDeleteModal.modal('hide');
+      this.model.destroy({ wait: true });
     }
   });
   
   var ManageGroupsView = Marionette.CompositeView.extend({
+    triggers: {
+      'submit .js-create-form': 'group:create'
+    },
+    ui: {
+      createForm: '.js-create-form'
+    },
     itemView: GroupView,
     itemViewContainer: '.js-groups',
     itemViewOptions: function(m) {
@@ -2118,6 +2152,12 @@ define([
     },
     template: function(data) {
       return templates.render('manage_groups', data);
+    },
+    onGroupCreate: function() {
+      var props = {
+        name: this.ui.createForm.find('[name="name"]').val()
+      };
+      this.collection.create(props, { wait: true });
     }
   });
 

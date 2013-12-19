@@ -1,3 +1,33 @@
-<h3>{{name}}</h3>
+<div class="panel panel-default">
+  <!-- Default panel contents -->
+  <div class="panel-heading">
+    {{name}}
+    <div class="js-delete close">&times;</div>
+  </div>
 
-<div class="js-memberships"></div>
+  <!-- List group -->
+  <ul class="list-group js-memberships"></ul>
+</div>
+<div class="js-confirm-delete-modal modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Are you really sure?</h4>
+      </div>
+      <div class="modal-body">
+        <p>
+        Deleting a group should not be done lightly. If you're really sure you
+        want to do this, then confirm the name of the group below:
+        </p>
+        <input class="js-confirm-delete-name form-control" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button"
+          class="js-confirm-delete btn btn-danger"
+          data-loading-text="Deleting...">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>

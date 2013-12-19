@@ -151,6 +151,7 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
     var router = new Backbone.Marionette.AppRouter({
       appRoutes: {
         "change-password": "changePassword",
+        "manage-groups": "manageGroups",
         "file/:id": "showFile",
         "folder/:id": "showFolder",
         "file/:id/version/:version/diff": "showFileDiff",
@@ -174,6 +175,9 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
     });
     router.listenTo(App.vent, "nav:notification:list", function(file) {
       router.navigate("notifications");
+    });
+    router.listenTo(App.vent, "nav:manage:groups", function(file) {
+      router.navigate("manage-groups");
     });
     
     fs.preload(options.filesAndFolders).done(function(fs) {
