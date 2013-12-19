@@ -27,6 +27,7 @@ POST    /user/:email/verify/:token  @controllers.Application.postVerify(email: S
 GET     /groups                     @controllers.GroupController.list
 POST    /groups                     @controllers.GroupController.create
 GET     /groups/:id                 @controllers.GroupController.get(id)
+PUT     /groups/:id                 @controllers.GroupController.update(id)
 DELETE  /groups/:id                 @controllers.GroupController.delete(id)
 
 # Map static resources from the /public folder to the /assets URL path

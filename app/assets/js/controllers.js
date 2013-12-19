@@ -149,7 +149,8 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
       layout.ui.sidebarTitle.text('Messages & Settings');
       layout.sidebar.show(this.getUserMenu());
       layout.main.show(new views.ManageGroupsView({
-        collection: this._users.groups()
+        collection: this._users.groups(),
+        users: this._users
       }));
       this._users.groups().fetch();
       this._setMainActive();

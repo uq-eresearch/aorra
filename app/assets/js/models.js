@@ -228,12 +228,14 @@ define(
   
   var Group = Backbone.Model.extend({
     members: function() {
-      var members = this.get('members');
-      return new Projections.Filtered(this.collection.options.users, {
-        filter: function(user) {
-          return _(members).contains(user.id);
-        }
+      var collection = new Projections.Filtered(this.collection.options.users, {
+        filter: _.bind(function(user) {
+          return _(this.get('members')).contains(user.id);
+        }, this)
       });
+      collection.listenTo(this, 'change:members',
+          _.bind(collection.update, collection));
+      return collection;
     }
   });
 

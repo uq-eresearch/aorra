@@ -2104,19 +2104,55 @@ define([
   
   var GroupView = Marionette.CompositeView.extend({
     triggers: {
+      'click .js-add-user-button': 'add:request',
       'click .js-delete': 'delete:request',
       'keyup .js-confirm-delete-name': 'delete:typing',
       'click .js-confirm-delete': 'delete:confirm'
     },
     ui: {
+      addUserControls: '.js-add-user-controls',
+      addUserSelect: '.js-add-users-select',
       confirmDelete: '.js-confirm-delete',
       confirmDeleteModal: '.js-confirm-delete-modal',
       confirmDeleteName: '.js-confirm-delete-name'
     },
     itemView: GroupMembership,
     itemViewContainer: '.js-memberships',
+    itemViewOptions: function(m) {
+      return {
+        group: this.model
+      };
+    },
     template: function(data) {
       return templates.render('group', data);
+    },
+    onAddRequest: function() {
+      var $typeahead = this.ui.addUserSelect.typeahead({
+        // LocalStorage is triggered by 'name', and cannot be active for
+        // list updates to show.
+        //name: 'files',
+        valueKey: 'id',
+        local: this.options.users.map(function(m){
+          return _.defaults(m.toJSON(), {
+            tokens: [m.get('name'), m.get('email')]
+          });
+        }),
+        template: function(datum) {
+          return templates.render('user_typeahead', datum);
+        }
+      });
+      $typeahead.on('typeahead:selected', _.bind(function(e) {
+        var userId = $(e.target).val();
+        this.ui.addUserControls.find('.twitter-typeahead').typeahead('destroy');
+        this.model.save(
+          { members: _.union(this.model.get('members'), [userId]) },
+          { wait: true });
+        this.ui.addUserControls.hide();
+      }, this));
+      $typeahead.typeahead('setQuery', '');
+      this.ui.addUserControls.find('.twitter-typeahead').css('width', '100%');
+      this.ui.addUserControls.show();
+      $typeahead.focus();
     },
     onDeleteRequest: function() {
       this.ui.confirmDeleteModal.modal();
@@ -2147,7 +2183,8 @@ define([
     itemViewContainer: '.js-groups',
     itemViewOptions: function(m) {
       return {
-        collection: m.members()
+        collection: m.members(),
+        users: this.options.users
       };
     },
     template: function(data) {

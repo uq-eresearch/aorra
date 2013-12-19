@@ -3,10 +3,21 @@
   <div class="panel-heading">
     {{name}}
     <div class="js-delete close">&times;</div>
+    <div class="pull-right" style="padding-right: 2em">
+      <button class="js-add-user-button btn btn-xs btn-default">
+        <i class="fa fa-plus"></i> Add User
+      </button>
+    </div>
   </div>
 
   <!-- List group -->
   <ul class="list-group js-memberships"></ul>
+  <ul class="list-group js-add-user-controls" style="display: none">
+  	<li class="list-group-item">
+      <input type="text" class="js-add-users-select form-control"
+        placeholder="User name or email"/>
+    </li>
+  </ul>
 </div>
 <div class="js-confirm-delete-modal modal fade">
   <div class="modal-dialog">
@@ -20,7 +31,7 @@
         Deleting a group should not be done lightly. If you're really sure you
         want to do this, then confirm the name of the group below:
         </p>
-        <input class="js-confirm-delete-name form-control" />
+        <input type="text" class="js-confirm-delete-name form-control" />
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
