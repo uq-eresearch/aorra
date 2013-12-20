@@ -21,6 +21,8 @@ import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.graphics.GrainsPracticeSystems;
+import charts.graphics.HSLandPracticeSystems;
 import charts.graphics.LandPracticeSystems;
 
 import com.google.common.collect.ImmutableList;
@@ -52,10 +54,42 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
 
     private static final List<String> CATEGORIES = Lists.newArrayList("A", "B", "C", "D");
 
+    private static interface Converter {
+      void addData(SpreadsheetDataSource ds, DefaultCategoryDataset dataset, String sheetname,
+          int row, PS ps, String series) throws MissingDataException;
+    }
+
+    private static class HSConverter implements Converter {
+      public void addData(SpreadsheetDataSource ds, DefaultCategoryDataset dataset, String sheetname,
+          int row, PS ps, String series) throws MissingDataException {
+        for (int col = 0; col < 4; col++) {
+          dataset.addValue(ds.select(sheetname, row, col + ps.getColstart()).asDouble(),
+              String.format("%s_%s", CATEGORIES.get(col), series), ps.getLabel());
+        }
+      }
+    }
+
+    private static class GrainsConverter implements Converter {
+      public void addData(SpreadsheetDataSource ds, DefaultCategoryDataset dataset, String sheetname,
+          int row, PS ps, String series) throws MissingDataException {
+        double a = ds.select(sheetname, row, ps.getColstart()).asDouble();
+        double b = ds.select(sheetname, row, 1 + ps.getColstart()).asDouble();
+        double c = ds.select(sheetname, row, 2 + ps.getColstart()).asDouble(); 
+        Double d = ds.select(sheetname, row, 3 + ps.getColstart()).asDouble();
+        if(d!= null) {
+          c+=d;
+        }
+        dataset.addValue(a,"A_"+series, ps.getLabel());
+        dataset.addValue(b,"B_"+series, ps.getLabel());
+        dataset.addValue(c,"C/D_"+series, ps.getLabel());
+      }
+    }
+
     private static final ImmutableMap<ChartType, String> SHEETS =
             new ImmutableMap.Builder<ChartType, String>()
                 .put(ChartType.HORTICULTURE_PS, "horticulture")
                 .put(ChartType.SUGARCANE_PS, "sugarcane")
+                .put(ChartType.GRAINS_PS, "sugarcane")
                 .build();
 
     private static final ImmutableMap<Region, Integer> ROWS =
@@ -71,7 +105,7 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
 
     public LandPracticeSystemsBuilder() {
         super(Lists.newArrayList(ChartType.HORTICULTURE_PS,
-                ChartType.SUGARCANE_PS));
+                ChartType.SUGARCANE_PS, ChartType.GRAINS_PS));
     }
 
     @Override
@@ -87,34 +121,37 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
     @Override
     public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
             final Region region) {
-        if(region == Region.CAPE_YORK) {
-            return null;
+        if(region == Region.CAPE_YORK ||
+            (type == ChartType.GRAINS_PS && region != Region.FITZROY) ||
+            (type == ChartType.SUGARCANE_PS && region == Region.FITZROY)) {
+          return null;
         }
+        final CategoryDataset dataset = createDataset(datasource, type, region);
+        LandPracticeSystems lps;
+        if(type == ChartType.GRAINS_PS) {
+          lps = new GrainsPracticeSystems();
+        } else {
+          lps = new HSLandPracticeSystems();
+        }
+        final Drawable drawable = 
+            lps.createChart(dataset, type.getLabel() + " - " + region.getProperName(),
+                new Dimension(750, 500));
+
         return new AbstractChart() {
             @Override
             public ChartDescription getDescription() {
-              return new ChartDescription(type, region, title());
+              return new ChartDescription(type, region);
             }
 
             @Override
             public Drawable getChart() {
-              return LandPracticeSystems.createChart(
-                  createDataset(datasource, type, region),
-                  title() + " - " + region.getProperName(),
-                  new Dimension(750, 500));
-            }
-
-            private String title() {
-                return (type == ChartType.SUGARCANE_PS && region == Region.FITZROY)?
-                    "Grains Practice Systems":type.getLabel();
+              return drawable;
             }
 
             @Override
             public String getCSV() {
               final StringWriter sw = new StringWriter();
               try {
-                final CategoryDataset dataset =
-                    createDataset(datasource, type, region);
                 final CsvListWriter csv = new CsvListWriter(sw,
                     CsvPreference.STANDARD_PREFERENCE);
                 @SuppressWarnings("unchecked")
@@ -160,24 +197,17 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             String series1 = ds.select(sheetname, row, 0).asString();
             String series2 = ds.select(sheetname, row+1, 0).asString();
-            addData(ds, dataset, sheetname, row, PS.NUTRIENTS, series1);
-            addData(ds, dataset, sheetname, row+1, PS.NUTRIENTS, series2);
-            addData(ds, dataset, sheetname, row, PS.HERBICIDES, series1);
-            addData(ds, dataset, sheetname, row+1, PS.HERBICIDES, series2);
-            addData(ds, dataset, sheetname, row, PS.SOIL, series1);
-            addData(ds, dataset, sheetname, row+1, PS.SOIL, series2);
+            Converter converter = (type ==ChartType.GRAINS_PS)?
+                new GrainsConverter():new HSConverter(); 
+            converter.addData(ds, dataset, sheetname, row, PS.NUTRIENTS, series1);
+            converter.addData(ds, dataset, sheetname, row+1, PS.NUTRIENTS, series2);
+            converter.addData(ds, dataset, sheetname, row, PS.HERBICIDES, series1);
+            converter.addData(ds, dataset, sheetname, row+1, PS.HERBICIDES, series2);
+            converter.addData(ds, dataset, sheetname, row, PS.SOIL, series1);
+            converter.addData(ds, dataset, sheetname, row+1, PS.SOIL, series2);
             return dataset;
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
         }
     }
-
-    private void addData(SpreadsheetDataSource ds, DefaultCategoryDataset dataset, String sheetname,
-            int row, PS ps, String series) throws MissingDataException {
-        for (int col = 0; col < 4; col++) {
-            dataset.addValue(ds.select(sheetname, row, col + ps.getColstart()).asDouble(),
-                    String.format("%s_%s", CATEGORIES.get(col), series), ps.getLabel());
-        }
-    }
-
 }

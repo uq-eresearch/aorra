@@ -1,6 +1,5 @@
 package charts.builder;
 
-import static charts.builder.ChartBuilderTest.getDatasource;
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -72,6 +71,8 @@ public class ChartBuilderTest {
     case TSA:
       return Region.BURDEKIN;
       //$CASES-OMITTED$
+    case GRAINS_PS:
+      return Region.FITZROY;
     default:
       return Region.GBR;
     }
@@ -87,6 +88,7 @@ public class ChartBuilderTest {
       return "test/grazing_practice_systems.xlsx";
     case HORTICULTURE_PS:
     case SUGARCANE_PS:
+    case GRAINS_PS:
       return "test/land_practice_systems.xlsx";
     case MARINE:
     case MARINE_CT:
