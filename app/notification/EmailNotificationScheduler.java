@@ -10,13 +10,21 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import play.Logger;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+@Singleton
 public class EmailNotificationScheduler {
 
   private final Timer timer = new Timer();
 
   private final EmailNotifier emailNotifier;
 
+  @Inject
   public EmailNotificationScheduler(EmailNotifier emailNotifier) {
+    if(emailNotifier == null) {
+      throw new RuntimeException("emailNotifier is null");
+    }
     this.emailNotifier = emailNotifier;
   }
 

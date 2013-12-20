@@ -9,6 +9,10 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import models.User;
+import notification.EmailNotifier;
+import notification.EmailNotifierImpl;
+import notification.Notifier;
+import notification.NotifierImpl;
 
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jcrom.Jcrom;
@@ -173,7 +177,28 @@ public class GuiceInjectionPlugin extends Plugin {
           .in(Singleton.class);
       }
     };
-    return intermediateInjector.createChildInjector(chartBuilderModule);
+
+    final Module notificationModule = new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(Notifier.class).toInstance(typedActor(
+            intermediateInjector, Notifier.class, NotifierImpl.class));
+        bind(EmailNotifier.class).toInstance(typedActor(
+            intermediateInjector, EmailNotifier.class, EmailNotifierImpl.class));
+      }
+    };
+    return intermediateInjector.createChildInjector(chartBuilderModule, notificationModule);
+  }
+
+  private <T> T typedActor(final Injector injector, 
+      final Class<T> iface, final Class <? extends T> impl) {
+    return TypedActor.get(Akka.system()).typedActorOf(
+        new TypedProps<T>(iface, new Creator<T>() {
+          @Override
+          public T create() {
+            return injector.getInstance(impl);
+          }
+        }));
   }
 
   private void registerRepoInJNDI(Repository repo) {

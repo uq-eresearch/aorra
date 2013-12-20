@@ -10,22 +10,18 @@ import models.Flag;
 import models.Notification;
 import models.NotificationDAO;
 import models.User;
-import models.UserDAO;
 
 import org.apache.jackrabbit.core.SessionImpl;
 import org.apache.jackrabbit.core.id.NodeId;
 import org.jcrom.Jcrom;
 
-import play.Application;
-import play.Logger;
 import play.api.templates.Html;
 import play.libs.F;
-import service.EventManager;
-import service.JcrSessionFactory;
-import service.OrderedEvent;
 import service.EventManager.Event;
 import service.EventManager.EventReceiver;
 import service.EventManager.EventReceiverMessage;
+import service.JcrSessionFactory;
+import service.OrderedEvent;
 import service.filestore.FileStore;
 import service.filestore.FlagStore;
 import akka.actor.TypedActor;
@@ -41,8 +37,7 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   private final Jcrom jcrom;
 
   @Inject
-  public NotifierImpl(Application application,
-      JcrSessionFactory sessionFactory, FileStore fileStore,
+  public NotifierImpl(JcrSessionFactory sessionFactory, FileStore fileStore,
       FlagStore flagStore, Jcrom jcrom) {
     this.sessionFactory = sessionFactory;
     this.fileStore = fileStore;

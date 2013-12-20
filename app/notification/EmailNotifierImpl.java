@@ -43,23 +43,26 @@ public class EmailNotifierImpl implements EmailNotifier {
     sessionFactory.inSession(new F.Function<Session, Session>() {
       @Override
       public Session apply(Session session) throws RepositoryException {
-        sendEmailNotifications(session, since, until);
+        UserDAO userDao = new UserDAO(session, jcrom);
+        for(User user : userDao.list()) {
+          sendEmailNotifications(user, since, until);
+        }
         return session;
       }
     });
   }
 
-  private void sendEmailNotifications(Session session, Date since, Date until) {
-    UserDAO userDao = new UserDAO(session, jcrom);
-    for(User user : userDao.list()) {
-      String body = emailBody(user, since, until);
-      if(body != null) {
-        try {
-          email.sendHtmlEmail(user, "AORRA notification summary", body);
-        } catch(Exception e) {
-          Logger.warn(String.format(
-              "send notification email to user %s failed", user.getEmail()), e);
-        }
+  @Override
+  public void sendEmailNotifications(User user, Date since, Date until) {
+    String body = emailBody(user, since, until);
+    if(body != null) {
+      try {
+        Logger.debug(String.format("Sending notification email to %s including notifications from " +
+            "%s until %s", user.getEmail(), since.toString(), until.toString()));
+        email.sendHtmlEmail(user, "AORRA notification summary", body);
+      } catch(Exception e) {
+        Logger.warn(String.format(
+            "send notification email to user %s failed", user.getEmail()), e);
       }
     }
   }

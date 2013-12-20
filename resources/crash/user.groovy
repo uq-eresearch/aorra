@@ -1,7 +1,10 @@
 import static play.Play.application;
 
+import java.util.Date;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import org.crsh.cli.Command
 import org.crsh.cli.Usage
 import org.crsh.cli.Argument
@@ -11,6 +14,7 @@ import org.jcrom.Jcrom
 import models.Notification
 import models.User
 import models.UserDAO
+import notification.EmailNotifier
 import play.Play
 import play.libs.F.Function
 import providers.JackrabbitEmailPasswordAuthProvider
@@ -169,6 +173,50 @@ class user {
         }
       }
     });
+  }
+
+
+  @Usage("send notification email")
+  @Command
+  String email(
+    @Usage("email") @Argument String email,
+    @Usage("notifications since dd/MM/yyyy HH:mm:ss") @Argument String since,
+    @Usage("notifications until dd/MM/yyyy HH:mm:ss") @Argument String until) {
+    sessionFactory().inSession(new Function<Session, String>() {
+      public String apply(Session session) {
+        try {
+          SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+          Date start;
+          try {
+            start = sdf.parse(since);
+          } catch(Exception e) {
+            start = new Date(0);
+          }
+          Date end;
+          try {
+            end = sdf.parse(until);
+          } catch(Exception e) {
+            end = new Date();
+          }
+          def dao = new UserDAO(session, jcrom())
+          User user = dao.findByEmail(email);
+          if(user == null) {
+            out.println("no user with email "+email);
+          } else {
+            out.println("sending notification email to "+email+
+                " including notifications from "+start.toString()+" until "+end.toString());
+            emailNotifier().sendEmailNotifications(user, start, end);
+          }
+        } catch(Exception e) {
+          return e.getMessage()
+        }
+      }
+    });
+  }
+
+  private EmailNotifier emailNotifier() {
+    return GuiceInjectionPlugin.getInjector(application())
+                               .getInstance(EmailNotifier.class);
   }
 
   private Jcrom jcrom() {

@@ -8,16 +8,10 @@ import play.Logger;
 import play.Play;
 import play.Plugin;
 import play.api.mvc.Call;
-import play.libs.Akka;
 import service.GuiceInjectionPlugin;
 import service.filestore.FileStore;
-import akka.actor.TypedActor;
-import akka.actor.TypedProps;
-import akka.japi.Creator;
 
-import com.google.inject.Binder;
 import com.google.inject.Injector;
-import com.google.inject.Module;
 
 public class NotificationManager extends Plugin {
 
@@ -33,11 +27,9 @@ public class NotificationManager extends Plugin {
 
   @Override
   public void onStart() {
-    typedActor(Notifier.class, NotifierImpl.class);
     if(application.configuration().getBoolean(
         NOTIFICATION_EMAILS, Boolean.TRUE)) {
-      scheduler = new EmailNotificationScheduler(
-          typedActor(EmailNotifier.class, EmailNotifierImpl.class));
+      scheduler = injector().getInstance((EmailNotificationScheduler.class));
       scheduler.start();
     } else {
       Logger.info(String.format(
@@ -45,29 +37,15 @@ public class NotificationManager extends Plugin {
     }
   }
 
-  private <T> T typedActor(final Class<T> iface, final Class <? extends T> impl) {
-    return TypedActor.get(Akka.system()).typedActorOf(
-        new TypedProps<T>(iface, new Creator<T>() {
-          @Override
-          public T create() {
-            return injector().getInstance(impl);
-          }
-        }));
-  }
-
   @Override
   public void onStop() {
-    scheduler.stop();
+    if(scheduler!=null) {
+      scheduler.stop();
+    }
   }
 
   private Injector injector() {
-    return GuiceInjectionPlugin.getInjector(application)
-        .createChildInjector(new Module() {
-          @Override
-          public void configure(Binder binder) {
-            binder.bind(Application.class).toInstance(application);
-          }
-        });
+    return GuiceInjectionPlugin.getInjector(application);
   }
 
   public static String absUrl(FileStore.FileOrFolder fof) {
