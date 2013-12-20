@@ -1273,6 +1273,10 @@ define([
       }, this);
       this.$el.on('typeahead:selected', emitEvent);
       this.$el.on('typeahead:autocompleted', emitEvent);
+      this.on('content:set', _.bind(function(fileId) {
+        this.$el.typeahead('setQuery', fileId);
+        emitEvent();
+      }, this));
     }
   });
   
@@ -1478,6 +1482,9 @@ define([
             elementObj.clear();
             _(charts).each(function(chart) {
               elementObj.add(chart.type+" - "+chart.region, chart.url);
+              if (elementObj.initialImageUrl == chart.url) {
+                elementObj.setValue(chart.url, false);
+              }
             });
           }
           this.getCharts(file, function(data) {
@@ -1487,10 +1494,18 @@ define([
         this.on('imageFile:selected', function(file) {
           elementObj.clear();
           elementObj.add(file.get('name'), file.downloadUrl());
+          elementObj.setValue(file.downloadUrl(), false);
         });
       }, this);
       this.ui.html.ckeditor().editor.on(
           'aorrafigure_fileId:loaded', fileIdInit);
+      this.ui.html.ckeditor().editor.on(
+          'aorrafigure_fileId:set',
+          _.bind(function(e) {
+            // There was an existing value, so propagate it through as if
+            // selected manually.
+            this._fileIdAutocomplete.trigger("content:set", e.data);
+          }, this));
       this.ui.html.ckeditor().editor.on(
           'aorrafigure_imageUrl:loaded', chartUrlInit);
       this.ui.html.ckeditor().editor.on(

@@ -10,11 +10,13 @@ CKEDITOR.plugins.add('aorrafigure', {
       button : 'Insert an AORRA figure',
 
       data: function() {
+        var fileId = this.data.fileId;
         var imageUrl = this.data.imageUrl;
         var width = this.data.width;
         var img = this.element.findOne("img");
         if (img && imageUrl) {
           img.setAttribute('style', "width: "+width);
+          img.setAttribute('data-cke-saved-src', imageUrl);
           img.setAttribute('src', imageUrl);
         }
       },
