@@ -1158,7 +1158,7 @@ define([
 
   var ChartElementView = Backbone.Marionette.ItemView.extend({
     modelEvents: {
-      'sync': 'render'
+      'change': 'render'
     },
     initialize: function() {
       var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
