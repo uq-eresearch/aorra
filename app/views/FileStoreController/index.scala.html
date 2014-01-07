@@ -39,8 +39,10 @@
   window.filestoreJSON = @Html(filestoreJson.toString());
   window.usersJSON = @Html(usersJson.toString());
 
-  // Load application
-  requirejs(['app']);
+  _.defer(function() {
+    // Load application
+    requirejs(['app']);
+  });
   </script>
 
 }
