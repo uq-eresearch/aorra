@@ -24,6 +24,7 @@ requirejs.config({
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
       'q': '//cdnjs.cloudflare.com/ajax/libs/q.js/0.9.6/q.min',
+      'spin': '//cdnjs.cloudflare.com/ajax/libs/spin.js/1.3.2/spin.min',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
       'underscore': '//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min',
       'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',

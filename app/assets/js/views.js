@@ -19,13 +19,14 @@ define([
         'unstyler',
         'htmldiff',
         'cryptojs-md5',
+        'spin',
         'FileAPI',
         'jquery.ckeditor',
         'typeahead'
         ], function(App, models, templates, _, _s, Q, moment, DiffMatchPatch,
             glyphtree, $, Backbone, Marionette, LocalStorage,
             BackboneProjections, marked,
-            unstyle, htmldiff, CryptoJS) {
+            unstyle, htmldiff, CryptoJS, Spinner) {
   'use strict';
 
   // Clock with ticks once a second, for periodic checks
@@ -1215,9 +1216,14 @@ define([
       return templates.render('charts', serialized_model);
     },
     onRender: function() {
-      this.$el.find('.commentary').each(function(i, e) {
-        var $e = $(e);
-        $e.load($e.attr('data-url'));
+      this.$('img').each(function(i, imgEl) {
+        var parent = $(imgEl).parents('.js-img-container').get(0);
+        $(parent).css('min-width', '100%');
+        $(parent).css('min-height', '200px');
+        var spinner = new Spinner({}).spin(parent);
+        $(imgEl).on('load', function() {
+          spinner.stop();
+        });
       });
     }
   });
