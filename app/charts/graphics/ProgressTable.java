@@ -23,11 +23,11 @@ import com.google.common.collect.ImmutableList;
 public class ProgressTable implements Drawable {
 
   public static enum Indicator {
-    GRAZING, SUGARCANE, GRAIN, HORTICULTURE,
-    GROUNDCOVER, NITROGEN, SEDIMENT, PESTICIDES;
+    GRAZING, SUGARCANE, GRAIN, HORTICULTURE, GROUNDCOVER,
+    NITROGEN, SEDIMENT, PESTICIDES, DAIRY, PHOSPHORUS;
 
     public String getLabel() {
-        return StringUtils.capitalize(StringUtils.lowerCase(name())); 
+      return StringUtils.capitalize(StringUtils.lowerCase(name()));
     }
   }
 

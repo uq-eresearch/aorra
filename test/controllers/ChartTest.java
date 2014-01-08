@@ -464,13 +464,13 @@ public class ChartTest {
             null, "Very Good", "Good", "Moderate", "Poor", "Very Poor"
           };
           final int[][] expected = new int[][] {
-            new int[] { 3, 2, 3, 1, 3, 1, 2 },
-            new int[] { 1, 0, 2, 0, 4, 2, 0 },
-            new int[] { 3, 2, 3, 1, 4, 2, 3 },
-            new int[] { 2, 3, 3, 1, 4, 1, 2 },
-            new int[] { 1, 2, 1, 1, 2, 5, 1 },
-            new int[] { 3, 3, 4, 1, 4, 2, 3 },
-            new int[] { 3, 1, 3, 1, 3, 2, 5 }
+            new int[] { 3, 2, 3, 1, 3, 1, 2, 2, 2 },
+            new int[] { 1, 0, 2, 0, 4, 2, 0, 0, 5 },
+            new int[] { 3, 2, 3, 1, 4, 2, 3, 0, 4 },
+            new int[] { 2, 3, 3, 1, 4, 1, 2, 0, 2 },
+            new int[] { 1, 2, 1, 1, 2, 5, 1, 0, 2 },
+            new int[] { 3, 3, 4, 1, 4, 2, 3, 0, 1 },
+            new int[] { 3, 1, 3, 1, 3, 2, 5, 0, 1 }
           };
           final FileStore.File f = createProgressTableChartFile(session);
           final Result result = callAction(
@@ -481,15 +481,17 @@ public class ChartTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("text/csv");
           assertThat(charset(result)).isEqualTo("utf-8");
+          final String content = contentAsString(result);
           final ICsvListReader listReader = new CsvListReader(
-              new StringReader(contentAsString(result)),
+              new StringReader(content),
               CsvPreference.STANDARD_PREFERENCE);
           int rowCount = 0;
           List<String> row = listReader.read();
           {
             final String[] headers = new String[] {
                 "", "Grazing", "Sugarcane", "Horticulture",
-                "Groundcover", "Nitrogen", "Sediment", "Pesticides" };
+                "Groundcover", "Nitrogen", "Sediment", "Pesticides",
+                "Dairy", "Phosphorus"};
             for (int i = 1; i < row.size(); i++) {
               assertThat(row.get(i)).isEqualTo(headers[i]);
             }
