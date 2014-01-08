@@ -118,6 +118,10 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
           return null;
         }
         final CategoryDataset dataset = createDataset(datasource, type, region);
+        // Unsupported region
+        if (dataset == null) {
+          return null;
+        }
         LandPracticeSystems lps;
         if(type == ChartType.GRAINS_PS) {
           lps = new GrainsPracticeSystems();
@@ -191,9 +195,9 @@ public class LandPracticeSystemsBuilder extends AbstractBuilder {
                 break;
               }
             }
+            // Unsupported region
             if (row == null) {
-                throw new RuntimeException(String.format("region %s not supported",
-                        region));
+              return null;
             }
             row += 2;
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
