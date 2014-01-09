@@ -6,6 +6,7 @@ public enum ChartType {
     ANNUAL_RAINFALL ("Annual Rainfall"),
     PROGRESS_TABLE ("Progress Table"),
     PROGRESS_TABLE_REGION ("Progress Table Region"),
+    PROGRESS_TABLE_TILE ("Progress Table Tile"),
     TTT_CANE_AND_HORT ("Tracking Towards Target - Cane and Horticulture"),
     TTT_GRAZING ("Tracking Towards Target - Grazing"),
     TTT_SEDIMENT ("Tracking Towards Target - Sediment"),

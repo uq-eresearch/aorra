@@ -75,8 +75,8 @@ public class Chart extends SessionAwareController {
       chartNode.put("type", desc.getType().getLabel());
       chartNode.put("region", desc.getRegion().getName());
       chartNode.put("title", desc.getTitle());
-      for(String pname : desc.getParameterNames()) {
-          chartNode.put(pname, desc.getParameter(pname).toString());
+      for (String pname : desc.getParameterNames()) {
+        chartNode.put(pname, desc.getParameter(pname).toString());
       }
       try {
         chartNode.put("url", buildUrl(chart, format, id));

@@ -95,8 +95,9 @@ public class ChartBuilderTest {
     case MARINE_ST:
     case MARINE_WQT:
       return "test/marine.xls";
-    case PROGRESS_TABLE_REGION:
     case PROGRESS_TABLE:
+    case PROGRESS_TABLE_REGION:
+    case PROGRESS_TABLE_TILE:
       return "test/progress_table.xlsx";
     case TSA:
       return "test/seagrass_cover.xls";

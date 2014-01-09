@@ -1,0 +1,24 @@
+@(
+  cell: charts.graphics.ProgressTable.Cell
+)
+@import org.apache.commons.lang3.StringUtils.lowerCase
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="progresstable.css"/>
+</head>
+<body>
+<table>
+<tr>
+<td align="center" class="datacell">
+@if(cell.condition != null) {
+<div class="@{lowerCase(cell.condition.name())} @{lowerCase(cell.indicator.name())} statusbox"></div>
+<div class="text-data">@cell.progress</div>
+@if(cell.indicator == charts.graphics.ProgressTable.Indicator.GRAIN) {
+<div style="font-family:LiberationSans;">(Grains)</div>
+}
+}
+</td>
+</tr>
+</table>
+</body>
+</html>

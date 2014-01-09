@@ -1,7 +1,5 @@
 package charts.graphics;
 
-import static views.html.chart.progresstable.render;
-
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.io.InputStream;
@@ -78,6 +76,12 @@ public class ProgressTable implements Drawable {
       this.description = description;
       this.target = target;
     }
+
+    @Override
+    public String toString() {
+      return header;
+    }
+
   }
 
   public static class Row {
@@ -104,24 +108,37 @@ public class ProgressTable implements Drawable {
 
   private final Box box;
 
+  private final Resolver resolver = new Resolver() {
+    @Override
+    public InputStream resolve(String source) throws Exception {
+      if (StringUtils.startsWith(source, "url('")) {
+        source = StringUtils.substringBetween(source, "('", "')");
+      }
+      final InputStream stream =
+          Chart.class.getResourceAsStream(source);
+      if (stream == null) {
+        throw new Exception("failed to load resource " + source);
+      }
+      return stream;
+    }
+  };
+
   public ProgressTable(Dataset dataset) {
     try {
-      final Resolver resolver = new Resolver() {
-        @Override
-        public InputStream resolve(String source) throws Exception {
-          if (StringUtils.startsWith(source, "url('")) {
-            source = StringUtils.substringBetween(source, "('", "')");
-          }
-          final InputStream stream =
-              Chart.class.getResourceAsStream(source);
-          if (stream == null) {
-            throw new Exception("failed to load resource " + source);
-          }
-          return stream;
-        }
-      };
       box = new Parser(resolver).parse(XmlUtils.parse(new InputSource(
-          new StringReader(render(dataset.columns, dataset.rows).toString()))));
+          new StringReader(
+              views.html.chart.progresstable.render(
+                  dataset.columns, dataset.rows).toString()))));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public ProgressTable(Cell cell) {
+    try {
+      box = new Parser(resolver).parse(XmlUtils.parse(new InputSource(
+          new StringReader(
+              views.html.chart.progresstile.render(cell).toString()))));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

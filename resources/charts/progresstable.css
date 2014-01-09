@@ -153,6 +153,14 @@ background-image:url('beaker.svg');
 background-image:url('grain.svg');
 }
 
+.dairy {
+background-image:url('grazing.svg');
+}
+
+.phosphorus {
+background-image:url('beaker.svg');
+}
+
 .fake-border {
 height: 2px;
 background-color: black;
