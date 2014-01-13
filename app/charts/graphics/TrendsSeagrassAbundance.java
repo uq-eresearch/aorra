@@ -36,7 +36,7 @@ public class TrendsSeagrassAbundance {
             );
         chart.setBackgroundPaint(Color.white);
         StatisticalLineAndShapeRenderer renderer = new StatisticalLineAndShapeRenderer();
-        renderer.setErrorIndicatorPaint(new Color(147,112,45));
+        renderer.setErrorIndicatorPaint(ErrorIndicator.ERROR_INDICATOR_COLOR);
         renderer.setDrawOutlines(true);
         renderer.setUseOutlinePaint(true);
         renderer.setBaseOutlinePaint(Color.black);
@@ -71,6 +71,7 @@ public class TrendsSeagrassAbundance {
         cAxis.setLabelFont(rangeAxis.getLabelFont());
         cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         plot.setDomainAxis(cAxis);
+        chart.addLegend(ErrorIndicatorLegend.createLegend());
         return new JFreeChartDrawable(chart, dimension);
     }
 

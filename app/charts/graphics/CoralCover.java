@@ -63,11 +63,13 @@ public class CoralCover {
         } else {
             title = String.format(title + " in the %s region", region.getProperName());
             chart = createChart(dataset, title, rangeAxisLabel);
+            CategoryPlot plot = (CategoryPlot)chart.getPlot();
+            plot.getDomainAxis().setLabel("Year");
         }
         return new JFreeChartDrawable(chart, dimension);
     }
 
-    public static JFreeChart createChart(final CategoryDataset dataset, String title,
+    private static JFreeChart createChart(final CategoryDataset dataset, String title,
             String rangeAxisLabel) {
         JFreeChart chart = ChartFactory.createLineChart(
                 title,  // title
@@ -81,7 +83,7 @@ public class CoralCover {
             );
         chart.setBackgroundPaint(Color.white);
         StatisticalLineAndShapeRenderer renderer = new StatisticalLineAndShapeRenderer();
-        renderer.setErrorIndicatorPaint(new Color(147,112,45));
+        renderer.setErrorIndicatorPaint(ErrorIndicator.ERROR_INDICATOR_COLOR);
         CategoryPlot plot = (CategoryPlot)chart.getPlot();
         plot.setRenderer(renderer);
         plot.setRangeGridlinePaint(Color.lightGray);
@@ -126,10 +128,10 @@ public class CoralCover {
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
         chart.getTitle().setFont(rangeAxis.getLabelFont());
+        chart.addLegend(ErrorIndicatorLegend.createLegend());
         return chart;
     }
 
-    
     // rearrange the dataset so, that the lines are drawn next to each other
     // (and not on top of each other)
     private static DefaultStatisticalCategoryDataset rearrange(DefaultStatisticalCategoryDataset d) {
@@ -191,12 +193,12 @@ public class CoralCover {
                 AxisSpace s = super.reserveSpace(g2, plot, plotArea, edge, space);
                 Box b = getLabelBox((int)plotArea.getWidth());
                 try {
-                    s.add(b.getDimension(g2).getHeight(), RectangleEdge.BOTTOM);
+                  // workaround, divide by 4 so reduce the large gap to the standard error indicator legend
+                    s.add(b.getDimension(g2).getHeight()/4, RectangleEdge.BOTTOM);
                 } catch(Exception e) {
                     throw new RuntimeException(e);
                 }
                 return s;
-                
             }
 
             private Box getLabelBox(int width) {
