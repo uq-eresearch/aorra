@@ -27,6 +27,7 @@ public class ProgressTableBuilder extends AbstractProgressTableBuilder {
       new ImmutableSet.Builder<ProgressTable.Indicator>()
         .add(ProgressTable.Indicator.GRAZING)
         .add(ProgressTable.Indicator.SUGARCANE)
+        .add(ProgressTable.Indicator.GRAIN)
         .add(ProgressTable.Indicator.HORTICULTURE)
         .add(ProgressTable.Indicator.GROUNDCOVER)
         .add(ProgressTable.Indicator.NITROGEN)
