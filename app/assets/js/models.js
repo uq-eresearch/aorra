@@ -118,6 +118,9 @@ define(
       return deferred.promise();
     },
     avatar: function(options) {
+      if (!this.has('author')) {
+        return null;
+      }
       return new Avatar(_(options).defaults({
         name: this.get('author').name,
         email: this.get('author').email
