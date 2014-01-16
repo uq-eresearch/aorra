@@ -35,6 +35,7 @@ import play.libs.F;
 import play.libs.Json;
 import play.mvc.Http.Status;
 import play.mvc.Result;
+import play.test.CopiedFakeRequest;
 import play.test.FakeRequest;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Permission;
@@ -1144,9 +1145,10 @@ public class FileStoreControllerTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
+        final FakeRequest copiedFakeRequest = copy(newRequest);
         final FileStore.Manager fm = fileStore().getManager(session);
         final FileStore.File file =
-            fm.getRoot().createFile("test file.txt", "text/plain",
+            fm.getRoot().createFile("test file", "text/plain",
                 new ByteArrayInputStream("Some content.".getBytes()));
         // Aliases should redirect
         for (String versionName : new String[]{"1.0", "latest"}) {
@@ -1177,6 +1179,8 @@ public class FileStoreControllerTest {
           assertThat(header("Last-Modified", result)).isNotNull();
           assertThat(header("Content-Disposition", result))
             .startsWith("attachment; filename=test%20file");
+          assertThat(header("Content-Disposition", result))
+            .endsWith(".txt");
           // ETag & Last Modified tests
           for (String[] headerData : new String[][]{
             new String[]{"If-None-Match", header("ETag", result)},
@@ -1190,6 +1194,33 @@ public class FileStoreControllerTest {
                   .withHeader(headerData[0], headerData[1]));
             assertThat(status(notModifiedResult)).isEqualTo(304);
           }
+        }
+        // Test extension with unknown mime type
+        {
+          file.update("application/vnd.somethingijustmadeup",
+                new ByteArrayInputStream("Some content.".getBytes()));
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.downloadFile(
+                  file.getIdentifier(),
+                  file.getVersions().first().getIdentifier()),
+              copy(copiedFakeRequest));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(header("Content-Disposition", result))
+            .endsWith("test%20file");
+        }
+        // Test extension when mime type is satisfactory
+        {
+          file.update("text/plain",
+              new ByteArrayInputStream("Some content.".getBytes()));
+          file.rename("test.text");
+          final Result result = callAction(
+              controllers.routes.ref.FileStoreController.downloadFile(
+                  file.getIdentifier(),
+                  file.getVersions().first().getIdentifier()),
+              copy(copiedFakeRequest));
+          assertThat(status(result)).isEqualTo(200);
+          assertThat(header("Content-Disposition", result))
+            .endsWith(".text");
         }
         {
           final String notFoundId = UUID.randomUUID().toString();
@@ -1217,6 +1248,10 @@ public class FileStoreControllerTest {
           }
         }
         return session;
+      }
+
+      private FakeRequest copy(FakeRequest req) {
+        return new CopiedFakeRequest(req);
       }
     });
   }

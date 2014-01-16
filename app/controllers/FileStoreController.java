@@ -2,6 +2,7 @@ package controllers;
 
 import static org.apache.commons.httpclient.util.URIUtil.encodeQuery;
 import static service.filestore.roles.Admin.isAdmin;
+import static scala.collection.JavaConversions.asJavaCollection;
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileOrFolderException;
@@ -28,6 +29,8 @@ import models.UserDAO;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.security.user.Group;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.mime.MimeTypeException;
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
@@ -392,8 +395,9 @@ public final class FileStoreController extends SessionAwareController {
             String.format("(%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS %2$s)",
                 version.getModificationTime(),
                 authorName);
-        final String filename = file.getName().replaceAll(
-            "(\\.?[^\\.]+$)", versionStamp + "$1" );
+        final String filename = getNameWithExt(
+            file.getName(), file.getMimeType()).replaceAll(
+                "(\\.?[^\\.]+$)", versionStamp + "$1" );
         ctx().response().setContentType(version.getMimeType());
         if (!version.getDigest().isEmpty()) {
           ctx().response().setHeader("ETag",
@@ -805,6 +809,28 @@ public final class FileStoreController extends SessionAwareController {
     final scala.Option<String> guessed = MimeTypes.forFileName(filename);
     return guessed.nonEmpty() ? guessed.get() : defaultMimeType;
   }
+
+  protected String getNameWithExt(String filename, String mimeType) {
+    // Check if the current extension is good enough
+    final scala.Option<String> expected = MimeTypes.forFileName(filename);
+    if (expected.isDefined() && expected.get().equals(mimeType)) {
+      return filename;
+    }
+    // We need to add on an extension that conveys the mime type.
+    try {
+      final org.apache.tika.mime.MimeTypes mimeTypes =
+          TikaConfig.getDefaultConfig().getMimeRepository();
+      final String ext = mimeTypes.forName(mimeType).getExtension();
+      if (!ext.isEmpty()) {
+        return filename+ext;
+      }
+    } catch (MimeTypeException e) {
+      // Fall through
+    }
+    // We gave it our best shot.
+    return filename;
+  }
+
 
   protected Result notFoundOfRequestedType() {
     final NotFoundMessage nf = NotFoundMessage.from(request().acceptedTypes());
