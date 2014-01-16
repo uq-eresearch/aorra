@@ -17,6 +17,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import charts.builder.DataSource;
@@ -110,17 +111,19 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
     @Override
     public java.awt.Color asColor() {
-      final Color c = cell.getCellStyle().getFillForegroundColorColor();
-      if (c instanceof HSSFColor) {
-        final short[] rgb = ((HSSFColor)c).getTriplet();
-        return new java.awt.Color(rgb[0], rgb[1], rgb[2]);
+      for(Color c : ImmutableList.of(cell.getCellStyle().getFillForegroundColorColor(),
+          cell.getCellStyle().getFillBackgroundColorColor())) {
+        if (c instanceof HSSFColor && (((HSSFColor)c).getTriplet() != null)) {
+          final short[] rgb = ((HSSFColor)c).getTriplet();
+          return new java.awt.Color(rgb[0], rgb[1], rgb[2]);
+        }
+        if (c instanceof XSSFColor && (((XSSFColor)c).getRgb() != null)) {
+          final byte[] rgb = ((XSSFColor)c).getRgb();
+          // Convert bytes to unsigned integers
+          return new java.awt.Color(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF);
+        }
       }
-      if (c instanceof XSSFColor) {
-        final byte[] rgb = ((XSSFColor)c).getRgb();
-        // Convert bytes to unsigned integers
-        return new java.awt.Color(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF);
-      }
-      return java.awt.Color.WHITE;
+      return null;
     }
 
     @Override
@@ -153,7 +156,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
     @Override
     public java.awt.Color asColor() {
-      return java.awt.Color.WHITE;
+      return null;
     }
 
     @Override

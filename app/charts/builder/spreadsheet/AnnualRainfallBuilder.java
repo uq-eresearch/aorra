@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
@@ -17,6 +16,8 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.AnnualRainfall;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -36,24 +37,26 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
     super(ChartType.ANNUAL_RAINFALL);
   }
 
-  private DefaultCategoryDataset createDataset(
+  private ADCDataset createDataset(
       SpreadsheetDataSource datasource, Region region) {
-    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+    ADCDataset dataset = new ADCDataset();
     final String series = "rainfall";
     Integer row = ROW.get(region);
     try {
       for (int i = 1; true; i++) {
         String year = datasource.select(0, i).asString();
         if (StringUtils.equalsIgnoreCase("Annual Average", year)) {
+          dataset.add(Attribute.TITLE, datasource.select(row,i+1).asString());
           break;
         }
-        String outbreaks = datasource.select(row, i).asString();
-        if (StringUtils.isBlank(year) || StringUtils.isBlank(outbreaks)) {
+        String rainfall = datasource.select(row, i).asString();
+        if (StringUtils.isBlank(year) || StringUtils.isBlank(rainfall)) {
           break;
         }
-        double val = Double.parseDouble(outbreaks);
+        double val = Double.parseDouble(rainfall);
         dataset.addValue(val, series, Integer.toString(parseYear(year)));
       }
+      dataset.add(Attribute.SERIES_COLOR, datasource.select(row, 0).asColor());
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -84,7 +87,8 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
     if (!ROW.containsKey(region)) {
       return null;
     }
-    final DefaultCategoryDataset dataset = createDataset(datasource, region);
+    final ADCDataset dataset = createDataset(datasource, region);
+    dataset.add(Attribute.REGION, region);
     final Chart chart = new AbstractChart() {
       @Override
       public ChartDescription getDescription() {
@@ -93,8 +97,7 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
 
       @Override
       public Drawable getChart() {
-        return new AnnualRainfall().createChart(region.getName(), dataset,
-            new Dimension(750, 500));
+        return new AnnualRainfall().createChart(dataset, new Dimension(750, 500));
       }
 
       @Override

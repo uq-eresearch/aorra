@@ -7,16 +7,17 @@ import static java.util.Arrays.asList;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 import org.apache.commons.lang.StringUtils;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
@@ -28,9 +29,12 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.PSIITrends;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class PSIITrendsBuilder extends AbstractBuilder {
 
@@ -52,10 +56,13 @@ public class PSIITrendsBuilder extends AbstractBuilder {
     }
 
   @Override
-  public Chart build(final SpreadsheetDataSource datasource,
+  public Chart build(SpreadsheetDataSource datasource,
       final ChartType type, final Region region) {
     if (region == Region.GBR) {
-      return new AbstractChart() {
+      final ADCDataset dataset = getDataset(datasource);
+      final Drawable drawable = PSIITrends.createChart(dataset, title(datasource),
+          new Dimension(1000, 500));
+       return new AbstractChart() {
 
         @Override
         public ChartDescription getDescription() {
@@ -64,15 +71,13 @@ public class PSIITrendsBuilder extends AbstractBuilder {
 
         @Override
         public Drawable getChart() {
-          return PSIITrends.createChart(getDataset(datasource), TITLE,
-              new Dimension(1000, 500));
+          return drawable;
         }
 
         @Override
         public String getCSV() throws UnsupportedFormatException {
           final StringWriter sw = new StringWriter();
           try {
-            final CategoryDataset dataset = getDataset(datasource);
             final CsvListWriter csv = new CsvListWriter(sw,
                 CsvPreference.STANDARD_PREFERENCE);
             @SuppressWarnings("unchecked")
@@ -109,6 +114,16 @@ public class PSIITrendsBuilder extends AbstractBuilder {
     }
   }
 
+  private String title(SpreadsheetDataSource d) {
+    try {
+      String t = d.select("A1").asString();
+      return StringUtils.isNotBlank(t)?t:TITLE;
+    } catch (MissingDataException e) {
+      e.printStackTrace();
+      return TITLE;
+    }
+  }
+
     private String getYear(String s) {
         Matcher m = YEAR_PATTERN.matcher(s);
         if(m.matches()) {
@@ -133,12 +148,13 @@ public class PSIITrendsBuilder extends AbstractBuilder {
         return true;
     }
 
-    private CategoryDataset getDataset(SpreadsheetDataSource ds) {
+    private ADCDataset getDataset(SpreadsheetDataSource ds) {
         try {
-            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+          ADCDataset dataset = new ADCDataset();
             String cRegion = null;
             String year = null;
             List<String> pesticides = Lists.newArrayList();
+            Map<String, Color> seriesColors = Maps.newHashMap();
             for(int row = 1;!eof(ds, row);row++) {
                 String col1 = ds.select(row, 0).asString();
                 if(StringUtils.startsWithIgnoreCase(col1, TITLE)) {
@@ -152,6 +168,10 @@ public class PSIITrendsBuilder extends AbstractBuilder {
                             break;
                         } else {
                             pesticides.add(p);
+                            Color c = ds.select(row,col).asColor();
+                            if(c!= null && !Color.white.equals(c)) {
+                              seriesColors.put(p, c);
+                            }
                         }
                     }
                     continue;
@@ -172,6 +192,14 @@ public class PSIITrendsBuilder extends AbstractBuilder {
                     dataset.addValue(v, p, key);
                 }
             }
+            Color[] colors = new Color[pesticides.size()];
+            for(int i=0;i<pesticides.size();i++) {
+              Color c = seriesColors.get(pesticides.get(i));
+              if(c!=null) {
+                colors[i] = c;
+              }
+            }
+            dataset.add(Attribute.SERIES_COLORS, colors);
             return dataset;
         } catch(MissingDataException e) {
             throw new RuntimeException(e);

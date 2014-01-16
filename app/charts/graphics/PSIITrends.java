@@ -20,6 +20,7 @@ import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.geom.Rectangle2D;
 
+
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.LegendItem;
 import org.jfree.chart.LegendItemCollection;
@@ -46,6 +47,8 @@ import org.jfree.ui.RectangleInsets;
 import svg.AorraSvgGraphics2D;
 import charts.Drawable;
 import charts.graphics.AutoSubCategoryAxis.Border;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -222,7 +225,7 @@ public class PSIITrends {
         }
     }
     
-    public static Drawable createChart(CategoryDataset dataset, String title, Dimension dimension) {
+    public static Drawable createChart(ADCDataset dataset, String title, Dimension dimension) {
         JFreeChart chart = createStackBarChart(dataset, title);
         CategoryPlot plot = (CategoryPlot)chart.getPlot();
         {
@@ -241,8 +244,11 @@ public class PSIITrends {
         }
         {
             StackedBarRenderer renderer = (StackedBarRenderer)plot.getRenderer();
-            for(int i=0;i<SERIES_PAINT.length;i++) {
-                renderer.setSeriesPaint(i, SERIES_PAINT[i]);
+            Paint[] sp = seriesPaint(dataset);
+            for(int i=0;i<sp.length;i++) {
+              if(sp[i] != null) {
+                renderer.setSeriesPaint(i, sp[i]);
+              }
             }
             renderer.setBarPainter(new StandardBarPainter());
         }
@@ -295,6 +301,24 @@ public class PSIITrends {
             chart.addLegend(legend);
         }
         return new JFreeChartDrawable(chart, dimension);
+    }
+
+    private static Paint[] seriesPaint(ADCDataset dataset) {
+      Color[] colors = dataset.get(Attribute.SERIES_COLORS);
+      if(colors == null) {
+        return SERIES_PAINT;
+      }
+      Paint[] p = new Paint[colors.length];
+      for(int i=0;i<colors.length;i++) {
+        if(colors[i] == null) {
+          if(i < SERIES_PAINT.length) {
+            p[i] = SERIES_PAINT[i];
+          }
+        } else {
+          p[i] = colors[i];
+        }
+      }
+      return p;
     }
 
     private static JFreeChart createStackBarChart(CategoryDataset dataset,String title) {

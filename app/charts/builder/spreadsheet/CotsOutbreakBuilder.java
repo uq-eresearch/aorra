@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -77,6 +78,8 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       return null;
     }
     final TimeSeriesCollection dataset = createDataset(datasource);
+    final Drawable d = new CotsOutbreak().createChart(dataset, title(datasource),
+        seriesColor(datasource), new Dimension(750, 500));
     final Chart chart = new AbstractChart() {
       @Override
       public ChartDescription getDescription() {
@@ -85,8 +88,7 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
 
       @Override
       public Drawable getChart() {
-        return new CotsOutbreak().createChart(dataset,
-            new Dimension(750, 500));
+        return d;
       }
 
       @SuppressWarnings("unchecked")
@@ -113,6 +115,22 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       }
     };
     return chart;
+  }
+
+  private String title(SpreadsheetDataSource datasource) {
+    try {
+      return datasource.select("E1").asString();
+    } catch(MissingDataException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Color seriesColor(SpreadsheetDataSource datasource) {
+    try {
+      return datasource.select("E2").asColor();
+    } catch (MissingDataException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }

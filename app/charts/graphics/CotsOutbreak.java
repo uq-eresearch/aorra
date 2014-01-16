@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.text.SimpleDateFormat;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -19,9 +20,12 @@ import charts.Drawable;
 
 public class CotsOutbreak {
 
-    public Drawable createChart(final XYDataset dataset, Dimension dimension) {
+  private static final String TITLE = "Crown-of-thorns starfish outbreaks";
+
+    public Drawable createChart(final XYDataset dataset, final String title,
+        Color seriesColor, Dimension dimension) {
         JFreeChart chart = ChartFactory.createTimeSeriesChart(
-                "Crown-of-thorns starfish outbreaks",  // title
+                StringUtils.isNotBlank(title)?title:TITLE,  // title
                 "Year",             // x-axis label
                 "Outbreaks",   // y-axis label
                 dataset,            // data
@@ -40,7 +44,8 @@ public class CotsOutbreak {
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setAutoRangeIncludesZero(true);
         XYItemRenderer r = plot.getRenderer();
-        r.setSeriesPaint(0, Color.blue);
+        r.setSeriesPaint(0, ((seriesColor != null) && !Color.white.equals(seriesColor))?
+            seriesColor:Color.blue);
         DateAxis axis = (DateAxis) plot.getDomainAxis();
         axis.setDateFormatOverride(new SimpleDateFormat("yyyy"));
         DateTickUnit unit = new DateTickUnit(DateTickUnitType.YEAR, 1, new SimpleDateFormat("yyyy"));
