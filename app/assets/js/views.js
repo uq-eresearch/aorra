@@ -669,7 +669,7 @@ define([
       var isCurrent = this.model.collection.target.get('modified') <=
           this.model.get('modified');
       return _(commentData).extend({
-        author: this.options.author.avatar({ size: 64 }),
+        author: this.options.author && this.options.author.avatar({ size: 64 }),
         isCurrent: isCurrent,
         mine: this.model.get("userId") == this.options.currentUser.id
       });

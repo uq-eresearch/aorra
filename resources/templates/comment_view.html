@@ -8,14 +8,18 @@
   {{/author}}
   <div class="media-body">
     <div class="panel panel-default">
-      {{#author}}
       <div class="panel-heading">
         <div class="pull-right">
           {{#mine}}
           <button class="js-edit btn btn-link btn-xs">Edit</button>
           {{/mine}}
         </div>
+        {{#author}}
       	<span class="text-muted">{{name}}</span>
+        {{/author}}
+        {{^author}}
+        <span class="text-muted">Deleted User</span>
+        {{/author}}
         <div class="pull-right text-muted">
           <i class="fa fa-clock-o" title="Last modified"></i>
           <span class="text-muted modified">{{modified}}</span>
@@ -28,7 +32,6 @@
           {{/isCurrent}}
         </div>
       </div>
-      {{/author}}
       <div class="panel-body">
         <div class="js-message"
           style="white-space: pre-line">{{message}}</div>
