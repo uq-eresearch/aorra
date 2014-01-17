@@ -3,6 +3,7 @@ package controllers;
 import static org.apache.commons.httpclient.util.URIUtil.encodeQuery;
 import static service.filestore.roles.Admin.isAdmin;
 import static scala.collection.JavaConversions.asJavaCollection;
+import static helpers.FileStoreHelper.getNameWithExt;
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileOrFolderException;
@@ -809,28 +810,6 @@ public final class FileStoreController extends SessionAwareController {
     final scala.Option<String> guessed = MimeTypes.forFileName(filename);
     return guessed.nonEmpty() ? guessed.get() : defaultMimeType;
   }
-
-  protected String getNameWithExt(String filename, String mimeType) {
-    // Check if the current extension is good enough
-    final scala.Option<String> expected = MimeTypes.forFileName(filename);
-    if (expected.isDefined() && expected.get().equals(mimeType)) {
-      return filename;
-    }
-    // We need to add on an extension that conveys the mime type.
-    try {
-      final org.apache.tika.mime.MimeTypes mimeTypes =
-          TikaConfig.getDefaultConfig().getMimeRepository();
-      final String ext = mimeTypes.forName(mimeType).getExtension();
-      if (!ext.isEmpty()) {
-        return filename+ext;
-      }
-    } catch (MimeTypeException e) {
-      // Fall through
-    }
-    // We gave it our best shot.
-    return filename;
-  }
-
 
   protected Result notFoundOfRequestedType() {
     final NotFoundMessage nf = NotFoundMessage.from(request().acceptedTypes());

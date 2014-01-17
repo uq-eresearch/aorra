@@ -31,6 +31,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.security.user.Authorizable;
 import org.apache.jackrabbit.api.security.user.Group;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.mime.MimeTypeException;
 
 import play.Logger;
 import play.Play;
@@ -173,16 +175,39 @@ public class FileStoreHelper {
       addFolderToZip(zos, subFolder, baseFolder);
     }
     for (final FileStore.File file : folder.getFiles()) {
-      addToZip(zos, getZipPath(file, baseFolder), file.getData());
+      addToZip(zos, getZipPath(file, baseFolder),
+          file.getMimeType(), file.getData());
     }
   }
 
-  protected void addToZip(final ZipOutputStream zos, String filename,
+  protected void addToZip(final ZipOutputStream zos,
+      String filename, String mimeType,
       InputStream data) throws IOException {
-    zos.putNextEntry(new ZipEntry(filename));
+    zos.putNextEntry(new ZipEntry(getNameWithExt(filename, mimeType)));
     IOUtils.copy(data, zos);
     zos.closeEntry();
     data.close();
+  }
+
+  public static String getNameWithExt(String filename, String mimeType) {
+    // Check if the current extension is good enough
+    final scala.Option<String> expected = MimeTypes.forFileName(filename);
+    if (expected.isDefined() && expected.get().equals(mimeType)) {
+      return filename;
+    }
+    // We need to add on an extension that conveys the mime type.
+    try {
+      final org.apache.tika.mime.MimeTypes mimeTypes =
+          TikaConfig.getDefaultConfig().getMimeRepository();
+      final String ext = mimeTypes.forName(mimeType).getExtension();
+      if (!ext.isEmpty()) {
+        return filename+ext;
+      }
+    } catch (MimeTypeException e) {
+      // Fall through
+    }
+    // We gave it our best shot.
+    return filename;
   }
 
   protected Iterable<String> getPathParts(final String absPath) {
