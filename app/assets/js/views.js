@@ -1348,9 +1348,10 @@ define([
         return null;
       }
       var content = mine.get('content');
-      content.isModified = function() {
-        return CryptoJS.MD5(content.data).toString() != content.md5;
-      };
+      content.isModified = _.bind(function() {
+        return CryptoJS.MD5(content.data).toString() != content.md5 ||
+          content.versionId != this._serverContentCache.versionId;
+      }, this);
       return content;
     },
     _setWorkingCopy: function(content) {
