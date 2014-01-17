@@ -705,7 +705,7 @@ public class FileStoreControllerTest {
         }
         {
           ObjectNode includingMime = JsonNodeFactory.instance.objectNode();
-          includingMime.put("name", "includingMime");
+          includingMime.put("name", "includingMime.png");
           includingMime.put("mime", "text/html");
           includingMime.put("parent", fm.getRoot().getIdentifier());
           Result result = sendJson(newRequest, includingMime);
@@ -713,7 +713,7 @@ public class FileStoreControllerTest {
           JsonNode json = Json.parse(contentAsString(result));
           assertThat(json.has("id")).isTrue();
           assertThat(json.has("name")).isTrue();
-          assertThat(json.get("name").asText()).isEqualTo("includingMime");
+          assertThat(json.get("name").asText()).isEqualTo("includingMime.png");
           assertThat(json.has("mime")).isTrue();
           assertThat(json.get("mime").asText()).isEqualTo("text/html");
           assertThat(json.has("parent")).isTrue();

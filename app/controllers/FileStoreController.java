@@ -586,10 +586,11 @@ public final class FileStoreController extends SessionAwareController {
       public Result apply(Session session, Folder folder) throws Throwable {
         final JsonBuilder jb = new JsonBuilder();
         final String name = params.get("name").asText();
-        final String mimeType = params.has("mime") ?
-            params.get("mime").asText() : "application/octet-stream";
+        final String mimeType = params.has("mime")
+            ? params.get("mime").asText()
+            : getMimeType(name, "application/octet-stream");
         final FileStore.File file =
-            folder.createFile(name, getMimeType(name, mimeType),
+            folder.createFile(name, mimeType,
                 new ByteArrayInputStream(new byte[]{}));
         return created(jb.toJsonShallow(file))
             .as("application/json; charset=utf-8");
