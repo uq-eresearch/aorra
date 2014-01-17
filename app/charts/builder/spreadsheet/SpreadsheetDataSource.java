@@ -111,7 +111,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
     @Override
     public java.awt.Color asColor() {
-      for(Color c : ImmutableList.of(cell.getCellStyle().getFillForegroundColorColor(),
+      for(Color c : Lists.newArrayList(cell.getCellStyle().getFillForegroundColorColor(),
           cell.getCellStyle().getFillBackgroundColorColor())) {
         if (c instanceof HSSFColor && (((HSSFColor)c).getTriplet() != null)) {
           final short[] rgb = ((HSSFColor)c).getTriplet();
