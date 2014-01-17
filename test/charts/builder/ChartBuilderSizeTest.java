@@ -2,6 +2,7 @@ package charts.builder;
 
 import static charts.builder.ChartBuilderTest.getDatasource;
 import static charts.builder.ChartBuilderTest.getDefaultTestingRegion;
+import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -40,7 +41,10 @@ public class ChartBuilderSizeTest {
 
   @Test
   public void svgAndPngChartSize() throws Exception {
-    for (final ChartType ct : ChartType.values()) {
+    final List<ChartType> chartTypes = newArrayList(ChartType.values());
+    // We sacrifice completeness for faster run times
+    Collections.shuffle(chartTypes);
+    for (final ChartType ct : chartTypes.subList(0, 5)) {
       try {
         svgAndPngChartSize(ct);
       } catch (UnsupportedFormatException e) {

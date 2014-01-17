@@ -31,7 +31,7 @@ public class ChartBuilderTest {
   @Test
   public void format() throws Exception {
     for (final ChartType ct : ChartType.values()) {
-      for (final Format f : new Format[]{Format.CSV, Format.EMF}) {
+      for (final Format f : new Format[]{Format.CSV, Format.SVG}) {
         format(ct, f);
       }
     }
@@ -70,9 +70,9 @@ public class ChartBuilderTest {
     switch (t) {
     case TSA:
       return Region.BURDEKIN;
-      //$CASES-OMITTED$
     case GRAINS_PS:
       return Region.FITZROY;
+    //$CASES-OMITTED$
     default:
       return Region.GBR;
     }
