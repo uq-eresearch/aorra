@@ -43,7 +43,7 @@ import charts.Drawable;
 
 import com.google.common.collect.Maps;
 
-public abstract class LandPracticeSystems {
+public abstract class LandPracticeSystems implements ManagementPracticeSystems {
 
   protected static final Color COLOR_A = new Color(0,118,70);
   protected static final Color COLOR_B = new Color(168,198,162); 

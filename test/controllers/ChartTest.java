@@ -594,7 +594,7 @@ public class ChartTest {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile("grazing_practice_systems.xlsx",
         XLSX_MIME_TYPE,
-        new FileInputStream("test/grazing_practice_systems.xlsx"));
+        new FileInputStream("test/management_practice_systems.xlsx"));
   }
 
   private FileStore.File createLandPracticeChartFile(final Session session,
@@ -602,7 +602,7 @@ public class ChartTest {
       throws RepositoryException, FileNotFoundException {
     final FileStore.Folder folder = fileStore().getManager(session).getRoot();
     return folder.createFile(prefix + ".xlsx", XLSX_MIME_TYPE,
-        new FileInputStream("test/land_practice_systems.xlsx"));
+        new FileInputStream("test/management_practice_systems.xlsx"));
   }
 
   private FileStore.File createTrackingTowardsTargetsChartFile(

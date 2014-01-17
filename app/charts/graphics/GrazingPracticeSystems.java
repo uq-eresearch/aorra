@@ -42,7 +42,7 @@ import charts.Drawable;
 
 import com.google.common.collect.ImmutableMap;
 
-public class GrazingPracticeSystems {
+public class GrazingPracticeSystems implements ManagementPracticeSystems {
 
     private static final Color COLOR_A = new Color(0,118,70);
     private static final Color COLOR_B = new Color(168,198,162); 
@@ -256,7 +256,7 @@ public class GrazingPracticeSystems {
         return percentFormat;
     }
 
-    public static Drawable createChart(CategoryDataset dataset, String title, Dimension dimension) {
+    public Drawable createChart(CategoryDataset dataset, String title, Dimension dimension) {
         JFreeChart chart = ChartFactory.createBarChart(
                 "",  // chart title
                 "",  // domain axis label

@@ -85,11 +85,10 @@ public class ChartBuilderTest {
     case ANNUAL_RAINFALL:
       return "test/annual_rainfall.xlsx";
     case GRAZING_PS:
-      return "test/grazing_practice_systems.xlsx";
     case HORTICULTURE_PS:
     case SUGARCANE_PS:
     case GRAINS_PS:
-      return "test/land_practice_systems.xlsx";
+      return "test/management_practice_systems.xlsx";
     case MARINE:
     case MARINE_CT:
     case MARINE_ST:

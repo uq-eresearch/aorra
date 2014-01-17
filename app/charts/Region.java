@@ -2,6 +2,8 @@ package charts;
 
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.google.common.collect.Sets;
 
 public enum Region {
@@ -42,6 +44,17 @@ public enum Region {
         }
       }
       return s;
+    }
+
+    public static Region lookup(String s) {
+      for (Region region : values()) {
+        if(StringUtils.equalsIgnoreCase(region.name, s) ||
+            StringUtils.equalsIgnoreCase(region.getName(), s) ||
+            StringUtils.equalsIgnoreCase(region.getProperName(), s)) {
+          return region;
+        }
+      }
+      return null;
     }
 
 }

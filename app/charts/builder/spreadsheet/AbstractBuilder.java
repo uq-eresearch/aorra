@@ -6,11 +6,14 @@ import static java.util.Arrays.asList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
 import charts.builder.ChartTypeBuilder;
 import charts.builder.DataSource;
+import charts.builder.DataSource.MissingDataException;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -93,6 +96,14 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
       }
     }
     return charts;
+  }
+
+  protected boolean cellEquals(SpreadsheetDataSource datasource, String s, String cellreference) {
+    try {
+      return s.equals(StringUtils.strip(datasource.select(cellreference).asString()));
+    } catch (MissingDataException e) {
+      return false;
+    }
   }
 
 }

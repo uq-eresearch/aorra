@@ -17,11 +17,10 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
 import charts.builder.DataSource;
 import charts.builder.Value;
+
+import com.google.common.collect.Lists;
 
 public abstract class SpreadsheetDataSource implements DataSource {
 

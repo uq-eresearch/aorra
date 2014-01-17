@@ -67,7 +67,7 @@ public class GrazingPracticeSystemsBuilder extends AbstractBuilder {
 
       @Override
       public Drawable getChart() {
-        return GrazingPracticeSystems.createChart(
+        return new GrazingPracticeSystems().createChart(
             createDataset(datasource, region),
             TITLE + " - " + region.getProperName(),
             new Dimension(750, 500));
