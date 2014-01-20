@@ -2229,9 +2229,9 @@ define([
     }
   });
   
-  var SettingsDashboardView = Backbone.Marionette.Layout.extend({
+  var SettingsView = Backbone.Marionette.Layout.extend({
     template: function(data) {
-      return "";
+      return templates.render('settings', {});
     }
   });
 
@@ -2289,7 +2289,7 @@ define([
     NotificationsNavView: NotificationsNavView,
     NotificationsView: NotificationsView,
     SearchView: SearchView,
-    SettingsDashboardView: SettingsDashboardView,
+    SettingsView: SettingsView,
     StartView: StartView,
     UserAvatar: UserAvatar,
     UserMenu: UserMenu

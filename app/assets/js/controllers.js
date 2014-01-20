@@ -226,8 +226,8 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
       var layout = this._layout;
       layout.ui.sidebarTitle.text('Messages & Settings');
       layout.sidebar.show(this.getUserMenu());
-      layout.main.show(new views.SettingsDashboardView());
-      this._setMainActive();
+      layout.main.show(new views.SettingsView());
+      this._setSidebarActive();
     },
     search: function(searchTerm) {
       var layout = this._layout;
