@@ -15,7 +15,6 @@ define([
         'marionette',
         'webjars!backbone.localStorage.js',
         'backbone.projections',
-        'marked',
         'unstyler',
         'htmldiff',
         'cryptojs-md5',
@@ -25,7 +24,7 @@ define([
         'typeahead'
         ], function(App, models, templates, _, _s, Q, moment, DiffMatchPatch,
             glyphtree, $, Backbone, Marionette, LocalStorage,
-            BackboneProjections, marked,
+            BackboneProjections,
             unstyle, htmldiff, CryptoJS, Spinner) {
   'use strict';
 
