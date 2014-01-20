@@ -6,8 +6,6 @@ var FileAPI = {
 
 requirejs.config({
     paths: {
-      'backbone': '//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min',
-      'backbone.localstorage': '//cdnjs.cloudflare.com/ajax/libs/backbone-localstorage.js/1.1.0/backbone.localStorage-min',
       'backbone.projections': '//cdnjs.cloudflare.com/ajax/libs/backbone.projections/1.0.0/backbone.projections.min',
       'ckeditor': '../ckeditor/ckeditor',
       'cryptojs-md5': 'lib/cryptojs-md5',
@@ -15,7 +13,6 @@ requirejs.config({
       'glyphtree': 'lib/glyphtree',
       'htmldiff': 'lib/htmldiff',
       'hogan': 'lib/hogan',
-      'jquery': '//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min',
       'jquery.bootstrap': 'lib/bootstrap',
       'jquery.ckeditor': '../ckeditor/adapters/jquery',
       'jquery.hotkeys': 'lib/jquery.hotkeys',
@@ -23,28 +20,17 @@ requirejs.config({
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
-      'q': '//cdnjs.cloudflare.com/ajax/libs/q.js/0.9.6/q.min',
       'spin': '//cdnjs.cloudflare.com/ajax/libs/spin.js/1.3.2/spin.min',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
-      'underscore': '//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min',
       'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',
       'unstyler': 'lib/unstyler'
     },
     shim: {
-      'backbone': {
-        deps: ['jquery', 'underscore'],
-        exports: 'Backbone'
-      },
-      'backbone.localstorage': {
-        deps: ['backbone'],
-        exports: 'Backbone.LocalStorage'
+      'backbone.projections': {
+        deps: ['backbone']
       },
       'marked': {
         exports: 'marked'
-      },
-      'marionette': {
-        deps: ['backbone'],
-        exports: 'Marionette'
       },
       'jquery.ckeditor': {
         deps: ['jquery', 'ckeditor'],
@@ -75,15 +61,13 @@ requirejs.config({
       'FileAPI': {
         exports: 'FileAPI'
       },
-      'to-markdown': {
-        exports: 'toMarkdown'
+      'marionette': {
+        deps: ['backbone'],
+        exports: 'Backbone.Marionette'
       },
       'typeahead': {
         deps: ['jquery'],
         exports: 'jQuery'
-      },
-      'underscore': {
-        exports: '_'
       },
       'underscore.string': {
         deps: ['underscore'],
@@ -94,6 +78,22 @@ requirejs.config({
       }
     },
     waitSeconds: 20
+});
+
+define('q', ['webjars!q.js'], function(Q) {
+  return Q;
+})
+
+define('jquery', ['webjars!jquery.js'], function() {
+  return jQuery;
+});
+
+define('underscore', ['webjars!underscore.js'], function() {
+  return _;
+});
+
+define('backbone', ['webjars!backbone.js'], function() {
+  return Backbone;
 });
 
 require(['jquery.bootstrap'], function() {

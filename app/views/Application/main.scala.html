@@ -21,9 +21,9 @@
     <!-- Modernizr detects browser features -->
     <script src="//cdn.jsdelivr.net/modernizr/2.6.2/modernizr.min.js"></script>
     <!-- jQuery -->
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.min.js"))'></script>
     <!-- Functional programming support library (required by Backbone.js) -->
-    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js" type="text/javascript"></script>
+    <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("underscore-min.js"))'></script>
     <!-- String function plugin for Underscore.js -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min.js" type="text/javascript"></script>
     <!-- For some settings we need to read/write cookies client-side -->

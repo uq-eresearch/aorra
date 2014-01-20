@@ -13,7 +13,7 @@ define([
         'jquery.bootstrap',
         'backbone',
         'marionette',
-        'backbone.localstorage',
+        'webjars!backbone.localStorage.js',
         'backbone.projections',
         'marked',
         'unstyler',
@@ -281,7 +281,7 @@ define([
     }
   });
 
-  var FileUploadView = Backbone.Marionette.ItemView.extend({
+  var FileUploadView = Marionette.ItemView.extend({
     tagName: 'div',
     ui: {
       alerts: '.alerts',
@@ -289,6 +289,7 @@ define([
       upload: 'input[type="file"]'
     },
     initialize: function(options) {
+      this.options = options;
       this._multiple = options.multiple == true;
       if (_.isFunction(this.model.info)) {
         this.listenTo(this.model, 'sync', function() {
@@ -406,7 +407,7 @@ define([
     }
   });
 
-  var FlagButtonView = Backbone.Marionette.ItemView.extend({
+  var FlagButtonView = Marionette.ItemView.extend({
     tagName: 'span',
     className: 'view',
     ui: {
@@ -528,7 +529,7 @@ define([
     }
   });
 
-  var CreateNewView = Backbone.Marionette.ItemView.extend({
+  var CreateNewView = Marionette.ItemView.extend({
     triggers: {
       'submit form': 'form:submit'
     },
@@ -586,8 +587,11 @@ define([
     }
   });
 
-  var UserAvatar = Backbone.Marionette.ItemView.extend({
+  var UserAvatar = Marionette.ItemView.extend({
     tagName: 'span',
+    initialize: function(options) {
+      this.options = options;
+    },
     serializeData: function() {
       return this.model.avatar(_(this.options).pick('missing', 'size'));
     },
@@ -599,7 +603,7 @@ define([
     }
   });
 
-  var VersionView = Backbone.Marionette.Layout.extend({
+  var VersionView = Marionette.Layout.extend({
     tagName: 'tr',
     className: 'version-row',
     modelEvents: {
@@ -614,6 +618,9 @@ define([
     },
     ui: {
       timestamp: '.timestamp'
+    },
+    initialize: function(options) {
+      this.options = options;
     },
     serializeData: function() {
       // Get data to render
@@ -652,7 +659,7 @@ define([
     }
   });
   
-  var CommentView = Backbone.Marionette.Layout.extend({
+  var CommentView = Marionette.Layout.extend({
     triggers: {
       'click .js-edit': 'comment:edit:start',
       'change textarea.js-message': 'comment:edit:end'
@@ -663,6 +670,9 @@ define([
     ui: {
       message: '.js-message',
       modified: '.modified'
+    },
+    initialize: function(options) {
+      this.options = options;
     },
     serializeData: function() {
       var commentData = this.model.toJSON();
@@ -693,7 +703,7 @@ define([
     }
   });
   
-  var CommentsView = Backbone.Marionette.CompositeView.extend({
+  var CommentsView = Marionette.CompositeView.extend({
     events: {
       "keyup .new-comment textarea": 'textKeyUp'
     },
@@ -719,7 +729,7 @@ define([
       this.collection.fetch();
     },
     appendHtml: reverseAppend,
-    emptyView: Backbone.Marionette.ItemView.extend({
+    emptyView: Marionette.ItemView.extend({
       template: function() {
         return '<p>No comments yet</p>';
       }
@@ -746,7 +756,7 @@ define([
     }
   });
 
-  var VersionsView = Backbone.Marionette.CompositeView.extend({
+  var VersionsView = Marionette.CompositeView.extend({
     initialize: function(options) {
       var file = options.file;
       this.on("itemview:show:diff", function(view) {
@@ -766,7 +776,7 @@ define([
     },
     itemViewContainer: 'tbody',
     appendHtml: reverseAppend,
-    emptyView: Backbone.Marionette.ItemView.extend({
+    emptyView: Marionette.ItemView.extend({
       template: function() {
         return '<tr><td><em>Loading version information...</em></td></tr>';
       }
@@ -776,7 +786,7 @@ define([
     }
   });
 
-  var GroupPermissionView = Backbone.Marionette.ItemView.extend({
+  var GroupPermissionView = Marionette.ItemView.extend({
     tagName: 'tr',
     events: {
       "change select": 'updateModel'
@@ -801,7 +811,7 @@ define([
     }
   });
 
-  var GroupPermissionsView = Backbone.Marionette.CompositeView.extend({
+  var GroupPermissionsView = Marionette.CompositeView.extend({
     initialize: function() {
       this.collection = this.model.permissions();
       this.render();
@@ -814,7 +824,7 @@ define([
     }
   });
 
-  var DeleteButtonView = Backbone.Marionette.ItemView.extend({
+  var DeleteButtonView = Marionette.ItemView.extend({
     tagName: 'span',
     events: {
       'click .delete-button': 'showModal',
@@ -929,10 +939,13 @@ define([
     }
   });
 
-  var BreadcrumbItemView = Backbone.Marionette.ItemView.extend({
+  var BreadcrumbItemView = Marionette.ItemView.extend({
     tagName: 'li',
     triggers: {
       'click .js-folder': 'folder:show'
+    },
+    initialize: function(options) {
+      this.options = options;
     },
     onFolderShow: function() {
       App.vent.trigger('nav:folder:show', this.model);
@@ -962,7 +975,7 @@ define([
     }
   });
 
-  var BreadcrumbView = Backbone.Marionette.CollectionView.extend({
+  var BreadcrumbView = Marionette.CollectionView.extend({
     tagName: 'ol',
     className: 'breadcrumb',
     modelEvents: {
@@ -988,7 +1001,7 @@ define([
     }
   });
 
-  var FileOrFolderView = Backbone.Marionette.Layout.extend({
+  var FileOrFolderView = Marionette.Layout.extend({
     _inlineList: function() {
       var $list = $('<ul class="list-inline"/>');
       _.each(arguments, function(arg) {
@@ -1038,6 +1051,9 @@ define([
     ui: {
       nameSpan: 'span.name',
       nameField: 'input.name'
+    },
+    initialize: function(options) {
+      this.options = options;
     },
     onFocusName: function() {
       if (this.options.isAdmin) {
@@ -1145,7 +1161,7 @@ define([
     })
   });
 
-  var ImageElementView = Backbone.Marionette.ItemView.extend({
+  var ImageElementView = Marionette.ItemView.extend({
     serializeData: function() {
       return {
         path: this.model.get('path'),
@@ -1157,7 +1173,7 @@ define([
     }
   });
 
-  var ChartElementView = Backbone.Marionette.ItemView.extend({
+  var ChartElementView = Marionette.ItemView.extend({
     modelEvents: {
       'change': 'render'
     },
@@ -1286,7 +1302,7 @@ define([
     }
   });
   
-  var HtmlEditor = Backbone.Marionette.Layout.extend({
+  var HtmlEditor = Marionette.Layout.extend({
     modelEvents: {
       "sync": "updatedOnServer"
     },
@@ -1902,30 +1918,33 @@ define([
     }
   });
 
-  var DeletedView = Backbone.Marionette.ItemView.extend({
+  var DeletedView = Marionette.ItemView.extend({
     template: function() {
       return templates.render('deleted_page', {});
     }
   });
 
-  var LoadingView = Backbone.Marionette.ItemView.extend({
+  var LoadingView = Marionette.ItemView.extend({
     template: function() {
       return templates.render('loading_page', {});
     }
   });
 
-  var StartView = Backbone.Marionette.ItemView.extend({
+  var StartView = Marionette.ItemView.extend({
     template: function() {
       return templates.render('start_page', {});
     }
   });
 
-  var UserMenu = Backbone.Marionette.ItemView.extend({
+  var UserMenu = Marionette.ItemView.extend({
     triggers: {
       'click .js-notification-list': 'notification:list',
       'click .js-change-password': 'password:change',
       'click .js-manage-groups': 'manage:groups',
       'click .js-back': 'back'
+    },
+    initialize: function(options) {
+      this.options = options;
     },
     onBack: function() {
       App.vent.trigger('nav:start');
@@ -1949,7 +1968,7 @@ define([
     }
   });
 
-  var ChangePasswordView = Backbone.Marionette.ItemView.extend({
+  var ChangePasswordView = Marionette.ItemView.extend({
     initialize: function() { this.render(); },
     events: {
       'keyup #newPassword,#repeatPassword': 'typePassword',
@@ -2000,7 +2019,7 @@ define([
     }
   });
 
-  var NotificationMessageView = Backbone.Marionette.ItemView.extend({
+  var NotificationMessageView = Marionette.ItemView.extend({
     tagName: 'li',
     className: 'media',
     triggers: {
@@ -2024,12 +2043,12 @@ define([
     }
   });
 
-  var NotificationsView = Backbone.Marionette.CompositeView.extend({
+  var NotificationsView = Marionette.CompositeView.extend({
     collectionEvents: {
       'sync': 'render'
     },
     itemView: NotificationMessageView,
-    emptyView: Backbone.Marionette.ItemView.extend({
+    emptyView: Marionette.ItemView.extend({
       template: function() {
         return '<div class="media-body">No messages.</div>';
       }
@@ -2040,7 +2059,7 @@ define([
     }
   });
 
-  var NotificationsNavView = Backbone.Marionette.ItemView.extend({
+  var NotificationsNavView = Marionette.ItemView.extend({
     tagName: 'a',
     collectionEvents: {
       'sync': 'render',
@@ -2081,6 +2100,9 @@ define([
     triggers: {
       'click': 'file:select'
     },
+    initialize: function(options) {
+      this.options = options;
+    },
     onFileSelect: function() {
       var fileOrFolder = this.options.fileOrFolder;
       App.vent.trigger('nav:'+fileOrFolder.get('type')+':show', fileOrFolder);
@@ -2113,6 +2135,9 @@ define([
         fileOrFolder: this.options.filestore.get(m.id),
         searchTerm: this.options.searchTerm
       };
+    },
+    initialize: function(options) {
+      this.options = options;
     }
   });
 
@@ -2122,6 +2147,9 @@ define([
     },
     tagName: 'li',
     className: 'list-group-item',
+    initialize: function(options) {
+      this.options = options;
+    },
     template: function(data) {
       return templates.render('group_membership', data);
     },
@@ -2153,6 +2181,9 @@ define([
       return {
         group: this.model
       };
+    },
+    initialize: function(options) {
+      this.options = options;
     },
     template: function(data) {
       return templates.render('group', data);
@@ -2218,6 +2249,9 @@ define([
         users: this.options.users
       };
     },
+    initialize: function(options) {
+      this.options = options;
+    },
     template: function(data) {
       return templates.render('manage_groups', data);
     },
@@ -2229,13 +2263,13 @@ define([
     }
   });
   
-  var SettingsView = Backbone.Marionette.Layout.extend({
+  var SettingsView = Marionette.Layout.extend({
     template: function(data) {
       return templates.render('settings', {});
     }
   });
 
-  var AppLayout = Backbone.Marionette.Layout.extend({
+  var AppLayout = Marionette.Layout.extend({
     regions: {
       main: "#main",
       sidebar: "#sidebar .panel-body"
@@ -2247,10 +2281,10 @@ define([
     },
     initialize: function(options) {
       this.addRegions({
-        notifications: new Backbone.Marionette.Region({
+        notifications: new Marionette.Region({
           el: '#notifications-nav-item'
         }),
-        currentUserAvatar: new Backbone.Marionette.Region({
+        currentUserAvatar: new Marionette.Region({
           el: '#current-user-avatar'
         })
       });
