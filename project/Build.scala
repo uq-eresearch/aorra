@@ -28,6 +28,7 @@ object ApplicationBuild extends Build {
     "org.webjars" % "q" % "0.9.7",
     "org.webjars" % "backbonejs" % "1.1.0",
     "org.webjars" % "backbone-localstorage" % "1.1.0",
+    "org.webjars" % "momentjs" % "2.0.0",
     "org.webjars" % "spin-js" % "1.3.0",
     "org.webjars" % "typeaheadjs" % "0.9.3",
     "javax.jcr" % "jcr" % "2.0",
