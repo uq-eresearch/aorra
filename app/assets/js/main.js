@@ -20,7 +20,6 @@ requirejs.config({
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
-      'spin': '//cdnjs.cloudflare.com/ajax/libs/spin.js/1.3.2/spin.min',
       'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
       'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',
       'unstyler': 'lib/unstyler'
@@ -94,6 +93,10 @@ define('underscore', ['webjars!underscore.js'], function() {
 
 define('backbone', ['webjars!backbone.js'], function() {
   return Backbone;
+});
+
+define('spin', ['webjars!spin.js'], function(Spin) {
+  return Spin;
 });
 
 require(['jquery.bootstrap'], function() {

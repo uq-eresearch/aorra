@@ -28,6 +28,7 @@ object ApplicationBuild extends Build {
     "org.webjars" % "q" % "0.9.7",
     "org.webjars" % "backbonejs" % "1.1.0",
     "org.webjars" % "backbone-localstorage" % "1.1.0",
+    "org.webjars" % "spin-js" % "1.3.0",
     "javax.jcr" % "jcr" % "2.0",
     "org.apache.jackrabbit" % "jackrabbit-core" % "2.7.1",
     "com.h2database" % "h2" % "1.3.174",
