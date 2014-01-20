@@ -6,7 +6,7 @@ var FileAPI = {
 
 requirejs.config({
     paths: {
-      'backbone.projections': '//cdnjs.cloudflare.com/ajax/libs/backbone.projections/1.0.0/backbone.projections.min',
+      'backbone.projections': 'lib/backbone.projections',
       'ckeditor': '../ckeditor/ckeditor',
       'cryptojs-md5': 'lib/cryptojs-md5',
       'diff_match_patch': 'lib/diff_match_patch',
