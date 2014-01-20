@@ -18,7 +18,7 @@ requirejs.config({
       'jquery.hotkeys': 'lib/jquery.hotkeys',
       'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
-      'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',
+      'underscore.string': 'lib/underscore.string',
       'unstyler': 'lib/unstyler'
     },
     shim: {
