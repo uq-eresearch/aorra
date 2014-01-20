@@ -98,7 +98,9 @@ public class GroupController extends SessionAwareController {
           while (iter.hasNext()) {
             final Authorizable auth = iter.next();
             final User user = dao.findByJackrabbitID(auth.getID());
-            currentMembers.put(user.getId(), user);
+            if (user != null) {
+              currentMembers.put(user.getId(), user);
+            }
           }
         }
         for (String userId : userIds) {
