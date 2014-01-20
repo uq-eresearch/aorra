@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 import org.apache.commons.lang.StringUtils;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
@@ -33,12 +32,18 @@ import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class PSIITrendsBuilder extends AbstractBuilder {
 
     private static final String TITLE = "Maximum concentration of individual PSII herbicides";
+
+    private static final Map<Attribute<String>,String> CHART_DEFAULTS = 
+        ImmutableMap.of(
+            Attribute.TITLE, TITLE,
+            Attribute.RANGE_AXIS_TITLE, "Concentration in water (ng/L)");
 
     private static final Pattern YEAR_PATTERN = Pattern.compile(".*?(\\d+-\\d+).*?");
 
@@ -60,8 +65,8 @@ public class PSIITrendsBuilder extends AbstractBuilder {
       final ChartType type, final Region region) {
     if (region == Region.GBR) {
       final ADCDataset dataset = getDataset(datasource);
-      final Drawable drawable = PSIITrends.createChart(dataset, title(datasource),
-          new Dimension(1000, 500));
+      new ChartConfigurator(CHART_DEFAULTS).configure(dataset, datasource, 1, 13);
+      final Drawable drawable = PSIITrends.createChart(dataset, new Dimension(1000, 500));
        return new AbstractChart() {
 
         @Override
@@ -114,16 +119,6 @@ public class PSIITrendsBuilder extends AbstractBuilder {
     }
   }
 
-  private String title(SpreadsheetDataSource d) {
-    try {
-      String t = d.select("A1").asString();
-      return StringUtils.isNotBlank(t)?t:TITLE;
-    } catch (MissingDataException e) {
-      e.printStackTrace();
-      return TITLE;
-    }
-  }
-
     private String getYear(String s) {
         Matcher m = YEAR_PATTERN.matcher(s);
         if(m.matches()) {
@@ -162,7 +157,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
                     continue;
                 } else if(StringUtils.equalsIgnoreCase("region", col1)) {
                     pesticides = Lists.newArrayList();
-                    for(int col=2;true;col++) {
+                    for(int col=2;col<13;col++) {
                         String p = ds.select(row, col).asString();
                         if(isBlank(p)) {
                             break;

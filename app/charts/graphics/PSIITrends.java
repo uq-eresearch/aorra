@@ -54,8 +54,6 @@ import com.google.common.collect.ImmutableMap;
 
 public class PSIITrends {
 
-    private static final String RANGE_AXIS_LABEL = "Concentraction in water (ng/L)";
-
     public static final String SEPARATOR = AutoSubCategoryAxis.DEFAULT_SEPARATOR;
 
     private static final Paint[] SERIES_PAINT = new Paint[] {
@@ -225,8 +223,8 @@ public class PSIITrends {
         }
     }
     
-    public static Drawable createChart(ADCDataset dataset, String title, Dimension dimension) {
-        JFreeChart chart = createStackBarChart(dataset, title);
+    public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
+        JFreeChart chart = createStackBarChart(dataset, dataset.get(Attribute.TITLE));
         CategoryPlot plot = (CategoryPlot)chart.getPlot();
         {
             plot.setBackgroundPaint(Color.white);
@@ -321,9 +319,10 @@ public class PSIITrends {
       return p;
     }
 
-    private static JFreeChart createStackBarChart(CategoryDataset dataset,String title) {
+    private static JFreeChart createStackBarChart(ADCDataset dataset,String title) {
         AutoSubCategoryAxis dAxis = new AutoSubCategoryAxis(dataset);
-        PartitionedNumberAxis vAxis = new PartitionedNumberAxis(RANGE_AXIS_LABEL);
+        PartitionedNumberAxis vAxis = new PartitionedNumberAxis(
+            dataset.get(Attribute.RANGE_AXIS_TITLE));
         CategoryPlot plot = new CategoryPlot(dAxis.getFixedDataset(), dAxis, vAxis, new Renderer());
         plot.setOrientation(PlotOrientation.VERTICAL);
         JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, false);
