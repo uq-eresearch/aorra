@@ -19,9 +19,13 @@
   </div>
 
   <script type="text/javascript">
+  window.lastEventID = "@lastEventId";
+  window.filestoreJSON = @Html(filestoreJson.toString());
+  window.usersJSON = @Html(usersJson.toString());
+
   // Update progress bar
   var updateModuleProgress = function(context, map, depMaps) {
-    // console.log('loading: ' + map.name + ' at ' + map.url);
+    //console.log('loading: ' + map.name + ' at ' + map.url);
     var $outerBar = $('#loading-progress .progress');
     var $innerBar = $outerBar.find('.progress-bar');
     var maxWidth = $outerBar.width();
@@ -29,17 +33,10 @@
     $innerBar.width(Math.min(maxWidth, $innerBar.width() + maxWidth / parts));
   };
 
-  require.onResourceLoad = function(context, map, depMaps) {
-    updateModuleProgress(context, map, depMaps);
-  };
-  </script>
-
-  <script type="text/javascript">
-  window.lastEventID = "@lastEventId";
-  window.filestoreJSON = @Html(filestoreJson.toString());
-  window.usersJSON = @Html(usersJson.toString());
-
-  _.defer(function() {
+  $(window).on('load', function() {
+    require.onResourceLoad = function(context, map, depMaps) {
+      updateModuleProgress(context, map, depMaps);
+    };
     // Load application
     requirejs(['app']);
   });

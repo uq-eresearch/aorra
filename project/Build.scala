@@ -21,6 +21,8 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     javaCore,
     cache,
+    "org.webjars" %% "webjars-play" % "2.2.1",
+    "org.webjars" % "requirejs" % "2.1.1",
     "javax.jcr" % "jcr" % "2.0",
     "org.apache.jackrabbit" % "jackrabbit-core" % "2.7.1",
     "com.h2database" % "h2" % "1.3.174",
