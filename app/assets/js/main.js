@@ -20,7 +20,6 @@ requirejs.config({
       'marionette': 'lib/backbone.marionette',
       'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'moment': '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.0.0/moment.min',
-      'typeahead': '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.9.3/typeahead.min',
       'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',
       'unstyler': 'lib/unstyler'
     },
@@ -64,10 +63,6 @@ requirejs.config({
         deps: ['backbone'],
         exports: 'Backbone.Marionette'
       },
-      'typeahead': {
-        deps: ['jquery'],
-        exports: 'jQuery'
-      },
       'underscore.string': {
         deps: ['underscore'],
         exports: '_'
@@ -79,9 +74,9 @@ requirejs.config({
     waitSeconds: 20
 });
 
-define('q', ['webjars!q.js'], function(Q) {
-  return Q;
-})
+var identity = function(x) { return x; };
+
+define('q', ['webjars!q.js'], identity);
 
 define('jquery', ['webjars!jquery.js'], function() {
   return jQuery;
@@ -95,8 +90,10 @@ define('backbone', ['webjars!backbone.js'], function() {
   return Backbone;
 });
 
-define('spin', ['webjars!spin.js'], function(Spin) {
-  return Spin;
+define('spin', ['webjars!spin.js'], identity);
+
+define('typeahead', ['jquery', 'webjars!typeahead.js'], function() {
+  return jQuery;
 });
 
 require(['jquery.bootstrap'], function() {
