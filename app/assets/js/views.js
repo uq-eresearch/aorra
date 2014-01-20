@@ -2228,6 +2228,12 @@ define([
       this.collection.create(props, { wait: true });
     }
   });
+  
+  var SettingsDashboardView = Backbone.Marionette.Layout.extend({
+    template: function(data) {
+      return "";
+    }
+  });
 
   var AppLayout = Backbone.Marionette.Layout.extend({
     regions: {
@@ -2268,6 +2274,7 @@ define([
       return templates.render('main_layout', data);
     }
   });
+  
 
   return {
     AppLayout: AppLayout,
@@ -2282,6 +2289,7 @@ define([
     NotificationsNavView: NotificationsNavView,
     NotificationsView: NotificationsView,
     SearchView: SearchView,
+    SettingsDashboardView: SettingsDashboardView,
     StartView: StartView,
     UserAvatar: UserAvatar,
     UserMenu: UserMenu

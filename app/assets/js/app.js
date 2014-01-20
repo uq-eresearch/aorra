@@ -156,6 +156,7 @@ require(['jquery', 'backbone', 'marionette', 'q', 'appcore', 'events', 'models',
         "folder/:id": "showFolder",
         "file/:id/version/:version/diff": "showFileDiff",
         "notifications": "showNotifications",
+        "settings": "showSettings",
         "": "start"
       },
       controller: mainController

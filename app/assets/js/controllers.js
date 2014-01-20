@@ -52,6 +52,9 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
       c.listenTo(App.vent, "nav:search", function(searchTerm) {
         c.search(searchTerm);
       });
+      c.listenTo(App.vent, "nav:settings", function() {
+        c.showSettings();
+      });
     },
     _buildFileTree: function() {
       var fileTree = new views.FileTree();
@@ -217,6 +220,13 @@ define(['jquery', 'marionette', 'q', 'appcore', 'models', 'views'],
         }));
         this.trigger('showFileDiff', file);
       }
+      this._setMainActive();
+    },
+    showSettings: function() {
+      var layout = this._layout;
+      layout.ui.sidebarTitle.text('Messages & Settings');
+      layout.sidebar.show(this.getUserMenu());
+      layout.main.show(new views.SettingsDashboardView());
       this._setMainActive();
     },
     search: function(searchTerm) {
