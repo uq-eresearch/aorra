@@ -18,16 +18,12 @@ requirejs.config({
       'jquery.hotkeys': 'lib/jquery.hotkeys',
       'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
-      'marked': '//cdnjs.cloudflare.com/ajax/libs/marked/0.2.9/marked.min',
       'underscore.string': '//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.0/underscore.string.min',
       'unstyler': 'lib/unstyler'
     },
     shim: {
       'backbone.projections': {
         deps: ['backbone']
-      },
-      'marked': {
-        exports: 'marked'
       },
       'jquery.ckeditor': {
         deps: ['jquery', 'ckeditor'],
