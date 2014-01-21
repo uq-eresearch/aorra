@@ -33,12 +33,9 @@ public class HtmlController extends SessionAwareController {
 
     @SubjectPresent
     public Result toHtml(final String fileId) {
-        try {
-            String h = html(fileId);
-            return h!=null?ok(h).as("text/html"):notFound("can not convert this file to html");
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
+      String h = html(fileId);
+      return h != null ? ok(h).as("text/html") :
+        notFound("can not convert this file to html");
     }
 
     @SubjectPresent
