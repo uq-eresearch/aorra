@@ -40,7 +40,6 @@ import service.filestore.roles.Admin;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
-import com.icegreen.greenmail.util.GreenMail;
 import com.wingnest.play2.jackrabbit.plugin.ConfigConsts;
 
 public class AorraTestUtils {

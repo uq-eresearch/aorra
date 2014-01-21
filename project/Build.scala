@@ -46,7 +46,6 @@ object ApplicationBuild extends Build {
     "com.typesafe" %% "play-plugins-mailer" % "2.1-RC2",
     "org.apache.tika" % "tika-parsers" % "1.3",
     "org.jsoup" % "jsoup" % "1.7.2" % "test",
-    "com.icegreen" % "greenmail" % "1.3.1b" % "test",
     "org.jfree" % "jfreechart" % "1.0.15",
     "org.apache.xmlgraphics" % "batik-codec" % BatikVersion,
     "org.apache.xmlgraphics" % "batik-rasterizer" % BatikVersion,
