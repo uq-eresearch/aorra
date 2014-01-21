@@ -1,5 +1,6 @@
 package test;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static play.test.Helpers.fakeApplication;
 import static play.test.Helpers.callAction;
 import static play.test.Helpers.fakeRequest;
@@ -9,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.jcr.Session;
@@ -27,6 +29,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.test.FakeApplication;
 import play.test.FakeRequest;
+import play.test.Helpers;
 import providers.JackrabbitEmailPasswordAuthProvider;
 import service.GuiceInjectionPlugin;
 import service.JcrSessionFactory;
@@ -67,9 +70,16 @@ public class AorraTestUtils {
   }
 
   public static FakeApplication fakeAorraApp(boolean muteErrors) {
-    return fakeApplication(
+    final List<String> additionalPlugins = newArrayList(
+        "test.FakeMailPlugin");
+    final List<String> withoutPlugins = newArrayList(
+        "com.typesafe.plugin.CommonsMailerPlugin");
+    return new FakeApplication(
+        new java.io.File("."), Helpers.class.getClassLoader(),
         additionalConfig(muteErrors),
-        Arrays.asList("test.GreenMailPlugin"));
+        additionalPlugins,
+        withoutPlugins,
+        null);
   }
 
   private static Map<String, Object> additionalConfig(boolean muteErrors) {
@@ -83,14 +93,12 @@ public class AorraTestUtils {
     m.put(ConfigConsts.CONF_JCR_REPOSITORY_CONFIG, REPOSITORY_CONFIG_PATH);
     m.put(ConfigConsts.CONF_JCR_HAS_RECREATION_REQUIRE, true);
     m.put("crash.enabled", false);
-    m.put("smtp.mock", false);
-    m.put("smtp.port", 3025);
     m.put("notifications.waitMillis", 100L);
     return m.build();
   }
 
-  public static GreenMail mailServer() {
-    return Play.application().plugin(GreenMailPlugin.class).get();
+  public static FakeMailPlugin mailServer() {
+    return Play.application().plugin(FakeMailPlugin.class);
   }
 
   public static JcrSessionFactory sessionFactory() {
