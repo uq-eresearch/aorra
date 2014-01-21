@@ -98,7 +98,7 @@ object ApplicationBuild extends Build {
           }""")
       Seq(file)
     },
-    requireJs ++= Seq("models.js") ,
+    requireJs ++= Seq() ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
     // Show deprecation & feature warnings
