@@ -124,22 +124,33 @@ public class GroupControllerTest {
           final Session session,
           final User user,
           final FakeRequest newRequest) throws Throwable {
-        final ObjectNode jsonRequest = Json.newObject();
-        jsonRequest.put("name", "newgroup");
-        final Result result = callAction(
-            controllers.routes.ref.GroupController.create(),
-            newRequest.withJsonBody(jsonRequest));
-        assertThat(new GroupManager(session).find("newgroup")).isNotNull();
-        assertThat(status(result)).isEqualTo(201);
-        assertThat(contentType(result)).isEqualTo("application/json");
-        assertThat(charset(result)).isEqualTo("utf-8");
-        assertThat(header("Cache-Control", result))
-          .isEqualTo("max-age=0, must-revalidate");
-        final JsonNode json = Json.parse(contentAsString(result));
-        assertThat(json.isArray()).isFalse();
-        assertThat(json.has("id")).isTrue();
-        assertThat(json.has("name")).isTrue();
-        assertThat(json.has("members")).isTrue();
+        // name attribute is required
+        {
+          final ObjectNode jsonRequest = Json.newObject();
+          final Result result = callAction(
+              controllers.routes.ref.GroupController.create(),
+              newRequest.withJsonBody(jsonRequest));
+          assertThat(status(result)).isEqualTo(400);
+        }
+        // New group can be created
+        {
+          final ObjectNode jsonRequest = Json.newObject();
+          jsonRequest.put("name", "newgroup");
+          final Result result = callAction(
+              controllers.routes.ref.GroupController.create(),
+              newRequest.withJsonBody(jsonRequest));
+          assertThat(new GroupManager(session).find("newgroup")).isNotNull();
+          assertThat(status(result)).isEqualTo(201);
+          assertThat(contentType(result)).isEqualTo("application/json");
+          assertThat(charset(result)).isEqualTo("utf-8");
+          assertThat(header("Cache-Control", result))
+            .isEqualTo("max-age=0, must-revalidate");
+          final JsonNode json = Json.parse(contentAsString(result));
+          assertThat(json.isArray()).isFalse();
+          assertThat(json.has("id")).isTrue();
+          assertThat(json.has("name")).isTrue();
+          assertThat(json.has("members")).isTrue();
+        }
         return session;
       }
     });
@@ -155,13 +166,22 @@ public class GroupControllerTest {
           final FakeRequest newRequest) throws Throwable {
         final GroupManager gm = new GroupManager(session);
         final Group group = gm.create("newgroup");
+        // members attribute is required
+        {
+          final ObjectNode jsonRequest = Json.newObject();
+          final Result result = callAction(
+              controllers.routes.ref.GroupController.update("newgroup"),
+              newRequest.withJsonBody(jsonRequest));
+          assertThat(status(result)).isEqualTo(400);
+        }
+        // Members can be added and removed
         {
           final ObjectNode jsonRequest = Json.newObject();
           jsonRequest.putArray("members").add(user.getId());
           final Result result = callAction(
               controllers.routes.ref.GroupController.update("newgroup"),
               newRequest.withJsonBody(jsonRequest));
-          assertThat(gm.memberships(user.getJackrabbitUserId()))
+          assertThat(gm.memberships(user.getId()))
             .contains(group);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
@@ -180,7 +200,7 @@ public class GroupControllerTest {
           final Result result = callAction(
               controllers.routes.ref.GroupController.update("newgroup"),
               newRequest.withJsonBody(jsonRequest));
-          assertThat(gm.memberships(user.getJackrabbitUserId()))
+          assertThat(gm.memberships(user.getId()))
             .excludes(group);
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("application/json");
@@ -192,6 +212,23 @@ public class GroupControllerTest {
           assertThat(json.has("id")).isTrue();
           assertThat(json.has("name")).isTrue();
           assertThat(json.has("members")).isTrue();
+        }
+        // Removing admin == removed access
+        {
+          final ObjectNode jsonRequest = Json.newObject();
+          jsonRequest.putArray("members");
+          final Result result = callAction(
+              controllers.routes.ref.GroupController.update("testgroup"),
+              newRequest.withJsonBody(jsonRequest));
+          assertThat(status(result)).isEqualTo(200);
+        }
+        {
+          final ObjectNode jsonRequest = Json.newObject();
+          jsonRequest.putArray("members").add(user.getId());
+          final Result result = callAction(
+              controllers.routes.ref.GroupController.update("testgroup"),
+              newRequest.withJsonBody(jsonRequest));
+          assertThat(status(result)).isEqualTo(403);
         }
         return session;
       }
