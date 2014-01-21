@@ -21,6 +21,16 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     javaCore,
     cache,
+    "org.webjars" %% "webjars-play" % "2.2.1",
+    "org.webjars" % "requirejs" % "2.1.1",
+    "org.webjars" % "underscorejs" % "1.5.2-2",
+    "org.webjars" % "jquery" % "1.10.2-1",
+    "org.webjars" % "q" % "0.9.7",
+    "org.webjars" % "backbonejs" % "1.1.0",
+    "org.webjars" % "backbone-localstorage" % "1.1.0",
+    "org.webjars" % "momentjs" % "2.0.0",
+    "org.webjars" % "spin-js" % "1.3.0",
+    "org.webjars" % "typeaheadjs" % "0.9.3",
     "javax.jcr" % "jcr" % "2.0",
     "org.apache.jackrabbit" % "jackrabbit-core" % "2.7.1",
     "com.h2database" % "h2" % "1.3.174",
@@ -88,7 +98,7 @@ object ApplicationBuild extends Build {
           }""")
       Seq(file)
     },
-    requireJs ++= Seq("models.js") ,
+    requireJs ++= Seq() ,
     requireJsShim += "main.js",
     requireJsFolder += "js",
     // Show deprecation & feature warnings

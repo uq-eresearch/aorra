@@ -1,7 +1,7 @@
 /*jslint nomen: true, white: true, vars: true, eqeq: true, todo: true, unparam: true */
 /*global _: false, define: false, window: false */
 define(
-    ['backbone', 'backbone.localstorage', 'backbone.projections', 'q', 'cryptojs-md5'], 
+    ['backbone', 'webjars!backbone.localStorage.js', 'backbone.projections', 'q', 'cryptojs-md5'], 
     function(Backbone, LocalStorage, Projections, Q, CryptoJS) {
   'use strict';
 
