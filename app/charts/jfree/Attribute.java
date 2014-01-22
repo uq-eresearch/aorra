@@ -1,52 +1,45 @@
 package charts.jfree;
 
 import java.awt.Color;
-import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import charts.ChartType;
 import charts.Region;
 
-import com.google.common.collect.Lists;
+public enum Attribute {
 
-public class Attribute<T> {
+  TITLE("title", String.class),
+  TYPE("type", ChartType.class),
+  REGION("region", Region.class),
+  SERIES_COLORS("seriesColors", Color[].class),
+  SERIES_COLOR("seriesColor", Color.class),
+  RANGE_AXIS_TITLE("range axis title", String.class),
+  DOMAIN_AXIS_TITLE("domain axis title", String.class);
 
   private String name;
-  private Class<T> type;
+  private Class<?> type;
 
-  private static final List<Attribute<?>> ATTRIBUTES = Lists.newArrayList();
-
-  public static final Attribute<String> TITLE = of("title", String.class);
-  public static final Attribute<Region> REGION = of("region", Region.class);
-  public static final Attribute<Color[]> SERIES_COLORS = of("seriesColors", Color[].class);
-  public static final Attribute<Color> SERIES_COLOR = of("seriesColor", Color.class);
-  public static final Attribute<String> RANGE_AXIS_TITLE = of("range axis title", String.class);
-
-  private Attribute(String name, Class<T> type) {
+  private Attribute(String name, Class<?> type) {
     this.name = name;
     this.type = type;
-    ATTRIBUTES.add(this);
   }
 
   public String getName() {
     return name;
   }
 
-  public Class<T> getType() {
+  public Class<?> getType() {
     return type;
   }
 
-  public static Attribute<?> lookup(String name) {
-    for(Attribute<?> a : ATTRIBUTES) {
+  public static Attribute lookup(String name) {
+    for(Attribute a : Attribute.values()) {
       if(StringUtils.equalsIgnoreCase(a.getName(), name)) {
         return a;
       }
     }
     return null;
-  }
-
-  private static <T> Attribute<T> of(String name, Class<T> type) {
-    return new Attribute<T>(name, type);
   }
 
   @Override

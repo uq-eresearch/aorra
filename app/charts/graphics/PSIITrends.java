@@ -224,7 +224,7 @@ public class PSIITrends {
     }
     
     public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
-        JFreeChart chart = createStackBarChart(dataset, dataset.get(Attribute.TITLE));
+        JFreeChart chart = createStackBarChart(dataset, dataset.<String>get(Attribute.TITLE));
         CategoryPlot plot = (CategoryPlot)chart.getPlot();
         {
             plot.setBackgroundPaint(Color.white);
@@ -322,7 +322,7 @@ public class PSIITrends {
     private static JFreeChart createStackBarChart(ADCDataset dataset,String title) {
         AutoSubCategoryAxis dAxis = new AutoSubCategoryAxis(dataset);
         PartitionedNumberAxis vAxis = new PartitionedNumberAxis(
-            dataset.get(Attribute.RANGE_AXIS_TITLE));
+            dataset.<String>get(Attribute.RANGE_AXIS_TITLE));
         CategoryPlot plot = new CategoryPlot(dAxis.getFixedDataset(), dAxis, vAxis, new Renderer());
         plot.setOrientation(PlotOrientation.VERTICAL);
         JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, false);

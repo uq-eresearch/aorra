@@ -1,5 +1,7 @@
 package charts;
 
+import org.apache.commons.lang3.StringUtils;
+
 public enum ChartType {
     MARINE ("Marine"),
     COTS_OUTBREAK ("Crown of Thorns Outbreak"),
@@ -49,5 +51,15 @@ public enum ChartType {
 
     public static ChartType getChartType(String str) {
         return ChartType.valueOf(str.toUpperCase());
+    }
+
+    public static ChartType lookup(String s) {
+      for(ChartType t : ChartType.values()) {
+        if(StringUtils.equalsIgnoreCase(t.getLabel(), s) || 
+            StringUtils.equalsIgnoreCase(t.name(), s)) {
+          return t;
+        }
+      }
+      return null;
     }
 }

@@ -3,14 +3,16 @@ package charts.builder.spreadsheet;
 import static com.google.common.collect.Lists.newLinkedList;
 import static java.lang.String.format;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
@@ -22,12 +24,52 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.TrackingTowardsTargets;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
+
+  private static final String IMPROVED_PRATICES = "% of farmers adopting improved practices";
+  private static final String POLLUTANT_REDUCTION = "% reduction in pollutant load";
+  private static final String TARGET = " target (%s by %s)";
+
+  private static class Title {
+    private String title;
+    private String valueAxisLabel;
+    public Title(String title, String valueAxisLabel) {
+      super();
+      this.title = title;
+      this.valueAxisLabel = valueAxisLabel;
+    }
+    public String getTitle(double target, String targetBy) {
+      return String.format(title, percentFormatter().format(target), targetBy);
+    }
+    public String getValueAxisLabel() {
+      return valueAxisLabel;
+    }
+  }
+
+  private static NumberFormat percentFormatter() {
+    NumberFormat percentFormat = NumberFormat.getPercentInstance();
+    percentFormat.setMaximumFractionDigits(0);
+    return percentFormat;
+  }
+
+  private static final ImmutableMap<ChartType, Title> TITLES =
+      new ImmutableMap.Builder<ChartType, Title>()
+        .put(ChartType.TTT_CANE_AND_HORT, new Title(
+          "Cane and horticulture"+TARGET, IMPROVED_PRATICES))
+        .put(ChartType.TTT_GRAZING, new Title(
+          "Grazing"+TARGET, IMPROVED_PRATICES))
+        .put(ChartType.TTT_NITRO_AND_PEST, new Title(
+          "Total nitrogen and pesticide"+TARGET, POLLUTANT_REDUCTION))
+        .put(ChartType.TTT_SEDIMENT, new Title(
+          "Sediment"+TARGET, POLLUTANT_REDUCTION))
+        .build();
 
   private static enum Series {
     CANE("Cane"), HORTICULTURE("Horticulture"), GRAZING("Grazing"), SEDIMENT(
@@ -74,6 +116,14 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   public Chart build(final SpreadsheetDataSource ds, final ChartType type,
       final Region region) {
     if (region == Region.GBR) {
+      final ADCDataset dataset = createDataset(ds, type);
+      Map<Attribute, Object> defaults = ImmutableMap.<Attribute, Object>of(
+          Attribute.TITLE, getDefaultTitle(ds, type),
+          Attribute.RANGE_AXIS_TITLE, getDefaultRangeAxisTitle(type));
+      new ChartConfigurator(defaults, ds, 14, 0).configure(dataset, type); 
+      final Drawable d = new TrackingTowardsTargets().createChart(
+          type, getTarget(ds, getTargetSeries(type)),
+          dataset, new Dimension(750, 500));
       return new AbstractChart() {
 
         @Override
@@ -83,22 +133,13 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
 
         @Override
         public Drawable getChart() {
-          try {
-            final double target = getTarget(ds, getTargetSeries(type));
-            final String targetBy = getTargetBy(ds, getTargetSeries(type));
-            return new TrackingTowardsTargets().createChart(type, target,
-                targetBy, createDataset(ds, type), new Dimension(750, 500));
-          } catch (MissingDataException e) {
-            throw new RuntimeException(e);
-          }
+          return d;
         }
 
         @Override
         public String getCSV() throws UnsupportedFormatException {
           final StringWriter sw = new StringWriter();
           try {
-            final CategoryDataset dataset =
-                createDataset(ds, type);
             final CsvListWriter csv = new CsvListWriter(sw,
                 CsvPreference.STANDARD_PREFERENCE);
             @SuppressWarnings("unchecked")
@@ -127,8 +168,6 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
           } catch (IOException e) {
             // How on earth would you get an IOException with a StringWriter?
             throw new RuntimeException(e);
-          } catch (MissingDataException e) {
-            throw new RuntimeException(e);
           }
           return sw.toString();
         }
@@ -138,9 +177,9 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
     return null;
   }
 
-  protected CategoryDataset createDataset(SpreadsheetDataSource ds,
+  protected ADCDataset createDataset(SpreadsheetDataSource ds,
       ChartType type) {
-    final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+    final ADCDataset dataset = new ADCDataset();
     try {
       switch (type) {
       case TTT_CANE_AND_HORT:
@@ -185,11 +224,18 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   }
 
   private void addSeries(SpreadsheetDataSource ds,
-      DefaultCategoryDataset dataset, Series series) throws MissingDataException {
+      ADCDataset dataset, Series series) throws MissingDataException {
     Integer row = ROW.get(series);
     if (row == null) {
       throw new RuntimeException("no row configured for series " + series);
     }
+    Color c = ds.select(row, 0).asColor();
+    Color[] seriesColors = dataset.get(Attribute.SERIES_COLORS);
+    if(seriesColors == null) {
+      seriesColors = new Color[0];
+    }
+    seriesColors = ArrayUtils.add(seriesColors, c);
+    dataset.add(Attribute.SERIES_COLORS, seriesColors);
     List<String> columns = getColumns(ds);
     for (int col = 0; col < columns.size(); col++) {
       String s = ds.select(row, col + 3).asString();
@@ -200,7 +246,6 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
         dataset.addValue(null, series.toString(), columns.get(col));
       }
     }
-
   }
 
   private List<String> getColumns(SpreadsheetDataSource ds) throws MissingDataException {
@@ -215,12 +260,30 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
     return columns;
   }
 
-  private double getTarget(SpreadsheetDataSource ds, Series series) throws MissingDataException {
-    return ds.select(ROW.get(series), 1).asDouble();
+  private double getTarget(SpreadsheetDataSource ds, Series series) {
+    try {
+      return ds.select(ROW.get(series), 1).asDouble();
+    } catch(MissingDataException e) {
+      throw new RuntimeException(e);
+    }
+    
   }
 
-  private String getTargetBy(SpreadsheetDataSource ds, Series series) throws MissingDataException {
-    return ds.select(ROW.get(series), 2).asInteger().toString();
+  private String getTargetBy(SpreadsheetDataSource ds, Series series) {
+    try {
+      return ds.select(ROW.get(series), 2).asInteger().toString();
+    } catch (MissingDataException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public String getDefaultTitle(SpreadsheetDataSource ds, ChartType type) {
+    Series series = getTargetSeries(type);
+    return TITLES.get(type).getTitle(getTarget(ds, series), getTargetBy(ds, series));
+  }
+
+  public String getDefaultRangeAxisTitle(ChartType type) {
+    return TITLES.get(type).getValueAxisLabel();
   }
 
 }

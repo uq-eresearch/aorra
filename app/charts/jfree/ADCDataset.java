@@ -11,12 +11,13 @@ public class ADCDataset extends DefaultCategoryDataset {
 
   private Map<String, Object> attributes = Maps.newHashMap();
 
-  public <T> void add(Attribute<T> attribute, T value) {
+  public <T> void add(Attribute attribute, T value) {
     attributes.put(attribute.getName(), value);
   }
 
-  public <T> T get(Attribute<T> attribute) {
-    return attribute.getType().cast(attributes.get(attribute.getName()));
+  @SuppressWarnings("unchecked")
+  public <T> T get(Attribute attribute) {
+    return (T)attributes.get(attribute.getName());
   }
 
 }

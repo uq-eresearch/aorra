@@ -40,8 +40,8 @@ public class PSIITrendsBuilder extends AbstractBuilder {
 
     private static final String TITLE = "Maximum concentration of individual PSII herbicides";
 
-    private static final Map<Attribute<String>,String> CHART_DEFAULTS = 
-        ImmutableMap.of(
+    private static final Map<Attribute, Object> CHART_DEFAULTS = 
+        ImmutableMap.<Attribute, Object>of(
             Attribute.TITLE, TITLE,
             Attribute.RANGE_AXIS_TITLE, "Concentration in water (ng/L)");
 
@@ -65,7 +65,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
       final ChartType type, final Region region) {
     if (region == Region.GBR) {
       final ADCDataset dataset = getDataset(datasource);
-      new ChartConfigurator(CHART_DEFAULTS).configure(dataset, datasource, 1, 13);
+      new ChartConfigurator(CHART_DEFAULTS, datasource, 1, 13).configure(dataset);
       final Drawable drawable = PSIITrends.createChart(dataset, new Dimension(1000, 500));
        return new AbstractChart() {
 

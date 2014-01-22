@@ -34,15 +34,13 @@ import boxrenderer.TableRowBox;
 import boxrenderer.TextBox;
 import charts.ChartType;
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class TrackingTowardsTargets {
-
-    private static final String IMPROVED_PRATICES = "% of farmers adopting improved practices";
-    private static final String POLLUTANT_REDUCTION = "% reduction in pollutant load";
-    private static final String TARGET = " target (%s by %s)";
 
     private static final Color GRADIENT_START = new Color(227, 246, 253);
     private static final Color GRADIENT_END = Color.white;
@@ -52,22 +50,6 @@ public class TrackingTowardsTargets {
 
     private static final float LINE_WIDTH = 8.0f;
     private static final double ARROWHEAD_EDGE_LENGTH = 30.0;
-
-    private static class Title {
-        private String title;
-        private String valueAxisLabel;
-        public Title(String title, String valueAxisLabel) {
-            super();
-            this.title = title;
-            this.valueAxisLabel = valueAxisLabel;
-        }
-        public String getTitle(double target, String targetBy) {
-            return String.format(title, percentFormatter().format(target), targetBy);
-        }
-        public String getValueAxisLabel() {
-            return valueAxisLabel;
-        }
-    }
 
     private static double sqr(double a) {
         return a*a;
@@ -325,40 +307,24 @@ public class TrackingTowardsTargets {
         }
     }
 
-    private static final ImmutableMap<ChartType, Title> TITLES =
-            new ImmutableMap.Builder<ChartType, Title>()
-                .put(ChartType.TTT_CANE_AND_HORT, new Title(
-                        "Cane and horticulture"+TARGET, IMPROVED_PRATICES))
-                .put(ChartType.TTT_GRAZING, new Title(
-                        "Grazing"+TARGET, IMPROVED_PRATICES))
-                .put(ChartType.TTT_NITRO_AND_PEST, new Title(
-                        "Total nitrogen and pesticide"+TARGET, POLLUTANT_REDUCTION))
-                .put(ChartType.TTT_SEDIMENT, new Title(
-                        "Sediment"+TARGET, POLLUTANT_REDUCTION))
-                .build();
-
     private static NumberFormat percentFormatter() {
-        NumberFormat percentFormat = NumberFormat.getPercentInstance();
-        percentFormat.setMaximumFractionDigits(0);
-        return percentFormat;
-    }
+      NumberFormat percentFormat = NumberFormat.getPercentInstance();
+      percentFormat.setMaximumFractionDigits(0);
+      return percentFormat;
+  }
 
-    public Drawable createChart(ChartType type, double target, String targetBy, 
-            final CategoryDataset dataset, Dimension dimension) {
+    public Drawable createChart(ChartType type, double target, 
+        final ADCDataset dataset, Dimension dimension) {
         if(dataset.getRowCount() == 0) {
             throw new RuntimeException("no series");
         }
         if(dataset.getRowCount() > 2) {
             throw new RuntimeException("too many series");
         }
-        Title title = TITLES.get(type);
-        if(title == null) {
-            throw new RuntimeException("no title configured for chart type "+type.toString());
-        }
         final JFreeChart chart = ChartFactory.createLineChart(
-                title.getTitle(target, targetBy),
-                null,
-                title.getValueAxisLabel(),
+                dataset.<String>get(Attribute.TITLE),
+                dataset.<String>get(Attribute.DOMAIN_AXIS_TITLE),
+                dataset.<String>get(Attribute.RANGE_AXIS_TITLE),
                 dataset,
                 PlotOrientation.VERTICAL,
                 false,
@@ -370,8 +336,15 @@ public class TrackingTowardsTargets {
         plot.setRenderer(new Renderer(caxis.getTickLabelFont()));
         plot.getRenderer().setSeriesStroke(0, new BasicStroke(LINE_WIDTH));
         plot.getRenderer().setSeriesStroke(1, new BasicStroke(LINE_WIDTH));
-        plot.getRenderer().setSeriesPaint(0, SERIES_1_COLOR);
-        plot.getRenderer().setSeriesPaint(1, SERIES_2_COLOR);
+        Color[] seriesColors = dataset.get(Attribute.SERIES_COLORS);
+        for(int i=0;i<2;i++) {
+          if(seriesColors != null && i < seriesColors.length && seriesColors[i] != null) {
+            plot.getRenderer().setSeriesPaint(i, seriesColors[i]);
+          } else {
+            plot.getRenderer().setSeriesPaint(i, ImmutableList.of(SERIES_1_COLOR,
+                SERIES_2_COLOR).get(i));
+          }
+        }
         plot.getRenderer().setBaseOutlinePaint(Color.black);
         plot.setBackgroundPaint(new GradientPaint(0, 0, GRADIENT_END, 0, 0, GRADIENT_START));
         plot.setDomainGridlinesVisible(false);
