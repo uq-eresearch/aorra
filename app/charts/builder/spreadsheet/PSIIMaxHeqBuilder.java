@@ -1,29 +1,25 @@
 package charts.builder.spreadsheet;
 
 import static charts.ChartType.PSII_MAX_HEQ;
+import static charts.graphics.PSIIMaxHeq.SEPARATOR;
+import static com.google.common.collect.Lists.newLinkedList;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang.StringUtils.isBlank;
-import static charts.graphics.PSIIMaxHeq.Condition;
-import static charts.graphics.PSIIMaxHeq.SEPARATOR;
-import static com.google.common.collect.Lists.newLinkedList;
 
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -33,10 +29,22 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.PSIIMaxHeq;
+import charts.graphics.PSIIMaxHeq.Condition;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 public class PSIIMaxHeqBuilder extends AbstractBuilder {
 
-    private static final String TITLE = "Maximum PSII Herbicide Equivalent Concentrations";
+  private static final String TITLE = "Maximum PSII Herbicide Equivalent Concentrations";
+
+  private static final Map<Attribute, Object> CHART_DEFAULTS = 
+      ImmutableMap.<Attribute, Object>of(
+          Attribute.TITLE, TITLE,
+          Attribute.RANGE_AXIS_TITLE, "Max PSII Heq ng/L");
 
     private static final Pattern YEAR_PATTERN = Pattern.compile(".*?(\\d+-\\d+).*?");
 
@@ -57,6 +65,10 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
   public Chart build(final SpreadsheetDataSource datasource,
       final ChartType type, final Region region) {
     if (region == Region.GBR) {
+      
+      ADCDataset dataset = getDataset(datasource);
+      new ChartConfigurator(CHART_DEFAULTS, datasource, 0, 4).configure(dataset);
+      final Drawable d = PSIIMaxHeq.createChart(dataset,new Dimension(1000, 500));
       return new AbstractChart() {
 
         @Override
@@ -66,8 +78,7 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
 
         @Override
         public Drawable getChart() {
-          return PSIIMaxHeq.createChart(getDataset(datasource), TITLE,
-              new Dimension(1000, 500));
+          return d;
         }
 
         @Override
@@ -148,9 +159,9 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
         }
     }
 
-    private CategoryDataset getDataset(SpreadsheetDataSource ds) {
+    private ADCDataset getDataset(SpreadsheetDataSource ds) {
         try {
-            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+          ADCDataset dataset = new ADCDataset();
             String year = "";
             String region = "";
             for(int row = 0;true;row++) {

@@ -548,7 +548,10 @@ public class AutoSubCategoryAxis extends CategoryAxis {
     @Override
     public AxisSpace reserveSpace(Graphics2D g2, Plot plot,
             Rectangle2D plotArea, RectangleEdge edge, AxisSpace space) {
-        AxisState axisState = drawCategoryLabels(g2, plotArea, space.shrink(plotArea, null), edge, new AxisState(), null, false);
+        Rectangle2D labelEnclosure = getLabelEnclosure(g2, edge);
+        space.add(labelEnclosure.getHeight() + this.getCategoryLabelPositionOffset(), edge);
+        AxisState axisState = drawCategoryLabels(g2, plotArea,
+            space.shrink(plotArea, null), edge, new AxisState(), null, false);
         space.add(axisState.getCursor(), RectangleEdge.BOTTOM);
         return space;
     }

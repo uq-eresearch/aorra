@@ -29,14 +29,14 @@ import org.jfree.ui.RectangleInsets;
 
 import charts.Drawable;
 import charts.graphics.AutoSubCategoryAxis.Border;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableMap;
 
 public class PSIIMaxHeq {
     
     public static final String SEPARATOR = AutoSubCategoryAxis.DEFAULT_SEPARATOR;
-
-    private static final String RANGE_AXIS_LABEL = "Max PSII Heq ng/L";
 
     public static enum Condition {
 
@@ -123,8 +123,8 @@ public class PSIIMaxHeq {
         }
     }
 
-    public static Drawable createChart(CategoryDataset dataset, String title, Dimension dimension) {
-        JFreeChart chart = createStackBarChart(dataset, title);
+    public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
+        JFreeChart chart = createBarChart(dataset);
         CategoryPlot plot = (CategoryPlot)chart.getPlot();
         {
             plot.setBackgroundPaint(Color.white);
@@ -177,14 +177,18 @@ public class PSIIMaxHeq {
         return new JFreeChartDrawable(chart, dimension);
     }
 
-    private static JFreeChart createStackBarChart(CategoryDataset dataset,String title) {
+    private static JFreeChart createBarChart(ADCDataset dataset) {
         AutoSubCategoryAxis categoryAxis = new AutoSubCategoryAxis(dataset);
+        categoryAxis.setCategoryLabelPositionOffset(0);
+        categoryAxis.setLabel(dataset.<String>get(Attribute.DOMAIN_AXIS_TITLE));
         CategoryDataset fixedDataset = categoryAxis.getFixedDataset();
-        PartitionedNumberAxis vAxis = new PartitionedNumberAxis(RANGE_AXIS_LABEL);
+        PartitionedNumberAxis vAxis = new PartitionedNumberAxis(
+            dataset.<String>get(Attribute.RANGE_AXIS_TITLE));
         CategoryPlot plot = new CategoryPlot(fixedDataset,
                 categoryAxis, vAxis, new Renderer(fixedDataset));
         plot.setOrientation(PlotOrientation.VERTICAL);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, false);
+        JFreeChart chart = new JFreeChart(dataset.<String>get(Attribute.TITLE),
+            JFreeChart.DEFAULT_TITLE_FONT, plot, false);
         final LegendItemCollection items = new LegendItemCollection();
         for(Condition c : Condition.values()) {
             if(c != Condition.NOT_EVALUATED) {
