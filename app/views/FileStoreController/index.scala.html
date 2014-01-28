@@ -37,8 +37,11 @@
     require.onResourceLoad = function(context, map, depMaps) {
       updateModuleProgress(context, map, depMaps);
     };
+    requirejs(['main'],
     // Load application
-    requirejs(['app']);
+    function() {
+      requirejs(['app']);
+    });
   });
   </script>
 
