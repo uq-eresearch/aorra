@@ -1,6 +1,16 @@
 package charts.builder.spreadsheet;
 
+import static com.google.common.collect.Lists.newLinkedList;
+import static java.lang.String.format;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
+
+import org.jfree.data.category.CategoryDataset;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -50,7 +60,7 @@ public class MarineBarChartBuilder extends AbstractBuilder {
     ChartConfigurator configurator = new ChartConfigurator(DEFAULTS.get(type), datasource, 14, 0);
     if(region == Region.GBR && supports(type) &&
         type.equals(configurator.getConfiguration(null).get(Attribute.TYPE))) {
-      ADCDataset dataset = createDataset(datasource);
+      final ADCDataset dataset = createDataset(datasource);
       configurator.configure(dataset);
       final Drawable d = new MarineBarChart().createChart(dataset);
       return new AbstractChart() {
@@ -66,8 +76,34 @@ public class MarineBarChartBuilder extends AbstractBuilder {
 
         @Override
         public String getCSV() {
-          // TODO 
-          return null;
+          final StringWriter sw = new StringWriter();
+          try {
+            final CsvListWriter csv = new CsvListWriter(sw,
+                CsvPreference.STANDARD_PREFERENCE);
+            @SuppressWarnings("unchecked")
+            List<String> columnKeys = dataset.getColumnKeys();
+            @SuppressWarnings("unchecked")
+            List<String> rowKeys = dataset.getRowKeys();
+            final List<String> heading = ImmutableList.<String>builder()
+                .add(format("%s %s", region.getProperName(), type.getLabel()))
+                .addAll(columnKeys)
+                .build();
+            csv.write(heading);
+            for (String row : rowKeys) {
+              List<String> line = newLinkedList();
+              line.add(row);
+              for (String col : columnKeys) {
+                final Number n = dataset.getValue(row, col);
+                line.add(n == null ? "" : format("%.1f", n.doubleValue()));
+              }
+              csv.write(line);
+            }
+            csv.close();
+          } catch (IOException e) {
+            // How on earth would you get an IOException with a StringWriter?
+            throw new RuntimeException(e);
+          }
+          return sw.toString();
         }
       };
     } else {
