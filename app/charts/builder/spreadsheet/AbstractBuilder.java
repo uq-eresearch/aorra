@@ -30,6 +30,10 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     this.types = types;
   }
 
+  protected boolean supports(ChartType type) {
+    return types.contains(type);
+  }
+
   protected abstract boolean canHandle(SpreadsheetDataSource datasource);
 
   protected Chart build(SpreadsheetDataSource datasource, ChartType type,

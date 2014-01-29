@@ -130,6 +130,10 @@ public class ChartBuilderTest {
     case WETLANDS_LOSS:
     case WETLANDS_REMAINING:
       return "test/wetlands_2010.xls";
+    case TOTAL_SUSPENDED_SEDIMENT:
+      return "test/TSS.xlsx";
+    case CHLOROPHYLL_A:
+      return "test/Chloro.xlsx";
     default:
       throw new RuntimeException("Unknown chart type: "+t);
     }

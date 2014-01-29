@@ -37,7 +37,10 @@ public enum ChartType {
     RIPARIAN_FOREST_LOSS_TOTAL("Riparian forest loss since pre-European extend"),
     RIPARIAN_FOREST_LOSS("Riparian forest loss"),
     WETLANDS_LOSS("Wetlands loss"),
-    WETLANDS_REMAINING("Wetlands remaining");
+    WETLANDS_REMAINING("Wetlands remaining"),
+    TOTAL_SUSPENDED_SEDIMENT("Total Suspended Sediment"),
+    CHLOROPHYLL_A("Chlorophyll \u03b1"),
+    ;
 
     private final String label;
 

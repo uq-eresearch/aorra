@@ -31,21 +31,27 @@ public class ChartConfigurator {
     this.column = column;
   }
 
+  public ChartConfigurator(SpreadsheetDataSource ds, int row, int column) {
+    this(null, ds, row, column);
+  }
+
   public void configure(ADCDataset dataset) {
     configure(dataset, null);
   }
 
   public void configure(ADCDataset dataset, ChartType type) {
     Map<Attribute, Object> cfg = getConfiguration(type);
-    for(Map.Entry<Attribute, Object> me : defaults.entrySet()) {
-      dataset.add(me.getKey(), me.getValue());
+    if(defaults != null) {
+      for(Map.Entry<Attribute, Object> me : defaults.entrySet()) {
+        dataset.add(me.getKey(), me.getValue());
+      }
     }
     for(Map.Entry<Attribute, Object> me : cfg.entrySet()) {
       dataset.add(me.getKey(), me.getValue());
     }
   }
 
-  private Map<Attribute, Object> getConfiguration(ChartType type) {
+  public Map<Attribute, Object> getConfiguration(ChartType type) {
     try {
       int col = column;
       while(true) {
