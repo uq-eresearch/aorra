@@ -29,6 +29,7 @@ public class JsonBuilder {
     json.put("name", user.getName());
     json.put("email", user.getEmail());
     json.put("isAdmin", isAdmin);
+    json.put("isVerified", user.isVerified());
     return json;
   }
 

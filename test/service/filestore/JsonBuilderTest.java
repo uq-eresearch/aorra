@@ -151,6 +151,8 @@ public class JsonBuilderTest {
     assertThat(json.get("email").asText()).isEqualTo(user.getEmail());
     assertThat(json.get("isAdmin")).isNotNull();
     assertThat(json.get("isAdmin").asBoolean()).isEqualTo(false);
+    assertThat(json.get("isVerified")).isNotNull();
+    assertThat(json.get("isVerified").asBoolean()).isEqualTo(true);
   }
 
   @Test
