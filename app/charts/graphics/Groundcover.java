@@ -9,7 +9,6 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.block.GridArrangement;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
@@ -40,9 +39,7 @@ public class Groundcover {
         r.setSeriesPaint(4, new Color(103,42,4));
         r.setSeriesPaint(5, new Color(208,162,33));
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-        rangeAxis.setTickUnit(new NumberTickUnit(10));
         rangeAxis.setTickMarksVisible(false);
-        rangeAxis.setRange(0, 100);
         final CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         LegendTitle legend = new LegendTitle(plot, new GridArrangement(3, 2), new GridArrangement(3, 2));
