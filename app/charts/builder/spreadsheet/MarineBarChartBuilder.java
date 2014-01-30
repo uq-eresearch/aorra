@@ -8,7 +8,6 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
-import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
