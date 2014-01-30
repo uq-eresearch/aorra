@@ -14,4 +14,7 @@ public interface Value {
   java.awt.Color asColor();
 
   Date asDate();
+
+  Double asPercent();
+
 }

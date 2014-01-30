@@ -26,7 +26,7 @@ public class GrainsPracticeBuilder extends ManagementPracticeBuilder {
   protected Double[] readRow(SpreadsheetDataSource ds, int row) throws MissingDataException {
     Double[] values = new Double[9];
     for(int i=0;i<9;i++) {
-      values[i] = ds.select(row, i+1).asDouble();
+      values[i] = ds.select(row, i+1).asPercent();
     }
     return values;
   }

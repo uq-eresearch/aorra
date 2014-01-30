@@ -25,7 +25,7 @@ public abstract class HSPracticeBuilder extends ManagementPracticeBuilder {
   protected Double[] readRow(SpreadsheetDataSource ds, int row) throws MissingDataException {
     Double[] values = new Double[12];
     for(int i=0;i<12;i++) {
-      values[i] = ds.select(row, i+1).asDouble();
+      values[i] = ds.select(row, i+1).asPercent();
     }
     return values;
   }

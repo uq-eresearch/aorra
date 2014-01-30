@@ -130,6 +130,18 @@ public abstract class SpreadsheetDataSource implements DataSource {
         return cell.getDateCellValue();
     }
 
+    @Override
+    public Double asPercent() {
+      Double value = null;
+      if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+        if(cell.getCellStyle().getDataFormatString().contains("%")) {
+          value = cell.getNumericCellValue();
+        } else {
+          value = cell.getNumericCellValue() / 100;
+        }
+      }
+      return value;
+    }
   }
 
   private static class EmptyCell implements Value {
@@ -161,6 +173,11 @@ public abstract class SpreadsheetDataSource implements DataSource {
     @Override
     public Date asDate() {
         return null;
+    }
+
+    @Override
+    public Double asPercent() {
+      return null;
     }
 
   }
