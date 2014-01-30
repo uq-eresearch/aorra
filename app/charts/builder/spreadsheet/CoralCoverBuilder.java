@@ -195,8 +195,8 @@ public class CoralCoverBuilder extends AbstractBuilder {
             for(Region r : regions) {
                 for(int row = getRegionStart(ds, r);
                         StringUtils.isNotBlank(ds.select(row, 0).asString());row++) {
-                    double mean = ds.select(row, meanColumn).asDouble();
-                    double deviation = ds.select(row, deviationColumn).asDouble();
+                    Double mean = ds.select(row, meanColumn).asDouble();
+                    Double deviation = ds.select(row, deviationColumn).asDouble();
                     String series = ds.select(row, 0).asString();
                     String year = ds.select(row, 1).asInteger().toString();
                     d.add(mean, deviation, series, year);
