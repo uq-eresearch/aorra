@@ -11,11 +11,28 @@
 
   @templates()
 
-  <div class="col-md-6 col-md-offset-3" id="loading-progress">
+  <div id="loading-progress" class="col-md-6 col-md-offset-3">
     <h4>Loading application...</h4>
     <div class="progress progress-striped active">
       <div class="progress-bar" style="width: 0%;"></div>
     </div>
+  </div>
+  
+  <div id="not-supported-msg" style="display: none"
+      class="col-md-6 col-md-offset-3">
+    <h1>This web browser is not supported!</h1>
+    <h1 class="text-center"><i class="fa fa-frown-o fa-5x"></i></h1>
+    <p>
+    Your web browser does not provide some features which
+    are required by this web application.
+    </p>
+    <p>
+    Try accessing this page with
+    <a href="https://chrome.google.com/">Google Chrome</a>
+    or
+    <a href="https://www.mozilla.org/firefox/">Mozilla Firefox</a>
+    instead.
+    </p>
   </div>
 
   <script type="text/javascript">
@@ -32,16 +49,23 @@
     var parts = 5;
     $innerBar.width(Math.min(maxWidth, $innerBar.width() + maxWidth / parts));
   };
+  
+  var unsupported = function() {
+    $('#loading-progress').hide();
+    $('#not-supported-msg').show();
+  };
 
   $(window).on('load', function() {
-    require.onResourceLoad = function(context, map, depMaps) {
-      updateModuleProgress(context, map, depMaps);
-    };
-    requirejs(['main'],
-    // Load application
-    function() {
-      requirejs(['app']);
-    });
+    if (Modernizr.history) {
+      requirejs(['main'], function() {
+        require.onResourceLoad = function(context, map, depMaps) {
+          updateModuleProgress(context, map, depMaps);
+        };
+        requirejs(['app']);
+      });
+    } else {
+      unsupported();
+    }
   });
   </script>
 
