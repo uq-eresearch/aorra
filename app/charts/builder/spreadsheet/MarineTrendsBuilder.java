@@ -27,13 +27,12 @@ import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.MarineTrends;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public class MarineTrendsBuilder extends AbstractBuilder {
 
-//    private static final String TIME_SERIES = "Time Series";
     private static final String WATER_QUALITY = "Water Quality";
     private static final String SEAGRASS = "Seagrass";
     private static final String CORAL = "Coral";
@@ -42,9 +41,11 @@ public class MarineTrendsBuilder extends AbstractBuilder {
             MARINE_WQT, 2, MARINE_ST, 14, MARINE_CT, 26);
 
     private static enum Indicator {
-        OWQ_SCORE("Overall water quality score", "WQI", MARINE_WQT),
+        OWQ_SCORE("Overall water quality score", new String[] 
+            {"Water quality index", "WQI"}, MARINE_WQT),
         CHLOROPHYLL_A("Chlorophyll \u03b1", "Chlorophyll a", MARINE_WQT),
-        TOTAL_SUSPENDED_SOLIDS("Total suspended solids", "TSS", MARINE_WQT),
+        TOTAL_SUSPENDED_SOLIDS("Total suspended solids", new String[]
+            {"Total suspended solids", "TSS"}, MARINE_WQT),
         OS_SCORE("Overall seagrass score", "Seagrass Index", MARINE_ST),
         REPRODUCTION("Reproduction", "Reproductive Effort", MARINE_ST),
         ABUNDANCE("Abundance", "Abundance", MARINE_ST),
@@ -57,12 +58,16 @@ public class MarineTrendsBuilder extends AbstractBuilder {
         ;
 
         private String label;
-        private String heading;
+        private String[] headers;
         private ChartType type;
 
         private Indicator(String label, String heading, ChartType type) {
+          this(label, new String[] {heading}, type);
+        }
+
+        private Indicator(String label, String[] headers, ChartType type) {
             this.label = label;
-            this.heading = heading;
+            this.headers = headers;
             this.type = type;
         }
 
@@ -70,12 +75,17 @@ public class MarineTrendsBuilder extends AbstractBuilder {
             return label;
         }
 
-        public String getHeading() {
-            return heading;
-        }
-
         public ChartType getChartType() {
             return type;
+        }
+
+        public boolean match(String header) {
+          for(String h : headers) {
+            if(equalsIgnoreCase(h, header)) {
+              return true;
+            }
+          }
+          return equalsIgnoreCase(header, label);
         }
 
         public static List<Indicator> forType(ChartType type) {
@@ -179,7 +189,7 @@ public class MarineTrendsBuilder extends AbstractBuilder {
         int row = getRow(ds, indicator.getChartType());
         for(int col = 1;col < 100;col++) {
             try {
-                if(equalsIgnoreCase(ds.select(row, col).asString(), indicator.getHeading())) {
+                if(indicator.match(ds.select(row, col).asString())) {
                     return col;
                 }
             } catch(MissingDataException e) {}
@@ -215,7 +225,6 @@ public class MarineTrendsBuilder extends AbstractBuilder {
 
     private CategoryDataset getDataset(SpreadsheetDataSource ds, ChartType type, Region region) {
         try {
-//            ds.setDefaultSheet(TIME_SERIES);
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             int row = getRow(ds, type, region);
             for(Indicator i : Indicator.forType(type)) {
