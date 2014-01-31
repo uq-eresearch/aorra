@@ -1,8 +1,14 @@
 package charts.builder.spreadsheet;
 
+import java.util.Map;
+
+import com.google.common.collect.Maps;
+
 import charts.ChartType;
+import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 public class GrazingPracticeBuilder extends ManagementPracticeBuilder {
 
@@ -35,6 +41,13 @@ public class GrazingPracticeBuilder extends ManagementPracticeBuilder {
     for(int i=0;i<4;i++) {
       dataset.addValue(values[i], year, ABCD[i]);
     }
+  }
+
+  protected Map<Attribute, Object> defaults(SpreadsheetDataSource ds, Region region) {
+    Map<Attribute, Object> result = Maps.newHashMap();
+    result.putAll(super.defaults(ds, region));
+    result.put(Attribute.RANGE_AXIS_TITLE, "% of graziers");
+    return result;
   }
 
 }

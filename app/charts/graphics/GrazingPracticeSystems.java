@@ -39,6 +39,8 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
 
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -256,7 +258,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
         return percentFormat;
     }
 
-    public Drawable createChart(CategoryDataset dataset, String title, Dimension dimension) {
+    public Drawable createChart(ADCDataset dataset, Dimension dimension) {
         JFreeChart chart = ChartFactory.createBarChart(
                 "",  // chart title
                 "",  // domain axis label
@@ -267,7 +269,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
                 false,                        // tooltips
                 false                        // urls
                 );
-        TextTitle textTitle = new TextTitle(title, TITLE_FONT);
+        TextTitle textTitle = new TextTitle(dataset.<String>get(Attribute.TITLE), TITLE_FONT);
         textTitle.setPadding(new RectangleInsets(10,0,0,0));
         chart.setTitle(textTitle);
         
@@ -286,7 +288,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
         rangeAxis.setAutoTickUnitSelection(true);
         rangeAxis.setTickUnit(new NumberTickUnit(0.2, percentFormatter()));
         rangeAxis.setAxisLineVisible(true);
-        rangeAxis.setLabel("% of graziers");
+        rangeAxis.setLabel(dataset.<String>get(Attribute.RANGE_AXIS_TITLE));
         rangeAxis.setAxisLineStroke(new BasicStroke(2));
         rangeAxis.setAxisLinePaint(Color.black);
         rangeAxis.setTickMarksVisible(false);
@@ -301,7 +303,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
         cAxis.setTickMarksVisible(false);
         cAxis.setAxisLinePaint(Color.black);
         cAxis.setAxisLineStroke(new BasicStroke(2));
-        cAxis.setLabel("");
+        cAxis.setLabel(dataset.<String>get(Attribute.DOMAIN_AXIS_TITLE));
         cAxis.setTickLabelsVisible(true);
         cAxis.setUpperMargin(0.05);
         cAxis.setLowerMargin(0.05);

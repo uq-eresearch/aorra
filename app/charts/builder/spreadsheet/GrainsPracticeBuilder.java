@@ -4,7 +4,7 @@ import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
 import charts.jfree.ADCDataset;
 
-public class GrainsPracticeBuilder extends ManagementPracticeBuilder {
+public class GrainsPracticeBuilder extends LandPracticeBuilder {
 
   private static final String[] ABCD = {"A", "B", "C/D" };
 

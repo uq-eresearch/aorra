@@ -40,6 +40,8 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
 
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.Maps;
 
@@ -148,9 +150,10 @@ public abstract class LandPracticeSystems implements ManagementPracticeSystems {
         return percentFormat;
     }
 
-    public Drawable createChart(CategoryDataset dataset, String title, Dimension dimension) {
+    @Override
+    public Drawable createChart(ADCDataset dataset, Dimension dimension) {
         JFreeChart chart = ChartFactory.createStackedBarChart(
-            title,  // chart title
+            dataset.<String>get(Attribute.TITLE),  // chart title
             "",  // domain axis label
             "",  // range axis label
             dataset,                     // data
@@ -173,7 +176,7 @@ public abstract class LandPracticeSystems implements ManagementPracticeSystems {
         rangeAxis.setAutoTickUnitSelection(true);
         rangeAxis.setTickUnit(new NumberTickUnit(0.2, percentFormatter()));
         rangeAxis.setAxisLineVisible(true);
-        rangeAxis.setLabel("% of landholders");
+        rangeAxis.setLabel(dataset.<String>get(Attribute.RANGE_AXIS_TITLE));
         rangeAxis.setAxisLineStroke(new BasicStroke(2));
         rangeAxis.setAxisLinePaint(Color.black);
         rangeAxis.setTickMarksVisible(false);
@@ -187,7 +190,7 @@ public abstract class LandPracticeSystems implements ManagementPracticeSystems {
         cAxis.setTickMarksVisible(false);
         cAxis.setAxisLinePaint(Color.black);
         cAxis.setAxisLineStroke(new BasicStroke(2));
-        cAxis.setLabel("");
+        cAxis.setLabel(dataset.<String>get(Attribute.DOMAIN_AXIS_TITLE));
         cAxis.setTickLabelsVisible(false);
         cAxis.setCategoryMargin(0.05);
         cAxis.setUpperMargin(0.1);

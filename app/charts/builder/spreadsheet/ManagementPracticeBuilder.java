@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -25,8 +26,10 @@ import charts.graphics.GrazingPracticeSystems;
 import charts.graphics.HSLandPracticeSystems;
 import charts.graphics.ManagementPracticeSystems;
 import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public abstract class ManagementPracticeBuilder extends AbstractBuilder {
@@ -45,6 +48,7 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
     if(dataset == null) {
       return null;
     }
+    new ChartConfigurator(defaults(datasource, region), datasource).configure(dataset);
     ManagementPracticeSystems mps;
     if(type == ChartType.HORTICULTURE_PS || type == ChartType.SUGARCANE_PS) {
       mps = new HSLandPracticeSystems();
@@ -55,7 +59,7 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
     } else {
       return null;
     }
-    final Drawable drawable = mps.createChart(dataset, title(datasource, region), new Dimension(750, 500));
+    final Drawable drawable = mps.createChart(dataset, new Dimension(750, 500));
     return new AbstractChart() {
       @Override
       public ChartDescription getDescription() {
@@ -146,6 +150,10 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
 
   protected String title(SpreadsheetDataSource ds, Region region) {
     return String.format("%s - %s", type.getLabel(), region.getProperName());
+  }
+
+  protected Map<Attribute, Object> defaults(SpreadsheetDataSource ds, Region region) {
+    return ImmutableMap.<Attribute, Object>of(Attribute.TITLE, title(ds, region));
   }
 
 }

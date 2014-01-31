@@ -4,7 +4,7 @@ import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
 import charts.jfree.ADCDataset;
 
-public abstract class HSPracticeBuilder extends ManagementPracticeBuilder {
+public abstract class HSPracticeBuilder extends LandPracticeBuilder {
 
   private static final String[] ABCD = {"A", "B", "C", "D" };
 

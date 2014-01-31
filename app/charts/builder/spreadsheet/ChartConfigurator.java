@@ -3,6 +3,7 @@ package charts.builder.spreadsheet;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
@@ -20,8 +21,8 @@ public class ChartConfigurator {
   private final SpreadsheetDataSource ds;
 
   //start of chart configuration block
-  private final int row;
-  private final int column;
+  private final Integer row;
+  private final Integer column;
 
   public ChartConfigurator(Map<Attribute, Object> defaults, 
       SpreadsheetDataSource ds, int row, int column) {
@@ -35,32 +36,71 @@ public class ChartConfigurator {
     this(null, ds, row, column);
   }
 
+  public ChartConfigurator(SpreadsheetDataSource ds) {
+    this(null, ds);
+  }
+
+  public ChartConfigurator(Map<Attribute, Object> defaults, 
+      SpreadsheetDataSource ds) {
+    this.defaults = defaults;
+    this.ds = ds;
+    this.row = null;
+    this.column = null;
+  }
+
+  private Pair<Integer, Integer> search(SpreadsheetDataSource ds) {
+    for(int row = 0;row<100;row++) {
+      try {
+        if(StringUtils.equalsIgnoreCase("type", ds.select(row, 0).asString()) &&
+            (ChartType.lookup(ds.select(row, 1).asString()) != null)) {
+          return Pair.of(row, 0);
+        }
+      } catch(MissingDataException e) {}
+    }
+    return null;
+  }
+
   public void configure(ADCDataset dataset) {
     configure(dataset, null);
   }
 
   public void configure(ADCDataset dataset, ChartType type) {
-    Map<Attribute, Object> cfg = getConfiguration(type);
     if(defaults != null) {
       for(Map.Entry<Attribute, Object> me : defaults.entrySet()) {
         dataset.add(me.getKey(), me.getValue());
       }
     }
-    for(Map.Entry<Attribute, Object> me : cfg.entrySet()) {
-      dataset.add(me.getKey(), me.getValue());
+    Map<Attribute, Object> cfg = getConfiguration(type);
+    if(cfg != null) {
+      for(Map.Entry<Attribute, Object> me : cfg.entrySet()) {
+        dataset.add(me.getKey(), me.getValue());
+      }
     }
   }
 
   public Map<Attribute, Object> getConfiguration(ChartType type) {
     try {
-      int col = column;
+      int c;
+      int r;
+      if(column == null) {
+        Pair<Integer, Integer> p = search(ds);
+        if(p == null) {
+          return null;
+        } else {
+          r = p.getLeft();
+          c = p.getRight();
+        }
+      } else {
+        c = column;
+        r = row;
+      }
       while(true) {
-        Map<Attribute, Object> cfg = readConfiguration(row, col);
+        Map<Attribute, Object> cfg = readConfiguration(r, c);
         if(type == null || 
             (cfg.containsKey(Attribute.TYPE) && (type == cfg.get(Attribute.TYPE)))) {
           return cfg;
         } else {
-          col+=2;
+          c+=2;
         }
       }
     } catch(MissingDataException e) {
