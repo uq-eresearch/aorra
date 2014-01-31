@@ -16,7 +16,6 @@ requirejs.config({
       'jquery.bootstrap': 'lib/bootstrap',
       'jquery.ckeditor': '../ckeditor/adapters/jquery',
       'jquery.hotkeys': 'lib/jquery.hotkeys',
-      'FileAPI': 'lib/FileAPI.min',
       'marionette': 'lib/backbone.marionette',
       'underscore.string': 'lib/underscore.string',
       'unstyler': 'lib/unstyler'
@@ -50,9 +49,6 @@ requirejs.config({
       'jquery.ui': {
         deps: ['jquery'],
         exports: 'jQuery'
-      },
-      'FileAPI': {
-        exports: 'FileAPI'
       },
       'marionette': {
         deps: ['backbone'],

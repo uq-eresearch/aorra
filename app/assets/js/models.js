@@ -172,7 +172,7 @@ define(
 
   var File = FileOrFolder.extend({
     urlRoot: '/file',
-    downloadUrl: function() {
+    downloadUrl: function(fixedUrl) {
       return this.url()+'/versions/latest';
     },
     uploadUrl: function() {
