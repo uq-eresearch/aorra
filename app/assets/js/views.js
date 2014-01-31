@@ -1269,7 +1269,7 @@ define([
           valueKey: 'id',
           local: _(files).map(function(m){
             return _.defaults(m.toJSON(), {
-              tokens: [m.id, m.get('name')]
+              tokens: [m.id].concat(m.get('name').split(/[\W_]+/))
             });
           }),
           template: function(datum) {
@@ -1485,6 +1485,7 @@ define([
           model: this.model
         });
         this._fileIdAutocomplete.on('file:selected', _.bind(function(file) {
+          if (_.isUndefined(file)) return;
           var fileType = typeFromMimeType(file.get('mime'));
           switch (fileType) {
           case 'spreadsheet':
