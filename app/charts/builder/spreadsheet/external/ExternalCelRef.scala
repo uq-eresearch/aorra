@@ -36,7 +36,7 @@ case class ResolvedRef(val source: SpreadsheetDataSource, val link: CellLink)
 
 trait ExternalCellRefDetector {
 
-  def scan(ds: SpreadsheetDataSource): Future[Set[ExternalCellRef[_]]]
+  def scan(ds: SpreadsheetDataSource): Future[Set[UnresolvedRef]]
 
 }
 
@@ -54,7 +54,7 @@ trait ExternalCellRefResolver {
 
   type DestinationIdentifier = String
 
-  def resolve(base: DestinationIdentifier, refs: Set[ExternalCellRef[_]]):
+  def resolve(base: DestinationIdentifier, refs: Set[UnresolvedRef]):
     Future[Set[ResolvedRef]]
 
 }
