@@ -36,6 +36,8 @@ case class ResolvedRef(val source: SpreadsheetDataSource, val link: CellLink)
 
 trait ExternalCellRefDetector {
 
+  def hasAny(ds: SpreadsheetDataSource): Future[Boolean]
+
   def scan(ds: SpreadsheetDataSource): Future[Set[UnresolvedRef]]
 
 }
