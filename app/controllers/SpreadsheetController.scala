@@ -4,7 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import charts.builder.FileStoreDataSourceFactory.getDataSource
 import org.jcrom.Jcrom
 import com.google.inject.Inject
-import ScalaSecured.isAuthenticatedAsync
+import controllers.ScalaSecured.isAuthenticatedAsync
 import charts.builder.spreadsheet.SpreadsheetDataSource
 import charts.builder.spreadsheet.external.ExternalCellRefDetector
 import play.api.mvc.Controller

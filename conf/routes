@@ -68,6 +68,8 @@ POST    /file/:fileId/comments          @controllers.CommentController.create(fi
 GET     /file/:fileId/comments/:cId     @controllers.CommentController.get(cId, fileId)
 PUT     /file/:fileId/comments/:cId     @controllers.CommentController.update(cId, fileId)
 DELETE  /file/:fileId/comments/:cId     @controllers.CommentController.delete(cId, fileId)
+GET     /file/:fileId/spreadsheet-external-references         @controllers.SpreadsheetController.hasExternalRefs(fileId)
+POST    /file/:fileId/spreadsheet-external-references/update  @controllers.SpreadsheetController.updateExternalRefs(fileId)
 
 GET     /events                     @controllers.FileStoreAsync.events()
 
