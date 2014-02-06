@@ -53,11 +53,11 @@ public class XlsxDataSource extends SpreadsheetDataSource {
 
   private Map<Integer, String> rmap = Maps.newHashMap();
 
-  public XlsxDataSource(InputStream in) throws Exception {
+  public XlsxDataSource(InputStream in) throws IOException {
     initWorkbook(initExternalRefs(in));
   }
 
-  private InputStream initExternalRefs(InputStream in) throws Exception {
+  private InputStream initExternalRefs(InputStream in) throws IOException {
     final File tmpDir = Files.createTempDir();
     File fSpreadsheet = new File(tmpDir, "spreadsheet.xlsx");
     FileOutputStream out = new FileOutputStream(fSpreadsheet);
@@ -111,14 +111,14 @@ public class XlsxDataSource extends SpreadsheetDataSource {
     }
   }
 
-  private void initWorkbook(InputStream in) throws Exception {
+  private void initWorkbook(InputStream in) throws IOException {
     XSSFWorkbook workbook = new XSSFWorkbook(in);
     FormulaEvaluator evaluator = workbook.getCreationHelper()
         .createFormulaEvaluator();
     init(workbook, evaluator);
   }
 
-  private XlsxDataSource(Workbook workbook, FormulaEvaluator evaluator, int defaultSheet, 
+  private XlsxDataSource(Workbook workbook, FormulaEvaluator evaluator, int defaultSheet,
       Map<Integer, String> rmap) {
     super(workbook, evaluator, defaultSheet);
     this.rmap = rmap;
@@ -149,7 +149,7 @@ public class XlsxDataSource extends SpreadsheetDataSource {
                 if(nameOrId != null) {
                 //FIXME escape sheet name?
                   urefs.add(uref(nameOrId,
-                      cr.formatAsString(), String.format("%s!%s", sheet.getSheetName(), 
+                      cr.formatAsString(), String.format("%s!%s", sheet.getSheetName(),
                       new CellReference(cell).formatAsString())));
                 }
               } catch(Exception e) {}

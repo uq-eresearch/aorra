@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
@@ -12,7 +13,7 @@ import charts.builder.spreadsheet.external.UnresolvedRef;
 
 public class XlsDataSource extends SpreadsheetDataSource {
 
-  public XlsDataSource(InputStream in) throws Exception {
+  public XlsDataSource(InputStream in) throws IOException {
     HSSFWorkbook workbook = new HSSFWorkbook(in);
     HSSFFormulaEvaluator evaluator = workbook.getCreationHelper()
         .createFormulaEvaluator();
