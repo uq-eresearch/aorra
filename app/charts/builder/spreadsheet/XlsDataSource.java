@@ -1,11 +1,14 @@
 package charts.builder.spreadsheet;
 
 import java.io.InputStream;
+import java.util.Set;
 
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Workbook;
+
+import charts.builder.spreadsheet.external.UnresolvedRef;
 
 public class XlsDataSource extends SpreadsheetDataSource {
 
@@ -24,6 +27,12 @@ public class XlsDataSource extends SpreadsheetDataSource {
   @Override
   public SpreadsheetDataSource toSheet(int sheet) {
     return new XlsDataSource(workbook(), evaluator(), sheet);
+  }
+
+  @Override
+  public Set<UnresolvedRef> externalReferences() {
+    //FIXME implement
+    throw new RuntimeException("not implemented");
   }
 
 }

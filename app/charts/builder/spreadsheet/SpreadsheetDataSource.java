@@ -2,6 +2,7 @@ package charts.builder.spreadsheet;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
@@ -20,6 +21,8 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import charts.builder.DataSource;
 import charts.builder.Value;
+import charts.builder.spreadsheet.external.CellLink;
+import charts.builder.spreadsheet.external.UnresolvedRef;
 
 import com.google.common.collect.Lists;
 
@@ -392,6 +395,21 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   FormulaEvaluator evaluator() {
     return evaluator;
+  }
+
+  public abstract Set<UnresolvedRef> externalReferences();
+
+  UnresolvedRef uref(String sIdOrName, final String sSelector, final String dSelector) {
+    return new UnresolvedRef(sIdOrName, new CellLink() {
+      @Override
+      public String destination() {
+        return dSelector;
+      }
+      @Override
+      public String source() {
+        return sSelector;
+      }
+    });
   }
 
 }
