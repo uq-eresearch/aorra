@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.Color;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.FormulaError;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -43,34 +44,57 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
     @Override
     public String getValue() {
-      String result;
-      CellValue cellValue = evaluator.evaluate(cell);
-      if (cellValue == null) {
-        return "";
-      }
-      switch (cellValue.getCellType()) {
-      case Cell.CELL_TYPE_BOOLEAN:
-        result = Boolean.toString(cellValue.getBooleanValue());
-        break;
-      case Cell.CELL_TYPE_NUMERIC:
-        double val = cellValue.getNumberValue();
-        result = Double.toString(val);
-        break;
-      case Cell.CELL_TYPE_STRING:
-        result = cellValue.getStringValue();
-        break;
-      case Cell.CELL_TYPE_BLANK:
-        result = "";
-        break;
-      case Cell.CELL_TYPE_ERROR:
-        result = ErrorEval.getText(cellValue.getErrorValue());
-        break;
-      // CELL_TYPE_FORMULA will never happen
-      case Cell.CELL_TYPE_FORMULA:
-        result = "#FORMULAR";
-        break;
-      default:
-        result = "#DEFAULT";
+      String result = "";
+      try {
+        CellValue cellValue = evaluator.evaluate(cell);
+        if (cellValue == null) {
+          return "";
+        }
+        switch (cellValue.getCellType()) {
+        case Cell.CELL_TYPE_BOOLEAN:
+          result = Boolean.toString(cellValue.getBooleanValue());
+          break;
+        case Cell.CELL_TYPE_NUMERIC:
+          double val = cellValue.getNumberValue();
+          result = Double.toString(val);
+          break;
+        case Cell.CELL_TYPE_STRING:
+          result = cellValue.getStringValue();
+          break;
+        case Cell.CELL_TYPE_BLANK:
+          result = "";
+          break;
+        case Cell.CELL_TYPE_ERROR:
+          result = ErrorEval.getText(cellValue.getErrorValue());
+          break;
+        // CELL_TYPE_FORMULA will never happen
+        case Cell.CELL_TYPE_FORMULA:
+          result = "#FORMULAR";
+          break;
+        default:
+          result = "#DEFAULT";
+        }
+      } catch(RuntimeException e) {
+        if(cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+          switch(cell.getCachedFormulaResultType()) {
+            case Cell.CELL_TYPE_NUMERIC: 
+              double val = cell.getNumericCellValue();
+              result = Double.toString(val);
+              break;
+            case Cell.CELL_TYPE_ERROR:
+              FormulaError fe = FormulaError.forInt(cell.getErrorCellValue());
+              result = fe.getString();
+              break;
+            case Cell.CELL_TYPE_STRING:
+              result = cell.getStringCellValue();
+              break;
+            case Cell.CELL_TYPE_BOOLEAN:
+              result = Boolean.toString(cell.getBooleanCellValue());
+              break;
+            default:
+              result = "";
+          }
+        }
       }
       return result;
     }
