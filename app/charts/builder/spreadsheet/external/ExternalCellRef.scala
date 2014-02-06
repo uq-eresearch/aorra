@@ -30,8 +30,9 @@ sealed trait ExternalCellRef[S] {
 case class UnresolvedRef(val source: String, val link: CellLink)
   extends ExternalCellRef[String]
 
-case class ResolvedRef(val source: SpreadsheetDataSource, val link: CellLink)
-  extends ExternalCellRef[SpreadsheetDataSource]
+case class ResolvedRef(
+    val source: Option[SpreadsheetDataSource],
+    val link: CellLink) extends ExternalCellRef[Option[SpreadsheetDataSource]]
 
 
 trait ExternalCellRefDetector {
