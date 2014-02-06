@@ -25,6 +25,7 @@ import charts.builder.spreadsheet.external.CellLink;
 import charts.builder.spreadsheet.external.UnresolvedRef;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public abstract class SpreadsheetDataSource implements DataSource {
 
@@ -397,7 +398,23 @@ public abstract class SpreadsheetDataSource implements DataSource {
     return evaluator;
   }
 
-  public abstract Set<UnresolvedRef> externalReferences();
+  public Set<UnresolvedRef> externalReferences() {
+    Set<UnresolvedRef> urefs = Sets.newHashSet();
+    for(int si = 0; si < workbook.getNumberOfSheets();si++) {
+      Sheet sheet = workbook.getSheetAt(si);
+      for(Row row : sheet) {
+        for(Cell cell : row) {
+          UnresolvedRef uref = externalReference(cell, sheet.getSheetName());
+          if(uref != null) {
+            urefs.add(uref);
+          }
+        }
+      }
+    }
+    return urefs;
+  }
+
+  abstract UnresolvedRef externalReference(Cell cell, String sheetname);
 
   UnresolvedRef uref(String sIdOrName, final String sSelector, final String dSelector) {
     return new UnresolvedRef(sIdOrName, new CellLink() {

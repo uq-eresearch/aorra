@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -24,8 +23,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -35,7 +32,6 @@ import charts.builder.spreadsheet.external.UnresolvedRef;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 public class XlsxDataSource extends SpreadsheetDataSource {
@@ -130,34 +126,26 @@ public class XlsxDataSource extends SpreadsheetDataSource {
   }
 
   @Override
-  public Set<UnresolvedRef> externalReferences() {
-    Set<UnresolvedRef> urefs = Sets.newHashSet();
-    Workbook wb = workbook();
-    for(int si = 0; si < wb.getNumberOfSheets();si++) {
-      Sheet sheet = wb.getSheetAt(si);
-      for(Row row : sheet) {
-        for(Cell cell : row) {
-          if((cell != null) && (cell.getCellType() == Cell.CELL_TYPE_FORMULA)) {
-            Matcher m = EXTERNAL_REF_FORMULA.matcher(cell.getCellFormula());
-            if(m.matches()) {
-              try {
-                Integer refnr = new Integer(m.group(1));
-                //FIXME escape sheet name
-                CellReference cr = new CellReference(String.format("%s!%s%s",
-                    m.group(2), m.group(3), m.group(4)));
-                String nameOrId = rmap.get(refnr);
-                if(nameOrId != null) {
-                //FIXME escape sheet name?
-                  urefs.add(uref(nameOrId,
-                      cr.formatAsString(), String.format("%s!%s", sheet.getSheetName(),
-                      new CellReference(cell).formatAsString())));
-                }
-              } catch(Exception e) {}
-            }
+  UnresolvedRef externalReference(Cell cell, String sheetname) {
+    UnresolvedRef uref = null;
+    if((cell != null) && (cell.getCellType() == Cell.CELL_TYPE_FORMULA)) {
+      Matcher m = EXTERNAL_REF_FORMULA.matcher(cell.getCellFormula());
+      if(m.matches()) {
+        try {
+          Integer refnr = new Integer(m.group(1));
+          //FIXME escape sheet name
+          CellReference cr = new CellReference(String.format("%s!%s%s",
+              m.group(2), m.group(3), m.group(4)));
+          String nameOrId = rmap.get(refnr);
+          if(nameOrId != null) {
+          //FIXME escape sheet name?
+            uref = uref(nameOrId,
+                cr.formatAsString(), String.format("%s!%s", sheetname,
+                new CellReference(cell).formatAsString()));
           }
-        }
+        } catch(Exception e) {}
       }
     }
-    return urefs;
+    return uref;
   }
 }
