@@ -1,22 +1,21 @@
 package controllers
 
+import java.io.InputStream
 import scala.concurrent.ExecutionContext.Implicits.global
-import charts.builder.FileStoreDataSourceFactory.getDataSource
+import scala.concurrent.Future
 import org.jcrom.Jcrom
 import com.google.inject.Inject
-import controllers.ScalaSecured.isAuthenticatedAsync
-import charts.builder.spreadsheet.SpreadsheetDataSource
+import charts.builder.FileStoreDataSourceFactory.getDataSource
 import charts.builder.spreadsheet.external.ExternalCellRefDetector
-import play.api.mvc.Controller
-import scala.concurrent.Future
-import play.api.mvc.SimpleResult
-import models.CacheableUser
-import play.libs.F
-import javax.jcr.Session
-import service.filestore.FileStore
-import charts.builder.spreadsheet.external.ExternalCellRefResolver
 import charts.builder.spreadsheet.external.ExternalCellRefReplacer
-import java.io.InputStream
+import charts.builder.spreadsheet.external.ExternalCellRefResolver
+import controllers.ScalaSecured.isAuthenticatedAsync
+import javax.jcr.Session
+import models.CacheableUser
+import play.api.mvc.Controller
+import play.libs.F
+import service.filestore.FileStore
+import charts.builder.spreadsheet.external.FileStoreExternalCellRefResolver
 
 class SpreadsheetController @Inject()(
       val jcrom: Jcrom,
@@ -28,7 +27,10 @@ class SpreadsheetController @Inject()(
 
   // For JcrSessionFactory interoperability
   implicit private def toPlayFunc[A, B](f: A => B): F.Function[A, B] =
-    new F.Function[A, B] { def apply(a: A): B = f(a) }
+    new F.Function[A, B] {
+      def apply(a: A): B = f(a)
+    }
+
 
   def hasExternalRefs(fileId: String) = isAuthenticatedAsync { user => implicit request =>
     val yes = Ok
@@ -61,7 +63,9 @@ class SpreadsheetController @Inject()(
 
   private def detector: ExternalCellRefDetector = ???
 
-  private def resolver(user: CacheableUser): ExternalCellRefResolver = ???
+  private def resolver(user: CacheableUser): ExternalCellRefResolver =
+    new FileStoreExternalCellRefResolver(
+        sessionFactory, filestore, user.getJackrabbitUserId)
 
   private def replacer: ExternalCellRefReplacer = ???
 
