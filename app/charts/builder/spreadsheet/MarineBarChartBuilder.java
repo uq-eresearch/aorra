@@ -8,6 +8,7 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
@@ -23,42 +24,35 @@ import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
-public class MarineBarChartBuilder extends AbstractBuilder {
+public abstract class MarineBarChartBuilder extends AbstractBuilder {
 
-  private static final Map<Attribute, Object> DEFAULTS_TSS = ImmutableMap.<Attribute, Object>of(
-      Attribute.TITLE,"Area (%) where the annual mean value for total suspended solids" +
-          " exceeded the Water Quality Guidelines",
-      Attribute.RANGE_AXIS_TITLE, "Area (%)",
-      Attribute.DOMAIN_AXIS_TITLE, "Region");
-
-  private static final Map<Attribute, Object> DEFAULTS_CHLORO = ImmutableMap.<Attribute, Object>of(
-      Attribute.TITLE,"Area (%) where the annual mean value for chlorophyll a" +
-          " exceeded the Water Quality Guidelines",
-      Attribute.RANGE_AXIS_TITLE, "Area (%)",
-      Attribute.DOMAIN_AXIS_TITLE, "Region");
-
-  private static final Map<ChartType, Map<Attribute, Object>> DEFAULTS = 
-      ImmutableMap.of(ChartType.TOTAL_SUSPENDED_SEDIMENT, DEFAULTS_TSS,
-          ChartType.CHLOROPHYLL_A, DEFAULTS_CHLORO);
-
-  public MarineBarChartBuilder() {
-    super(ImmutableList.of(ChartType.CHLOROPHYLL_A, ChartType.TOTAL_SUSPENDED_SEDIMENT));
+  public MarineBarChartBuilder(ChartType type) {
+    super(type);
   }
+
+  private ChartConfigurator configurator(Map<Attribute, Object> defaults,
+      SpreadsheetDataSource datasource) {
+    return new ChartConfigurator(defaults, datasource);
+  }
+
+  abstract Map<Attribute, Object> defaults();
 
   @Override
   protected boolean canHandle(SpreadsheetDataSource datasource) {
-    Map<Attribute, Object> cfg = new ChartConfigurator(datasource,14,0).getConfiguration(null);
-    return supports((ChartType)cfg.get(Attribute.TYPE));
+    try {
+      return StringUtils.startsWithIgnoreCase(datasource.select("A1").asString(),
+          (String)defaults().get(Attribute.TITLE));
+    } catch (MissingDataException e) {
+      return false;
+    }
   }
 
   @Override
   protected Chart build(SpreadsheetDataSource datasource, final ChartType type,
       final Region region) {
-    ChartConfigurator configurator = new ChartConfigurator(DEFAULTS.get(type), datasource, 14, 0);
-    if(region == Region.GBR && supports(type) &&
-        type.equals(configurator.getConfiguration(null).get(Attribute.TYPE))) {
+    if(region == Region.GBR && supports(type)) {
+      ChartConfigurator configurator = configurator(defaults(), datasource);
       final ADCDataset dataset = createDataset(datasource);
       configurator.configure(dataset);
       final Drawable d = new MarineBarChart().createChart(dataset);
