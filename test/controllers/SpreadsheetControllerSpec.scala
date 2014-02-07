@@ -72,7 +72,6 @@ class SpreadsheetControllerSpec extends Specification {
           .createFile("test.xlsx", XLSX_MIME_TYPE,
             new FileInputStream("test/cots_outbreak.xlsx"))
         val id = file.getIdentifier
-        pending
         val Some(result) = route(
             FakeRequest(GET,
                 s"/file/$id/spreadsheet-external-references", rh,

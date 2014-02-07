@@ -6,16 +6,13 @@ import scala.concurrent.Future
 import org.jcrom.Jcrom
 import com.google.inject.Inject
 import charts.builder.FileStoreDataSourceFactory.getDataSource
-import charts.builder.spreadsheet.external.ExternalCellRefDetector
-import charts.builder.spreadsheet.external.ExternalCellRefReplacer
-import charts.builder.spreadsheet.external.ExternalCellRefResolver
+import charts.builder.spreadsheet.external._
 import controllers.ScalaSecured.isAuthenticatedAsync
 import javax.jcr.Session
 import models.CacheableUser
 import play.api.mvc.Controller
 import play.libs.F
 import service.filestore.FileStore
-import charts.builder.spreadsheet.external.FileStoreExternalCellRefResolver
 
 class SpreadsheetController @Inject()(
       val jcrom: Jcrom,
@@ -61,7 +58,8 @@ class SpreadsheetController @Inject()(
   }
 
 
-  private def detector: ExternalCellRefDetector = ???
+  private def detector: ExternalCellRefDetector =
+    SpreadsheetDataSourceExternalCellRefDetector
 
   private def resolver(user: CacheableUser): ExternalCellRefResolver =
     new FileStoreExternalCellRefResolver(
