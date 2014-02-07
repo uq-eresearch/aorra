@@ -8,7 +8,7 @@ import scala.collection.JavaConversions.asScalaSet
 object SpreadsheetDataSourceExternalCellRefDetector extends ExternalCellRefDetector {
 
   def hasAny(ds: SpreadsheetDataSource): Future[Boolean] = future {
-    !ds.externalReferences.isEmpty
+    ds.hasExternalReferences
   }
 
   def scan(ds: SpreadsheetDataSource): Future[Set[UnresolvedRef]] = future {

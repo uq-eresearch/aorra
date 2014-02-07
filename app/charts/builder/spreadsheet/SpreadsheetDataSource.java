@@ -32,7 +32,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
   private Workbook workbook;
 
   private FormulaEvaluator evaluator;
-  
+
   private final int defaultSheet;
 
   private static class SpreadsheetCellValue implements Value {
@@ -81,7 +81,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
       } catch(RuntimeException e) {
         if(cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
           switch(cell.getCachedFormulaResultType()) {
-            case Cell.CELL_TYPE_NUMERIC: 
+            case Cell.CELL_TYPE_NUMERIC:
               double val = cell.getNumericCellValue();
               result = Double.toString(val);
               break;
@@ -360,7 +360,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
       Integer max = getColumnCount(row);
       if(max == null) {
           return result;
-      } 
+      }
       for(int col = 0;col <= max;col++) {
           result.add(select(row, col));
       }
@@ -396,6 +396,20 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   FormulaEvaluator evaluator() {
     return evaluator;
+  }
+
+  public boolean hasExternalReferences() {
+    for (int si = 0; si < workbook.getNumberOfSheets();si++) {
+      Sheet sheet = workbook.getSheetAt(si);
+      for (Row row : sheet) {
+        for (Cell cell : row) {
+          if (externalReference(cell, sheet.getSheetName()) != null) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   public Set<UnresolvedRef> externalReferences() {
