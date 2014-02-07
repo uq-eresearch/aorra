@@ -117,7 +117,11 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
       for(int row=1;!eof(row, ds);row++) {
         String r0 = ds.select(row, 0).asString();
         if(StringUtils.isBlank(r0)) {
-          continue;
+          if(values.isEmpty()) {
+            continue;
+          } else {
+            break;
+          }
         }
         if(Region.lookup(r0) != null) {
           current = Region.lookup(r0);

@@ -72,6 +72,10 @@ public abstract class LandPracticeSystems implements ManagementPracticeSystems {
           return dataset.getRowCount()-1 == row;
         }
 
+        private boolean renderBarLabel(CategoryDataset dataset, int row, int column) {
+          return dataset.getValue(row, column) != null;
+        }
+
         @Override
         public void drawItem(Graphics2D g2, CategoryItemRendererState state,
                 Rectangle2D dataArea, CategoryPlot plot,
@@ -80,7 +84,7 @@ public abstract class LandPracticeSystems implements ManagementPracticeSystems {
             super.drawItem(g2, state, dataArea, plot, domainAxis, rangeAxis, dataset, row,
                     column, pass);
             // after the stacked bar is completely rendered draw the glow text into it.
-            if((pass == 2) && isSeriesComplete(dataset, row)) {
+            if((pass == 2) && isSeriesComplete(dataset, row) && renderBarLabel(dataset, row, column)) {
                 GraphUtils g = new GraphUtils(g2);
                 String rowKey = dataset.getRowKey(row).toString();
                 String colKey = dataset.getColumnKey(column).toString();
