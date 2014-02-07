@@ -4,9 +4,6 @@ import org.specs2.mutable.Specification
 import java.io.FileInputStream
 import charts.builder.FileStoreDataSourceFactory.getDataSource
 import charts.builder.spreadsheet.XlsxDataSource
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import java.util.concurrent.TimeUnit
 import charts.builder.spreadsheet.XlsDataSource
 
 class SpreadsheetDataSourceExternalCellRefDetectorSpec extends Specification {
@@ -34,10 +31,7 @@ class SpreadsheetDataSourceExternalCellRefDetectorSpec extends Specification {
         (filename, expected) <- expectations
       } {
         val ds = getDataSource(filename)
-        val result = Await.result(
-              subject.hasAny(ds),
-              Duration(30, TimeUnit.SECONDS))
-        result must_== expected
+        subject.hasAny(ds) must_== expected
       }
       true
     }

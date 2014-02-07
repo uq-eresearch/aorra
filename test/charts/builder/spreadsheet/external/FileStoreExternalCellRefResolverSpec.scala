@@ -2,9 +2,6 @@ package charts.builder.spreadsheet.external
 
 import java.io.InputStream
 import java.io.FileInputStream
-import java.util.concurrent.TimeUnit
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import helpers.FileStoreHelper.XLSX_MIME_TYPE
 import org.specs2.mutable.Specification
 import test.AorraScalaHelper.FakeAorraApp
@@ -40,9 +37,8 @@ class FileStoreExternalCellRefResolverSpec extends Specification {
 
         val resolver = new FileStoreExternalCellRefResolver(
             sessionFactory, filestore, userId)
-        val resolvedRefs: Set[ResolvedRef] = Await.result(
-            resolver.resolve(baseFileId, unresolvedRefs),
-            Duration(30, TimeUnit.SECONDS))
+        val resolvedRefs: Set[ResolvedRef] =
+            resolver.resolve(baseFileId, unresolvedRefs)
 
         resolvedRefs.foreach { (ref) =>
           ref.source must beSome
@@ -66,9 +62,8 @@ class FileStoreExternalCellRefResolverSpec extends Specification {
 
         val resolver = new FileStoreExternalCellRefResolver(
             sessionFactory, filestore, userId)
-        val resolvedRefs: Set[ResolvedRef] = Await.result(
-            resolver.resolve(baseFileId, unresolvedRefs),
-            Duration(30, TimeUnit.SECONDS))
+        val resolvedRefs: Set[ResolvedRef] =
+            resolver.resolve(baseFileId, unresolvedRefs)
 
         resolvedRefs.foreach { (ref) =>
           ref.source must beSome

@@ -1,18 +1,14 @@
 package charts.builder.spreadsheet.external
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future,future}
 import charts.builder.spreadsheet.SpreadsheetDataSource
 import scala.collection.JavaConversions.asScalaSet
 
 object SpreadsheetDataSourceExternalCellRefDetector extends ExternalCellRefDetector {
 
-  def hasAny(ds: SpreadsheetDataSource): Future[Boolean] = future {
+  def hasAny(ds: SpreadsheetDataSource): Boolean =
     ds.hasExternalReferences
-  }
 
-  def scan(ds: SpreadsheetDataSource): Future[Set[UnresolvedRef]] = future {
+  def scan(ds: SpreadsheetDataSource): Set[UnresolvedRef] =
     asScalaSet(ds.externalReferences).toSet
-  }
 
 }

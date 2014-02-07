@@ -1,10 +1,7 @@
 package charts.builder.spreadsheet.external
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import charts.builder.FileStoreDataSourceFactory.getDataSource
 import charts.builder.spreadsheet.SpreadsheetDataSource
-import scala.concurrent.future
-import scala.concurrent.Future
 import service.filestore.FileStore
 import service.JcrSessionFactory
 import com.google.inject.Inject
@@ -21,7 +18,7 @@ class FileStoreExternalCellRefResolver @Inject()(
   override def resolve(
       base: DestinationIdentifier,
       refs: Set[UnresolvedRef]
-      ): Future[Set[ResolvedRef]] = future {
+      ): Set[ResolvedRef] =
     withFileStoreManager(jackrabbitUser) { (fsm) =>
       val fsmh = new FsmHelper(fsm)
       // Resolve base file
@@ -39,7 +36,6 @@ class FileStoreExternalCellRefResolver @Inject()(
         ResolvedRef(resolvedFile.map(getDataSource(_)), ref.link)
       }
     }
-  }
 
 
   private class FsmHelper(fsm: FileStore.Manager) {

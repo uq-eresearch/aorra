@@ -37,9 +37,9 @@ case class ResolvedRef(
 
 trait ExternalCellRefDetector {
 
-  def hasAny(ds: SpreadsheetDataSource): Future[Boolean]
+  def hasAny(ds: SpreadsheetDataSource): Boolean
 
-  def scan(ds: SpreadsheetDataSource): Future[Set[UnresolvedRef]]
+  def scan(ds: SpreadsheetDataSource): Set[UnresolvedRef]
 
 }
 
@@ -48,7 +48,7 @@ trait ExternalCellRefReplacer {
 
   // If None is returned, then use original
   def replace(ds: SpreadsheetDataSource, refs: Set[ResolvedRef]):
-    Future[Option[InputStream]]
+    Option[InputStream]
 
 }
 
@@ -58,6 +58,6 @@ trait ExternalCellRefResolver {
   type DestinationIdentifier = String
 
   def resolve(base: DestinationIdentifier, refs: Set[UnresolvedRef]):
-    Future[Set[ResolvedRef]]
+    Set[ResolvedRef]
 
 }
