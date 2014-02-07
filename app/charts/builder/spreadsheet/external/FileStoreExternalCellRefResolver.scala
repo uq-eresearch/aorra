@@ -1,7 +1,6 @@
 package charts.builder.spreadsheet.external
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import charts.builder.FileStoreDataSourceFactory.getDataSource
 import charts.builder.spreadsheet.SpreadsheetDataSource
 import scala.concurrent.future
@@ -11,6 +10,8 @@ import service.JcrSessionFactory
 import com.google.inject.Inject
 import play.libs.F
 import javax.jcr.Session
+import org.jcrom.util.JcrUtils
+import org.jcrom.util.PathUtils
 
 class FileStoreExternalCellRefResolver @Inject()(
     sessionFactory: JcrSessionFactory,
@@ -50,7 +51,28 @@ class FileStoreExternalCellRefResolver @Inject()(
       }
 
     def getFileByPath(
-        file: FileStore.File, path: String): Option[FileStore.File] = ???
+        file: FileStore.File, path: String): Option[FileStore.File] = {
+      def followPath(
+          folder: FileStore.Folder,
+          parts: Seq[String]): Option[FileStore.File] = {
+        folder.getFileOrFolder(parts.head) match {
+          case null => None
+          case file: FileStore.File =>
+            if (parts.tail.isEmpty)
+              Some(file)
+            else
+              None
+          case subFolder: FileStore.Folder =>
+            if (parts.tail.isEmpty)
+              None
+            else
+              followPath(subFolder, parts.tail)
+        }
+      }
+      val baseFolder = file.getParent
+      val parts = path.split("/")
+      followPath(baseFolder, parts)
+    }
 
   }
 

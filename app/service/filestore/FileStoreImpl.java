@@ -215,10 +215,14 @@ public class FileStoreImpl implements FileStore {
     @Override
     public FileOrFolder getByIdentifier(final String id)
         throws RepositoryException {
-      final String absPath = NodeWrapper.getPath(session, id);
-      if (absPath == null)
+      try {
+        final String absPath = NodeWrapper.getPath(session, id);
+        if (absPath == null)
+          return null;
+        return getFileOrFolder(absPath);
+      } catch (IllegalArgumentException e) {
         return null;
-      return getFileOrFolder(absPath);
+      }
     }
 
     @Override

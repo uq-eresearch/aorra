@@ -49,7 +49,7 @@ object AorraScalaHelper {
   }
 
   // Convert asAdminUser to work well with Scala
-  def asAdminUser(f: (Session, User, FakeHeaders) => Unit) = {
+  def asAdminUser(f: (Session, User, FakeHeaders) => Unit) {
     try {
       AorraTestUtils.asAdminUser(
           new F.Function3[Session, User, JFakeRequest, Session]() {
@@ -60,7 +60,7 @@ object AorraScalaHelper {
           f(session, u, headers)
           session
         }
-      });
+      })
     } catch {
       // Catch and rethrow Specs2 exceptions
       case e: RuntimeException =>
