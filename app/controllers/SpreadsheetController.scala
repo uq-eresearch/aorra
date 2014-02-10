@@ -45,15 +45,19 @@ class SpreadsheetController @Inject()(
       case Some(ds) =>
         future {
           val unresolvedRefs = detector.scan(ds)
-          val resolvedRefs = resolver(user).resolve(fileId, unresolvedRefs)
-          replacer.replace(ds, resolvedRefs) match {
-            case None => Ok // File is unchanged - no write required.
-            case Some(replacement: InputStream) =>
-              val updatedFile = writeContent(fileId, user, replacement)
-              val loc = controllers.routes.FileStoreController.downloadFile(
-                    updatedFile.getIdentifier(),
-                    updatedFile.getVersions().last().getName()).url
-              Created.withHeaders("Location" -> loc)
+          if (unresolvedRefs.isEmpty) {
+            Ok // Nothing to do, so return immediately
+          } else {
+            val resolvedRefs = resolver(user).resolve(fileId, unresolvedRefs)
+            replacer.replace(ds, resolvedRefs) match {
+              case None => Ok // File is unchanged - no write required.
+              case Some(replacement: InputStream) =>
+                val updatedFile = writeContent(fileId, user, replacement)
+                val loc = controllers.routes.FileStoreController.downloadFile(
+                      updatedFile.getIdentifier(),
+                      updatedFile.getVersions().last().getName()).url
+                Created.withHeaders("Location" -> loc)
+            }
           }
         }
       case None => Future.successful(NotFound)

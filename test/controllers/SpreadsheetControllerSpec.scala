@@ -66,7 +66,7 @@ class SpreadsheetControllerSpec extends Specification {
       }
     }
 
-    "returns 404 if a spreadsheet w/o external refs" in new FakeAorraApp {
+    "returns 404 for a spreadsheet w/o external refs" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         val file = filestore.getManager(session).getRoot
           .createFile("test.xlsx", XLSX_MIME_TYPE,
@@ -77,6 +77,20 @@ class SpreadsheetControllerSpec extends Specification {
                 s"/file/$id/spreadsheet-external-references", rh,
                 AnyContentAsEmpty))
         status(result) must equalTo(404)
+      }
+    }
+
+    "returns 200 for a spreadsheet with external refs" in new FakeAorraApp {
+      asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
+        val file = filestore.getManager(session).getRoot
+          .createFile("test.xlsx", XLSX_MIME_TYPE,
+            new FileInputStream("test/extref.xlsx"))
+        val id = file.getIdentifier
+        val Some(result) = route(
+            FakeRequest(HEAD,
+                s"/file/$id/spreadsheet-external-references", rh,
+                AnyContentAsEmpty))
+        status(result) must equalTo(200)
       }
     }
 
@@ -103,6 +117,37 @@ class SpreadsheetControllerSpec extends Specification {
                 s"/file/$id/spreadsheet-external-references/update", rh,
                 AnyContentAsEmpty))
         status(result) must equalTo(404)
+      }
+    }
+
+    "returns 200 for a spreadsheet w/o external refs" in new FakeAorraApp {
+      asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
+        val file = filestore.getManager(session).getRoot
+          .createFile("test.xlsx", XLSX_MIME_TYPE,
+            new FileInputStream("test/cots_outbreak.xlsx"))
+        val id = file.getIdentifier
+        val Some(result) = route(
+            FakeRequest(POST,
+                s"/file/$id/spreadsheet-external-references/update", rh,
+                AnyContentAsEmpty))
+        status(result) must equalTo(200)
+      }
+    }
+
+    "returns 201 for a spreadsheet with external refs" in new FakeAorraApp {
+      // Note: this should result in broken cells, which is why a new version
+      // is expected to be created.
+      asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
+        val file = filestore.getManager(session).getRoot
+          .createFile("test.xlsx", XLSX_MIME_TYPE,
+            new FileInputStream("test/extref.xlsx"))
+        val id = file.getIdentifier
+        pending
+        val Some(result) = route(
+            FakeRequest(POST,
+                s"/file/$id/spreadsheet-external-references/update", rh,
+                AnyContentAsEmpty))
+        status(result) must equalTo(201)
       }
     }
 
