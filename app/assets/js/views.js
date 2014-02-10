@@ -1220,18 +1220,58 @@ define([
       return templates.render('img_view', serialized_model);
     }
   });
+  
+  var ExternalRefButton = Marionette.ItemView.extend({
+    className: 'hidden',
+    triggers: {
+      'click .js-update': 'update'
+    },
+    ui: {
+      'button': '.js-update'
+    },
+    initialize: function() {
+      // Check if external references exist
+      $.ajax({
+        type: 'GET',
+        url: this.model.url()+"/spreadsheet-external-references",
+        success: _.bind(function() {
+          // Show the button
+          this.$el.removeClass('hidden');
+        }, this)
+      });
+    },
+    onUpdate: function() {
+      this.ui.button.button('loading');
+      $.ajax({
+        type: 'POST',
+        url: this.model.url()+"/spreadsheet-external-references/update"
+      }).done(_.bind(function() {
+        this.ui.button.button('reset');
+      }, this));
+    },
+    template: function(serialized_model) {
+      return templates.render('external_refs', serialized_model);
+    }
+  });
 
-  var ChartElementView = Marionette.ItemView.extend({
+  var ChartElementView = Marionette.Layout.extend({
     modelEvents: {
       'change': 'render'
+    },
+    regions: {
+      'externals': '.region-external-refs'
     },
     initialize: function() {
       var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
         format: svgOrPng
       });
+      var externalRefButton = new ExternalRefButton({ model: this.model });
       var onSuccess = function(data) {
         this._charts = data.charts;
         this.render();
+        if (this.model.get('accessLevel') == 'RW') {
+          this.externals.show(externalRefButton);
+        }
       };
       $.get(url, _.bind(onSuccess, this));
     },
