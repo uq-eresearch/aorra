@@ -451,21 +451,23 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   public InputStream updateExternalReferences(Set<ResolvedRef> refs) throws IOException {
     boolean dirty = false;
-    for(ResolvedRef ref : refs) {
-      if(!ref.source().isEmpty()) {
-        SpreadsheetDataSource source = ref.source().get();
-        try {
-          Cell sCell = source.selectCell(ref.link().source());
-          Cell dCell = selectCell(ref.link().destination());
-          if(dCell != null) {
-            if(updatePrecalculatedValue(dCell, sCell, source.evaluator())) {
-              dirty = true;
-            }
-          }
-        } catch(Exception e) {e.printStackTrace();}
+    for (ResolvedRef ref : refs) {
+      try {
+        final Cell dCell = selectCell(ref.link().destination());
+        if (dCell == null)
+          continue;
+        if (ref.source().isDefined()) {
+          final SpreadsheetDataSource source = ref.source().get();
+          final Cell sCell = source.selectCell(ref.link().source());
+          dirty |= updatePrecalculatedValue(dCell, sCell, source.evaluator());
+        } else {
+          dirty |= updatePrecalculatedError(dCell, FormulaError.REF);
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
       }
     }
-    return dirty?writeToTempFile():null;
+    return dirty ? writeToTempFile() : null;
   }
 
   private boolean updatePrecalculatedValue(Cell destination,

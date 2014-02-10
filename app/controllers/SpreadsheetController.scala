@@ -13,6 +13,7 @@ import models.CacheableUser
 import play.api.mvc.Controller
 import play.libs.F
 import service.filestore.FileStore
+import charts.builder.spreadsheet.external.SpreadsheetDataSourceExternalCellRefReplacer
 
 class SpreadsheetController @Inject()(
       val jcrom: Jcrom,
@@ -52,10 +53,11 @@ class SpreadsheetController @Inject()(
             replacer.replace(ds, resolvedRefs) match {
               case None => Ok // File is unchanged - no write required.
               case Some(replacement: InputStream) =>
-                val updatedFile = writeContent(fileId, user, replacement)
+                val (updatedFile, updatedVersion) =
+                  writeContent(fileId, user, replacement)
                 val loc = controllers.routes.FileStoreController.downloadFile(
                       updatedFile.getIdentifier(),
-                      updatedFile.getVersions().last().getName()).url
+                      updatedVersion.getName()).url
                 Created.withHeaders("Location" -> loc)
             }
           }
@@ -72,7 +74,8 @@ class SpreadsheetController @Inject()(
     new FileStoreExternalCellRefResolver(
         sessionFactory, filestore, user.getJackrabbitUserId)
 
-  private def replacer: ExternalCellRefReplacer = ???
+  private def replacer: ExternalCellRefReplacer =
+    SpreadsheetDataSourceExternalCellRefReplacer
 
   private def retrieveDatasource(fileId: String, user: CacheableUser) =
     sessionFactory.inSession(user.getJackrabbitUserId, { (session: Session) =>
@@ -85,12 +88,13 @@ class SpreadsheetController @Inject()(
 
   private def writeContent(
       fileId: String, user: CacheableUser,
-      newContent: InputStream): FileStore.File = {
+      newContent: InputStream): (FileStore.File, FileStore.File) = {
     sessionFactory.inSession(user.getJackrabbitUserId, { (session: Session) =>
       val fsm = filestore.getManager(session)
       fsm.getByIdentifier(fileId) match {
         case file: FileStore.File =>
-          file.update(file.getMimeType, newContent)
+          ( file.update(file.getMimeType, newContent),
+            file.getVersions().last() )
         case fof =>
           throw new RuntimeException("The source file has disappeared: "+fof)
       }

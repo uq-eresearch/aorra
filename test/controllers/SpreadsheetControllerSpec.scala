@@ -140,9 +140,8 @@ class SpreadsheetControllerSpec extends Specification {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         val file = filestore.getManager(session).getRoot
           .createFile("test.xlsx", XLSX_MIME_TYPE,
-            new FileInputStream("test/extref.xlsx"))
+            new FileInputStream("test/progress_table.xlsx"))
         val id = file.getIdentifier
-        pending
         val Some(result) = route(
             FakeRequest(POST,
                 s"/file/$id/spreadsheet-external-references/update", rh,
