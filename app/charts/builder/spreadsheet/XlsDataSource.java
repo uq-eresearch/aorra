@@ -17,7 +17,7 @@ import charts.builder.spreadsheet.external.UnresolvedRef;
 public class XlsDataSource extends SpreadsheetDataSource {
 
   private static final Pattern EXTERNAL_REF_FORMULA = Pattern.compile(
-      "^\\+'?\\[(.+)\\](.*?)'?!\\$(\\w+)\\$(\\d+)$");
+      "^\\+?'?\\[(.+)\\](.*?)'?!\\$(\\w+)\\$(\\d+)$");
 
   public XlsDataSource(InputStream in) throws IOException {
     HSSFWorkbook workbook = new HSSFWorkbook(in);
@@ -37,7 +37,7 @@ public class XlsDataSource extends SpreadsheetDataSource {
   }
 
   @Override
-  UnresolvedRef externalReference(Cell cell, String sheetname) {
+  UnresolvedRef externalReference(Cell cell) {
     UnresolvedRef uref = null;
     if((cell != null) && (cell.getCellType() == Cell.CELL_TYPE_FORMULA)) {
       Matcher m = EXTERNAL_REF_FORMULA.matcher(cell.getCellFormula());
@@ -45,7 +45,7 @@ public class XlsDataSource extends SpreadsheetDataSource {
         CellReference crSource = new CellReference(String.format("%s!%s%s",
             m.group(2), m.group(3), m.group(4)));
         uref = uref(m.group(1),
-            crSource.formatAsString(), String.format("%s!%s", sheetname,
+            crSource.formatAsString(), String.format("%s!%s", cell.getSheet().getSheetName(),
             new CellReference(cell).formatAsString()));
       }
     }

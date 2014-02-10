@@ -1,25 +1,19 @@
 package charts.builder.spreadsheet;
 
 import java.io.FileInputStream;
-import java.util.Set;
+import java.io.IOException;
+import java.io.InputStream;
 
-import org.junit.Assert;
-import org.junit.Test;
+public class XlsxDataSourceTest extends SpreadsheetDataSourceTest {
 
-import charts.builder.spreadsheet.external.UnresolvedRef;
+  @Override
+  SpreadsheetDataSource datasource() throws IOException {
+    return datasource(new FileInputStream("test/extref.xlsx"));
+  }
 
-public class XlsxDataSourceTest {
-
-  @Test
-  public void testExternalReferences() throws Exception {
-    XlsxDataSource ds = new XlsxDataSource(new FileInputStream("test/extref.xlsx"));
-    Set<UnresolvedRef> urefs = ds.externalReferences();
-    Assert.assertNotNull(urefs);
-    Assert.assertTrue(urefs.size() == 1);
-    UnresolvedRef uref = urefs.iterator().next();
-    Assert.assertEquals("external.xlsx", uref.source());
-    Assert.assertEquals("bar!A1", uref.link().source());
-    Assert.assertEquals("foo!A1", uref.link().destination());
+  @Override
+  SpreadsheetDataSource datasource(InputStream in) throws IOException {
+    return new XlsxDataSource(in);
   }
 
 }

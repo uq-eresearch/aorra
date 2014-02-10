@@ -40,7 +40,7 @@ public class XlsxDataSource extends SpreadsheetDataSource {
       "^xl/externalLinks/_rels/externalLink(\\d+).xml.rels$");
 
   private static final Pattern EXTERNAL_REF_FORMULA = Pattern.compile(
-      "^\\[(\\d+)\\](.*)!\\$(\\w+)\\$(\\d+)$");
+      "^\\+?\\[(\\d+)\\](.*)!\\$(\\w+)\\$(\\d+)$");
 
   private static final String REL_NS_URI =
       "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -126,7 +126,7 @@ public class XlsxDataSource extends SpreadsheetDataSource {
   }
 
   @Override
-  UnresolvedRef externalReference(Cell cell, String sheetname) {
+  UnresolvedRef externalReference(Cell cell) {
     UnresolvedRef uref = null;
     if((cell != null) && (cell.getCellType() == Cell.CELL_TYPE_FORMULA)) {
       Matcher m = EXTERNAL_REF_FORMULA.matcher(cell.getCellFormula());
@@ -140,7 +140,7 @@ public class XlsxDataSource extends SpreadsheetDataSource {
           if(nameOrId != null) {
           //FIXME escape sheet name?
             uref = uref(nameOrId,
-                cr.formatAsString(), String.format("%s!%s", sheetname,
+                cr.formatAsString(), String.format("%s!%s", cell.getSheet().getSheetName(),
                 new CellReference(cell).formatAsString()));
           }
         } catch(Exception e) {}

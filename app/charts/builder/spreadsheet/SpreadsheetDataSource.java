@@ -1,9 +1,15 @@
 package charts.builder.spreadsheet;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.formula.eval.ErrorEval;
@@ -18,9 +24,11 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.tika.io.IOUtils;
 
 import charts.builder.DataSource;
 import charts.builder.Value;
+import charts.builder.spreadsheet.external.ResolvedRef;
 import charts.builder.spreadsheet.external.SimpleCellLink;
 import charts.builder.spreadsheet.external.UnresolvedRef;
 
@@ -253,6 +261,11 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   @Override
   public Value select(String selector) throws MissingDataException {
+    Cell cell = selectCell(selector);
+    return cell!=null?new SpreadsheetCellValue(cell, evaluator):new EmptyCell();
+  }
+
+  private Cell selectCell(String selector) throws MissingDataException {
     // currently only CellReference selectors are supported like
     // [sheet!]<row><column>
     // e.g. Coral!A1 or just B20 which will select the cell from the first
@@ -275,13 +288,13 @@ public abstract class SpreadsheetDataSource implements DataSource {
     }
     Row row = sheet.getRow(cr.getRow());
     if (row == null) {
-      return new EmptyCell();
+      return null;
     }
     Cell cell = row.getCell(cr.getCol());
     if (cell == null) {
-      return new EmptyCell();
+      return null;
     }
-    return new SpreadsheetCellValue(cell, evaluator);
+    return cell;
   }
 
   private Sheet getSheet(String name) {
@@ -403,7 +416,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
       Sheet sheet = workbook.getSheetAt(si);
       for (Row row : sheet) {
         for (Cell cell : row) {
-          if (externalReference(cell, sheet.getSheetName()) != null) {
+          if (externalReference(cell) != null) {
             return true;
           }
         }
@@ -418,7 +431,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
       Sheet sheet = workbook.getSheetAt(si);
       for(Row row : sheet) {
         for(Cell cell : row) {
-          UnresolvedRef uref = externalReference(cell, sheet.getSheetName());
+          UnresolvedRef uref = externalReference(cell);
           if(uref != null) {
             urefs.add(uref);
           }
@@ -428,12 +441,177 @@ public abstract class SpreadsheetDataSource implements DataSource {
     return urefs;
   }
 
-  abstract UnresolvedRef externalReference(Cell cell, String sheetname);
+  abstract UnresolvedRef externalReference(Cell cell);
 
   UnresolvedRef uref(String sIdOrName, final String sSelector,
       final String dSelector) {
     return new UnresolvedRef(sIdOrName,
         new SimpleCellLink(sSelector, dSelector));
+  }
+
+  public InputStream updateExternalReferences(Set<ResolvedRef> refs) throws IOException {
+    boolean dirty = false;
+    for(ResolvedRef ref : refs) {
+      if(!ref.source().isEmpty()) {
+        SpreadsheetDataSource source = ref.source().get();
+        try {
+          Cell sCell = source.selectCell(ref.link().source());
+          Cell dCell = selectCell(ref.link().destination());
+          if(dCell != null) {
+            if(updatePrecalculatedValue(dCell, sCell, source.evaluator())) {
+              dirty = true;
+            }
+          }
+        } catch(Exception e) {e.printStackTrace();}
+      }
+    }
+    return dirty?writeToTempFile():null;
+  }
+
+  private boolean updatePrecalculatedValue(Cell destination,
+      Cell source, FormulaEvaluator sEvaluator) {
+    if(source != null) {
+      switch(source.getCellType()) {
+      case Cell.CELL_TYPE_BLANK:
+        return updatePrecalculatedBlank(destination);
+      case Cell.CELL_TYPE_BOOLEAN:
+        return updatePrecalculatedBoolean(destination, source.getBooleanCellValue());
+      case Cell.CELL_TYPE_ERROR:
+        return updatePrecalculatedError(destination,
+            FormulaError.forInt(source.getErrorCellValue()));
+      case Cell.CELL_TYPE_FORMULA:
+        try {
+          return updatePrecalculatedCellValue(destination, sEvaluator.evaluate(source));
+        } catch(Exception e) {
+          switch(source.getCachedFormulaResultType()) {
+          case Cell.CELL_TYPE_NUMERIC:
+            return updatePrecalculatedNumeric(destination, source.getNumericCellValue());
+          case Cell.CELL_TYPE_STRING:
+            return updatePrecalculatedString(destination, source.getStringCellValue());
+          case Cell.CELL_TYPE_BOOLEAN:
+            return updatePrecalculatedBoolean(destination, source.getBooleanCellValue());
+          case Cell.CELL_TYPE_ERROR:
+            return updatePrecalculatedError(destination,
+                FormulaError.forInt(source.getErrorCellValue()));
+          }
+        }
+      case Cell.CELL_TYPE_NUMERIC:
+        return updatePrecalculatedNumeric(destination, source.getNumericCellValue());
+      case Cell.CELL_TYPE_STRING:
+        return updatePrecalculatedString(destination, source.getStringCellValue());
+      default:
+        return false;
+      }
+    } else {
+      return updatePrecalculatedError(destination, FormulaError.REF);
+    }
+  }
+
+  private boolean updatePrecalculatedCellValue(Cell destination, CellValue val) {
+    if(val != null) {
+      switch(val.getCellType()) {
+      case Cell.CELL_TYPE_BOOLEAN:
+        return updatePrecalculatedBoolean(destination, val.getBooleanValue());
+      case Cell.CELL_TYPE_NUMERIC:
+        return updatePrecalculatedNumeric(destination, val.getNumberValue());
+      case Cell.CELL_TYPE_STRING:
+        return updatePrecalculatedString(destination, val.getStringValue());
+      case Cell.CELL_TYPE_BLANK:
+        return updatePrecalculatedBlank(destination);
+      case Cell.CELL_TYPE_ERROR:
+        return updatePrecalculatedError(destination,
+            FormulaError.forInt(val.getErrorValue()));
+      default: return false;
+      }
+    } else {
+      return updatePrecalculatedError(destination, FormulaError.REF);
+    }
+  }
+
+  private boolean updatePrecalculatedBlank(Cell destination) {
+    return updatePrecalculatedNumeric(destination, 0);
+  }
+
+  private boolean updatePrecalculatedNumeric(Cell destination, double sVal) {
+    if(isFormula(destination)) {
+      try {
+        double dVal = destination.getNumericCellValue();
+        if(dVal != sVal) {
+          destination.setCellValue(sVal);
+          return true;
+        }
+      } catch(Exception e) {
+        destination.setCellValue(sVal);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean updatePrecalculatedString(Cell destination, String sVal) {
+    if(isFormula(destination)) {
+      try {
+        String dVal = destination.getStringCellValue();
+        if(!StringUtils.equals(sVal, dVal)) {
+          destination.setCellValue(sVal);
+          return true;
+        }
+      } catch(Exception e) {
+        destination.setCellValue(sVal);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean updatePrecalculatedError(Cell destination, FormulaError sError) {
+    if(isFormula(destination)) {
+      try {
+        FormulaError dError = FormulaError.forInt(destination.getErrorCellValue());
+        if(sError != dError) {
+          destination.setCellErrorValue(sError.getCode());
+          return true;
+        }
+      } catch(Exception e) {
+        destination.setCellValue(sError.getCode());
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean updatePrecalculatedBoolean(Cell destination, boolean sVal) {
+    if(isFormula(destination)) {
+      try {
+        boolean dVal = destination.getBooleanCellValue();
+        if(dVal != sVal) {
+          destination.setCellValue(sVal);
+          return true;
+        }
+      } catch(Exception e) {
+        destination.setCellValue(sVal);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isFormula(Cell cell) {
+    return (cell != null) && (cell.getCellType() == Cell.CELL_TYPE_FORMULA);
+  }
+
+  private InputStream writeToTempFile() throws IOException {
+    final File f = File.createTempFile("spreadsheet", "poi");
+    FileOutputStream out = new FileOutputStream(f);
+    workbook.write(out);
+    IOUtils.closeQuietly(out);
+    return new FileInputStream(f) {
+      @Override
+      public void close() throws IOException {
+        super.close();
+        FileUtils.deleteQuietly(f);
+      }
+    };
   }
 
 }
