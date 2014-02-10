@@ -1232,7 +1232,7 @@ define([
     initialize: function() {
       // Check if external references exist
       $.ajax({
-        type: 'GET',
+        type: 'HEAD',
         url: this.model.url()+"/spreadsheet-external-references",
         success: _.bind(function() {
           // Show the button
