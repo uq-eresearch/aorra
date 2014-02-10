@@ -17,7 +17,12 @@ trait CellLink {
    */
   def destination: Selector
 
+  override def toString = s""""$source" \u2192 "$destination""""
+
 }
+
+class SimpleCellLink(val source: String, val destination: String)
+  extends CellLink
 
 sealed trait ExternalCellRef[S] {
   type SpreadsheetReference = S

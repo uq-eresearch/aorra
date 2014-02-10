@@ -21,7 +21,7 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import charts.builder.DataSource;
 import charts.builder.Value;
-import charts.builder.spreadsheet.external.CellLink;
+import charts.builder.spreadsheet.external.SimpleCellLink;
 import charts.builder.spreadsheet.external.UnresolvedRef;
 
 import com.google.common.collect.Lists;
@@ -430,17 +430,10 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   abstract UnresolvedRef externalReference(Cell cell, String sheetname);
 
-  UnresolvedRef uref(String sIdOrName, final String sSelector, final String dSelector) {
-    return new UnresolvedRef(sIdOrName, new CellLink() {
-      @Override
-      public String destination() {
-        return dSelector;
-      }
-      @Override
-      public String source() {
-        return sSelector;
-      }
-    });
+  UnresolvedRef uref(String sIdOrName, final String sSelector,
+      final String dSelector) {
+    return new UnresolvedRef(sIdOrName,
+        new SimpleCellLink(sSelector, dSelector));
   }
 
 }

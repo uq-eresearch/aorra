@@ -19,7 +19,7 @@ class SpreadsheetDataSourceExternalCellRefDetectorSpec extends Specification {
 
   "detector" should {
 
-    "be able to detect the presence of external refs" in {
+    "detect the presence of external refs" in {
       val expectations = List(
         ("test/marine.xls" -> false),
         ("test/marine.xlsx" -> false),
@@ -34,6 +34,16 @@ class SpreadsheetDataSourceExternalCellRefDetectorSpec extends Specification {
         subject.hasAny(ds) must_== expected
       }
       true
+    }
+
+    "provide a set of external refs" in {
+      val ds = getDataSource("test/extref.xlsx")
+      val refs = subject.scan(ds)
+      refs must have size(1)
+      val ref = refs.head
+      ref.source must_== "external.xlsx"
+      ref.link.source must_== "bar!A1"
+      ref.link.destination must_== "foo!A1"
     }
 
   }
