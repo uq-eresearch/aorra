@@ -1247,14 +1247,17 @@ define([
       this.ui.button.button('loading');
       $.ajax({
         type: 'POST',
-        url: this.model.url()+"/spreadsheet-external-references/update"
+        url: this.model.url()+"/spreadsheet-external-references/update",
+        statusCode: {
+          200: function() {
+            this.ui.msg.text('No updated required.');
+          },
+          201: function() {
+            this.ui.msg.text('Successfully updated.');
+          }
+        }
       }).done(_.bind(function(data, textStatus, jqXHR) {
         this.ui.button.button('reset');
-        if (jqXHR.status == 200) {
-          this.ui.msg.text('No updated required.');
-        } else {
-          this.ui.msg.text('Successfully updated.');
-        }
       }, this));
     },
     serializeData: function() {
