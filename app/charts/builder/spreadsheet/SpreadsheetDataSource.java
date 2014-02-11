@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.formula.eval.ErrorEval;
 import org.apache.poi.ss.usermodel.Cell;
@@ -473,7 +474,9 @@ public abstract class SpreadsheetDataSource implements DataSource {
       Sheet sheet = workbook.getSheetAt(si);
       for(Row row : sheet) {
         for(Cell cell : row) {
-          evaluator().evaluateInCell(cell);
+          if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+            evaluator().evaluateFormulaCell(cell);
+          }
         }
       }
     }
