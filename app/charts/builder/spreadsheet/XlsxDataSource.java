@@ -25,6 +25,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.xml.sax.InputSource;
 
@@ -109,8 +110,8 @@ public class XlsxDataSource extends SpreadsheetDataSource {
 
   private void initWorkbook(InputStream in) throws IOException {
     XSSFWorkbook workbook = new XSSFWorkbook(in);
-    FormulaEvaluator evaluator = workbook.getCreationHelper()
-        .createFormulaEvaluator();
+    XSSFFormulaEvaluator evaluator = new XSSFFormulaEvaluator(workbook);
+    evaluator.setIgnoreMissingWorkbooks(true);
     init(workbook, evaluator);
   }
 

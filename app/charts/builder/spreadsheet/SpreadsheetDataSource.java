@@ -43,22 +43,19 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   private final int defaultSheet;
 
-  private static class SpreadsheetCellValue implements Value {
+  private class SpreadsheetCellValue implements Value {
 
     private final Cell cell;
 
-    private final FormulaEvaluator evaluator;
-
-    public SpreadsheetCellValue(Cell cell, FormulaEvaluator evaluator) {
+    public SpreadsheetCellValue(Cell cell) {
       this.cell = cell;
-      this.evaluator = evaluator;
     }
 
     @Override
     public String getValue() {
       String result = "";
       try {
-        CellValue cellValue = evaluator.evaluate(cell);
+        CellValue cellValue = evaluator().evaluate(cell);
         if (cellValue == null) {
           return "";
         }
@@ -115,7 +112,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
     public String toString() {
       String result;
       DataFormatter df = new DataFormatter();
-      result = df.formatCellValue(cell, evaluator);
+      result = df.formatCellValue(cell, evaluator());
       return result;
     }
 
@@ -262,7 +259,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
   @Override
   public Value select(String selector) throws MissingDataException {
     Cell cell = selectCell(selector);
-    return cell!=null?new SpreadsheetCellValue(cell, evaluator):new EmptyCell();
+    return cell!=null?new SpreadsheetCellValue(cell):new EmptyCell();
   }
 
   private Cell selectCell(String selector) throws MissingDataException {
@@ -467,6 +464,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
         e.printStackTrace();
       }
     }
+    evaluator().evaluateAll();
     return dirty ? writeToTempFile() : null;
   }
 
