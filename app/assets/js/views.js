@@ -1222,35 +1222,54 @@ define([
   });
   
   var ExternalRefButton = Marionette.ItemView.extend({
-    className: 'hidden',
     triggers: {
       'click .js-update': 'update'
     },
     ui: {
-      'button': '.js-update'
+      'button': '.js-update',
+      'msg': '.js-msg'
     },
     initialize: function() {
+      this._hasRefs = false;
       // Check if external references exist
       $.ajax({
         type: 'HEAD',
         url: this.model.url()+"/spreadsheet-external-references",
         success: _.bind(function() {
           // Show the button
-          this.$el.removeClass('hidden');
+          this._hasRefs = true;
+          this.render();
         }, this)
       });
     },
     onUpdate: function() {
+      this.ui.msg.text('');
       this.ui.button.button('loading');
       $.ajax({
         type: 'POST',
         url: this.model.url()+"/spreadsheet-external-references/update"
-      }).done(_.bind(function() {
+      }).done(_.bind(function(data, textStatus, jqXHR) {
         this.ui.button.button('reset');
+        if (jqXHR.status == 200) {
+          this.ui.msg.text('No updated required.');
+        } else {
+          this.ui.msg.text('Successfully updated.');
+        }
       }, this));
     },
+    serializeData: function() {
+      return { hidden: !this._hasRefs };
+    },
     template: function(serialized_model) {
-      return templates.render('external_refs', serialized_model);
+      if (serialized_model.hidden) {
+        return '';
+      } else {
+        return templates.render('external_refs', serialized_model);
+      }
+    },
+    onRender: function() {
+      this.ui.button.on('click',
+          _.bind(this.triggerMethod, this, 'update'));
     }
   });
 
@@ -1265,13 +1284,10 @@ define([
       var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
         format: svgOrPng
       });
-      var externalRefButton = new ExternalRefButton({ model: this.model });
+      this._externalRefButton = new ExternalRefButton({ model: this.model });
       var onSuccess = function(data) {
         this._charts = data.charts;
         this.render();
-        if (this.model.get('accessLevel') == 'RW') {
-          this.externals.show(externalRefButton);
-        }
       };
       $.get(url, _.bind(onSuccess, this));
     },
@@ -1329,6 +1345,9 @@ define([
           spinner.stop();
         });
       });
+      if (this.model.get('accessLevel') == 'RW') {
+        this.externals.show(this._externalRefButton);
+      }
     }
   });
   
