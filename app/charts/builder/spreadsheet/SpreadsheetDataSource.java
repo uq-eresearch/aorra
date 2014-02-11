@@ -464,8 +464,19 @@ public abstract class SpreadsheetDataSource implements DataSource {
         e.printStackTrace();
       }
     }
-    evaluator().evaluateAll();
+    evaluateAll();
     return dirty ? writeToTempFile() : null;
+  }
+
+  private void evaluateAll() {
+    for(int si = 0; si < workbook.getNumberOfSheets();si++) {
+      Sheet sheet = workbook.getSheetAt(si);
+      for(Row row : sheet) {
+        for(Cell cell : row) {
+          evaluator().evaluateInCell(cell);
+        }
+      }
+    }
   }
 
   private boolean updatePrecalculatedValue(Cell destination,
