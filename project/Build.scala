@@ -44,15 +44,20 @@ object ApplicationBuild extends Build {
     "tyrex" % "tyrex" % "1.0.1", // JNDI provider for CRSH Jackrabbit access
     "com.feth" %% "play-authenticate" % "0.5.0-SNAPSHOT",
     "com.typesafe" %% "play-plugins-mailer" % "2.1-RC2",
-    "org.apache.tika" % "tika-parsers" % "1.3",
+    "org.apache.tika" % "tika-parsers" % "1.3"
+      exclude("org.apache.poi", "poi")
+      exclude("org.apache.poi", "poi-ooxml")
+      exclude("org.apache.poi", "poi-ooxml-schemas")
+      exclude("org.apache.poi", "poi-scratchpad"),
+    "org.apache.xmlbeans" % "xmlbeans" % "2.3.0", // POI dependency
     "org.jsoup" % "jsoup" % "1.7.2" % "test",
     "org.jfree" % "jfreechart" % "1.0.15",
     "org.apache.xmlgraphics" % "batik-codec" % BatikVersion,
     "org.apache.xmlgraphics" % "batik-rasterizer" % BatikVersion,
     "org.apache.xmlgraphics" % "batik-svggen" % BatikVersion,
     "org.apache.xmlgraphics" % "fop" % "1.0",
-    "org.apache.poi" % "poi" % PoiVersion,
-    "org.apache.poi" % "poi-ooxml" % PoiVersion,
+    //"org.apache.poi" % "poi" % PoiVersion,
+    //"org.apache.poi" % "poi-ooxml" % PoiVersion,
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.13.v20130916" % "test",
     "com.kitfox.svg" % "svg-salamander" % "1.0",
     "net.sf.supercsv" % "super-csv" % "2.1.0",
