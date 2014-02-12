@@ -11,7 +11,6 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.formula.eval.ErrorEval;
 import org.apache.poi.ss.usermodel.Cell;
@@ -465,21 +464,8 @@ public abstract class SpreadsheetDataSource implements DataSource {
         e.printStackTrace();
       }
     }
-    evaluateAll();
+    evaluator().evaluateAll();
     return dirty ? writeToTempFile() : null;
-  }
-
-  private void evaluateAll() {
-    for(int si = 0; si < workbook.getNumberOfSheets();si++) {
-      Sheet sheet = workbook.getSheetAt(si);
-      for(Row row : sheet) {
-        for(Cell cell : row) {
-          if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
-            evaluator().evaluateFormulaCell(cell);
-          }
-        }
-      }
-    }
   }
 
   private boolean updatePrecalculatedValue(Cell destination,
