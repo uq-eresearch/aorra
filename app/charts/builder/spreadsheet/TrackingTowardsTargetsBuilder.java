@@ -33,6 +33,9 @@ import com.google.common.collect.Lists;
 
 public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
 
+  private static final String TITLE_TYPO = "tracking towards tagets";
+  private static final String TITLE = "tracking towards targets";
+
   private static final String IMPROVED_PRATICES = "% of farmers adopting improved practices";
   private static final String POLLUTANT_REDUCTION = "% reduction in pollutant load";
   private static final String TARGET = " target (%s by %s)";
@@ -106,7 +109,8 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   @Override
   public boolean canHandle(SpreadsheetDataSource datasource) {
     try {
-        return "tracking towards tagets".equalsIgnoreCase(datasource.select("A1").asString());
+      String title = datasource.select("A1").asString();
+      return TITLE.equalsIgnoreCase(title) || TITLE_TYPO.equalsIgnoreCase(title);
     } catch (MissingDataException e) {
       return false;
     }
