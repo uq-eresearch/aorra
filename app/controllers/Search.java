@@ -170,10 +170,10 @@ public class Search extends SessionAwareController {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         Query query = queryManager.createQuery(
             "SELECT * FROM [nt:unstructured] as file " +
-            "WHERE localname() LIKE $query AND ISDESCENDANTNODE(file, '/filestore')",
+            "WHERE LOWER(localname()) LIKE $query AND ISDESCENDANTNODE(file, '/filestore')",
             javax.jcr.query.Query.JCR_SQL2);
         ValueFactory vf = session.getValueFactory();
-        query.bindValue("query", vf.createValue("%" + q + "%"));
+        query.bindValue("query", vf.createValue("%" + StringUtils.lowerCase(q) + "%"));
         QueryResult qr = query.execute();
         RowIterator iter = qr.getRows();
         while (iter.hasNext()) {
@@ -181,19 +181,25 @@ public class Search extends SessionAwareController {
           Node n = row.getNode();
           FileStore.FileOrFolder fof = fm.getByIdentifier(n.getIdentifier());
           if(fof!= null) {
-            String highlighted = StringUtils.join(new String[] {
-                StringUtils.substringBeforeLast(fof.getPath(), fof.getName()),
-                StringUtils.substringBefore(fof.getName(), q),
-                "<strong>",
-                q,
-                "</strong>",
-                StringUtils.substringAfter(fof.getName(), q)});
             SearchResult sr = new SearchResult(n.getIdentifier(), row.getScore(),
-                highlighted, "filename");
+                highlight(fof, q), "filename");
             result.add(sr);
           }
         }
         return result;
+      }
+
+      private String highlight(FileStore.FileOrFolder fof, String query) {
+        int start = StringUtils.indexOfIgnoreCase(fof.getName(), query);
+        if(start == -1) {
+          return fof.getPath();
+        }
+        return StringUtils.join(new String[] {
+            StringUtils.substring(fof.getName(), 0, start),
+            "<strong>",
+            StringUtils.substring(fof.getName(), start, start + query.length()),
+            "</strong>",
+            StringUtils.substring(fof.getName(), start + query.length())});
       }
     });
   }
