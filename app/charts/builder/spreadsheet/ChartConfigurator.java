@@ -97,6 +97,7 @@ public class ChartConfigurator {
       while(true) {
         Map<Attribute, Object> cfg = readConfiguration(r, c);
         if(type == null || 
+            (!cfg.containsKey(Attribute.TYPE)) ||
             (cfg.containsKey(Attribute.TYPE) && (type == cfg.get(Attribute.TYPE)))) {
           return cfg;
         } else {
