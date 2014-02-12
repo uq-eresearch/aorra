@@ -1,28 +1,40 @@
 package controllers
 
-import scala.annotation.implicitNotFound
 import scala.collection.JavaConversions.mapAsJavaMap
+import scala.concurrent.Future
+
 import com.feth.play.module.pa.PlayAuthenticate
+
 import models.CacheableUser
+import play.api.Play
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.Call
+import play.api.mvc.EssentialAction
 import play.api.mvc.Request
 import play.api.mvc.RequestHeader
 import play.api.mvc.Result
 import play.api.mvc.Results.Redirect
 import play.api.mvc.Security.Authenticated
+import play.api.mvc.Security.AuthenticatedBuilder
+import play.api.mvc.Security.AuthenticatedRequest
+import play.api.mvc.SimpleResult
 import providers.CacheableUserProvider
-import play.api.Play
 import service.GuiceInjectionPlugin
 
 object ScalaSecured {
 
-  def isAuthenticated(f: => CacheableUser => Request[AnyContent] => Result) = {
+  type AuthenticatedUserFunction[R] = CacheableUser => Request[AnyContent] => R
+
+  def isAuthenticated(f: => AuthenticatedUserFunction[Result]): EssentialAction =
     Authenticated(user, onUnauthorized) { user =>
       Action(request => f(user)(request))
     }
-  }
+
+  def isAuthenticatedAsync(f: => AuthenticatedUserFunction[Future[SimpleResult]]): Action[AnyContent] =
+    AuthenticatedBuilder(user, onUnauthorized).async({ authReq: AuthenticatedRequest[AnyContent, CacheableUser] =>
+      f(authReq.user)(authReq)
+    })
 
   private def user(request: RequestHeader): Option[CacheableUser] =
     Option(getSubjectHandler().getUser(javaSession(request)))

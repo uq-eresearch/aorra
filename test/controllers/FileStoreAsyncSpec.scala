@@ -6,8 +6,6 @@ import org.specs2.mutable.Specification
 import javax.jcr.Session
 import models.User
 import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.AsyncResult
 import play.api.mvc.SimpleResult
 import play.api.mvc.Results.EmptyContent
 import play.api.test.FakeHeaders

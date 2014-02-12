@@ -1220,15 +1220,74 @@ define([
       return templates.render('img_view', serialized_model);
     }
   });
+  
+  var ExternalRefButton = Marionette.ItemView.extend({
+    triggers: {
+      'click .js-update': 'update'
+    },
+    ui: {
+      'button': '.js-update',
+      'msg': '.js-msg'
+    },
+    initialize: function() {
+      this._hasRefs = false;
+      // Check if external references exist
+      $.ajax({
+        type: 'HEAD',
+        url: this.model.url()+"/spreadsheet-external-references",
+        success: _.bind(function() {
+          // Show the button
+          this._hasRefs = true;
+          this.render();
+        }, this)
+      });
+    },
+    onUpdate: function() {
+      this.ui.msg.text('');
+      this.ui.button.button('loading');
+      $.ajax({
+        type: 'POST',
+        url: this.model.url()+"/spreadsheet-external-references/update",
+        statusCode: {
+          200: function() {
+            this.ui.msg.text('No updated required.');
+          },
+          201: function() {
+            this.ui.msg.text('Successfully updated.');
+          }
+        }
+      }).done(_.bind(function(data, textStatus, jqXHR) {
+        this.ui.button.button('reset');
+      }, this));
+    },
+    serializeData: function() {
+      return { hidden: !this._hasRefs };
+    },
+    template: function(serialized_model) {
+      if (serialized_model.hidden) {
+        return '';
+      } else {
+        return templates.render('external_refs', serialized_model);
+      }
+    },
+    onRender: function() {
+      this.ui.button.on('click',
+          _.bind(this.triggerMethod, this, 'update'));
+    }
+  });
 
-  var ChartElementView = Marionette.ItemView.extend({
+  var ChartElementView = Marionette.Layout.extend({
     modelEvents: {
       'change': 'render'
+    },
+    regions: {
+      'externals': '.region-external-refs'
     },
     initialize: function() {
       var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
         format: svgOrPng
       });
+      this._externalRefButton = new ExternalRefButton({ model: this.model });
       var onSuccess = function(data) {
         this._charts = data.charts;
         this.render();
@@ -1289,6 +1348,9 @@ define([
           spinner.stop();
         });
       });
+      if (this.model.get('accessLevel') == 'RW') {
+        this.externals.show(this._externalRefButton);
+      }
     }
   });
   
