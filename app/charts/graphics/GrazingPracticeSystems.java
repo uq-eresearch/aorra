@@ -294,7 +294,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
         rangeAxis.setTickMarksVisible(false);
         rangeAxis.setLabelPaint(AXIS_LABEL_COLOR);
         rangeAxis.setLabelFont(AXIS_LABEL_FONT);
-        rangeAxis.setLabelInsets(new RectangleInsets(0,0,0,-10));
+        rangeAxis.setLabelInsets(new RectangleInsets(0,0,0,0));
         rangeAxis.setUpperMargin(0);
         rangeAxis.setAutoRange(false);
         rangeAxis.setRange(0, 1);
