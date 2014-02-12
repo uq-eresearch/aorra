@@ -36,6 +36,9 @@ import com.google.inject.Inject;
 @With(UncacheableAction.class)
 public class Search extends SessionAwareController {
 
+  private static final String CONTENT = "content:";
+  private static final String FILE = "file:";
+
   public static class SearchResult {
 
     private final String id;
@@ -111,8 +114,14 @@ public class Search extends SessionAwareController {
       @Override
       public final List<SearchResult> apply(Session session) throws Exception {
         Set<SearchResult> sresults = Sets.newHashSet();
-        sresults.addAll(searchContent(session, q));
-        sresults.addAll(searchFilename(session, q));
+        if(StringUtils.startsWith(q, CONTENT)) {
+          sresults.addAll(searchContent(session, StringUtils.substring(q, CONTENT.length())));
+        } else if(StringUtils.startsWith(q, FILE)) {
+          sresults.addAll(searchFilename(session, StringUtils.substring(q, FILE.length())));
+        } else {
+          sresults.addAll(searchContent(session, q));
+          sresults.addAll(searchFilename(session, q));
+        }
         List<SearchResult> l = Lists.newArrayList(sresults);
         Collections.sort(l, Collections.reverseOrder(new Comparator<SearchResult>() {
           @Override
@@ -123,6 +132,9 @@ public class Search extends SessionAwareController {
       }
 
       private Set<SearchResult> searchContent(Session session, String q) throws Exception {
+        if(StringUtils.isBlank(q)) {
+          return Collections.emptySet();
+        }
         Map<String, SearchResult> srMap = Maps.newHashMap();
         Set<SearchResult> result = Sets.newHashSet();
         ValueFactory vf = session.getValueFactory();
@@ -143,7 +155,7 @@ public class Search extends SessionAwareController {
           result.add(sr);
           srMap.put(row.getNode().getIdentifier(), sr);
         }
-        iter = fulltextQuery(queryManager);
+        iter = fulltextQuery(queryManager, q);
         while (iter.hasNext()) {
           Row row = iter.nextRow();
           SearchResult sr = srMap.get(row.getNode().getIdentifier());
@@ -155,7 +167,7 @@ public class Search extends SessionAwareController {
       }
 
       @SuppressWarnings("deprecation")
-      protected RowIterator fulltextQuery(QueryManager queryManager)
+      protected RowIterator fulltextQuery(QueryManager queryManager, String q)
           throws RepositoryException, InvalidQueryException {
         // TODO figure out how to do bindValue with javax.jcr.query.Query.SQL
         return queryManager
@@ -165,6 +177,9 @@ public class Search extends SessionAwareController {
       }
 
       private Set<SearchResult> searchFilename(Session session, String q) throws Exception {
+        if(StringUtils.isBlank(q)) {
+          return Collections.emptySet();
+        }
         Set<SearchResult> result = Sets.newHashSet();
         FileStore.Manager fm = fileStore.getManager(session);
         QueryManager queryManager = session.getWorkspace().getQueryManager();
