@@ -126,8 +126,8 @@ public abstract class AbstractProgressTableBuilder extends AbstractBuilder {
     }
     List<ProgressTable.Cell> cells = Lists.newArrayList();
     for (ProgressTable.Column column : columns) {
-      Double progress = getProgress(ds.select(row, columns.indexOf(column) + 2)
-          .asString());
+      Double progress = ds.select(row, columns.indexOf(column) + 2)
+          .asPercent();
       if (progress != null) {
         ProgressTable.Indicator indicator = getIndicator(column.header, region);
         ProgressTable.Condition condition = getCondition(ds, columns,
@@ -140,14 +140,6 @@ public abstract class AbstractProgressTableBuilder extends AbstractBuilder {
     }
     return new ProgressTable.Row(region.getProperName(), ds.select(row, 1)
         .asString(), cells);
-  }
-
-  private Double getProgress(String value) {
-    try {
-      return Double.parseDouble(value);
-    } catch (Exception e) {
-      return null;
-    }
   }
 
   private String formatProgress(double value) {

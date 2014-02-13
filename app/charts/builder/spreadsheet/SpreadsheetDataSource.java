@@ -167,13 +167,9 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
     @Override
     public Double asPercent() {
-      Double value = null;
-      if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-        if(cell.getCellStyle().getDataFormatString().contains("%")) {
-          value = cell.getNumericCellValue();
-        } else {
-          value = cell.getNumericCellValue() / 100;
-        }
+      Double value = asDouble();
+      if(!cell.getCellStyle().getDataFormatString().contains("%") && (value!=null)) {
+        value = value / 100.0;
       }
       return value;
     }
