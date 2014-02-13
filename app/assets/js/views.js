@@ -1249,12 +1249,12 @@ define([
         type: 'POST',
         url: this.model.url()+"/spreadsheet-external-references/update",
         statusCode: {
-          200: function() {
+          200: _.bind(function() {
             this.ui.msg.text('No updated required.');
-          },
-          201: function() {
+          }, this),
+          201: _.bind(function() {
             this.ui.msg.text('Successfully updated.');
-          }
+          }, this)
         }
       }).done(_.bind(function(data, textStatus, jqXHR) {
         this.ui.button.button('reset');
