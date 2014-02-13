@@ -21,6 +21,8 @@ public abstract class SpreadsheetDataSourceTest {
       .put("progress1.xls", new String[] {"bar!C7", "foo!D7"})
       .put("6d843435-9ee5-45a0-9187-ccedc5b223f6", new String[] {"bar!C8", "foo!D8"})
       .put("progress2.xlsx", new String[] {"bar!C9", "foo!D9"})
+      .put("progress1.xlsx", new String[] {"bar!A1", "O'Brien's Sales!E3"})
+      .put("progress3.xlsx", new String[] {"O'Brien's!A1", "O'Brien's Sales!E4"})
       .build();
 
   abstract SpreadsheetDataSource datasource() throws IOException;
@@ -33,7 +35,7 @@ public abstract class SpreadsheetDataSourceTest {
     Assert.assertEquals(extrefs.size(), urefs.size());
     for(UnresolvedRef uref : urefs) {
       String[] links = extrefs.get(uref.source());
-      Assert.assertNotNull(links);
+      Assert.assertNotNull(String.format("%s not found in testdata", uref.source()), links);
       Assert.assertEquals(links[0], uref.link().source());
       Assert.assertEquals(links[1], uref.link().destination());
     }
@@ -91,7 +93,7 @@ public abstract class SpreadsheetDataSourceTest {
   }
 
   @Test
-  public void textUpdateExternalReferences() throws IOException {
+  public void testUpdateExternalReferences() throws IOException {
     testUpdateExternalReferences(datasource());
   }
 }

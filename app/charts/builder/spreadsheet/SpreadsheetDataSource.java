@@ -26,6 +26,8 @@ import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.tika.io.IOUtils;
 
+import play.Logger;
+
 import charts.builder.DataSource;
 import charts.builder.Value;
 import charts.builder.spreadsheet.external.ResolvedRef;
@@ -464,7 +466,12 @@ public abstract class SpreadsheetDataSource implements DataSource {
         e.printStackTrace();
       }
     }
-    evaluator().evaluateAll();
+    try {
+      evaluator().evaluateAll();
+    } catch(RuntimeException e) {
+      Logger.debug("evaluateAll() failed on updateExternalReferences," +
+          "some cached formula results may be out of date", e);
+    }
     return dirty ? writeToTempFile() : null;
   }
 

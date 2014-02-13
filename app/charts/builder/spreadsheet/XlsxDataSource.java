@@ -41,7 +41,7 @@ public class XlsxDataSource extends SpreadsheetDataSource {
       "^xl/externalLinks/_rels/externalLink(\\d+).xml.rels$");
 
   private static final Pattern EXTERNAL_REF_FORMULA = Pattern.compile(
-      "^\\+?\\[(\\d+)\\](.*)!\\$(\\w+)\\$(\\d+)$");
+      "^\\+?('?)\\[(\\d+)\\](.*?)'?!\\$?(\\w+)\\$?(\\d+)$");
 
   private static final String REL_NS_URI =
       "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -133,20 +133,27 @@ public class XlsxDataSource extends SpreadsheetDataSource {
       Matcher m = EXTERNAL_REF_FORMULA.matcher(cell.getCellFormula());
       if(m.matches()) {
         try {
-          Integer refnr = new Integer(m.group(1));
-          //FIXME escape sheet name
-          CellReference cr = new CellReference(String.format("%s!%s%s",
-              m.group(2), m.group(3), m.group(4)));
+          Integer refnr = new Integer(m.group(2));
+          String sheetname = m.group(3);
+          String column = m.group(4);
+          String row = m.group(5);
+          if(StringUtils.isNotBlank(m.group(1))) {
+            sheetname = unescapeSheetname(sheetname);
+          }
           String nameOrId = rmap.get(refnr);
           if(nameOrId != null) {
-          //FIXME escape sheet name?
             uref = uref(nameOrId,
-                cr.formatAsString(), String.format("%s!%s", cell.getSheet().getSheetName(),
-                new CellReference(cell).formatAsString()));
+                String.format("%s!%s%s", sheetname, column, row),
+                String.format("%s!%s", cell.getSheet().getSheetName(),
+                    new CellReference(cell).formatAsString()));
           }
         } catch(Exception e) {}
       }
     }
     return uref;
+  }
+
+  private String unescapeSheetname(String name) {
+    return StringUtils.replace(name, "''", "'");
   }
 }
