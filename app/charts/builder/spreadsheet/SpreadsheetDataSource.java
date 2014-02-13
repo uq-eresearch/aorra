@@ -573,7 +573,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
           return true;
         }
       } catch(Exception e) {
-        destination.setCellValue(sError.getCode());
+        destination.setCellErrorValue(sError.getCode());
         return true;
       }
     }
