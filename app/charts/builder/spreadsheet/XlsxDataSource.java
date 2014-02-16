@@ -41,7 +41,7 @@ public class XlsxDataSource extends SpreadsheetDataSource {
       "^xl/externalLinks/_rels/externalLink(\\d+).xml.rels$");
 
   private static final Pattern EXTERNAL_REF_FORMULA = Pattern.compile(
-      "^\\+?('?)\\[(\\d+)\\](.*?)'?!\\$?(\\w+)\\$?(\\d+)$");
+      "^\\+?('?)\\[(\\d+)\\](.*?)'?!\\$?([A-Za-z]+)\\$?(\\d+)$");
 
   private static final String REL_NS_URI =
       "http://schemas.openxmlformats.org/package/2006/relationships";

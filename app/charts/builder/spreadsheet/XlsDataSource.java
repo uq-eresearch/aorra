@@ -18,7 +18,7 @@ import charts.builder.spreadsheet.external.UnresolvedRef;
 public class XlsDataSource extends SpreadsheetDataSource {
 
   private static final Pattern EXTERNAL_REF_FORMULA = Pattern.compile(
-      "^\\+?('?)\\[(.+)\\](.*?)'?!\\$?(\\w+)\\$?(\\d+)$");
+      "^\\+?('?)\\[(.+)\\](.*?)'?!\\$?([A-Za-z]+)\\$?(\\d+)$");
 
   public XlsDataSource(InputStream in) throws IOException {
     HSSFWorkbook workbook = new HSSFWorkbook(in);
