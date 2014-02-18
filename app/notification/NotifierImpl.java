@@ -11,10 +11,12 @@ import models.Notification;
 import models.NotificationDAO;
 import models.User;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.core.SessionImpl;
 import org.apache.jackrabbit.core.id.NodeId;
 import org.jcrom.Jcrom;
 
+import play.Logger;
 import play.api.templates.Html;
 import play.libs.F;
 import service.EventManager.Event;
@@ -103,21 +105,25 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
     if (isFlagEvent(event)) {
       if (isEditFlag(session, event)) {
         sendEditNotification(session,
-            getWatchUsers(session, event.info("target:id")),
+            getWatchUsers(session, event.info("target:id"), event),
             event);
       }
     } else if (isCommentEvent(event)) {
       sendCommentNotification(session,
-          getWatchUsers(session, event.info("target:id")), event);
+          getWatchUsers(session, event.info("target:id"), event), event);
     } else {
       sendNotification(session, event);
     }
   }
 
-  private Iterable<User> getWatchUsers(Session session, String nodeId) {
+  private Iterable<User> getWatchUsers(Session session, String nodeId, Event event) {
     final Set<User> users = Sets.newHashSet();
     FlagStore.Manager manager = flagStore.getManager(session);
     for (Flag flag : manager.getFlags(FlagStore.FlagType.WATCH)) {
+      // filter out user who triggered the event,  issue #144
+      if(isEventOwner(flag.getUser(), event)) {
+        continue;
+      }
       if (flag.getTargetId().equals(nodeId)) {
         users.add(flag.getUser());
       } else {
@@ -128,17 +134,25 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
           }
         } catch (RepositoryException e) {
           // Dump trace and ignore
-          e.printStackTrace();
+          Logger.trace(String.format("couldn't determine if %s is ancestor of %s",
+              flag.getTargetId(), nodeId), e);
         }
       }
     }
     return users;
   }
 
+  private boolean isEventOwner(User user, Event event) {
+    return user!=null?
+        (StringUtils.equals(user.getId(), event.info("owner:id")) ||
+        StringUtils.equals(user.getId(), event.info("author:id"))) :
+        false;
+  }
+
   private void sendNotification(Session session, final Event event)
       throws RepositoryException {
     final FileStore.Manager manager = fileStore.getManager(session);
-    for (final User user : getWatchUsers(session, event.info("id"))) {
+    for (final User user : getWatchUsers(session, event.info("id"), event)) {
       FileStore.FileOrFolder item = getItem(manager, event);
       final String message = views.html.notification.notification.render(event,
           item).toString();

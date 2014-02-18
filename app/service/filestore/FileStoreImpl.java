@@ -315,6 +315,10 @@ public class FileStoreImpl implements FileStore {
       return userDAO;
     }
 
+    public String userId() {
+      return session.getUserID();
+    }
+
   }
 
   public static class Folder extends NodeWrapper<models.filestore.Folder> implements FileStore.Folder {
@@ -347,7 +351,7 @@ public class FileStoreImpl implements FileStore {
       final FileStore.Folder folder =
           filestoreManager.wrap(newFolderEntity, this);
       getMutableFolderSet().add(folder);
-      eventManagerImpl.tell(Events.create(folder));
+      eventManagerImpl.tell(Events.create(folder, filestoreManager.userId()));
       return folder;
     }
 
@@ -361,7 +365,7 @@ public class FileStoreImpl implements FileStore {
       final FileStore.File file = filestoreManager.wrap(newFileEntity, this);
       getMutableFileSet().add(file);
       Logger.debug("New file, version "+newFileEntity.getVersion());
-      eventManagerImpl.tell(Events.create(file));
+      eventManagerImpl.tell(Events.create(file, filestoreManager.userId()));
       return file;
     }
 
@@ -437,13 +441,13 @@ public class FileStoreImpl implements FileStore {
     public void rename(final String newName)
         throws ItemExistsException, RepositoryException {
       super.rename(newName);
-      eventManagerImpl.tell(Events.updateFolder(getIdentifier()));
+      eventManagerImpl.tell(Events.updateFolder(getIdentifier(), filestoreManager.userId()));
     }
 
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final Event event = Events.delete(this);
+      final Event event = Events.delete(this, filestoreManager.userId());
       getDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }
@@ -500,7 +504,8 @@ public class FileStoreImpl implements FileStore {
         throws ItemExistsException, RepositoryException {
       FileStore.Folder formerParent = this.getParent();
       move(destination, "folders");
-      eventManagerImpl.tell(Events.move(this, formerParent, destination));
+      eventManagerImpl.tell(Events.move(this, formerParent,
+          destination, filestoreManager.userId()));
     }
 
   }
@@ -528,7 +533,7 @@ public class FileStoreImpl implements FileStore {
       entity.setMimeType(mime);
       entity.setData(data);
       getDAO().update(entity);
-      eventManagerImpl.tell(Events.update(this));
+      eventManagerImpl.tell(Events.update(this, filestoreManager.userId()));
       return this;
     }
 
@@ -566,13 +571,13 @@ public class FileStoreImpl implements FileStore {
     public void rename(final String newName)
         throws ItemExistsException, RepositoryException {
       super.rename(newName);
-      eventManagerImpl.tell(Events.update(this));
+      eventManagerImpl.tell(Events.update(this, filestoreManager.userId()));
     }
 
     @Override
     public void delete() throws AccessDeniedException, VersionException,
         LockException, ConstraintViolationException, RepositoryException {
-      final Event event = Events.delete(this);
+      final Event event = Events.delete(this, filestoreManager.userId());
       getDAO().remove(rawPath());
       eventManagerImpl.tell(event);
     }
@@ -638,7 +643,8 @@ public class FileStoreImpl implements FileStore {
         throws ItemExistsException, RepositoryException {
       FileStore.Folder formerParent = this.getParent();
       move(destination, "files");
-      eventManagerImpl.tell(Events.move(this, formerParent, destination));
+      eventManagerImpl.tell(Events.move(this, formerParent,
+          destination, filestoreManager.userId()));
     }
   }
 
@@ -688,7 +694,7 @@ public class FileStoreImpl implements FileStore {
             versions.get(versions.size()-2).getVersion(), true);
       }
       getDAO().removeVersionById(file.getIdentifier(), entity.getVersion());
-      final Event event = Events.update(this.file);
+      final Event event = Events.update(this.file, filestoreManager.userId());
       eventManagerImpl.tell(event);
       file.reload();
     }

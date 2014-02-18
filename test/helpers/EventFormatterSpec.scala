@@ -19,7 +19,7 @@ class EventFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val event = FileStore.Events.updateFolder(randomUUID)
+        val event = FileStore.Events.updateFolder(randomUUID, "test")
         val msg = jsonMessage(eventId, event)
 
         (msg \ "id") must beJson(eventId)
@@ -45,7 +45,7 @@ class EventFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val event = FileStore.Events.updateFolder(randomUUID)
+        val event = FileStore.Events.updateFolder(randomUUID, "test")
         val msg: String = sseMessage(eventId, event)
         val lines: Seq[String] = msg.split('\n')
 

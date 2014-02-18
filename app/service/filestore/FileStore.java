@@ -144,65 +144,65 @@ public interface FileStore {
 
   public static class Events {
 
-    public static Event create(FileStore.File file)
+    public static Event create(FileStore.File file, String ownerId)
         throws RepositoryException {
-      return new Event("file:create", nodeInfo(file));
+      return new Event("file:create", nodeInfo(file.getIdentifier(), ownerId));
     }
 
-    public static Event create(FileStore.Folder folder)
+    public static Event create(FileStore.Folder folder, String ownerId)
         throws RepositoryException {
-      return new Event("folder:create", nodeInfo(folder));
+      return new Event("folder:create", nodeInfo(folder.getIdentifier(), ownerId));
     }
 
-    public static Event update(FileStore.File file)
+    public static Event update(FileStore.File file, String ownerId)
         throws RepositoryException {
-      return new Event("file:update", nodeInfo(file));
+      return new Event("file:update", nodeInfo(file.getIdentifier(), ownerId));
     }
 
-    public static Event updateFolder(String folderId)
+    public static Event updateFolder(String folderId, String ownerId)
         throws RepositoryException {
-      return new Event("folder:update", ImmutableMap.of("id", folderId));
+      return new Event("folder:update", nodeInfo(folderId, ownerId));
     }
 
-    public static Event delete(FileStore.File file)
+    public static Event delete(FileStore.File file, String ownerId)
         throws RepositoryException {
-      return new EventManager.Event("file:delete", nodeInfo(file));
+      return new EventManager.Event("file:delete", nodeInfo(file.getIdentifier(), ownerId));
     }
 
-    public static Event delete(FileStore.Folder folder)
+    public static Event delete(FileStore.Folder folder, String ownerId)
         throws RepositoryException {
-      return new EventManager.Event("folder:delete", nodeInfo(folder));
+      return new EventManager.Event("folder:delete", nodeInfo(folder.getIdentifier(), ownerId));
     }
 
     public static Event move(FileStore.File file,
         FileStore.Folder formerParent,
-        FileStore.Folder newParent)
+        FileStore.Folder newParent,
+        String ownerId)
         throws RepositoryException {
-      return move("file", file, formerParent, newParent);
+      return move("file", file, formerParent, newParent, ownerId);
     }
 
     public static Event move(FileStore.Folder folder,
         FileStore.Folder formerParent,
-        FileStore.Folder newParent)
+        FileStore.Folder newParent,
+        String ownerId)
         throws RepositoryException {
-      return move("folder", folder, formerParent, newParent);
+      return move("folder", folder, formerParent, newParent, ownerId);
     }
 
     private static Event move(String type,
         FileStore.FileOrFolder f,
         FileStore.Folder formerParent,
-        FileStore.Folder newParent) throws RepositoryException {
+        FileStore.Folder newParent,
+        String ownerId) throws RepositoryException {
       return new EventManager.Event(type+":move", ImmutableMap.of("id", f.getIdentifier(),
           "formerParent", formerParent.getIdentifier(),
-          "newParent", newParent.getIdentifier()));
+          "newParent", newParent.getIdentifier(),
+          "owner:id", ownerId));
     }
 
-    private static Map<String, String> nodeInfo(FileStore.Folder folder) {
-      return ImmutableMap.of("id", folder.getIdentifier());
-    }
-
-    private static Map<String, String> nodeInfo(FileStore.File file) {
-      return ImmutableMap.of("id", file.getIdentifier());
+    private static Map<String, String> nodeInfo(String id, String ownerId) {
+      return ImmutableMap.of("id", id, "owner:id", ownerId);
     }
 
   }

@@ -1,9 +1,8 @@
 package controllers;
 
+import static helpers.FileStoreHelper.getNameWithExt;
 import static org.apache.commons.httpclient.util.URIUtil.encodeQuery;
 import static service.filestore.roles.Admin.isAdmin;
-import static scala.collection.JavaConversions.asJavaCollection;
-import static helpers.FileStoreHelper.getNameWithExt;
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
 import helpers.FileStoreHelper.FileOrFolderException;
@@ -30,8 +29,6 @@ import models.UserDAO;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.security.user.Group;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.mime.MimeTypeException;
 import org.jcrom.Jcrom;
 import org.jcrom.util.PathUtils;
 
@@ -533,7 +530,7 @@ public final class FileStoreController extends SessionAwareController {
         acm.grant(group.getPrincipal(),
             session.getNodeByIdentifier(id).getPath(),
             accessLevel.toJackrabbitPermission());
-        fileStoreImpl.getEventManager().tell(FileStore.Events.updateFolder(id));
+        fileStoreImpl.getEventManager().tell(FileStore.Events.updateFolder(id, session.getUserID()));
         return null;
       }
     });
