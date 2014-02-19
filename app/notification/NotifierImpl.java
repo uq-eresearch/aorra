@@ -143,10 +143,19 @@ public class NotifierImpl implements Notifier, TypedActor.PreStart {
   }
 
   private boolean isEventOwner(User user, Event event) {
-    return user!=null?
-        (StringUtils.equals(user.getId(), event.info("owner:id")) ||
-        StringUtils.equals(user.getId(), event.info("author:id"))) :
-        false;
+    return user!=null?StringUtils.equals(user.getId(), getEventOwnerId(event)):false;
+  }
+
+  private String getEventOwnerId(Event event) {
+    String instigator = event.info("instigator:id");
+    String author = event.info("author:id");
+    if(instigator != null) {
+      return instigator;
+    } else if(author != null) {
+      return author;
+    } else {
+      return event.info("owner:id");
+    }
   }
 
   private void sendNotification(Session session, final Event event)
