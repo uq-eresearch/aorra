@@ -29,8 +29,7 @@ CKEDITOR.plugins.add('aorrafigure', {
 
       editables : {
         content : {
-          selector : 'figcaption',
-          allowedContent : 'strong em s'
+          selector : 'figcaption'
         }
       },
 

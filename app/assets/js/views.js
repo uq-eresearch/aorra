@@ -1586,7 +1586,7 @@ define([
     },
     _setupCKEditor: function() {
       this.ui.html.ckeditor({
-        extraPlugins: 'aorrafigure'
+        extraPlugins: 'aorrafigure,justify'
       }); // Initialize with CKEditor
       var fileIdInit = _.bind(function(e) {
         var elementObj = e.data;
