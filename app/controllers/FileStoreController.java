@@ -41,6 +41,7 @@ import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import play.mvc.With;
 import providers.CacheableUserProvider;
+import service.EventManager.Event;
 import service.JcrSessionFactory;
 import service.filestore.FileStore;
 import service.filestore.FileStore.Folder;
@@ -497,9 +498,9 @@ public final class FileStoreController extends SessionAwareController {
     final String groupName = params.get("name").asText();
     final Permission accessLevel = Permission.valueOf(
         params.get("access").asText());
-    final String id = inUserSession(new F.Function<Session, String>() {
+    final Event event = inUserSession(new F.Function<Session, Event>() {
       @Override
-      public final String apply(Session session) throws RepositoryException,
+      public final Event apply(Session session) throws RepositoryException,
           IOException {
         final FileStore.Manager fm = fileStoreImpl.getManager(session);
         final FileStore.FileOrFolder fof = fm.getByIdentifier(folderId);
@@ -510,10 +511,10 @@ public final class FileStoreController extends SessionAwareController {
         if (fof.getAccessLevel() != FileStore.Permission.RW) {
           return null;
         }
-        return fof.getIdentifier();
+        return FileStore.Events.update((FileStoreImpl.Folder) fof, session.getUserID());
       }
     });
-    if (id == null) {
+    if (event == null) {
       return notFound();
     }
     // Try granting the permission
@@ -521,6 +522,7 @@ public final class FileStoreController extends SessionAwareController {
         sessionFactory.inSession(new F.Function<Session, Result>() {
       @Override
       public Result apply(final Session session) throws Throwable {
+        final String id = event.info("id");
         final GroupManager gm = new GroupManager(session);
         final Group group = gm.find(groupName);
         if (group == null)
@@ -530,12 +532,12 @@ public final class FileStoreController extends SessionAwareController {
         acm.grant(group.getPrincipal(),
             session.getNodeByIdentifier(id).getPath(),
             accessLevel.toJackrabbitPermission());
-        fileStoreImpl.getEventManager().tell(FileStore.Events.updateFolder(id, session.getUserID()));
         return null;
       }
     });
     if (result != null)
       return result;
+    fileStoreImpl.getEventManager().tell(event);
     return groupPermission(folderId, groupName);
   }
 

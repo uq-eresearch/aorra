@@ -7,7 +7,9 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.libs.json.JsValue
 import service.EventManager
+import service.EventManager.Event
 import service.filestore.FileStore
+import scala.collection.JavaConversions.mapAsJavaMap
 
 class EventFormatterSpec extends Specification {
 
@@ -19,7 +21,8 @@ class EventFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val event = FileStore.Events.updateFolder(randomUUID, "test")
+        val event = new Event("folder:update",
+            Map("id" -> eventId, "owner:id" -> "test"))
         val msg = jsonMessage(eventId, event)
 
         (msg \ "id") must beJson(eventId)
@@ -45,7 +48,8 @@ class EventFormatterSpec extends Specification {
 
       "incorporating node info" in {
         val eventId = randomUUID
-        val event = FileStore.Events.updateFolder(randomUUID, "test")
+        val event = new Event("folder:update",
+            Map("id" -> eventId, "owner:id" -> "test"))
         val msg: String = sseMessage(eventId, event)
         val lines: Seq[String] = msg.split('\n')
 

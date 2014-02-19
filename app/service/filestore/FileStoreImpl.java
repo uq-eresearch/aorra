@@ -441,7 +441,7 @@ public class FileStoreImpl implements FileStore {
     public void rename(final String newName)
         throws ItemExistsException, RepositoryException {
       super.rename(newName);
-      eventManagerImpl.tell(Events.updateFolder(getIdentifier(), filestoreManager.userId()));
+      eventManagerImpl.tell(Events.update(this, filestoreManager.userId()));
     }
 
     @Override

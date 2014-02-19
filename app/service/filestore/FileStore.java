@@ -159,9 +159,9 @@ public interface FileStore {
       return new Event("file:update", nodeInfo(file.getIdentifier(), ownerId));
     }
 
-    public static Event updateFolder(String folderId, String ownerId)
+    public static Event update(FileStore.Folder folder, String ownerId)
         throws RepositoryException {
-      return new Event("folder:update", nodeInfo(folderId, ownerId));
+      return new Event("folder:update", nodeInfo(folder.getIdentifier(), ownerId));
     }
 
     public static Event delete(FileStore.File file, String ownerId)
