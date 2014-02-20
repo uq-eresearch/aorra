@@ -12,4 +12,9 @@ script:
   - yes "q" | play-${PLAY_VERSION}/play jacoco:cover coveralls
   - curl -v --form json_file=@target/coveralls.json https://coveralls.io/api/v1/jobs || true
 notifications:
-  email: true
+  email:
+    recipients:
+      - t.dettrick@uq.edu.au
+      - a.gebers@uq.edu.au
+    on_success: change
+    on_failure: always
