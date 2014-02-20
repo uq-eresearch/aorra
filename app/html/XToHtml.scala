@@ -11,13 +11,18 @@ class XToHtml {
   }
 
   private def wrapHtml(content: String) =
-    s"""
+    s"""<!DOCTYPE html>
     <html>
       <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <link rel="stylesheet" media="screen" href="/assets/stylesheets/main.min.css"/>
       </head>
       <body>
-        ${content}
+        <div id="html-tab">
+          <div class="html-pane">
+            ${content}
+          </div>
+        </div>
       </body>
     </html>
     """

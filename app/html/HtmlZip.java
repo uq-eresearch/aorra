@@ -28,6 +28,11 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 public class HtmlZip {
+  
+  private static final Pattern IMG_PATTERN =
+      Pattern.compile("(<img.+?src=\")(.+?)(\".*?>)");
+  private static final Pattern CSS_PATTERN =
+      Pattern.compile("(<link.+?href=\")(.+?\\.css)(\".*?>)");
 
     public FileCleanup toHtmlZip(String name, String html, String playSession) {
         File destination = Files.createTempDir();
@@ -39,7 +44,8 @@ public class HtmlZip {
 
     public File toFolder(File destination, String name, String html, String playSession) {
         try {
-            html = downloadImages(html, destination, playSession);
+            html = download(html, destination, IMG_PATTERN, "img", playSession);
+            html = download(html, destination, CSS_PATTERN, "css", playSession);
             File f = new File(destination, name);
             FileUtils.write(f, html);
             return f;
@@ -78,28 +84,28 @@ public class HtmlZip {
         return files;
     }
 
-    private String downloadImages(String html, File destination, String playSession) throws IOException {
-        Map<String, String> srcMap = Maps.newHashMap();
-        int fc = 0;
-        Pattern p = Pattern.compile("(<img.+?src=\")(.+?)(\".*?>)");
-        Matcher m = p.matcher(html);
-        StringBuffer result = new StringBuffer();
-        while(m.find()) {
-            String imgSrc = m.group(2);
-            String localPath;
-            if(!srcMap.containsKey(imgSrc)) {
-                localPath = String.format("files/img%s_%s",
-                        Integer.toString(fc++), getFilename(imgSrc));
-                srcMap.put(imgSrc, localPath);
-                download(imgSrc, localPath, destination, playSession);
-            } else {
-                localPath = srcMap.get(imgSrc);
-            }
-            m.appendReplacement(result, String.format("$1%s$3", localPath));
-        }
-        m.appendTail(result);
-        return result.toString();
-    }
+    private String download(String html, File destination, Pattern p,
+        String prefix, String playSession) throws IOException {
+      Map<String, String> srcMap = Maps.newHashMap();
+      int fc = 0;
+      Matcher m = p.matcher(html);
+      StringBuffer result = new StringBuffer();
+      while(m.find()) {
+          String href = m.group(2);
+          String localPath;
+          if(!srcMap.containsKey(href)) {
+              localPath = String.format("files/%s%s_%s",
+                      prefix, Integer.toString(fc++), getFilename(href));
+              srcMap.put(href, localPath);
+              download(href, localPath, destination, playSession);
+          } else {
+              localPath = srcMap.get(href);
+          }
+          m.appendReplacement(result, String.format("$1%s$3", localPath));
+      }
+      m.appendTail(result);
+      return result.toString();
+  }
 
     private boolean download(String src, String local, File destination, String playSession) {
         try {
