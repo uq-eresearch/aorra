@@ -126,9 +126,9 @@ public abstract class SpreadsheetDataSource implements DataSource {
     @Override
     public Double asDouble() {
       String s = getValue();
-      if (StringUtils.isNotBlank(s)) {
+      try {
         return new Double(s);
-      } else {
+      } catch (NumberFormatException e) {
         return null;
       }
     }
@@ -136,9 +136,9 @@ public abstract class SpreadsheetDataSource implements DataSource {
     @Override
     public Integer asInteger() {
       String s = getValue();
-      if (StringUtils.isNotBlank(s)) {
+      try {
         return new Integer(Math.round(Float.parseFloat(s)));
-      } else {
+      } catch (NumberFormatException e) {
         return null;
       }
     }
