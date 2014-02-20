@@ -8,11 +8,11 @@ import org.apache.commons.io.FileUtils;
 
 import com.google.common.collect.Lists;
 
-public class FileCleanup {
+public class TempFiles implements AutoCloseable {
 
     private List<File> cleanup = Lists.newArrayList();
 
-    FileCleanup(File... cleanup) {
+    TempFiles(File... cleanup) {
         this.cleanup.addAll(Arrays.asList(cleanup));
     }
 
@@ -24,6 +24,11 @@ public class FileCleanup {
         for(File f : cleanup) {
             FileUtils.deleteQuietly(f);
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+      cleanup();
     }
 
 }

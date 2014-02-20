@@ -17,11 +17,11 @@ public class HtmlToPdf {
 
     private static final String CMD_WEASYPRINT = "weasyprint";
 
-    public FileCleanup toPdf(String name, String html, String playSession, String copts) {
+    public TempFiles toPdf(String name, String html, String playSession, String copts) {
         String filename = FilenameUtils.removeExtension(name)+".html";
         File htmlFile = new HtmlZip().toFolder(Files.createTempDir(), filename, html, playSession);
         File pdfFile = pdf(htmlFile, copts);
-        return new FileCleanup(pdfFile, pdfFile.getParentFile(), htmlFile.getParentFile());
+        return new TempFiles(pdfFile, pdfFile.getParentFile(), htmlFile.getParentFile());
     }
 
     private File pdf(File in, String copts) {

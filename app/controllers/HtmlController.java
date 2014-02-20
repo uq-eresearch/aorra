@@ -1,6 +1,6 @@
 package controllers;
 
-import html.FileCleanup;
+import html.TempFiles;
 import html.HtmlToPdf;
 import html.HtmlZip;
 import html.XToHtml;
@@ -40,48 +40,36 @@ public class HtmlController extends SessionAwareController {
 
     @SubjectPresent
     public Result toHtmlZip(final String fileId) {
-        FileCleanup c = null;
-        try {
-            String h = html(fileId);
-            if(h!=null) {
-                 c = new HtmlZip().toHtmlZip(filename(fileId), h,
-                        request().cookie("PLAY_SESSION").value());
-                ctx().response().setHeader("Content-Disposition",
-                        "attachment; filename="+filename(fileId)+".zip");
-                return ok(c.result()).as("application/zip");
-            } else {
-                return notFound("can not convert this file to html");
-            }
+      String h = html(fileId);
+      if(h!=null) {
+        try (TempFiles files = new HtmlZip().toHtmlZip(filename(fileId),
+            h, request().cookie("PLAY_SESSION").value())) {
+          ctx().response().setHeader("Content-Disposition",
+              "attachment; filename="+filename(fileId)+".zip");
+          return ok(files.result()).as("application/zip");
         } catch(Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if(c!= null) {
-                c.cleanup();
-            }
+          throw new RuntimeException(e);
         }
+      } else {
+        return notFound("can not convert this file to html");
+      }
     }
 
     @SubjectPresent
     public Result toPdf(final String fileId, String copts) {
-        FileCleanup c = null;
-        try {
-            String h = html(fileId);
-            if(h!=null) {
-                c = new HtmlToPdf().toPdf(filename(fileId), html(fileId),
-                        request().cookie("PLAY_SESSION").value(), copts);
-                ctx().response().setHeader("Content-Disposition",
-                        "attachment; filename="+filename(fileId)+".pdf");
-                return ok(c.result()).as("application/pdf");
-            } else {
-                return notFound("can not convert this file to pdf");
-            }
+      String h = html(fileId);
+      if(h!=null) {
+        try (TempFiles files = new HtmlToPdf().toPdf(filename(fileId),
+            h, request().cookie("PLAY_SESSION").value(), copts)) {
+          ctx().response().setHeader("Content-Disposition",
+              "attachment; filename="+filename(fileId)+".pdf");
+          return ok(files.result()).as("application/pdf");
         } catch(Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if(c!= null) {
-                c.cleanup();
-            }
+          throw new RuntimeException(e);
         }
+      } else {
+        return notFound("can not convert this file to pdf");
+      }
     }
 
     private String html(final String fileId) {

@@ -34,12 +34,12 @@ public class HtmlZip {
   private static final Pattern CSS_PATTERN =
       Pattern.compile("(<link.+?href=\")(.+?\\.css)(\".*?>)");
 
-    public FileCleanup toHtmlZip(String name, String html, String playSession) {
+    public TempFiles toHtmlZip(String name, String html, String playSession) {
         File destination = Files.createTempDir();
         toFolder(destination,
                 FilenameUtils.removeExtension(name)+".html", html, playSession);
         File zipFile = zip(destination, name);
-        return new FileCleanup(zipFile, zipFile.getParentFile(), destination);
+        return new TempFiles(zipFile, zipFile.getParentFile(), destination);
     }
 
     public File toFolder(File destination, String name, String html, String playSession) {
