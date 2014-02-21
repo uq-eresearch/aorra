@@ -178,7 +178,7 @@ public class GroundcoverBuilder extends AbstractBuilder {
                 row--;
                 String rowName = ds.select(row, 0).toString();
                 for(int column = 2;column<=getLastColumn(ds);column++) {
-                    String series = ds.select(0, column).asInteger().toString();
+                    String series = ds.select(0, column).asInteger() + "";
                     if(ds.select(row, column).getValue() == null) {
                         dataset.addValue(null, rowName, series);
                     } else {
@@ -193,11 +193,11 @@ public class GroundcoverBuilder extends AbstractBuilder {
     }
 
     public String getStartYear(SpreadsheetDataSource ds) throws MissingDataException {
-        return ds.select(0, 2).asInteger().toString();
+        return ds.select(0, 2).asInteger() + "";
     }
 
     public String getLastYear(SpreadsheetDataSource ds) throws MissingDataException {
-        return ds.select(0, getLastColumn(ds)).asInteger().toString();
+        return ds.select(0, getLastColumn(ds)).asInteger() + "";
     }
 
     public int getLastColumn(SpreadsheetDataSource ds) throws MissingDataException {
