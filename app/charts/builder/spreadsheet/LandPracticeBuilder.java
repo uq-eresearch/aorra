@@ -18,7 +18,7 @@ public abstract class LandPracticeBuilder extends ManagementPracticeBuilder {
   protected Map<Attribute, Object> defaults(SpreadsheetDataSource ds, Region region) {
     Map<Attribute, Object> result = Maps.newHashMap();
     result.putAll(super.defaults(ds, region));
-    result.put(Attribute.RANGE_AXIS_TITLE, "% of landholders");
+    result.put(Attribute.RANGE_AXIS_LABEL, "% of landholders");
     return result;
   }
 }

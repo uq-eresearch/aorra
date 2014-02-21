@@ -44,7 +44,7 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
   private static final Map<Attribute, Object> CHART_DEFAULTS = 
       ImmutableMap.<Attribute, Object>of(
           Attribute.TITLE, TITLE,
-          Attribute.RANGE_AXIS_TITLE, "Max PSII Heq ng/L");
+          Attribute.RANGE_AXIS_LABEL, "Max PSII Heq ng/L");
 
     private static final Pattern YEAR_PATTERN = Pattern.compile(".*?(\\d+-\\d+).*?");
 
@@ -67,7 +67,7 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
     if (region == Region.GBR) {
       
       ADCDataset dataset = getDataset(datasource);
-      new ChartConfigurator(CHART_DEFAULTS, datasource, 0, 4).configure(dataset);
+      configurator(datasource, CHART_DEFAULTS, type, region).configure(dataset);
       final Drawable d = PSIIMaxHeq.createChart(dataset,new Dimension(1000, 500));
       return new AbstractChart() {
 

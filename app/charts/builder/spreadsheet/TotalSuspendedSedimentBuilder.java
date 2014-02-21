@@ -12,8 +12,8 @@ public class TotalSuspendedSedimentBuilder extends MarineBarChartBuilder {
   private static final Map<Attribute, Object> DEFAULTS = ImmutableMap.<Attribute, Object>of(
       Attribute.TITLE,"Area (%) where the annual mean value for total suspended solids" +
           " exceeded the Water Quality Guidelines",
-      Attribute.RANGE_AXIS_TITLE, "Area (%)",
-      Attribute.DOMAIN_AXIS_TITLE, "Region");
+      Attribute.RANGE_AXIS_LABEL, "Area (%)",
+      Attribute.DOMAIN_AXIS_LABEL, "Region");
 
   public TotalSuspendedSedimentBuilder() {
     super(ChartType.TOTAL_SUSPENDED_SEDIMENT);

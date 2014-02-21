@@ -180,10 +180,10 @@ public class PSIIMaxHeq {
     private static JFreeChart createBarChart(ADCDataset dataset) {
         AutoSubCategoryAxis categoryAxis = new AutoSubCategoryAxis(dataset);
         categoryAxis.setCategoryLabelPositionOffset(0);
-        categoryAxis.setLabel(dataset.<String>get(Attribute.DOMAIN_AXIS_TITLE));
+        categoryAxis.setLabel(dataset.<String>get(Attribute.DOMAIN_AXIS_LABEL));
         CategoryDataset fixedDataset = categoryAxis.getFixedDataset();
         PartitionedNumberAxis vAxis = new PartitionedNumberAxis(
-            dataset.<String>get(Attribute.RANGE_AXIS_TITLE));
+            dataset.<String>get(Attribute.RANGE_AXIS_LABEL));
         CategoryPlot plot = new CategoryPlot(fixedDataset,
                 categoryAxis, vAxis, new Renderer(fixedDataset));
         plot.setOrientation(PlotOrientation.VERTICAL);

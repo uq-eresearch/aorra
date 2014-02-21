@@ -323,8 +323,8 @@ public class TrackingTowardsTargets {
         }
         final JFreeChart chart = ChartFactory.createLineChart(
                 dataset.<String>get(Attribute.TITLE),
-                dataset.<String>get(Attribute.DOMAIN_AXIS_TITLE),
-                dataset.<String>get(Attribute.RANGE_AXIS_TITLE),
+                dataset.<String>get(Attribute.DOMAIN_AXIS_LABEL),
+                dataset.<String>get(Attribute.RANGE_AXIS_LABEL),
                 dataset,
                 PlotOrientation.VERTICAL,
                 false,

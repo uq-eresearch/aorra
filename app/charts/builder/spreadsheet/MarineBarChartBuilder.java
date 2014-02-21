@@ -31,11 +31,6 @@ public abstract class MarineBarChartBuilder extends AbstractBuilder {
     super(type);
   }
 
-  private ChartConfigurator configurator(Map<Attribute, Object> defaults,
-      SpreadsheetDataSource datasource) {
-    return new ChartConfigurator(defaults, datasource);
-  }
-
   abstract Map<Attribute, Object> defaults();
 
   @Override
@@ -52,9 +47,8 @@ public abstract class MarineBarChartBuilder extends AbstractBuilder {
   protected Chart build(SpreadsheetDataSource datasource, final ChartType type,
       final Region region) {
     if(region == Region.GBR && supports(type)) {
-      ChartConfigurator configurator = configurator(defaults(), datasource);
       final ADCDataset dataset = createDataset(datasource);
-      configurator.configure(dataset);
+      configurator(datasource, defaults(), type, region).configure(dataset);
       final Drawable d = new MarineBarChart().createChart(dataset);
       return new AbstractChart() {
         @Override

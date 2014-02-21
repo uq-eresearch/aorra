@@ -15,8 +15,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
@@ -29,11 +27,20 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.TrendsSeagrassAbundance;
+import charts.jfree.ADSCDataset;
+import charts.jfree.Attribute;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
+
+  private static final Map<Attribute, Object> ccDefaults = ImmutableMap.<Attribute, Object>of(
+      Attribute.TITLE, "Trends in seagrass abundance (mean) at ${subregion}",
+      Attribute.DOMAIN_AXIS_LABEL, "Year",
+      Attribute.RANGE_AXIS_LABEL, "Seagrass abundance"
+      );
 
     public static final String SUBREGION = "subregion";
 
@@ -147,8 +154,10 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
       return null;
     }
     if (subregion.getRegion() == region) {
-      final CategoryDataset dataset = createDataset(ds, subregion);
-      final String title = getTitle(subregion);
+      final ADSCDataset dataset = createDataset(ds, subregion);
+      configurator(ds, ccDefaults, type, region,
+          ImmutableMap.of("subregion", subregion.getLabel())).configure(dataset);
+      final Drawable d = TrendsSeagrassAbundance.createChart(dataset, new Dimension(750, 500));
       return new AbstractChart() {
         @Override
         public ChartDescription getDescription() {
@@ -157,8 +166,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
 
         @Override
         public Drawable getChart() {
-          return TrendsSeagrassAbundance.createChart(dataset, title,
-              new Dimension(750, 500));
+          return d;
         }
 
         @Override
@@ -224,9 +232,9 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
     return -1;
   }
 
-  private DefaultStatisticalCategoryDataset createDataset(
+  private ADSCDataset createDataset(
       SpreadsheetDataSource ds, Subregion subregion) {
-    final DefaultStatisticalCategoryDataset d = new DefaultStatisticalCategoryDataset();
+    final ADSCDataset d = new ADSCDataset();
     SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
     try {
       int row = getSubregionRowStart(ds, subregion);
@@ -249,11 +257,6 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
       e.printStackTrace();
     }
     return d;
-  }
-
-  private String getTitle(Subregion subregion) {
-    return String.format("Trends in seagrass abundance (mean) at %s",
-        subregion.getLabel());
   }
 
 }

@@ -3,7 +3,6 @@ package charts.builder.spreadsheet;
 import static com.google.common.collect.Lists.newLinkedList;
 import static java.lang.String.format;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -11,7 +10,6 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
@@ -123,8 +121,8 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
       final ADCDataset dataset = createDataset(ds, type);
       Map<Attribute, Object> defaults = ImmutableMap.<Attribute, Object>of(
           Attribute.TITLE, getDefaultTitle(ds, type),
-          Attribute.RANGE_AXIS_TITLE, getDefaultRangeAxisTitle(type));
-      new ChartConfigurator(defaults, ds, 14, 0).configure(dataset, type); 
+          Attribute.RANGE_AXIS_LABEL, getDefaultRangeAxisTitle(type));
+      configurator(ds, defaults, type, region).configure(dataset, type);
       final Drawable d = new TrackingTowardsTargets().createChart(
           type, getTarget(ds, getTargetSeries(type)),
           dataset, new Dimension(750, 500));
@@ -233,13 +231,6 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
     if (row == null) {
       throw new RuntimeException("no row configured for series " + series);
     }
-    Color c = ds.select(row, 0).asColor();
-    Color[] seriesColors = dataset.get(Attribute.SERIES_COLORS);
-    if(seriesColors == null) {
-      seriesColors = new Color[0];
-    }
-    seriesColors = ArrayUtils.add(seriesColors, c);
-    dataset.add(Attribute.SERIES_COLORS, seriesColors);
     List<String> columns = getColumns(ds);
     for (int col = 0; col < columns.size(); col++) {
       String s = ds.select(row, col + 3).asString();

@@ -46,7 +46,7 @@ public class GrazingPracticeBuilder extends ManagementPracticeBuilder {
   protected Map<Attribute, Object> defaults(SpreadsheetDataSource ds, Region region) {
     Map<Attribute, Object> result = Maps.newHashMap();
     result.putAll(super.defaults(ds, region));
-    result.put(Attribute.RANGE_AXIS_TITLE, "% of graziers");
+    result.put(Attribute.RANGE_AXIS_LABEL, "% of graziers");
     return result;
   }
 

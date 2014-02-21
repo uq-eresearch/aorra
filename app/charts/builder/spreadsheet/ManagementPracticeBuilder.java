@@ -48,7 +48,7 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
     if(dataset == null) {
       return null;
     }
-    new ChartConfigurator(defaults(datasource, region), datasource).configure(dataset);
+    configurator(datasource, defaults(datasource, region), type, region).configure(dataset);
     ManagementPracticeSystems mps;
     if(type == ChartType.HORTICULTURE_PS || type == ChartType.SUGARCANE_PS) {
       mps = new HSLandPracticeSystems();

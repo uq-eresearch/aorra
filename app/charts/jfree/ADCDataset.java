@@ -7,14 +7,16 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import com.google.common.collect.Maps;
 
 // Attributed Default Category Dataset
-public class ADCDataset extends DefaultCategoryDataset {
+public class ADCDataset extends DefaultCategoryDataset implements AttributedDataset {
 
   private Map<String, Object> attributes = Maps.newHashMap();
 
+  @Override
   public <T> void add(Attribute attribute, T value) {
     attributes.put(attribute.getName(), value);
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public <T> T get(Attribute attribute) {
     return (T)attributes.get(attribute.getName());

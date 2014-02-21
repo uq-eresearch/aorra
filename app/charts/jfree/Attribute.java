@@ -14,15 +14,17 @@ public enum Attribute {
   REGION("region", Region.class),
   SERIES_COLORS("seriesColors", Color[].class),
   SERIES_COLOR("seriesColor", Color.class),
-  RANGE_AXIS_TITLE("range axis title", String.class),
-  DOMAIN_AXIS_TITLE("domain axis title", String.class);
+  RANGE_AXIS_LABEL("range axis label", String.class, "range axis title", "y-axis label"),
+  DOMAIN_AXIS_LABEL("domain axis label", String.class, "domain axis title", "x-axis label");
 
   private String name;
   private Class<?> type;
+  private String[] synonyms;
 
-  private Attribute(String name, Class<?> type) {
+  private Attribute(String name, Class<?> type, String... synonyms) {
     this.name = name;
     this.type = type;
+    this.synonyms = synonyms;
   }
 
   public String getName() {
@@ -33,9 +35,19 @@ public enum Attribute {
     return type;
   }
 
+  private boolean hasSynonym(String synonym) {
+    for(String s : synonyms) {
+      if(StringUtils.equalsIgnoreCase(s, synonym)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static Attribute lookup(String name) {
     for(Attribute a : Attribute.values()) {
-      if(StringUtils.equalsIgnoreCase(a.getName(), name)) {
+      if(StringUtils.equalsIgnoreCase(a.getName(), name) ||
+          a.hasSynonym(name)) {
         return a;
       }
     }

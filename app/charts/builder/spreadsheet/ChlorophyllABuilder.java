@@ -14,8 +14,8 @@ public class ChlorophyllABuilder extends MarineBarChartBuilder {
 
   private static final Map<Attribute, Object> DEFAULTS = ImmutableMap.<Attribute, Object>of(
       Attribute.TITLE, TITLE,
-      Attribute.RANGE_AXIS_TITLE, "Area (%)",
-      Attribute.DOMAIN_AXIS_TITLE, "Region");
+      Attribute.RANGE_AXIS_LABEL, "Area (%)",
+      Attribute.DOMAIN_AXIS_LABEL, "Region");
 
   public ChlorophyllABuilder() {
     super(ChartType.CHLOROPHYLL_A);

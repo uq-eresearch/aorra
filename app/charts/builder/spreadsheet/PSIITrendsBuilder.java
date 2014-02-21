@@ -43,7 +43,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
     private static final Map<Attribute, Object> CHART_DEFAULTS = 
         ImmutableMap.<Attribute, Object>of(
             Attribute.TITLE, TITLE,
-            Attribute.RANGE_AXIS_TITLE, "Concentration in water (ng/L)");
+            Attribute.RANGE_AXIS_LABEL, "Concentration in water (ng/L)");
 
     private static final Pattern YEAR_PATTERN = Pattern.compile(".*?(\\d+-\\d+).*?");
 
@@ -65,7 +65,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
       final ChartType type, final Region region) {
     if (region == Region.GBR) {
       final ADCDataset dataset = getDataset(datasource);
-      new ChartConfigurator(CHART_DEFAULTS, datasource, 1, 13).configure(dataset);
+      configurator(datasource, CHART_DEFAULTS, type, region).configure(dataset);
       final Drawable drawable = PSIITrends.createChart(dataset, new Dimension(1000, 500));
        return new AbstractChart() {
 
