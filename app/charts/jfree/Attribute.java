@@ -12,8 +12,8 @@ public enum Attribute {
   TITLE("title", String.class),
   TYPE("type", ChartType.class),
   REGION("region", Region.class),
-  SERIES_COLORS("seriesColors", Color[].class),
-  SERIES_COLOR("seriesColor", Color.class),
+  SERIES_COLORS("series colors", Color[].class),
+  SERIES_COLOR("series color", Color.class),
   RANGE_AXIS_LABEL("range axis label", String.class, "range axis title", "y-axis label"),
   DOMAIN_AXIS_LABEL("domain axis label", String.class, "domain axis title", "x-axis label");
 

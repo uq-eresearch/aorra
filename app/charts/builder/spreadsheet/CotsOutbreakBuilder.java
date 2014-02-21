@@ -1,16 +1,15 @@
 package charts.builder.spreadsheet;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.time.TimeSeries;
-import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.TimeSeriesDataItem;
 import org.jfree.data.time.Year;
 import org.supercsv.io.CsvListWriter;
@@ -24,8 +23,20 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.CotsOutbreak;
+import charts.jfree.ATSCollection;
+import charts.jfree.Attribute;
+
+import com.google.common.collect.ImmutableMap;
 
 public class CotsOutbreakBuilder extends AbstractBuilder {
+
+  private static final String TITLE = "Crown-of-thorns starfish outbreaks";
+
+  private static final Map<Attribute, Object> ccDefaults = ImmutableMap.<Attribute, Object>of(
+      Attribute.TITLE, TITLE,
+      Attribute.DOMAIN_AXIS_LABEL, "Year",
+      Attribute.RANGE_AXIS_LABEL, "Outbreaks"
+      );
 
   public CotsOutbreakBuilder() {
     super(ChartType.COTS_OUTBREAK);
@@ -40,7 +51,7 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
     }
   }
 
-  private TimeSeriesCollection createDataset(SpreadsheetDataSource datasource) {
+  private ATSCollection createDataset(SpreadsheetDataSource datasource) {
     TimeSeries s1 = new TimeSeries("outbreaks");
     try {
       for (int i = 2; true; i++) {
@@ -53,7 +64,7 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       }
     } catch (Exception e) {
     }
-    TimeSeriesCollection dataset = new TimeSeriesCollection();
+    ATSCollection dataset = new ATSCollection();
     dataset.addSeries(s1);
     return dataset;
   }
@@ -77,9 +88,9 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
     if (!region.equals(Region.GBR)) {
       return null;
     }
-    final TimeSeriesCollection dataset = createDataset(datasource);
-    final Drawable d = new CotsOutbreak().createChart(dataset, title(datasource),
-        seriesColor(datasource), new Dimension(750, 500));
+    final ATSCollection dataset = createDataset(datasource);
+    configurator(datasource, ccDefaults, type, region).configure(dataset);
+    final Drawable d = new CotsOutbreak().createChart(dataset, new Dimension(750, 500));
     final Chart chart = new AbstractChart() {
       @Override
       public ChartDescription getDescription() {
@@ -115,22 +126,6 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       }
     };
     return chart;
-  }
-
-  private String title(SpreadsheetDataSource datasource) {
-    try {
-      return datasource.select("E1").asString();
-    } catch(MissingDataException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private Color seriesColor(SpreadsheetDataSource datasource) {
-    try {
-      return datasource.select("E2").asColor();
-    } catch (MissingDataException e) {
-      throw new RuntimeException(e);
-    }
   }
 
 }

@@ -5,7 +5,6 @@ import java.awt.Dimension;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -19,17 +18,16 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.ui.RectangleInsets;
 
 import charts.Drawable;
+import charts.jfree.ATSCollection;
+import charts.jfree.Attribute;
 
 public class CotsOutbreak {
 
-  private static final String TITLE = "Crown-of-thorns starfish outbreaks";
-
-    public Drawable createChart(final XYDataset dataset, final String title,
-        Color seriesColor, Dimension dimension) {
+    public Drawable createChart(final ATSCollection dataset, Dimension dimension) {
         JFreeChart chart = ChartFactory.createTimeSeriesChart(
-                StringUtils.isNotBlank(title)?title:TITLE,  // title
-                "Year",             // x-axis label
-                "Outbreaks",   // y-axis label
+                dataset.<String>get(Attribute.TITLE),  // title
+                dataset.<String>get(Attribute.DOMAIN_AXIS_LABEL), // x-axis label
+                dataset.<String>get(Attribute.RANGE_AXIS_LABEL),   // y-axis label
                 dataset,            // data
                 false,               // create legend?
                 false,               // generate tooltips?
@@ -48,6 +46,7 @@ public class CotsOutbreak {
         rangeAxis.setTickUnit(new NumberTickUnit(
             (Math.round(Math.floor(getMaxOutbreaks(dataset)))/20)+1, new DecimalFormat("0")));
         XYItemRenderer r = plot.getRenderer();
+        Color seriesColor = dataset.<Color>get(Attribute.SERIES_COLOR);
         r.setSeriesPaint(0, ((seriesColor != null) && !Color.white.equals(seriesColor))?
             seriesColor:Color.blue);
         DateAxis axis = (DateAxis) plot.getDomainAxis();

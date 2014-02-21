@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Color;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
@@ -8,6 +9,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.Value;
 import charts.jfree.Attribute;
 import charts.jfree.AttributedDataset;
 
@@ -112,13 +114,13 @@ public class ChartConfigurator {
       if(attribute == null) {
         continue;
       }
+      Value val = ds.select(r, column+1);
       if(attribute.getType() == String.class) {
-        String value = ds.select(r, column+1).asString();
-        configuration.put(attribute, value);
+        configuration.put(attribute, val.asString());
       } else if(attribute.getName().equals("type")) {
-        String value = ds.select(r, column+1).asString();
-        ChartType type = ChartType.lookup(value);
-        configuration.put(attribute, type);
+        configuration.put(attribute, ChartType.lookup(val.asString()));
+      } else if(attribute.getType().equals(Color.class)) {
+        configuration.put(attribute, val.asColor());
       }
     }
     return configuration;
