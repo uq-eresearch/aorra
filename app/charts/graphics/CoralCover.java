@@ -9,6 +9,7 @@ import java.awt.Paint;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.ChartFactory;
@@ -18,6 +19,7 @@ import org.jfree.chart.axis.AxisState;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.DrawingSupplier;
 import org.jfree.chart.plot.Plot;
@@ -69,7 +71,7 @@ public class CoralCover {
         return new JFreeChartDrawable(chart, dimension);
     }
 
-    private static JFreeChart createChart(final CategoryDataset dataset, String title,
+    private static JFreeChart createChart(final DefaultStatisticalCategoryDataset dataset, String title,
             String rangeAxisLabel) {
         JFreeChart chart = ChartFactory.createLineChart(
                 title,  // title
@@ -127,6 +129,8 @@ public class CoralCover {
         renderer.setBaseOutlinePaint(Color.black);
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
+        rangeAxis.setTickUnit(new NumberTickUnit(
+            (Math.round(Math.floor(getMax(dataset)))/20)+1, new DecimalFormat("0")));
         chart.getTitle().setFont(rangeAxis.getLabelFont());
         chart.addLegend(ErrorIndicatorLegend.createLegend());
         return chart;
@@ -150,6 +154,26 @@ public class CoralCover {
             }
         }
         return ds;
+    }
+
+    public static double getMax(DefaultStatisticalCategoryDataset dataset) {
+      double max = 0;
+      for(int r = 0;r<dataset.getRowCount();r++) {
+        for(int c = 0;c<dataset.getColumnCount();c++) {
+          Comparable<?> row = dataset.getRowKey(r);
+          Comparable<?> col = dataset.getColumnKey(c);
+          Number mean = dataset.getMeanValue(row, col);
+          Number stddev = dataset.getStdDevValue(row, col);
+          if(mean != null) {
+            if(stddev != null) {
+              max = Math.max(max, mean.doubleValue()+stddev.doubleValue());
+            } else {
+              max = Math.max(max, mean.doubleValue());
+            }
+          }
+        }
+      }
+      return max;
     }
 
     private static CategoryAxis getSubCategoryAxis(final DefaultStatisticalCategoryDataset dataset) {
