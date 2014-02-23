@@ -5,6 +5,7 @@ import java.awt.Dimension;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
@@ -29,6 +30,8 @@ public class MarineTrends {
         plot.setBackgroundPaint(Color.white);
         plot.setDomainGridlinePaint(Color.lightGray);
         plot.setRangeGridlinePaint(Color.lightGray);
+        ValueAxis raxis = plot.getRangeAxis();
+        raxis.setRange(0, 100.0);
         CategoryItemRenderer renderer = plot.getRenderer();
         renderer.setSeriesPaint(0, Colors.BLUE);
         renderer.setSeriesPaint(1, Colors.DARK_RED);
