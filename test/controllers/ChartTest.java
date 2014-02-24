@@ -4,7 +4,7 @@ import static helpers.FileStoreHelper.XLSX_MIME_TYPE;
 import static helpers.FileStoreHelper.XLS_MIME_TYPE;
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
-import static play.test.Helpers.callAction;
+import static controllers.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
