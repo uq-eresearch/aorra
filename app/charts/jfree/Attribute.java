@@ -5,13 +5,11 @@ import java.awt.Color;
 import org.apache.commons.lang3.StringUtils;
 
 import charts.ChartType;
-import charts.Region;
 
 public enum Attribute {
 
   TITLE("title", String.class),
   TYPE("type", ChartType.class),
-  REGION("region", Region.class),
   SERIES_COLORS("series colors", Color[].class),
   SERIES_COLOR("series color", Color.class),
   RANGE_AXIS_LABEL("range axis label", String.class, "range axis title", "y-axis label"),
