@@ -1284,6 +1284,7 @@ define([
       'externals': '.region-external-refs'
     },
     initialize: function() {
+      this.model.on('all', _.bind(console.log, console));
       var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
         format: svgOrPng
       });
@@ -1308,7 +1309,8 @@ define([
             csv: c.url.replace(/\.(png|svg)\?/, ".csv?"),
             emf: c.url.replace(/\.(png|svg)\?/, ".emf?"),
             png: c.url.replace(/\.(png|svg)\?/, ".png?"),
-            svg: c.url.replace(/\.(png|svg)\?/, ".svg?")
+            svg: c.url.replace(/\.(png|svg)\?/, ".svg?"),
+            url: c.url.replace(/(#[0-9]+)?$/, "#"+(new Date()).getTime()) // Force recheck of URL
           });
         };
       };
