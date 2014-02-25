@@ -21,7 +21,7 @@ public class Helpers {
 
     @Override
     public A get() {
-      return FPromiseHelper.get(this, 60, TimeUnit.SECONDS);
+      return FPromiseHelper.get(this, 5, TimeUnit.MINUTES);
     }
 
   }

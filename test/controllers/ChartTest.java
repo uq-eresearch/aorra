@@ -1,10 +1,10 @@
 package controllers;
 
+import static controllers.Helpers.callAction;
 import static helpers.FileStoreHelper.XLSX_MIME_TYPE;
 import static helpers.FileStoreHelper.XLS_MIME_TYPE;
 import static java.util.Arrays.asList;
 import static org.fest.assertions.Assertions.assertThat;
-import static controllers.Helpers.callAction;
 import static play.test.Helpers.charset;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.contentType;
@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -211,7 +212,10 @@ public class ChartTest {
                 f.getIdentifier())
           };
         for (HandlerRef call : calls) {
+          Date d = new Date();
           final Result result = callAction(call, newRequest);
+          System.out.println(String.format("XXX chart (type %s) generation took %s ms",
+              chartType, new Date().getTime()-d.getTime()));
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("image/svg+xml");
         }
