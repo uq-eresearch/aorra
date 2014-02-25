@@ -1,7 +1,6 @@
 package charts.builder.spreadsheet;
 
 import java.awt.Color;
-import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
@@ -11,22 +10,22 @@ import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
 import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 import charts.jfree.AttributedDataset;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 
 public class ChartConfigurator {
 
   private static final int SEARCH_DEPTH = 100;
 
-  private final Map<Attribute, Object> defaults;
+  private final AttributeMap defaults;
 
   private final SpreadsheetDataSource ds;
 
   private final StrSubstitutor substitutor;
 
-  public ChartConfigurator(Map<Attribute, Object> defaults, 
+  public ChartConfigurator(AttributeMap defaults, 
       SpreadsheetDataSource ds, StrSubstitutor subst) {
     this.defaults = defaults;
     this.ds = ds;
@@ -68,28 +67,21 @@ public class ChartConfigurator {
   }
 
   public void configure(AttributedDataset dataset, ChartType type) {
-    if(defaults != null) {
-      for(Map.Entry<Attribute, Object> me : defaults.entrySet()) {
-        dataset.add(me.getKey(), substitute(me.getValue()));
-      }
-    }
-    Map<Attribute, Object> cfg = getConfiguration(type);
-    if(cfg != null) {
-      for(Map.Entry<Attribute, Object> me : cfg.entrySet()) {
-        dataset.add(me.getKey(),  substitute(me.getValue()));
-      }
-    }
+    dataset.attrMap().putAll(substitute(defaults));
+    dataset.attrMap().putAll(substitute(getConfiguration(type)));
+    
   }
 
-  private Object substitute(Object o) {
-    if((o instanceof String) && (substitutor != null)) {
-      return substitutor.replace(o);
-    } else {
-      return o;
+  private AttributeMap substitute(AttributeMap m) {
+    if((substitutor != null) && (m != null)) {
+      for(Attribute<String> a : m.getKeys(String.class)) {
+        m.put(a, substitutor.replace(m.get(a)));
+      }
     }
+    return m;
   }
 
-  public Map<Attribute, Object> getConfiguration(ChartType type) {
+  public AttributeMap getConfiguration(ChartType type) {
     try {
       Pair<Integer, Integer> p = search(ds, type);
       if(p != null) {
@@ -99,9 +91,10 @@ public class ChartConfigurator {
     return null;
   }
 
-  private Map<Attribute, Object> readConfiguration(int row,
+  @SuppressWarnings("unchecked")
+  private AttributeMap readConfiguration(int row,
       int column) throws MissingDataException {
-    Map<Attribute, Object> configuration = Maps.newHashMap();
+    AttributeMap m = new AttributeMap();
     for(int r = row;true;r++) {
       if((r-row) >= 100) {
         throw new RuntimeException("expected less than 100 chart config entries");
@@ -110,20 +103,20 @@ public class ChartConfigurator {
       if(StringUtils.isBlank(key)) {
         break;
       }
-      Attribute attribute = Attribute.lookup(key);
+      Attribute<?> attribute = Attribute.lookup(key);
       if(attribute == null) {
         continue;
       }
       Value val = ds.select(r, column+1);
       if(attribute.getType() == String.class) {
-        configuration.put(attribute, val.asString());
+        m.put((Attribute<String>)attribute, val.asString());
       } else if(attribute.getName().equals("type")) {
-        configuration.put(attribute, ChartType.lookup(val.asString()));
+        m.put((Attribute<ChartType>)attribute, ChartType.lookup(val.asString()));
       } else if(attribute.getType().equals(Color.class)) {
-        configuration.put(attribute, val.asColor());
+        m.put((Attribute<Color>)attribute, val.asColor());
       }
     }
-    return configuration;
+    return m;
   }
 
 }

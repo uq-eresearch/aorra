@@ -1,25 +1,19 @@
 package charts.jfree;
 
-import java.util.Map;
-
 import org.jfree.data.category.DefaultCategoryDataset;
-
-import com.google.common.collect.Maps;
 
 // Attributed Default Category Dataset
 public class ADCDataset extends DefaultCategoryDataset implements AttributedDataset {
 
-  private Map<String, Object> attributes = Maps.newHashMap();
+  private AttributeMap attrMap = new AttributeMap();
 
   @Override
-  public <T> void add(Attribute attribute, T value) {
-    attributes.put(attribute.getName(), value);
+  public AttributeMap attrMap() {
+    return attrMap;
   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T get(Attribute attribute) {
-    return (T)attributes.get(attribute.getName());
+  public <T> T get(Attribute<T> attribute) {
+    return attrMap().get(attribute);
   }
 
 }

@@ -2,8 +2,8 @@ package charts.jfree;
 
 public interface AttributedDataset {
 
-  public <T> void add(Attribute attribute, T value);
+  AttributeMap attrMap();
 
-  public <T> T get(Attribute attribute);
+  public <T> T get(Attribute<T> attribute);
 
 }

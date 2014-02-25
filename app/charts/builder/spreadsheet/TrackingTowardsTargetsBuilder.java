@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.text.NumberFormat;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.io.CsvListWriter;
@@ -24,6 +23,7 @@ import charts.builder.DataSource.MissingDataException;
 import charts.graphics.TrackingTowardsTargets;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -36,7 +36,7 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
 
   private static final String IMPROVED_PRATICES = "% of farmers adopting improved practices";
   private static final String POLLUTANT_REDUCTION = "% reduction in pollutant load";
-  private static final String TARGET = " target (%s by %s)";
+  private static final String TARGET = " target (${target} by ${by})";
 
   private static class Title {
     private String title;
@@ -46,8 +46,8 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
       this.title = title;
       this.valueAxisLabel = valueAxisLabel;
     }
-    public String getTitle(double target, String targetBy) {
-      return String.format(title, percentFormatter().format(target), targetBy);
+    public String getTitle() {
+      return title;
     }
     public String getValueAxisLabel() {
       return valueAxisLabel;
@@ -119,12 +119,11 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
       final Region region) {
     if (region == Region.GBR) {
       final ADCDataset dataset = createDataset(ds, type);
-      Map<Attribute, Object> defaults = ImmutableMap.<Attribute, Object>of(
-          Attribute.TITLE, getDefaultTitle(ds, type),
-          Attribute.RANGE_AXIS_LABEL, getDefaultRangeAxisTitle(type));
-      configurator(ds, defaults, type, region).configure(dataset, type);
+      configurator(ds, type, region,
+          ImmutableMap.of("target", percentFormatter().format(getTarget(ds, type)),
+              "by", getTargetBy(ds, type))).configure(dataset, type);
       final Drawable d = new TrackingTowardsTargets().createChart(
-          type, getTarget(ds, getTargetSeries(type)),
+          type, getTarget(ds, type),
           dataset, new Dimension(750, 500));
       return new AbstractChart() {
 
@@ -151,11 +150,11 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
             final List<String> heading = ImmutableList.<String>builder()
                 .add(format("%s %s", region, type))
                 .add(format("%% Target by " +
-                    getTargetBy(ds, getTargetSeries(type))))
+                    getTargetBy(ds, type)))
                 .addAll(columnKeys)
                 .build();
             csv.write(heading);
-            final double target = getTarget(ds, getTargetSeries(type));
+            final double target = getTarget(ds, type);
             for (String row : rowKeys) {
               List<String> line = newLinkedList();
               line.add(row);
@@ -255,8 +254,9 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
     return columns;
   }
 
-  private double getTarget(SpreadsheetDataSource ds, Series series) {
+  private double getTarget(SpreadsheetDataSource ds, ChartType type) {
     try {
+      Series series = getTargetSeries(type);
       return ds.select(ROW.get(series), 1).asDouble();
     } catch(MissingDataException e) {
       throw new RuntimeException(e);
@@ -264,21 +264,29 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
     
   }
 
-  private String getTargetBy(SpreadsheetDataSource ds, Series series) {
+  private String getTargetBy(SpreadsheetDataSource ds, ChartType type) {
     try {
+      Series series = getTargetSeries(type);
       return ds.select(ROW.get(series), 2).asInteger().toString();
     } catch (MissingDataException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public String getDefaultTitle(SpreadsheetDataSource ds, ChartType type) {
-    Series series = getTargetSeries(type);
-    return TITLES.get(type).getTitle(getTarget(ds, series), getTargetBy(ds, series));
+  public String getDefaultTitle(ChartType type) {
+    return TITLES.get(type).getTitle();
   }
 
   public String getDefaultRangeAxisTitle(ChartType type) {
     return TITLES.get(type).getValueAxisLabel();
+  }
+
+  @Override
+  protected AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().
+        put(Attribute.TITLE, getDefaultTitle(type)).
+        put(Attribute.RANGE_AXIS_LABEL, getDefaultRangeAxisTitle(type)).
+        build();
   }
 
 }

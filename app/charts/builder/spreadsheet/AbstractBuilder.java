@@ -15,7 +15,7 @@ import charts.Region;
 import charts.builder.ChartTypeBuilder;
 import charts.builder.DataSource;
 import charts.builder.DataSource.MissingDataException;
-import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -113,13 +113,11 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   }
 
   protected ChartConfigurator configurator(SpreadsheetDataSource datasource,
-      Map<Attribute, Object> defaults, 
       ChartType type, Region region) {
-    return configurator(datasource, defaults, type, region, null);
+    return configurator(datasource, type, region, null);
   }
 
   protected ChartConfigurator configurator(SpreadsheetDataSource datasource,
-      Map<Attribute, Object> defaults, 
       ChartType type, Region region,
       Map<String, String> substitutions) {
     Map<String, String> m = Maps.newHashMap();
@@ -128,7 +126,21 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     }
     m.put("type", type.getLabel());
     m.put("region", region.getProperName());
-    return new ChartConfigurator(defaults, datasource, new StrSubstitutor(m));
+    return new ChartConfigurator(defaults(type), datasource, new StrSubstitutor(m));
+  }
+
+  
+  protected AttributeMap defaults(ChartType type) {
+    throw new ChartConfigurationNotSupported(this);
+  }
+
+  ChartType type() {
+    if(types.size() == 1) {
+      return types.get(0);
+    } else {
+      throw new RuntimeException(String.format("this builder (%s) supports multiple types",
+          this.getClass().getName()));
+    }
   }
 
 }

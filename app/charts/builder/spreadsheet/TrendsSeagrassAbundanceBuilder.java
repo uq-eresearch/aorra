@@ -29,18 +29,13 @@ import charts.builder.DataSource.MissingDataException;
 import charts.graphics.TrendsSeagrassAbundance;
 import charts.jfree.ADSCDataset;
 import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
-
-  private static final Map<Attribute, Object> ccDefaults = ImmutableMap.<Attribute, Object>of(
-      Attribute.TITLE, "Trends in seagrass abundance (mean) at ${subregion}",
-      Attribute.DOMAIN_AXIS_LABEL, "Year",
-      Attribute.RANGE_AXIS_LABEL, "Seagrass abundance"
-      );
 
     public static final String SUBREGION = "subregion";
 
@@ -155,7 +150,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
     }
     if (subregion.getRegion() == region) {
       final ADSCDataset dataset = createDataset(ds, subregion);
-      configurator(ds, ccDefaults, type, region,
+      configurator(ds, type, region,
           ImmutableMap.of("subregion", subregion.getLabel())).configure(dataset);
       final Drawable d = TrendsSeagrassAbundance.createChart(dataset, new Dimension(750, 500));
       return new AbstractChart() {
@@ -257,6 +252,15 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
       e.printStackTrace();
     }
     return d;
+  }
+
+  @Override
+  protected AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().
+        put(Attribute.TITLE, "Trends in seagrass abundance (mean) at ${subregion}").
+        put(Attribute.DOMAIN_AXIS_LABEL, "Year").
+        put(Attribute.RANGE_AXIS_LABEL, "Seagrass abundance").
+        build();
   }
 
 }

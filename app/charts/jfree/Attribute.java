@@ -1,49 +1,65 @@
 package charts.jfree;
 
 import java.awt.Color;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
 import charts.ChartType;
 
-public enum Attribute {
+import com.google.common.collect.Lists;
 
-  TITLE("title", String.class),
-  TYPE("type", ChartType.class),
-  SERIES_COLORS("series colors", Color[].class),
-  SERIES_COLOR("series color", Color.class),
-  RANGE_AXIS_LABEL("range axis label", String.class, "range axis title", "y-axis label"),
-  DOMAIN_AXIS_LABEL("domain axis label", String.class, "domain axis title", "x-axis label");
+public class Attribute<T> {
 
-  private String name;
-  private Class<?> type;
-  private String[] synonyms;
+  private static final List<Attribute<?>> ATTRIBUTES = Lists.newArrayList();
 
-  private Attribute(String name, Class<?> type, String... synonyms) {
+  public static final Attribute<String> TITLE = strAttr("title");
+  public static final Attribute<ChartType> TYPE = attr("type", ChartType.class);
+  public static final Attribute<String> RANGE_AXIS_LABEL = strAttr("y-axis label",
+      "range axis label", "range axis title");
+  public static final Attribute<String> DOMAIN_AXIS_LABEL = strAttr("x-axis label",
+      "domain axis label", "domain axis title");
+  public static final Attribute<Color> SERIES_COLOR = attr("series color", Color.class);
+  public static final Attribute<Color[]> SERIES_COLORS = attr("series colors", Color[].class);
+
+  private final String name;
+  private final Class<T> type;
+  private final String[] synonyms;
+
+  private Attribute(String name, Class<T> type, String... synonyms) {
     this.name = name;
     this.type = type;
     this.synonyms = synonyms;
+    ATTRIBUTES.add(this);
   }
 
   public String getName() {
     return name;
   }
 
-  public Class<?> getType() {
+  public Class<T> getType() {
     return type;
   }
 
   private boolean hasSynonym(String synonym) {
-    for(String s : synonyms) {
-      if(StringUtils.equalsIgnoreCase(s, synonym)) {
-        return true;
+    if(synonyms != null) {
+      for(String s : synonyms) {
+        if(StringUtils.equalsIgnoreCase(s, synonym)) {
+          return true;
+        }
       }
     }
     return false;
   }
 
-  public static Attribute lookup(String name) {
-    for(Attribute a : Attribute.values()) {
+  @Override
+  public String toString() {
+    return String.format("%s/%s", getName(), getType().getSimpleName());
+  }
+
+  public static Attribute<?> lookup(String name) {
+    for(Attribute<?> a : Attribute.values()) {
       if(StringUtils.equalsIgnoreCase(a.getName(), name) ||
           a.hasSynonym(name)) {
         return a;
@@ -52,9 +68,24 @@ public enum Attribute {
     return null;
   }
 
-  @Override
-  public String toString() {
-    return String.format("%s/%s", getName(), getType().getSimpleName());
+  public static List<Attribute<?>> values() {
+    return Collections.unmodifiableList(ATTRIBUTES);
+  }
+
+  private static Attribute<String> strAttr(String label) {
+    return attr(label, String.class);
+  }
+
+  private static Attribute<String> strAttr(String label, String... synonyms) {
+    return attr(label, String.class, synonyms);
+  }
+
+  private static <T> Attribute<T> attr(String label, Class<T> type) {
+    return attr(label, type, (String[])null);
+  }
+
+  private static <T> Attribute<T> attr(String label, Class<T> type, String... synonyms) {
+    return new Attribute<>(label, type, synonyms);
   }
 
 }

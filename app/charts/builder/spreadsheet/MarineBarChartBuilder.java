@@ -6,7 +6,6 @@ import static java.lang.String.format;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.io.CsvListWriter;
@@ -31,13 +30,11 @@ public abstract class MarineBarChartBuilder extends AbstractBuilder {
     super(type);
   }
 
-  abstract Map<Attribute, Object> defaults();
-
   @Override
   protected boolean canHandle(SpreadsheetDataSource datasource) {
     try {
       return StringUtils.startsWithIgnoreCase(datasource.select("A1").asString(),
-          (String)defaults().get(Attribute.TITLE));
+          defaults(type()).get(Attribute.TITLE));
     } catch (MissingDataException e) {
       return false;
     }
@@ -48,7 +45,7 @@ public abstract class MarineBarChartBuilder extends AbstractBuilder {
       final Region region) {
     if(region == Region.GBR && supports(type)) {
       final ADCDataset dataset = createDataset(datasource);
-      configurator(datasource, defaults(), type, region).configure(dataset);
+      configurator(datasource, type, region).configure(dataset);
       final Drawable d = new MarineBarChart().createChart(dataset);
       return new AbstractChart() {
         @Override

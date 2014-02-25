@@ -1,12 +1,8 @@
 package charts.builder.spreadsheet;
 
-import java.util.Map;
-
-import com.google.common.collect.Maps;
-
 import charts.ChartType;
-import charts.Region;
 import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 public abstract class LandPracticeBuilder extends ManagementPracticeBuilder {
 
@@ -15,10 +11,9 @@ public abstract class LandPracticeBuilder extends ManagementPracticeBuilder {
   }
 
   @Override
-  protected Map<Attribute, Object> defaults(SpreadsheetDataSource ds, Region region) {
-    Map<Attribute, Object> result = Maps.newHashMap();
-    result.putAll(super.defaults(ds, region));
-    result.put(Attribute.RANGE_AXIS_LABEL, "% of landholders");
-    return result;
+  protected AttributeMap defaults(ChartType type) {
+    AttributeMap m = super.defaults(type);
+    m.put(Attribute.RANGE_AXIS_LABEL, "% of landholders");
+    return m;
   }
 }

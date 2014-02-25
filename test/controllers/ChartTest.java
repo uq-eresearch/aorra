@@ -446,7 +446,7 @@ public class ChartTest {
               CsvPreference.STANDARD_PREFERENCE);
           int rowCount = 0;
           List<String> row = listReader.read();
-          assertThat(row).contains("Year", "Railfall (mm)");
+          assertThat(row).contains("Year", "Rainfall (mm)");
           while ((row = listReader.read()) != null) {
             assertThat(row).hasSize(2);
             // Rainfall years start at 1988

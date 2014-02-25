@@ -269,7 +269,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
                 false,                        // tooltips
                 false                        // urls
                 );
-        TextTitle textTitle = new TextTitle(dataset.<String>get(Attribute.TITLE), TITLE_FONT);
+        TextTitle textTitle = new TextTitle(dataset.get(Attribute.TITLE), TITLE_FONT);
         textTitle.setPadding(new RectangleInsets(10,0,0,0));
         chart.setTitle(textTitle);
         
@@ -288,7 +288,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
         rangeAxis.setAutoTickUnitSelection(true);
         rangeAxis.setTickUnit(new NumberTickUnit(0.2, percentFormatter()));
         rangeAxis.setAxisLineVisible(true);
-        rangeAxis.setLabel(dataset.<String>get(Attribute.RANGE_AXIS_LABEL));
+        rangeAxis.setLabel(dataset.get(Attribute.RANGE_AXIS_LABEL));
         rangeAxis.setAxisLineStroke(new BasicStroke(2));
         rangeAxis.setAxisLinePaint(Color.black);
         rangeAxis.setTickMarksVisible(false);
@@ -303,7 +303,7 @@ public class GrazingPracticeSystems implements ManagementPracticeSystems {
         cAxis.setTickMarksVisible(false);
         cAxis.setAxisLinePaint(Color.black);
         cAxis.setAxisLineStroke(new BasicStroke(2));
-        cAxis.setLabel(dataset.<String>get(Attribute.DOMAIN_AXIS_LABEL));
+        cAxis.setLabel(dataset.get(Attribute.DOMAIN_AXIS_LABEL));
         cAxis.setTickLabelsVisible(true);
         cAxis.setUpperMargin(0.05);
         cAxis.setLowerMargin(0.05);

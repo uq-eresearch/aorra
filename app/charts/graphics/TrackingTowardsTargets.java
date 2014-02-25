@@ -322,9 +322,9 @@ public class TrackingTowardsTargets {
             throw new RuntimeException("too many series");
         }
         final JFreeChart chart = ChartFactory.createLineChart(
-                dataset.<String>get(Attribute.TITLE),
-                dataset.<String>get(Attribute.DOMAIN_AXIS_LABEL),
-                dataset.<String>get(Attribute.RANGE_AXIS_LABEL),
+                dataset.get(Attribute.TITLE),
+                dataset.get(Attribute.DOMAIN_AXIS_LABEL),
+                dataset.get(Attribute.RANGE_AXIS_LABEL),
                 dataset,
                 PlotOrientation.VERTICAL,
                 false,

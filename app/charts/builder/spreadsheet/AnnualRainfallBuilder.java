@@ -3,7 +3,6 @@ package charts.builder.spreadsheet;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
@@ -20,17 +19,11 @@ import charts.builder.DataSource.MissingDataException;
 import charts.graphics.AnnualRainfall;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
-
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableMap;
 
 public class AnnualRainfallBuilder extends AbstractBuilder {
-
-  private static final Map<Attribute, Object> ccDefaults = ImmutableMap.<Attribute, Object>of(
-      Attribute.TITLE, "Mean annual rainfall for ${startYear}-${endYear} - ${region}",
-      Attribute.DOMAIN_AXIS_LABEL, "Year",
-      Attribute.RANGE_AXIS_LABEL, "Rainfall (mm)"
-      );
 
   private static final ImmutableMap<Region, Integer> ROW =
       new ImmutableMap.Builder<Region, Integer>()
@@ -95,7 +88,7 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
       return null;
     }
     final ADCDataset dataset = createDataset(datasource, region);
-    configurator(datasource, ccDefaults, type, region, ImmutableMap.of(
+    configurator(datasource, type, region, ImmutableMap.of(
         "startYear", startYear(dataset),
         "endYear", endYear(dataset))).configure(dataset);
     final Drawable d = new AnnualRainfall().createChart(dataset, new Dimension(750, 500));
@@ -145,6 +138,15 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
     } else {
       return "";
     }
+  }
+
+  @Override
+  protected AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().
+        put(Attribute.TITLE, "Mean annual rainfall for ${startYear}-${endYear} - ${region}").
+        put(Attribute.DOMAIN_AXIS_LABEL, "Year").
+        put(Attribute.RANGE_AXIS_LABEL, "Rainfall (mm)").
+        build();
   }
 
 }

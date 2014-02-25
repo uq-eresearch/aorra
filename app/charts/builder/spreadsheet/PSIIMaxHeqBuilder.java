@@ -12,7 +12,6 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,19 +31,14 @@ import charts.graphics.PSIIMaxHeq;
 import charts.graphics.PSIIMaxHeq.Condition;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public class PSIIMaxHeqBuilder extends AbstractBuilder {
 
   private static final String TITLE = "Maximum PSII Herbicide Equivalent Concentrations";
-
-  private static final Map<Attribute, Object> CHART_DEFAULTS = 
-      ImmutableMap.<Attribute, Object>of(
-          Attribute.TITLE, TITLE,
-          Attribute.RANGE_AXIS_LABEL, "Max PSII Heq ng/L");
 
     private static final Pattern YEAR_PATTERN = Pattern.compile(".*?(\\d+-\\d+).*?");
 
@@ -67,7 +61,7 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
     if (region == Region.GBR) {
       
       ADCDataset dataset = getDataset(datasource);
-      configurator(datasource, CHART_DEFAULTS, type, region).configure(dataset);
+      configurator(datasource, type, region).configure(dataset);
       final Drawable d = PSIIMaxHeq.createChart(dataset,new Dimension(1000, 500));
       return new AbstractChart() {
 
@@ -194,6 +188,14 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.TITLE, TITLE).
+          put(Attribute.RANGE_AXIS_LABEL, "Max PSII Heq ng/L").
+          build();
     }
 
 }

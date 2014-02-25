@@ -30,20 +30,15 @@ import charts.builder.DataSource.MissingDataException;
 import charts.graphics.PSIITrends;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class PSIITrendsBuilder extends AbstractBuilder {
 
     private static final String TITLE = "Maximum concentration of individual PSII herbicides";
-
-    private static final Map<Attribute, Object> CHART_DEFAULTS = 
-        ImmutableMap.<Attribute, Object>of(
-            Attribute.TITLE, TITLE,
-            Attribute.RANGE_AXIS_LABEL, "Concentration in water (ng/L)");
 
     private static final Pattern YEAR_PATTERN = Pattern.compile(".*?(\\d+-\\d+).*?");
 
@@ -65,7 +60,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
       final ChartType type, final Region region) {
     if (region == Region.GBR) {
       final ADCDataset dataset = getDataset(datasource);
-      configurator(datasource, CHART_DEFAULTS, type, region).configure(dataset);
+      configurator(datasource, type, region).configure(dataset);
       final Drawable drawable = PSIITrends.createChart(dataset, new Dimension(1000, 500));
        return new AbstractChart() {
 
@@ -194,10 +189,18 @@ public class PSIITrendsBuilder extends AbstractBuilder {
                 colors[i] = c;
               }
             }
-            dataset.add(Attribute.SERIES_COLORS, colors);
+            dataset.attrMap().put(Attribute.SERIES_COLORS, colors);
             return dataset;
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.TITLE, TITLE).
+          put(Attribute.RANGE_AXIS_LABEL, "Concentration in water (ng/L)").
+          build();
     }
 }

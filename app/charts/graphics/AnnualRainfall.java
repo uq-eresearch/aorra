@@ -22,9 +22,9 @@ public class AnnualRainfall {
 
     public Drawable createChart(final ADCDataset dataset, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createBarChart(
-            dataset.<String>get(Attribute.TITLE),       // chart title
-            dataset.<String>get(Attribute.DOMAIN_AXIS_LABEL),               // domain axis label
-            dataset.<String>get(Attribute.RANGE_AXIS_LABEL),                  // range axis label
+            dataset.get(Attribute.TITLE),       // chart title
+            dataset.get(Attribute.DOMAIN_AXIS_LABEL),               // domain axis label
+            dataset.get(Attribute.RANGE_AXIS_LABEL),                  // range axis label
             dataset,                  // data
             PlotOrientation.VERTICAL, // orientation
             false,                    // include legend

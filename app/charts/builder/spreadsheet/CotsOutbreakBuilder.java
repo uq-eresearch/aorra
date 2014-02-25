@@ -6,7 +6,6 @@ import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.time.TimeSeries;
@@ -25,18 +24,11 @@ import charts.builder.DataSource.MissingDataException;
 import charts.graphics.CotsOutbreak;
 import charts.jfree.ATSCollection;
 import charts.jfree.Attribute;
-
-import com.google.common.collect.ImmutableMap;
+import charts.jfree.AttributeMap;
 
 public class CotsOutbreakBuilder extends AbstractBuilder {
 
   private static final String TITLE = "Crown-of-thorns starfish outbreaks";
-
-  private static final Map<Attribute, Object> ccDefaults = ImmutableMap.<Attribute, Object>of(
-      Attribute.TITLE, TITLE,
-      Attribute.DOMAIN_AXIS_LABEL, "Year",
-      Attribute.RANGE_AXIS_LABEL, "Outbreaks"
-      );
 
   public CotsOutbreakBuilder() {
     super(ChartType.COTS_OUTBREAK);
@@ -89,7 +81,7 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       return null;
     }
     final ATSCollection dataset = createDataset(datasource);
-    configurator(datasource, ccDefaults, type, region).configure(dataset);
+    configurator(datasource, type, region).configure(dataset);
     final Drawable d = new CotsOutbreak().createChart(dataset, new Dimension(750, 500));
     final Chart chart = new AbstractChart() {
       @Override
@@ -126,6 +118,15 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
       }
     };
     return chart;
+  }
+
+  @Override
+  protected AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().
+        put(Attribute.TITLE, TITLE).
+        put(Attribute.DOMAIN_AXIS_LABEL, "Year").
+        put(Attribute.RANGE_AXIS_LABEL, "Outbreaks").
+        build();
   }
 
 }

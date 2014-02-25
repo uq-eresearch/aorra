@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -27,18 +26,15 @@ import charts.graphics.HSLandPracticeSystems;
 import charts.graphics.ManagementPracticeSystems;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public abstract class ManagementPracticeBuilder extends AbstractBuilder {
 
-  private ChartType type;
-
   public ManagementPracticeBuilder(ChartType type) {
     super(type);
-    this.type = type;
   }
 
   @Override
@@ -48,7 +44,7 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
     if(dataset == null) {
       return null;
     }
-    configurator(datasource, defaults(datasource, region), type, region).configure(dataset);
+    configurator(datasource, type, region).configure(dataset);
     ManagementPracticeSystems mps;
     if(type == ChartType.HORTICULTURE_PS || type == ChartType.SUGARCANE_PS) {
       mps = new HSLandPracticeSystems();
@@ -152,12 +148,10 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
 
   protected abstract void addData(ADCDataset dataset, String year, Double[] values);
 
-  protected String title(SpreadsheetDataSource ds, Region region) {
-    return String.format("%s - %s", type.getLabel(), region.getProperName());
-  }
-
-  protected Map<Attribute, Object> defaults(SpreadsheetDataSource ds, Region region) {
-    return ImmutableMap.<Attribute, Object>of(Attribute.TITLE, title(ds, region));
+  @Override
+  protected AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().put(
+        Attribute.TITLE, "${type} - ${region}").build();
   }
 
 }
