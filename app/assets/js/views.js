@@ -1277,24 +1277,20 @@ define([
   });
 
   var ChartElementView = Marionette.Layout.extend({
-    modelEvents: {
-      'change': 'retrieveCharts'
-    },
     regions: {
       'externals': '.region-external-refs'
     },
     initialize: function() {
       this._externalRefButton = new ExternalRefButton({ model: this.model });
-      this.retrieveCharts();
     },
-    retrieveCharts: function() {
-      var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
-        format: svgOrPng
-      });
-      $.get(url, _(function onSuccess(data) {
-        this._charts = data.charts;
-        this.render();
-      }).bind(this));
+    onShow: function() {
+      this._charts = new models.Charts(this.model);
+      this.listenTo(this._charts, 'change', _(this.render).bind(this));
+    },
+    onClose: function() {
+      this._charts.stopListening();
+      this.stopListening(this._charts);
+      this._charts = null;
     },
     serializeData: function() {
       var makeChartAttrs = function(region) {
@@ -1307,35 +1303,32 @@ define([
                 region: _s.slugify(c.region),
                 uniqueId: i
               }, { variable: 'v' }),
-            csv: c.url.replace(/\.(png|svg)\?/, ".csv?"),
-            emf: c.url.replace(/\.(png|svg)\?/, ".emf?"),
-            png: c.url.replace(/\.(png|svg)\?/, ".png?"),
-            svg: c.url.replace(/\.(png|svg)\?/, ".svg?"),
-            url: c.url.replace(/(#[0-9]+)?$/, "#"+(new Date()).getTime()) // Force recheck of URL
+            url: c[svgOrPng].replace(/(#[0-9]+)?$/, "#"+(new Date()).getTime()) // Force recheck of URL
           });
         };
       };
+      var l = this._charts ? this._charts.list : [];
       return {
-        regions: _.chain(this._charts).groupBy('region')
-        .map(function(charts, region) {
-          var common = { title: region, slug: _s.slugify(region) };
-          if (charts.length == 1) {
+        regions: _.chain(l).groupBy('region')
+          .map(function(charts, region) {
+            var common = { title: region, slug: _s.slugify(region) };
+            if (charts.length == 1) {
+              return _(common).extend({
+                chart: makeChartAttrs(region)(charts[0], 0)
+              });
+            }
             return _(common).extend({
-              chart: makeChartAttrs(region)(charts[0], 0)
+              charts: _(charts).chain()
+                .map(makeChartAttrs(region))
+                .sortBy('title')
+                .map(function(c, i) { return _(c).extend({ first: i == 0 }); })
+                .value()
             });
-          }
-          return _(common).extend({
-            charts: _(charts).chain()
-              .map(makeChartAttrs(region))
-              .sortBy('title')
-              .map(function(c, i) { return _(c).extend({ first: i == 0 }); })
-              .value()
-          });
-        }).map(function(region, i) {
-          return _(region).extend({
-            first: i == 0
-          });
-        }).value()
+          }).map(function(region, i) {
+            return _(region).extend({
+              first: i == 0
+            });
+          }).value()
       };
     },
     template: function(serialized_model) {

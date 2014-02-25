@@ -169,6 +169,59 @@ define(
       return new CommentsForThisFile([], { target: file });
     }
   });
+  
+  var Charts = function(file) {
+    // Initialize with link to file and event base
+    this.file = file;
+    _(this).extend(Backbone.Events);
+    // Helper for retrieving charts and returning a promise of them.
+    // On error, assume no charts.
+    function fetchCharts(ext) {
+      var url = _.template('<%=url%>/charts?format=<%=format%>#<%=secs%>', {
+        url: file.url(),
+        format: ext,
+        secs: (new Date()).getTime() // For cache-busting in Firefox
+      });
+      return Q($.get(url)).get('charts').fail(function() { return []; });
+    }
+    // Initially no charts
+    this.list = [];
+    // On reload, get all the chart lists, merge & return as list.
+    // Async, so returns promise referencing this object.
+    this.reload = (function(charts) {
+      return function() {
+        var extensions = ['csv', 'emf', 'png', 'svg'];
+        function processChartLists(chartLists) {
+          var formats = _.object(extensions, chartLists);
+          var chartIndex = {};
+          _.each(formats, function(chartList, format) {
+            _.each(chartList, function(chart) {
+              var key = chart.region+"|"+chart.type;
+              if (_.isUndefined(chartIndex[key])) {
+                chartIndex[key] = {
+                  region: chart.region,
+                  title: chart.title,
+                  type: chart.type
+                };
+              }
+              chartIndex[key][format] = chart.url;
+            });
+          });
+          return _.values(chartIndex);
+        }
+        return Q.all(_(extensions).map(fetchCharts)).then(processChartLists)
+          .then(function(chartList) {
+            charts.list = chartList;
+            charts.trigger('change', charts);
+            return charts;
+          }).done();
+      }
+    })(this);
+    // When the file changes, charts should reload automatically.
+    this.listenTo(file, 'change', this.reload);
+    // Initialize list
+    this.reload();
+  };
 
   var File = FileOrFolder.extend({
     urlRoot: '/file',
@@ -289,6 +342,7 @@ define(
   });
 
   return {
+    Charts: Charts,
     File: File,
     FileOrFolder: FileOrFolder,
     FileStore: FileStore,
