@@ -180,7 +180,7 @@ public abstract class LandPracticeSystems implements ManagementPracticeSystems {
         rangeAxis.setAutoTickUnitSelection(true);
         rangeAxis.setTickUnit(new NumberTickUnit(0.2, percentFormatter()));
         rangeAxis.setAxisLineVisible(true);
-        rangeAxis.setLabel(dataset.<String>get(Attribute.RANGE_AXIS_LABEL));
+        rangeAxis.setLabel(dataset.<String>get(Attribute.Y_AXIS_LABEL));
         rangeAxis.setAxisLineStroke(new BasicStroke(2));
         rangeAxis.setAxisLinePaint(Color.black);
         rangeAxis.setTickMarksVisible(false);
@@ -194,7 +194,7 @@ public abstract class LandPracticeSystems implements ManagementPracticeSystems {
         cAxis.setTickMarksVisible(false);
         cAxis.setAxisLinePaint(Color.black);
         cAxis.setAxisLineStroke(new BasicStroke(2));
-        cAxis.setLabel(dataset.<String>get(Attribute.DOMAIN_AXIS_LABEL));
+        cAxis.setLabel(dataset.<String>get(Attribute.X_AXIS_LABEL));
         cAxis.setTickLabelsVisible(false);
         cAxis.setCategoryMargin(0.05);
         cAxis.setUpperMargin(0.1);

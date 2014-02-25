@@ -144,8 +144,8 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
   protected AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, "Mean annual rainfall for ${startYear}-${endYear} - ${region}").
-        put(Attribute.DOMAIN_AXIS_LABEL, "Year").
-        put(Attribute.RANGE_AXIS_LABEL, "Rainfall (mm)").
+        put(Attribute.X_AXIS_LABEL, "Year").
+        put(Attribute.Y_AXIS_LABEL, "Rainfall (mm)").
         build();
   }
 

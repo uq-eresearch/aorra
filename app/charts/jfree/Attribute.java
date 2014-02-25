@@ -16,9 +16,9 @@ public class Attribute<T> {
 
   public static final Attribute<String> TITLE = strAttr("title");
   public static final Attribute<ChartType> TYPE = attr("type", ChartType.class);
-  public static final Attribute<String> RANGE_AXIS_LABEL = strAttr("y-axis label",
+  public static final Attribute<String> Y_AXIS_LABEL = strAttr("y-axis label",
       "range axis label", "range axis title");
-  public static final Attribute<String> DOMAIN_AXIS_LABEL = strAttr("x-axis label",
+  public static final Attribute<String> X_AXIS_LABEL = strAttr("x-axis label",
       "domain axis label", "domain axis title");
   public static final Attribute<Color> SERIES_COLOR = attr("series color", Color.class);
   public static final Attribute<Color[]> SERIES_COLORS = attr("series colors", Color[].class);

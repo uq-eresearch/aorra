@@ -322,9 +322,9 @@ public class PSIITrends {
     private static JFreeChart createStackBarChart(ADCDataset dataset,String title) {
         AutoSubCategoryAxis dAxis = new AutoSubCategoryAxis(dataset);
         dAxis.setCategoryLabelPositionOffset(0);
-        dAxis.setLabel(dataset.get(Attribute.DOMAIN_AXIS_LABEL));
+        dAxis.setLabel(dataset.get(Attribute.X_AXIS_LABEL));
         PartitionedNumberAxis vAxis = new PartitionedNumberAxis(
-            dataset.get(Attribute.RANGE_AXIS_LABEL));
+            dataset.get(Attribute.Y_AXIS_LABEL));
         CategoryPlot plot = new CategoryPlot(dAxis.getFixedDataset(), dAxis, vAxis, new Renderer());
         plot.setOrientation(PlotOrientation.VERTICAL);
         JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, false);

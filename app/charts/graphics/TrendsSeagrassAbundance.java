@@ -29,7 +29,7 @@ public class TrendsSeagrassAbundance {
         JFreeChart chart = ChartFactory.createLineChart(
                 dataset.get(Attribute.TITLE),  // title
                 "",             // x-axis label
-                dataset.get(Attribute.RANGE_AXIS_LABEL),   // y-axis label
+                dataset.get(Attribute.Y_AXIS_LABEL),   // y-axis label
                 dataset,            // data
                 PlotOrientation.VERTICAL,
                 false,               // create legend?
@@ -69,7 +69,7 @@ public class TrendsSeagrassAbundance {
                         getTickLabelFont(category), getTickLabelPaint(category));
             }
         };
-        cAxis.setLabel(dataset.get(Attribute.DOMAIN_AXIS_LABEL));
+        cAxis.setLabel(dataset.get(Attribute.X_AXIS_LABEL));
         cAxis.setLabelFont(rangeAxis.getLabelFont());
         cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         plot.setDomainAxis(cAxis);

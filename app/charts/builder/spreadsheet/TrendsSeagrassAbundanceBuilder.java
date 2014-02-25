@@ -258,8 +258,8 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
   protected AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, "Trends in seagrass abundance (mean) at ${subregion}").
-        put(Attribute.DOMAIN_AXIS_LABEL, "Year").
-        put(Attribute.RANGE_AXIS_LABEL, "Seagrass abundance").
+        put(Attribute.X_AXIS_LABEL, "Year").
+        put(Attribute.Y_AXIS_LABEL, "Seagrass abundance").
         build();
   }
 

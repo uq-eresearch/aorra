@@ -15,8 +15,8 @@ public class TotalSuspendedSedimentBuilder extends MarineBarChartBuilder {
     return new AttributeMap.Builder().
         put(Attribute.TITLE,"Area (%) where the annual mean value for total suspended solids" +
             " exceeded the Water Quality Guidelines").
-            put(Attribute.RANGE_AXIS_LABEL, "Area (%)").
-            put(Attribute.DOMAIN_AXIS_LABEL, "Region").
+            put(Attribute.Y_AXIS_LABEL, "Area (%)").
+            put(Attribute.X_AXIS_LABEL, "Region").
             build();
   }
 

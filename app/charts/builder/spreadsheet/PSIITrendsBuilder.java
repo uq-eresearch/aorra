@@ -200,7 +200,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
     protected AttributeMap defaults(ChartType type) {
       return new AttributeMap.Builder().
           put(Attribute.TITLE, TITLE).
-          put(Attribute.RANGE_AXIS_LABEL, "Concentration in water (ng/L)").
+          put(Attribute.Y_AXIS_LABEL, "Concentration in water (ng/L)").
           build();
     }
 }

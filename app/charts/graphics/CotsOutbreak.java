@@ -26,8 +26,8 @@ public class CotsOutbreak {
     public Drawable createChart(final ATSCollection dataset, Dimension dimension) {
         JFreeChart chart = ChartFactory.createTimeSeriesChart(
                 dataset.get(Attribute.TITLE),  // title
-                dataset.get(Attribute.DOMAIN_AXIS_LABEL), // x-axis label
-                dataset.get(Attribute.RANGE_AXIS_LABEL),   // y-axis label
+                dataset.get(Attribute.X_AXIS_LABEL), // x-axis label
+                dataset.get(Attribute.Y_AXIS_LABEL),   // y-axis label
                 dataset,            // data
                 false,               // create legend?
                 false,               // generate tooltips?

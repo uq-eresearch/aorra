@@ -124,8 +124,8 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
   protected AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, TITLE).
-        put(Attribute.DOMAIN_AXIS_LABEL, "Year").
-        put(Attribute.RANGE_AXIS_LABEL, "Outbreaks").
+        put(Attribute.X_AXIS_LABEL, "Year").
+        put(Attribute.Y_AXIS_LABEL, "Outbreaks").
         build();
   }
 

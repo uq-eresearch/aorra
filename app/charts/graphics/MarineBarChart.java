@@ -22,8 +22,8 @@ public class MarineBarChart {
   public Drawable createChart(ADCDataset dataset) {
     final JFreeChart chart = ChartFactory.createBarChart(
         dataset.get(Attribute.TITLE),
-        dataset.get(Attribute.DOMAIN_AXIS_LABEL),
-        dataset.get(Attribute.RANGE_AXIS_LABEL),
+        dataset.get(Attribute.X_AXIS_LABEL),
+        dataset.get(Attribute.Y_AXIS_LABEL),
         dataset,
         PlotOrientation.VERTICAL,
         true, false, false);

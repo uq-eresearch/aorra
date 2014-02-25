@@ -285,7 +285,7 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   protected AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, getDefaultTitle(type)).
-        put(Attribute.RANGE_AXIS_LABEL, getDefaultRangeAxisTitle(type)).
+        put(Attribute.Y_AXIS_LABEL, getDefaultRangeAxisTitle(type)).
         build();
   }
 

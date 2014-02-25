@@ -17,8 +17,8 @@ public class ChlorophyllABuilder extends MarineBarChartBuilder {
   protected AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, TITLE).
-        put(Attribute.RANGE_AXIS_LABEL, "Area (%)").
-        put(Attribute.DOMAIN_AXIS_LABEL, "Region").
+        put(Attribute.Y_AXIS_LABEL, "Area (%)").
+        put(Attribute.X_AXIS_LABEL, "Region").
         build();
   }
 }

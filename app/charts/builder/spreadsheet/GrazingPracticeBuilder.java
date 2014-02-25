@@ -42,7 +42,7 @@ public class GrazingPracticeBuilder extends ManagementPracticeBuilder {
   @Override
   protected AttributeMap defaults(ChartType type) {
     AttributeMap m = super.defaults(type);
-    m.put(Attribute.RANGE_AXIS_LABEL, "% of graziers");
+    m.put(Attribute.Y_AXIS_LABEL, "% of graziers");
     return m;
   }
 
