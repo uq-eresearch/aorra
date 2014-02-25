@@ -1278,22 +1278,23 @@ define([
 
   var ChartElementView = Marionette.Layout.extend({
     modelEvents: {
-      'change': 'render'
+      'change': 'retrieveCharts'
     },
     regions: {
       'externals': '.region-external-refs'
     },
     initialize: function() {
-      this.model.on('all', _.bind(console.log, console));
+      this._externalRefButton = new ExternalRefButton({ model: this.model });
+      this.retrieveCharts();
+    },
+    retrieveCharts: function() {
       var url = _.template(this.model.url() + '/charts?format=<%=format%>', {
         format: svgOrPng
       });
-      this._externalRefButton = new ExternalRefButton({ model: this.model });
-      var onSuccess = function(data) {
+      $.get(url, _(function onSuccess(data) {
         this._charts = data.charts;
         this.render();
-      };
-      $.get(url, _.bind(onSuccess, this));
+      }).bind(this));
     },
     serializeData: function() {
       var makeChartAttrs = function(region) {
