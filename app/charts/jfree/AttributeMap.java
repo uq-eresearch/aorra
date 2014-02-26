@@ -46,4 +46,8 @@ public class AttributeMap {
     }
     return result;
   }
+
+  public Set<Attribute<?>> keySet() {
+    return m.keySet();
+  }
 }

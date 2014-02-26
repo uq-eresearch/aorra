@@ -194,6 +194,7 @@ public class PSIIMaxHeqBuilder extends AbstractBuilder {
     protected AttributeMap defaults(ChartType type) {
       return new AttributeMap.Builder().
           put(Attribute.TITLE, TITLE).
+          put(Attribute.X_AXIS_LABEL, "").
           put(Attribute.Y_AXIS_LABEL, "Max PSII Heq ng/L").
           build();
     }

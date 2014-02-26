@@ -42,8 +42,7 @@ public class AnnualRainfall {
         rangeAxis.setUpperMargin(0.15);
         final CategoryItemRenderer renderer = plot.getRenderer();
         renderer.setSeriesItemLabelsVisible(0, Boolean.TRUE);
-        final Color c = dataset.get(Attribute.SERIES_COLOR);
-        renderer.setSeriesPaint(0, c != null?c:Color.blue);
+        renderer.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
         ((BarRenderer)renderer).setBarPainter(new StandardBarPainter());
         final CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);

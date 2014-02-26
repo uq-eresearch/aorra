@@ -48,7 +48,7 @@ public class TrendsSeagrassAbundance {
         plot.setRangeGridlineStroke(new BasicStroke(1.0f));
         plot.setDomainGridlinesVisible(false);
         plot.setBackgroundPaint(Color.white);
-        renderer.setSeriesPaint(0, new Color(30, 172, 226));
+        renderer.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickUnit(new NumberTickUnit(5));
         rangeAxis.setRange(0.0, upperRange(dataset));

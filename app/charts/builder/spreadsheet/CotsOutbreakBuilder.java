@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -126,6 +127,7 @@ public class CotsOutbreakBuilder extends AbstractBuilder {
         put(Attribute.TITLE, TITLE).
         put(Attribute.X_AXIS_LABEL, "Year").
         put(Attribute.Y_AXIS_LABEL, "Outbreaks").
+        put(Attribute.SERIES_COLOR, Color.blue).
         build();
   }
 

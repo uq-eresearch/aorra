@@ -6,6 +6,7 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.strip;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -260,6 +261,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         put(Attribute.TITLE, "Trends in seagrass abundance (mean) at ${subregion}").
         put(Attribute.X_AXIS_LABEL, "Year").
         put(Attribute.Y_AXIS_LABEL, "Seagrass abundance").
+        put(Attribute.SERIES_COLOR, new Color(30, 172, 226)).
         build();
   }
 

@@ -46,9 +46,7 @@ public class CotsOutbreak {
         rangeAxis.setTickUnit(new NumberTickUnit(
             (Math.round(Math.floor(getMaxOutbreaks(dataset)))/20)+1, new DecimalFormat("0")));
         XYItemRenderer r = plot.getRenderer();
-        Color seriesColor = dataset.get(Attribute.SERIES_COLOR);
-        r.setSeriesPaint(0, ((seriesColor != null) && !Color.white.equals(seriesColor))?
-            seriesColor:Color.blue);
+        r.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
         DateAxis axis = (DateAxis) plot.getDomainAxis();
         axis.setDateFormatOverride(new SimpleDateFormat("yyyy"));
         DateTickUnit unit = new DateTickUnit(DateTickUnitType.YEAR, 1, new SimpleDateFormat("yyyy"));

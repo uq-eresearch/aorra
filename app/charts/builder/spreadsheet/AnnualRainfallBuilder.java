@@ -1,5 +1,6 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -146,6 +147,7 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
         put(Attribute.TITLE, "Mean annual rainfall for ${startYear}-${endYear} - ${region}").
         put(Attribute.X_AXIS_LABEL, "Year").
         put(Attribute.Y_AXIS_LABEL, "Rainfall (mm)").
+        put(Attribute.SERIES_COLOR, Color.blue).
         build();
   }
 
