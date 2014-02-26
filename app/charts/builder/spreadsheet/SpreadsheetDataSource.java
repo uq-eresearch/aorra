@@ -27,7 +27,6 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.tika.io.IOUtils;
 
 import play.Logger;
-
 import charts.builder.DataSource;
 import charts.builder.Value;
 import charts.builder.spreadsheet.external.ResolvedRef;
@@ -428,6 +427,9 @@ public abstract class SpreadsheetDataSource implements DataSource {
         for(Cell cell : row) {
           UnresolvedRef uref = externalReference(cell);
           if(uref != null) {
+            Logger.debug(String.format(
+                "found external reference source '%s', source cell '%s', destination cell '%s'",
+                uref.source(), uref.link().source(), uref.link().destination()));
             urefs.add(uref);
           }
         }
@@ -463,12 +465,40 @@ public abstract class SpreadsheetDataSource implements DataSource {
       }
     }
     try {
-      evaluator().evaluateAll();
+      evaluateAll();
     } catch(RuntimeException e) {
       Logger.debug("evaluateAll() failed on updateExternalReferences," +
           "some cached formula results may be out of date", e);
     }
     return dirty ? writeToTempFile() : null;
+  }
+
+  // evaluate all formula cells but external references. the XSSF evaluator seem to have
+  // issues with external references even if setIgnoreMissingWorkbooks(...) is set to true
+  // this workaround will probably not fully resolve the issue as formulas that depend on
+  // problematic external references might still fail.
+  private void evaluateAll() {
+    for(int i=0; i<workbook.getNumberOfSheets(); i++) {
+      Sheet sheet = workbook.getSheetAt(i);
+      for(Row r : sheet) {
+        for (Cell c : r) {
+          if (c.getCellType() == Cell.CELL_TYPE_FORMULA && !isExternalReference(c)) {
+            try {
+              evaluator.evaluateFormulaCell(c);
+            } catch(RuntimeException e) {
+              CellReference cr = new CellReference(c);
+              Logger.debug(String.format("failed to evaluate cell %s!%s, formula %s." +
+                  " some cached formula results may be out of date",
+                  sheet.getSheetName(), cr.formatAsString(), c.getCellFormula()), e);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private boolean isExternalReference(Cell cell) {
+    return externalReference(cell) != null;
   }
 
   private boolean updatePrecalculatedValue(Cell destination,
