@@ -121,6 +121,10 @@ background-color:rgb(244,141,64);
 background-color:rgb(233,44,48);
 }
 
+.undecided {
+background-color:rgb(180,180,180);
+}
+
 .grazing {
 background-image:url('grazing.svg');
 }

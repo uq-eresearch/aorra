@@ -172,6 +172,9 @@ public abstract class AbstractProgressTableBuilder extends AbstractBuilder {
   private ProgressTable.Condition getCondition(
       java.awt.Color c,
       Map<java.awt.Color, ProgressTable.Condition> conditions) {
+    if (c == null) {
+      return ProgressTable.Condition.UNDECIDED;
+    }
     if (conditions.containsKey(c)) {
       return conditions.get(c);
     }

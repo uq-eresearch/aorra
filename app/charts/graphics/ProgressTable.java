@@ -34,7 +34,8 @@ public class ProgressTable implements Drawable {
     POOR ("Poor"),
     MODERATE ("Moderate"),
     GOOD ("Good"),
-    VERYGOOD ("Very Good");
+    VERYGOOD ("Very Good"),
+    UNDECIDED ("Undecided");
 
     private final String label;
 
