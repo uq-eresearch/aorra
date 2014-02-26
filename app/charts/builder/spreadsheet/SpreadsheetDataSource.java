@@ -5,8 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -647,6 +645,10 @@ public abstract class SpreadsheetDataSource implements DataSource {
         FileUtils.deleteQuietly(f);
       }
     };
+  }
+
+  public int getColumns(int row) {
+    return workbook.getSheetAt(defaultSheet).getRow(row).getLastCellNum();
   }
 
 }

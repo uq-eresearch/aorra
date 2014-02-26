@@ -201,17 +201,11 @@ public class GroundcoverBuilder extends AbstractBuilder {
     }
 
     public int getLastColumn(SpreadsheetDataSource ds) throws MissingDataException {
-        for(int col=2;true;col++) {
-            String s = ds.select(0, col).asString();
-            if(StringUtils.isBlank(s)) {
-                return col -1;
-            }
-            try {
-                ds.select(0, col).asInteger();
-            } catch(Exception e) {
-                return col -1;
-            }
+      for(int col=ds.getColumns(0)-1;col > 0;col--) {
+        if(ds.select(0, col).asInteger() != null) {
+          return col;
         }
+      }
+      return 0;
     }
-
 }
