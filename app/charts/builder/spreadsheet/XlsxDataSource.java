@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -29,6 +31,7 @@ import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.xml.sax.InputSource;
 
+import charts.builder.spreadsheet.external.SimpleCellLink;
 import charts.builder.spreadsheet.external.UnresolvedRef;
 
 import com.google.common.collect.Lists;
@@ -151,6 +154,18 @@ public class XlsxDataSource extends SpreadsheetDataSource {
       }
     }
     return uref;
+  }
+
+  @Override
+  protected UnresolvedRef uref(String sIdOrName, final String sSelector,
+      final String dSelector) {
+    try {
+      return new UnresolvedRef(URLDecoder.decode(sIdOrName, "UTF-8"),
+          new SimpleCellLink(sSelector, dSelector));
+    } catch (UnsupportedEncodingException e) {
+      // "UTF-8" is should never throw this exception
+      throw new RuntimeException(e);
+    }
   }
 
   private String unescapeSheetname(String name) {

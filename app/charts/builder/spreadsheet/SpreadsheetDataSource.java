@@ -442,15 +442,10 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   abstract UnresolvedRef externalReference(Cell cell);
 
-  UnresolvedRef uref(String sIdOrName, final String sSelector,
+  protected UnresolvedRef uref(String sIdOrName, final String sSelector,
       final String dSelector) {
-    try {
-      return new UnresolvedRef(URLDecoder.decode(sIdOrName, "UTF-8"),
-          new SimpleCellLink(sSelector, dSelector));
-    } catch (UnsupportedEncodingException e) {
-      // "UTF-8" is should never throw this exception
-      throw new RuntimeException(e);
-    }
+    return new UnresolvedRef(sIdOrName,
+        new SimpleCellLink(sSelector, dSelector));
   }
 
   public InputStream updateExternalReferences(Set<ResolvedRef> refs) throws IOException {

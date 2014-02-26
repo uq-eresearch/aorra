@@ -5,10 +5,12 @@ import charts.builder.spreadsheet.SpreadsheetDataSource
 import service.filestore.FileStore
 import service.JcrSessionFactory
 import com.google.inject.Inject
+import play.api.{Logger => logger}
 import play.libs.F
 import javax.jcr.Session
 import org.jcrom.util.JcrUtils
 import org.jcrom.util.PathUtils
+import scala.collection.mutable.{Map => MutableMap}
 
 class FileStoreExternalCellRefResolver @Inject()(
     sessionFactory: JcrSessionFactory,
@@ -20,23 +22,36 @@ class FileStoreExternalCellRefResolver @Inject()(
       refs: Set[UnresolvedRef]
       ): Set[ResolvedRef] =
     withFileStoreManager(jackrabbitUser) { (fsm) =>
-      val fsmh = new FsmHelper(fsm)
-      // Resolve base file
-      val baseFile = fsmh.getFileById(base).getOrElse {
-        throw new Exception("Base file not found.")
-      }
+      val resolver = getCachingResolver(fsm, base)
       // Resolve references
       refs.map { (ref) =>
-        val resolvedFile: Option[FileStore.File] =
-          // Try ID first
-          fsmh.getFileById(ref.source).orElse {
-            // Otherwise try resolving the path
-            fsmh.getFileByPath(baseFile, ref.source)
-          }
-        ResolvedRef(resolvedFile.map(getDataSource(_)), ref.link)
+        ResolvedRef(resolver(ref.source).map(getDataSource(_)), ref.link)
       }
     }
 
+  def getCachingResolver(
+      fsm: FileStore.Manager,
+      base: DestinationIdentifier): String => Option[FileStore.File] = {
+    val fsmh = new FsmHelper(fsm)
+    // Resolve base file
+    val baseFile = fsmh.getFileById(base).getOrElse {
+      throw new Exception("Base file not found.")
+    }
+    val results = MutableMap[String, Option[FileStore.File]]()
+    (source: String) => {
+      results.getOrElse(source, {
+        val file = fsmh.getFileById(source).orElse {
+          // Otherwise try resolving the path
+          fsmh.getFileByPath(baseFile, source)
+        }
+        if (file.isEmpty) {
+          logger.debug(s"Unable to resolve $source")
+        }
+        results += (source -> file)
+        file
+      })
+    }
+  }
 
   private class FsmHelper(fsm: FileStore.Manager) {
 

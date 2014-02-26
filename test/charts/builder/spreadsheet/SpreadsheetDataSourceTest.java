@@ -17,12 +17,13 @@ import com.google.common.collect.Sets;
 
 public abstract class SpreadsheetDataSourceTest {
 
-  private Map<String, String[]> extrefs = new ImmutableMap.Builder<String, String[]>()
+  private final Map<String, String[]> extrefs = new ImmutableMap.Builder<String, String[]>()
       .put("progress1.xls", new String[] {"bar!C7", "foo!D7"})
       .put("6d843435-9ee5-45a0-9187-ccedc5b223f6", new String[] {"bar!C8", "foo!D8"})
       .put("progress2.xlsx", new String[] {"bar!C9", "foo!D9"})
       .put("progress1.xlsx", new String[] {"bar!A1", "O'Brien's Sales!E3"})
       .put("progress3.xlsx", new String[] {"O'Brien's!A1", "O'Brien's Sales!E4"})
+      .put("groundcover below 50%.xlsx", new String[] {"areaBelow50_ordered!Z28", "O'Brien's Sales!A5"})
       .build();
 
   abstract SpreadsheetDataSource datasource() throws IOException;
