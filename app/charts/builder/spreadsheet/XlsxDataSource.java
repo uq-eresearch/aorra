@@ -29,6 +29,8 @@ import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.xml.sax.InputSource;
 
+import play.Logger;
+
 import charts.builder.spreadsheet.external.UnresolvedRef;
 
 import com.google.common.collect.Lists;
@@ -149,6 +151,10 @@ public class XlsxDataSource extends SpreadsheetDataSource {
           }
         } catch(Exception e) {}
       }
+    }
+    if(uref != null) {
+      Logger.debug(String.format("found external reference source '%s', source cell '%s'," +
+        " destination cell '%s' ", uref.source(), uref.link().source(), uref.link().destination()));
     }
     return uref;
   }
