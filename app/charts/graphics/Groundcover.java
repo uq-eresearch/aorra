@@ -3,12 +3,14 @@ package charts.graphics;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.text.DecimalFormat;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.block.GridArrangement;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
@@ -18,12 +20,13 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
 
+import charts.ChartType;
 import charts.Drawable;
 
 public class Groundcover {
 
     public static Drawable createChart(final CategoryDataset dataset, String title,
-            String valueAxisLabel, Dimension dimension) {
+            String valueAxisLabel, ChartType type, Dimension dimension) {
         JFreeChart chart = ChartFactory.createLineChart(title,
                 "Year", valueAxisLabel, dataset, PlotOrientation.VERTICAL, false, false, false);
         final CategoryPlot plot = chart.getCategoryPlot();
@@ -40,6 +43,12 @@ public class Groundcover {
         r.setSeriesPaint(5, new Color(208,162,33));
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
+        if(type == ChartType.GROUNDCOVER_BELOW_50) {
+          rangeAxis.setTickUnit(new NumberTickUnit(
+              (Math.round(Math.floor(getMaxValue(dataset)))/10)+1, new DecimalFormat("0")));
+        } else {
+          rangeAxis.setRange(0, 100.0);
+        }
         final CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         LegendTitle legend = new LegendTitle(plot, new GridArrangement(3, 2), new GridArrangement(3, 2));
@@ -47,5 +56,18 @@ public class Groundcover {
         legend.setPosition(RectangleEdge.BOTTOM);
         chart.addLegend(legend);
         return new JFreeChartDrawable(chart, dimension);
+    }
+
+    private static double getMaxValue(CategoryDataset dataset) {
+      double max = 0;
+      for(int r = 0;r<dataset.getRowCount();r++) {
+        for(int c = 0;c<dataset.getColumnCount();c++) {
+          Number n = dataset.getValue(r, c);
+          if(n!=null) {
+            max = Math.max(n.doubleValue(), max);
+          }
+        }
+      }
+      return max;
     }
 }

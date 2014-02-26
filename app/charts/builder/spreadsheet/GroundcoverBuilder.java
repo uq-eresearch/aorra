@@ -90,6 +90,7 @@ public class GroundcoverBuilder extends AbstractBuilder {
                         createDataset(datasource, type, region),
                         getTitle(datasource, type, region),
                         valueAxisLabel(type),
+                        type,
                         new Dimension(750,500));
             }
 
