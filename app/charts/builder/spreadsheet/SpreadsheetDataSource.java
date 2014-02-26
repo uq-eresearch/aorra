@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -442,8 +444,13 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   UnresolvedRef uref(String sIdOrName, final String sSelector,
       final String dSelector) {
-    return new UnresolvedRef(sIdOrName,
-        new SimpleCellLink(sSelector, dSelector));
+    try {
+      return new UnresolvedRef(URLDecoder.decode(sIdOrName, "UTF-8"),
+          new SimpleCellLink(sSelector, dSelector));
+    } catch (UnsupportedEncodingException e) {
+      // "UTF-8" is should never throw this exception
+      throw new RuntimeException(e);
+    }
   }
 
   public InputStream updateExternalReferences(Set<ResolvedRef> refs) throws IOException {

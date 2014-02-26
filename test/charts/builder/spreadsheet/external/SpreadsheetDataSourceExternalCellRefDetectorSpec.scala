@@ -39,7 +39,12 @@ class SpreadsheetDataSourceExternalCellRefDetectorSpec extends Specification {
     "provide a set of external refs" in {
       val ds = getDataSource("test/extref.xlsx")
       val refs = subject.scan(ds)
-      refs must have size(5)
+      refs must have size(6)
+      val filenames = refs.map(_.source)
+      filenames must contain("progress1.xlsx")
+      filenames must contain("progress2.xlsx")
+      filenames must contain("progress3.xlsx")
+      filenames must contain("groundcover below 50%.xlsx")
     }
 
   }
