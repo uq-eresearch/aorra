@@ -30,7 +30,7 @@ class FileStoreExternalCellRefResolverSpec extends Specification {
         val baseFileId = fh.getRoot().createFile(
             "base.xlsx", XLSX_MIME_TYPE, dummySpreadsheet).getIdentifier
         val unresolvedRefs = (1 to 3).map { (i) =>
-          var file = fh.getRoot().createFile(
+          val file = fh.getRoot().createFile(
               s"test$i.xlsx", XLSX_MIME_TYPE, dummySpreadsheet)
           UnresolvedRef(file.getIdentifier, DummyCellLink)
         }.toSet
@@ -53,10 +53,10 @@ class FileStoreExternalCellRefResolverSpec extends Specification {
         val baseFileId = fh.getRoot().createFile(
             "base.xlsx", XLSX_MIME_TYPE, dummySpreadsheet).getIdentifier
         val unresolvedRefs = (1 to 3).map { (i) =>
-          var file = fh.getRoot()
+          val file = fh.getRoot()
               .createFolder(i.toString)
               .createFile(s"test.xlsx", XLSX_MIME_TYPE, dummySpreadsheet)
-          var relPath = file.getPath.substring(1)
+          val relPath = file.getPath.substring(1)
           UnresolvedRef(relPath, DummyCellLink)
         }.toSet
 
