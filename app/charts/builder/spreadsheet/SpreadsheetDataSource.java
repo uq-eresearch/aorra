@@ -429,9 +429,9 @@ public abstract class SpreadsheetDataSource implements DataSource {
         for(Cell cell : row) {
           UnresolvedRef uref = externalReference(cell);
           if(uref != null) {
-            Logger.debug(String.format(
-                "found external reference source '%s', source cell '%s', destination cell '%s'",
-                uref.source(), uref.link().source(), uref.link().destination()));
+            //Logger.debug(String.format(
+            //    "found external reference source '%s', source cell '%s', destination cell '%s'",
+            //    uref.source(), uref.link().source(), uref.link().destination()));
             urefs.add(uref);
           }
         }

@@ -22,22 +22,22 @@ class FileStoreExternalCellRefResolver @Inject()(
       refs: Set[UnresolvedRef]
       ): Set[ResolvedRef] =
     withFileStoreManager(jackrabbitUser) { (fsm) =>
-      val resolver = getCachingResolver(fsm, base)
+      val resolver = cachingResolver(fsm, base)
       // Resolve references
       refs.map { (ref) =>
-        ResolvedRef(resolver(ref.source).map(getDataSource(_)), ref.link)
+        ResolvedRef(resolver(ref.source), ref.link)
       }
     }
 
-  def getCachingResolver(
+  def cachingResolver(
       fsm: FileStore.Manager,
-      base: DestinationIdentifier): String => Option[FileStore.File] = {
+      base: DestinationIdentifier): String => Option[SpreadsheetDataSource] = {
     val fsmh = new FsmHelper(fsm)
     // Resolve base file
     val baseFile = fsmh.getFileById(base).getOrElse {
       throw new Exception("Base file not found.")
     }
-    val results = MutableMap[String, Option[FileStore.File]]()
+    val results = MutableMap[String, Option[SpreadsheetDataSource]]()
     (source: String) => {
       results.getOrElse(source, {
         val file = fsmh.getFileById(source).orElse {
@@ -45,10 +45,11 @@ class FileStoreExternalCellRefResolver @Inject()(
           fsmh.getFileByPath(baseFile, source)
         }
         if (file.isEmpty) {
-          logger.debug(s"Unable to resolve $source")
+          logger.debug(s"Unable to resolve external reference source: $source")
         }
-        results += (source -> file)
-        file
+        val ds = file.map(getDataSource)
+        results += (source -> ds)
+        ds
       })
     }
   }
