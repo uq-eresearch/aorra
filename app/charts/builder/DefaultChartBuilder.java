@@ -48,7 +48,8 @@ public class DefaultChartBuilder implements ChartBuilder {
           result.addAll(charts);
         }
       } catch(Exception e) {
-          e.printStackTrace();
+        Logger.warn(String.format("caught exception while building charts (type %s," +
+            " regions %s, parameters %s)", type, regions, parameters), e);
       }
     }
     // make sure charts are sorted by region
@@ -85,6 +86,4 @@ public class DefaultChartBuilder implements ChartBuilder {
     }
     return b.build();
   }
-
-
 }
