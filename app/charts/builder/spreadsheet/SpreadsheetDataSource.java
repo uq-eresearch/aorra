@@ -455,8 +455,12 @@ public abstract class SpreadsheetDataSource implements DataSource {
           continue;
         if (ref.source().isDefined()) {
           final SpreadsheetDataSource source = ref.source().get();
-          final Cell sCell = source.selectCell(ref.link().source());
-          dirty |= updatePrecalculatedValue(dCell, sCell, source.evaluator());
+          try {
+            final Cell sCell = source.selectCell(ref.link().source());
+            dirty |= updatePrecalculatedValue(dCell, sCell, source.evaluator());
+          } catch (MissingDataException e) {
+            dirty |= updatePrecalculatedError(dCell, FormulaError.REF);
+          }
         } else {
           dirty |= updatePrecalculatedError(dCell, FormulaError.REF);
         }
