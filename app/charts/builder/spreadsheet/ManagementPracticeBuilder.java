@@ -149,7 +149,7 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
   protected abstract void addData(ADCDataset dataset, String year, Double[] values);
 
   @Override
-  protected AttributeMap defaults(ChartType type) {
+  public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, "${type} - ${region}").
         put(Attribute.X_AXIS_LABEL, "").

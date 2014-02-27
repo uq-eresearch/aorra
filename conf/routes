@@ -89,3 +89,6 @@ GET    /file/:fileId/htmlzip        @controllers.HtmlController.toHtmlZip(fileId
 GET    /file/:fileId/pdf            @controllers.HtmlController.toPdf(fileId, copts: String ?= "")
 
 GET    /search                      @controllers.Search.search(q: String ?="")
+
+GET    /chartref                    @controllers.ChartReferenceController.index
+GET    /chartref/config             @controllers.ChartReferenceController.config

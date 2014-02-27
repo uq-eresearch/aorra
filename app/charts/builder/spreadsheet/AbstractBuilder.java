@@ -32,7 +32,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     this.types = types;
   }
 
-  protected boolean supports(ChartType type) {
+  public boolean supports(ChartType type) {
     return types.contains(type);
   }
 
@@ -130,7 +130,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
   }
 
   
-  protected AttributeMap defaults(ChartType type) {
+  public AttributeMap defaults(ChartType type) {
     throw new ChartConfigurationNotSupported(this);
   }
 

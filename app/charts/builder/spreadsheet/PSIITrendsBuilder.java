@@ -197,7 +197,7 @@ public class PSIITrendsBuilder extends AbstractBuilder {
     }
 
     @Override
-    protected AttributeMap defaults(ChartType type) {
+    public AttributeMap defaults(ChartType type) {
       return new AttributeMap.Builder().
           put(Attribute.TITLE, TITLE).
           put(Attribute.X_AXIS_LABEL, "").

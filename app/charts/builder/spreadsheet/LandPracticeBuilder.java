@@ -11,7 +11,7 @@ public abstract class LandPracticeBuilder extends ManagementPracticeBuilder {
   }
 
   @Override
-  protected AttributeMap defaults(ChartType type) {
+  public AttributeMap defaults(ChartType type) {
     AttributeMap m = super.defaults(type);
     m.put(Attribute.Y_AXIS_LABEL, "% of landholders");
     return m;

@@ -11,7 +11,7 @@ public class TotalSuspendedSedimentBuilder extends MarineBarChartBuilder {
   }
 
   @Override
-  protected AttributeMap defaults(ChartType type) {
+  public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE,"Area (%) where the annual mean value for total suspended solids" +
             " exceeded the Water Quality Guidelines").

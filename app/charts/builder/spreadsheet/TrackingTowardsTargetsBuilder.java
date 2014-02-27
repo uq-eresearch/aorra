@@ -282,7 +282,7 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   }
 
   @Override
-  protected AttributeMap defaults(ChartType type) {
+  public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, getDefaultTitle(type)).
         put(Attribute.Y_AXIS_LABEL, getDefaultRangeAxisTitle(type)).

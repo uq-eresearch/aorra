@@ -66,6 +66,10 @@ public class DefaultChartBuilder implements ChartBuilder {
     return result;
   }
 
+  public List<ChartTypeBuilder> builders() {
+    return builders;
+  }
+
   private static List<ChartTypeBuilder> detectBuilders() {
     final ImmutableList.Builder<ChartTypeBuilder> b =
         new ImmutableList.Builder<ChartTypeBuilder>();
