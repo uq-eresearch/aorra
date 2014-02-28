@@ -196,7 +196,7 @@ define(
           var chartIndex = {};
           _.each(formats, function(chartList, format) {
             _.each(chartList, function(chart) {
-              var key = chart.region+"|"+chart.type;
+              var key = chart.region+"|"+chart.type+"|"+chart.title;
               if (_.isUndefined(chartIndex[key])) {
                 chartIndex[key] = {
                   region: chart.region,
