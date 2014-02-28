@@ -42,8 +42,10 @@ public class ProgressTableBuilder extends AbstractProgressTableBuilder {
   }
 
   @Override
-  public Chart build(final SpreadsheetDataSource datasource,
-      final ChartType type, final Region region) {
+  public Chart build(Context ctx) {
+    final SpreadsheetDataSource datasource = ctx.datasource();
+    final ChartType type = ctx.type();
+    final Region region = ctx.region();
     final ProgressTable.Dataset ds;
     try {
       ds = getDataset(datasource, type==ChartType.PROGRESS_TABLE_REGION?region:null);

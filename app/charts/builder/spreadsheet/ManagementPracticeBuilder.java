@@ -13,16 +13,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
-import charts.graphics.GrainsPracticeSystems;
-import charts.graphics.GrazingPracticeSystems;
-import charts.graphics.HSLandPracticeSystems;
 import charts.graphics.ManagementPracticeSystems;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
@@ -31,74 +25,10 @@ import charts.jfree.AttributeMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
-public abstract class ManagementPracticeBuilder extends AbstractBuilder {
+public abstract class ManagementPracticeBuilder extends JFreeBuilder {
 
   public ManagementPracticeBuilder(ChartType type) {
     super(type);
-  }
-
-  @Override
-  protected Chart build(SpreadsheetDataSource datasource,
-      final ChartType type, final Region region) {
-    final ADCDataset dataset = createDataset(datasource, type, region);
-    if(dataset == null) {
-      return null;
-    }
-    configurator(datasource, type, region).configure(dataset);
-    ManagementPracticeSystems mps;
-    if(type == ChartType.HORTICULTURE_PS || type == ChartType.SUGARCANE_PS) {
-      mps = new HSLandPracticeSystems();
-    } else if(type == ChartType.GRAINS_PS) {
-      mps = new GrainsPracticeSystems();
-    } else if(type == ChartType.GRAZING_PS) {
-      mps = new GrazingPracticeSystems();
-    } else {
-      return null;
-    }
-    final Drawable drawable = mps.createChart(dataset, new Dimension(750, 500));
-    return new AbstractChart() {
-      @Override
-      public ChartDescription getDescription() {
-        return new ChartDescription(type, region);
-      }
-
-      @Override
-      public Drawable getChart() {
-        return drawable;
-      }
-
-      @Override
-      public String getCSV() {
-        final StringWriter sw = new StringWriter();
-        try {
-          final CsvListWriter csv = new CsvListWriter(sw,
-              CsvPreference.STANDARD_PREFERENCE);
-          @SuppressWarnings("unchecked")
-          List<String> columnKeys = dataset.getColumnKeys();
-          @SuppressWarnings("unchecked")
-          List<String> rowKeys = dataset.getRowKeys();
-          final List<String> heading = ImmutableList.<String>builder()
-              .add(format("%s %s practices", region, type))
-              .addAll(rowKeys)
-              .build();
-          csv.write(heading);
-          for (String col : columnKeys) {
-            List<String> line = newLinkedList();
-            line.add(col);
-            for (String row : rowKeys) {
-              line.add(format("%.1f",
-                  dataset.getValue(row, col).doubleValue() * 100));
-            }
-            csv.write(line);
-          }
-          csv.close();
-        } catch (IOException e) {
-          // How on earth would you get an IOException with a StringWriter?
-          throw new RuntimeException(e);
-        }
-        return sw.toString();
-      }
-    };
   }
 
   private boolean eof(int row, SpreadsheetDataSource ds) throws MissingDataException {
@@ -106,7 +36,10 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
         StringUtils.isBlank(ds.select(row+1, 0).asString());
   }
 
-  private ADCDataset createDataset(SpreadsheetDataSource ds, ChartType type, Region region) {
+  @Override
+  protected ADCDataset createDataset(Context ctx) {
+    SpreadsheetDataSource ds = ctx.datasource();
+    Region region = ctx.region();
     try {
       Region current = null;
       List<Pair<String, Double[]>> values = Lists.newArrayList();
@@ -154,6 +87,50 @@ public abstract class ManagementPracticeBuilder extends AbstractBuilder {
         put(Attribute.TITLE, "${type} - ${region}").
         put(Attribute.X_AXIS_LABEL, "").
         build();
+  }
+
+  @Override
+  protected String getCsv(JFreeContext ctx) {
+    final ADCDataset dataset = (ADCDataset)ctx.dataset();
+    final StringWriter sw = new StringWriter();
+    try {
+      final CsvListWriter csv = new CsvListWriter(sw,
+          CsvPreference.STANDARD_PREFERENCE);
+      @SuppressWarnings("unchecked")
+      List<String> columnKeys = dataset.getColumnKeys();
+      @SuppressWarnings("unchecked")
+      List<String> rowKeys = dataset.getRowKeys();
+      final List<String> heading = ImmutableList.<String>builder()
+          .add(format("%s %s practices", ctx.region(), ctx.type()))
+          .addAll(rowKeys)
+          .build();
+      csv.write(heading);
+      for (String col : columnKeys) {
+        List<String> line = newLinkedList();
+        line.add(col);
+        for (String row : rowKeys) {
+          Number n = dataset.getValue(row, col);
+          if(n != null) {
+            line.add(format("%.1f",n.doubleValue() * 100));
+          } else {
+            line.add("");
+          }
+        }
+        csv.write(line);
+      }
+      csv.close();
+    } catch (IOException e) {
+      // How on earth would you get an IOException with a StringWriter?
+      throw new RuntimeException(e);
+    }
+    return sw.toString();
+  }
+
+  protected abstract ManagementPracticeSystems renderer();
+
+  @Override
+  protected Drawable getDrawable(JFreeContext ctx) {
+    return renderer().createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500));
   }
 
 }

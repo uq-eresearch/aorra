@@ -21,4 +21,5 @@ public class ChlorophyllABuilder extends MarineBarChartBuilder {
         put(Attribute.X_AXIS_LABEL, "Region").
         build();
   }
+
 }

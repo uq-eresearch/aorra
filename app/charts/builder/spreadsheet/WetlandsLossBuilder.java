@@ -12,9 +12,6 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -22,7 +19,7 @@ import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
 import charts.graphics.WetlandLoss;
 
-public class WetlandsLossBuilder extends AbstractBuilder {
+public class WetlandsLossBuilder extends JFreeBuilder {
 
     private static final String SWAMPS = "Vegetated freshwater swamps loss";
     private static final String FLATS = "Mangroves/salt flats loss";
@@ -86,72 +83,62 @@ public class WetlandsLossBuilder extends AbstractBuilder {
         }
     }
 
-    @Override
-    public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region) {
-        if(canHandle(datasource) && matchesRegion(datasource, region)) {
-            final CategoryDataset dataset = getDataset(datasource);
-            return new AbstractChart() {
-
-                @Override
-                public ChartDescription getDescription() {
-                    return new ChartDescription(type, region);
-                }
-
-                @Override
-                public Drawable getChart() {
-                    return WetlandLoss.createChart(title(datasource, region), WETLANDS_LOSS, dataset, new Dimension(750, 500));
-                }
-
-                @Override
-                public String getCSV() throws UnsupportedFormatException {
-                    final StringWriter sw = new StringWriter();
-                    try {
-                      final CsvListWriter csv = new CsvListWriter(sw,
-                          CsvPreference.STANDARD_PREFERENCE);
-                      csv.writeHeader((region == Region.GBR?"Region":"Catchment"),
-                          (String)dataset.getRowKey(0), (String)dataset.getRowKey(1),
-                          (String)dataset.getRowKey(2), (String)dataset.getRowKey(3));
-                      DecimalFormat f = new DecimalFormat(".##");
-                      for(int cat=0;cat<dataset.getColumnCount();cat++) {
-                          csv.write(dataset.getColumnKey(cat), f.format(dataset.getValue(0, cat)),
-                              f.format(dataset.getValue(1, cat)), f.format(dataset.getValue(2, cat)),
-                              f.format(dataset.getValue(3, cat)));
-                      }
-                      csv.close();
-                    } catch (IOException e) {
-                      // How on earth would you get an IOException with a StringWriter?
-                      throw new RuntimeException(e);
-                    }
-                    return sw.toString();
-                }
-
-            };
-        } else {
-            return null;
-        }
-    }
-
     private String title(SpreadsheetDataSource ds, Region region) {
         return String.format("%s\n%s",TITLE, region.getProperName());
     }
 
-    private CategoryDataset getDataset(SpreadsheetDataSource ds) {
+    @Override
+    protected CategoryDataset createDataset(Context ctx) {
+      SpreadsheetDataSource ds = ctx.datasource();
+      if(canHandle(ds) && matchesRegion(ds, ctx.region())) {
         try {
-            DefaultCategoryDataset d = new DefaultCategoryDataset();
-            int fc = findFirstColumn(ds);
-            for(int col=1;col<5;col++) {
-                String series = ds.select(0, fc+col).asString();
-                for(int row = 1;StringUtils.isNotBlank(ds.select(row, fc).asString());row++) {
-                    String region = ds.select(row, fc).asString();
-                    Double val = ds.select(row, fc+col).asDouble();
-                    d.addValue(val, series, region);
-                }
+          DefaultCategoryDataset d = new DefaultCategoryDataset();
+          int fc = findFirstColumn(ds);
+          for(int col=1;col<5;col++) {
+            String series = ds.select(0, fc+col).asString();
+            for(int row = 1;StringUtils.isNotBlank(ds.select(row, fc).asString());row++) {
+              String region = ds.select(row, fc).asString();
+              Double val = ds.select(row, fc+col).asDouble();
+              d.addValue(val, series, region);
             }
-            return d;
+          }
+          return d;
         } catch(MissingDataException e) {
-            throw new RuntimeException(e);
+          throw new RuntimeException(e);
         }
+      } else {
+        return null;
+      }
+    }
+
+    @Override
+    protected Drawable getDrawable(JFreeContext ctx) {
+      return WetlandLoss.createChart(title(ctx.datasource(), ctx.region()),
+          WETLANDS_LOSS, (CategoryDataset)ctx.dataset(), new Dimension(750, 500));
+    }
+
+    @Override
+    protected String getCsv(JFreeContext ctx) {
+      CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+      final StringWriter sw = new StringWriter();
+      try {
+        final CsvListWriter csv = new CsvListWriter(sw,
+            CsvPreference.STANDARD_PREFERENCE);
+        csv.writeHeader((ctx.region() == Region.GBR?"Region":"Catchment"),
+            (String)dataset.getRowKey(0), (String)dataset.getRowKey(1),
+            (String)dataset.getRowKey(2), (String)dataset.getRowKey(3));
+        DecimalFormat f = new DecimalFormat(".##");
+        for(int cat=0;cat<dataset.getColumnCount();cat++) {
+            csv.write(dataset.getColumnKey(cat), f.format(dataset.getValue(0, cat)),
+                f.format(dataset.getValue(1, cat)), f.format(dataset.getValue(2, cat)),
+                f.format(dataset.getValue(3, cat)));
+        }
+        csv.close();
+      } catch (IOException e) {
+        // How on earth would you get an IOException with a StringWriter?
+        throw new RuntimeException(e);
+      }
+      return sw.toString();
     }
 
 }

@@ -15,14 +15,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
+import play.Logger;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -33,10 +32,18 @@ import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
+public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
+
+  private final SubstitutionKey S_SUBREGION = new SubstitutionKey("subregion",
+      "Subregion e.g. Archer Point", new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          return getSubregion(ctx.datasource(), ctx.parameters()).getLabel();
+        }
+      });
 
     public static final String SUBREGION = "subregion";
 
@@ -141,7 +148,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         }
         return Subregion.valueOf(subregion.toUpperCase());
     }
-
+/*
     @Override
   public Chart build(final SpreadsheetDataSource ds, final ChartType type,
       final Region region, final Map<String, String> parameters) {
@@ -167,38 +174,6 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
 
         @Override
         public String getCSV() throws UnsupportedFormatException {
-          final StringWriter sw = new StringWriter();
-          try {
-            final StatisticalCategoryDataset dataset =
-                createDataset(ds, subregion);
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            @SuppressWarnings("unchecked")
-            List<String> columnKeys = dataset.getColumnKeys();
-            @SuppressWarnings("unchecked")
-            List<Subregion> rowKeys = dataset.getRowKeys();
-            final List<String> heading = ImmutableList.<String> builder()
-                .add(format("%s %s %s", type, region,
-                    rowKeys.get(0).getLabel()))
-                .add("Mean")
-                .add("Std Dev")
-                .build();
-            csv.write(heading);
-            for (String col : columnKeys) {
-              List<String> line = newLinkedList();
-              line.add(col);
-              line.add(format("%.3f",
-                  dataset.getMeanValue(rowKeys.get(0), col).doubleValue()));
-              line.add(format("%.3f",
-                  dataset.getStdDevValue(rowKeys.get(0), col).doubleValue()));
-              csv.write(line);
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
         }
 
       };
@@ -206,6 +181,7 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
       return null;
     }
   }
+*/
 
   private int
       getSubregionRowStart(SpreadsheetDataSource ds, Subregion subregion) {
@@ -228,31 +204,40 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
     return -1;
   }
 
-  private ADSCDataset createDataset(
-      SpreadsheetDataSource ds, Subregion subregion) {
-    final ADSCDataset d = new ADSCDataset();
-    SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
-    try {
-      int row = getSubregionRowStart(ds, subregion);
-      if (row == -1) {
-        return d;
-      }
-      for (; true; row++) {
-        String subr = strip(ds.select(row, 0).asString());
-        if (!equalsIgnoreCase(subr, subregion.name())) {
-          break;
-        }
-        Date date = ds.select(row, 1).asDate();
-        Double mean = ds.select(row, 2).asDouble();
-        Double deviation = ds.select(row, 3).asDouble();
-        if (mean != null && deviation != null) {
-          d.add(mean, deviation, subregion, sdf.format(date));
-        }
-      }
-    } catch (MissingDataException e) {
-      e.printStackTrace();
+  @Override
+  protected ADSCDataset createDataset(Context ctx) {
+    SpreadsheetDataSource ds = ctx.datasource();
+    final Subregion subregion = getSubregion(ds, ctx.parameters());
+    if (subregion == null) {
+      return null;
     }
-    return d;
+    if (subregion.getRegion() == ctx.region()) {
+      final ADSCDataset d = new ADSCDataset();
+      SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
+      try {
+        int row = getSubregionRowStart(ds, subregion);
+        if (row == -1) {
+          return d;
+        }
+        for (; true; row++) {
+          String subr = strip(ds.select(row, 0).asString());
+          if (!equalsIgnoreCase(subr, subregion.name())) {
+            break;
+          }
+          Date date = ds.select(row, 1).asDate();
+          Double mean = ds.select(row, 2).asDouble();
+          Double deviation = ds.select(row, 3).asDouble();
+          if (mean != null && deviation != null) {
+            d.add(mean, deviation, subregion, sdf.format(date));
+          }
+        }
+      } catch (MissingDataException e) {
+        Logger.debug("while building tracking towards targets dataset "+ctx.toString(), e);
+      }
+      return d;
+    } else {
+      return null;
+    }
   }
 
   @Override
@@ -263,6 +248,58 @@ public class TrendsSeagrassAbundanceBuilder extends AbstractBuilder {
         put(Attribute.Y_AXIS_LABEL, "Seagrass abundance").
         put(Attribute.SERIES_COLOR, new Color(30, 172, 226)).
         build();
+  }
+
+  @Override
+  protected Drawable getDrawable(JFreeContext ctx) {
+    return TrendsSeagrassAbundance.createChart(
+        (ADSCDataset)ctx.dataset(), new Dimension(750, 500));
+  }
+
+  @Override
+  protected String getCsv(JFreeContext ctx) {
+    final StringWriter sw = new StringWriter();
+    try {
+      final StatisticalCategoryDataset dataset = (StatisticalCategoryDataset)ctx.dataset();
+      final CsvListWriter csv = new CsvListWriter(sw,
+          CsvPreference.STANDARD_PREFERENCE);
+      @SuppressWarnings("unchecked")
+      List<String> columnKeys = dataset.getColumnKeys();
+      @SuppressWarnings("unchecked")
+      List<Subregion> rowKeys = dataset.getRowKeys();
+      final List<String> heading = ImmutableList.<String> builder()
+          .add(format("%s %s %s", ctx.type(), ctx.region(),
+              rowKeys.get(0).getLabel()))
+          .add("Mean")
+          .add("Std Dev")
+          .build();
+      csv.write(heading);
+      for (String col : columnKeys) {
+        List<String> line = newLinkedList();
+        line.add(col);
+        line.add(format("%.3f",
+            dataset.getMeanValue(rowKeys.get(0), col).doubleValue()));
+        line.add(format("%.3f",
+            dataset.getStdDevValue(rowKeys.get(0), col).doubleValue()));
+        csv.write(line);
+      }
+      csv.close();
+    } catch (IOException e) {
+      // How on earth would you get an IOException with a StringWriter?
+      throw new RuntimeException(e);
+    }
+    return sw.toString();
+  }
+
+  @Override
+  protected String title(JFreeContext ctx) {
+    return "TSA at "+getSubregion(ctx.datasource(), ctx.parameters()).getLabel();
+  }
+
+  @Override
+  public Set<SubstitutionKey> substitutionKeys() {
+    return ImmutableSet.<SubstitutionKey>builder().
+        addAll(super.substitutionKeys()).add(S_SUBREGION).build();
   }
 
 }

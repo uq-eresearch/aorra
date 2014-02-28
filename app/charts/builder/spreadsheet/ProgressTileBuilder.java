@@ -42,7 +42,11 @@ public class ProgressTileBuilder extends AbstractProgressTableBuilder {
   }
 
   @Override
-  protected Chart build(SpreadsheetDataSource datasource, final ChartType type, final Region region, final Map<String, String> parameters) {
+  public Chart build(Context ctx) {
+    final SpreadsheetDataSource datasource = ctx.datasource();
+    final ChartType type = ctx.type();
+    final Region region = ctx.region();
+    final Map<String, String> parameters = ctx.parameters();
     if (!parameters.containsKey("indicator")) {
       return null;
     }

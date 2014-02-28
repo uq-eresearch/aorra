@@ -5,6 +5,7 @@ import static java.util.Arrays.asList;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
@@ -17,10 +18,56 @@ import charts.builder.DataSource;
 import charts.builder.DataSource.MissingDataException;
 import charts.jfree.AttributeMap;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public abstract class AbstractBuilder implements ChartTypeBuilder {
+
+  private static final SubstitutionKey TYPE = new SubstitutionKey("type", "the chart type label" +
+      " e.g. Crown of Thorns Outbreak for chart type COTS_OUTBREAK", new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          return ctx.type().getLabel();
+        }
+      });
+  private static final SubstitutionKey REGION = new SubstitutionKey("region", "the region name" +
+      " e.g. Wet Tropics", new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          return ctx.region().getProperName();
+        }
+      });
+
+  public static class Context {
+    private final SpreadsheetDataSource datasource;
+    private final ChartType type;
+    private final Region region;
+    private final Map<String, String> parameters;
+    public Context(SpreadsheetDataSource datasource, ChartType type,
+        Region region, Map<String, String> parameters) {
+      this.datasource = datasource;
+      this.type = type;
+      this.region = region;
+      this.parameters = parameters;
+    }
+    public ChartType type() {
+      return type;
+    }
+    public Region region() {
+      return region;
+    }
+    public SpreadsheetDataSource datasource() {
+      return datasource;
+    }
+    public Map<String, String> parameters() {
+      return parameters;
+    }
+    @Override
+    public String toString() {
+      return String.format("%s - %s - %s", type, region, parameters);
+    }
+  }
 
   private final List<ChartType> types;
 
@@ -38,19 +85,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
 
   protected abstract boolean canHandle(SpreadsheetDataSource datasource);
 
-  protected Chart build(SpreadsheetDataSource datasource, ChartType type,
-      Region region) {
-      throw new RuntimeException("override me");
-  }
-
-  protected Chart build(SpreadsheetDataSource datasource, ChartType type,
-          Region region, Map<String, String> parameters) {
-      if(parameters.isEmpty()) {
-          return build(datasource, type, region);
-      } else {
-          throw new RuntimeException("override me");
-      }
-  }
+  protected abstract Chart build(Context context);
 
   protected Map<String, List<String>> getParameters(SpreadsheetDataSource datasource, ChartType type) {
       return Maps.newHashMap();
@@ -96,7 +131,7 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     final List<Chart> charts = Lists.newLinkedList();
     for (Object o : ChartPermutations.apply(t, r, m)) {
       ChartPermutation p = (ChartPermutation)o;
-      final Chart chart = build(datasource, p.chartType(), p.region(), p.javaParams());
+      final Chart chart = build(context(datasource, p.chartType(), p.region(), p.javaParams()));
       if (chart != null) {
         charts.add(chart);
       }
@@ -112,26 +147,25 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     }
   }
 
-  protected ChartConfigurator configurator(SpreadsheetDataSource datasource,
-      ChartType type, Region region) {
-    return configurator(datasource, type, region, null);
+  protected ChartConfigurator configurator(Context ctx) {
+    return new ChartConfigurator(defaults(ctx.type()),
+        ctx.datasource(), new StrSubstitutor(substitutions(ctx)));
   }
 
-  protected ChartConfigurator configurator(SpreadsheetDataSource datasource,
-      ChartType type, Region region,
-      Map<String, String> substitutions) {
+  private Map<String, String> substitutions(Context ctx) {
     Map<String, String> m = Maps.newHashMap();
-    if(substitutions != null) {
-      m.putAll(substitutions);
+    for(SubstitutionKey key : substitutionKeys()) {
+      m.put(key.getName(), key.getValue(ctx));
     }
-    m.put("type", type.getLabel());
-    m.put("region", region.getProperName());
-    return new ChartConfigurator(defaults(type), datasource, new StrSubstitutor(m));
+    return m;
   }
 
-  
   public AttributeMap defaults(ChartType type) {
     throw new ChartConfigurationNotSupported(this);
+  }
+
+  public Set<SubstitutionKey> substitutionKeys() {
+    return ImmutableSet.of(TYPE, REGION);
   }
 
   ChartType type() {
@@ -143,4 +177,12 @@ public abstract class AbstractBuilder implements ChartTypeBuilder {
     }
   }
 
+  protected Context context(SpreadsheetDataSource datasource, ChartType type,
+      Region region, Map<String, String> parameters) {
+    return new Context(datasource, type, region, parameters);
+  }
+
+  protected String formatNumber(String format, Number n) {
+    return n!=null?String.format(format,n.doubleValue()):"";
+  }
 }

@@ -6,13 +6,13 @@ import java.util.Set;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-
+// TODO make immutable
 public class AttributeMap {
 
   public static class Builder {
     private AttributeMap m = new AttributeMap();
     public <T> Builder put(Attribute<T> key, T value) {
-      m.put(key, value);
+      m.m.put(key, value);
       return this;
     }
     public AttributeMap build() {

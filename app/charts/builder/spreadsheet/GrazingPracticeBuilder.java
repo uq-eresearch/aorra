@@ -2,6 +2,8 @@ package charts.builder.spreadsheet;
 
 import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
+import charts.graphics.GrazingPracticeSystems;
+import charts.graphics.ManagementPracticeSystems;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
@@ -44,6 +46,11 @@ public class GrazingPracticeBuilder extends ManagementPracticeBuilder {
     AttributeMap m = super.defaults(type);
     m.put(Attribute.Y_AXIS_LABEL, "% of graziers");
     return m;
+  }
+
+  @Override
+  protected ManagementPracticeSystems renderer() {
+    return new GrazingPracticeSystems();
   }
 
 }

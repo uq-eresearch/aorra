@@ -1,6 +1,5 @@
 package charts.builder.spreadsheet;
 
-import static com.google.common.collect.Lists.newLinkedList;
 import static java.lang.String.format;
 
 import java.awt.Dimension;
@@ -8,14 +7,13 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -27,9 +25,26 @@ import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
+public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
+
+  private static final SubstitutionKey S_TARGET = new SubstitutionKey("target", "the target in %",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          return percentFormatter().format(getTarget(ctx.datasource(), ctx.type()));
+        }
+      });
+
+  private static final SubstitutionKey S_BY = new SubstitutionKey("by", "year to reach the target",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          return getTargetBy(ctx.datasource(), ctx.type());
+        }
+      });
 
   private static final String TITLE_TYPO = "tracking towards tagets";
   private static final String TITLE = "tracking towards targets";
@@ -115,100 +130,41 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   }
 
   @Override
-  public Chart build(final SpreadsheetDataSource ds, final ChartType type,
-      final Region region) {
-    if (region == Region.GBR) {
-      final ADCDataset dataset = createDataset(ds, type);
-      configurator(ds, type, region,
-          ImmutableMap.of("target", percentFormatter().format(getTarget(ds, type)),
-              "by", getTargetBy(ds, type))).configure(dataset, type);
-      final Drawable d = new TrackingTowardsTargets().createChart(
-          type, getTarget(ds, type),
-          dataset, new Dimension(750, 500));
-      return new AbstractChart() {
-
-        @Override
-        public ChartDescription getDescription() {
-          return new ChartDescription(type, region);
+  protected ADCDataset createDataset(Context ctx) {
+    if (ctx.region() == Region.GBR) {
+      SpreadsheetDataSource ds = ctx.datasource();
+      final ADCDataset dataset = new ADCDataset();
+      try {
+        switch (ctx.type()) {
+        case TTT_CANE_AND_HORT:
+          addSeries(ds, dataset, Series.CANE);
+          addSeries(ds, dataset, Series.HORTICULTURE);
+          break;
+        case TTT_GRAZING:
+          addSeries(ds, dataset, Series.GRAZING);
+          break;
+        case TTT_NITRO_AND_PEST:
+          addSeries(ds, dataset, Series.TOTAL_NITROGEN);
+          addSeries(ds, dataset, Series.PESTICIDES);
+          break;
+        case TTT_SEDIMENT:
+          addSeries(ds, dataset, Series.SEDIMENT);
+          break;
+          //$CASES-OMITTED$
+        default:
+          throw new RuntimeException("chart type not supported "
+              + ctx.type().toString());
         }
-
-        @Override
-        public Drawable getChart() {
-          return d;
-        }
-
-        @Override
-        public String getCSV() throws UnsupportedFormatException {
-          final StringWriter sw = new StringWriter();
-          try {
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            @SuppressWarnings("unchecked")
-            List<String> columnKeys = dataset.getColumnKeys();
-            @SuppressWarnings("unchecked")
-            List<String> rowKeys = dataset.getRowKeys();
-            final List<String> heading = ImmutableList.<String>builder()
-                .add(format("%s %s", region, type))
-                .add(format("%% Target by " +
-                    getTargetBy(ds, type)))
-                .addAll(columnKeys)
-                .build();
-            csv.write(heading);
-            final double target = getTarget(ds, type);
-            for (String row : rowKeys) {
-              List<String> line = newLinkedList();
-              line.add(row);
-              line.add(format("%.0f", target * 100));
-              for (String col : columnKeys) {
-                Number n = dataset.getValue(row, col);
-                line.add(n == null ? "" : format("%.0f", n.doubleValue()*100));
-              }
-              csv.write(line);
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
-        }
-
-      };
-    }
-    return null;
-  }
-
-  protected ADCDataset createDataset(SpreadsheetDataSource ds,
-      ChartType type) {
-    final ADCDataset dataset = new ADCDataset();
-    try {
-      switch (type) {
-      case TTT_CANE_AND_HORT:
-        addSeries(ds, dataset, Series.CANE);
-        addSeries(ds, dataset, Series.HORTICULTURE);
-        break;
-      case TTT_GRAZING:
-        addSeries(ds, dataset, Series.GRAZING);
-        break;
-      case TTT_NITRO_AND_PEST:
-        addSeries(ds, dataset, Series.TOTAL_NITROGEN);
-        addSeries(ds, dataset, Series.PESTICIDES);
-        break;
-      case TTT_SEDIMENT:
-        addSeries(ds, dataset, Series.SEDIMENT);
-        break;
-        //$CASES-OMITTED$
-      default:
-        throw new RuntimeException("chart type not supported "
-            + type.toString());
+      } catch (MissingDataException e) {
+        throw new RuntimeException(e);
       }
-    } catch (MissingDataException e) {
-      throw new RuntimeException(e);
+      return dataset;
+    } else {
+      return null;
     }
-    return dataset;
   }
 
-  protected Series getTargetSeries(ChartType chartType) {
+  protected static Series getTargetSeries(ChartType chartType) {
     switch (chartType) {
     case TTT_CANE_AND_HORT:
       return Series.CANE;
@@ -254,7 +210,7 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
     return columns;
   }
 
-  private double getTarget(SpreadsheetDataSource ds, ChartType type) {
+  private static double getTarget(SpreadsheetDataSource ds, ChartType type) {
     try {
       Series series = getTargetSeries(type);
       return ds.select(ROW.get(series), 1).asDouble();
@@ -264,7 +220,7 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
     
   }
 
-  private String getTargetBy(SpreadsheetDataSource ds, ChartType type) {
+  private static String getTargetBy(SpreadsheetDataSource ds, ChartType type) {
     try {
       Series series = getTargetSeries(type);
       return ds.select(ROW.get(series), 2).asInteger().toString();
@@ -285,8 +241,59 @@ public class TrackingTowardsTargetsBuilder extends AbstractBuilder {
   public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, getDefaultTitle(type)).
+        put(Attribute.X_AXIS_LABEL, "").
         put(Attribute.Y_AXIS_LABEL, getDefaultRangeAxisTitle(type)).
         build();
+  }
+
+  @Override
+  protected Drawable getDrawable(JFreeContext ctx) {
+    return new TrackingTowardsTargets().createChart(
+        ctx.type(), getTarget(ctx.datasource(), ctx.type()),
+        (ADCDataset)ctx.dataset(), new Dimension(750, 500));
+  }
+
+  @Override
+  protected String getCsv(JFreeContext ctx) {
+    final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+    final StringWriter sw = new StringWriter();
+    try {
+      final CsvListWriter csv = new CsvListWriter(sw,
+          CsvPreference.STANDARD_PREFERENCE);
+      @SuppressWarnings("unchecked")
+      List<String> columnKeys = dataset.getColumnKeys();
+      @SuppressWarnings("unchecked")
+      List<String> rowKeys = dataset.getRowKeys();
+      final List<String> heading = ImmutableList.<String>builder()
+          .add(format("%s %s", ctx.region(), ctx.type()))
+          .add(format("%% Target by " +
+              getTargetBy(ctx.datasource(), ctx.type())))
+          .addAll(columnKeys)
+          .build();
+      csv.write(heading);
+      final double target = getTarget(ctx.datasource(), ctx.type());
+      for (String row : rowKeys) {
+        List<String> line = Lists.newLinkedList();
+        line.add(row);
+        line.add(format("%.0f", target * 100));
+        for (String col : columnKeys) {
+          Number n = dataset.getValue(row, col);
+          line.add(n == null ? "" : format("%.0f", n.doubleValue()*100));
+        }
+        csv.write(line);
+      }
+      csv.close();
+    } catch (IOException e) {
+      // How on earth would you get an IOException with a StringWriter?
+      throw new RuntimeException(e);
+    }
+    return sw.toString();
+  }
+
+  @Override
+  public Set<SubstitutionKey> substitutionKeys() {
+    return ImmutableSet.<SubstitutionKey>builder().
+        addAll(super.substitutionKeys()).add(S_TARGET).add(S_BY).build();
   }
 
 }

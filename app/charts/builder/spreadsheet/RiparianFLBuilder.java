@@ -13,17 +13,13 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
-import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
 import charts.graphics.RiparianFL;
 
-public class RiparianFLBuilder extends AbstractBuilder {
+public class RiparianFLBuilder extends JFreeBuilder {
 
     private static final String TITLE = "Riparian forest loss (%)";
 
@@ -59,50 +55,9 @@ public class RiparianFLBuilder extends AbstractBuilder {
     }
 
     @Override
-    public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region) {
-        if(canHandle(datasource) && matchesRegion(datasource, region)) {
-            final CategoryDataset dataset = getDataset(datasource);
-            return new AbstractChart() {
-
-                @Override
-                public ChartDescription getDescription() {
-                    return new ChartDescription(type, region);
-                }
-
-                @Override
-                public Drawable getChart() {
-                    return RiparianFL.createChart(String.format("%s\n%s",TITLE,
-                            region.getProperName()), region == Region.GBR?"Region":"Catchment", TITLE,
-                            dataset, new Dimension(750,500));
-                }
-
-                @Override
-                public String getCSV() throws UnsupportedFormatException {
-                    final StringWriter sw = new StringWriter();
-                    try {
-                      final CsvListWriter csv = new CsvListWriter(sw,
-                          CsvPreference.STANDARD_PREFERENCE);
-                      csv.writeHeader(TITLE, (String)dataset.getRowKey(0), (String)dataset.getRowKey(1));
-                      for(int cat=0;cat<dataset.getColumnCount();cat++) {
-                          csv.write(dataset.getColumnKey(cat),
-                                  dataset.getValue(0, cat), dataset.getValue(1, cat));
-                      }
-                      csv.close();
-                    } catch (IOException e) {
-                      // How on earth would you get an IOException with a StringWriter?
-                      throw new RuntimeException(e);
-                    }
-                    return sw.toString();
-                }
-
-            };
-        } else {
-            return null;
-        }
-    }
-
-    protected CategoryDataset getDataset(SpreadsheetDataSource ds) {
+    protected CategoryDataset createDataset(Context ctx) {
+      final SpreadsheetDataSource ds = ctx.datasource();
+      if(canHandle(ds) && matchesRegion(ds, ctx.region())) {
         try {
             DefaultCategoryDataset d = new DefaultCategoryDataset();
             String[] cols;
@@ -123,6 +78,37 @@ public class RiparianFLBuilder extends AbstractBuilder {
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
         }
+      } else {
+        return null;
+      }
+    }
+
+    @Override
+    protected Drawable getDrawable(JFreeContext ctx) {
+      Region region = ctx.region();
+      return RiparianFL.createChart(String.format("%s\n%s",TITLE,
+          region.getProperName()), region == Region.GBR?"Region":"Catchment", TITLE,
+          (CategoryDataset)ctx.dataset(), new Dimension(750,500));
+    }
+
+    @Override
+    protected String getCsv(JFreeContext ctx) {
+      final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+      final StringWriter sw = new StringWriter();
+      try {
+        final CsvListWriter csv = new CsvListWriter(sw,
+            CsvPreference.STANDARD_PREFERENCE);
+        csv.writeHeader(TITLE, (String)dataset.getRowKey(0), (String)dataset.getRowKey(1));
+        for(int cat=0;cat<dataset.getColumnCount();cat++) {
+            csv.write(dataset.getColumnKey(cat),
+                    dataset.getValue(0, cat), dataset.getValue(1, cat));
+        }
+        csv.close();
+      } catch (IOException e) {
+        // How on earth would you get an IOException with a StringWriter?
+        throw new RuntimeException(e);
+      }
+      return sw.toString();
     }
 
 }

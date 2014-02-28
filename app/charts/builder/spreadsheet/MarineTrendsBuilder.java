@@ -3,8 +3,6 @@ package charts.builder.spreadsheet;
 import static charts.ChartType.MARINE_CT;
 import static charts.ChartType.MARINE_ST;
 import static charts.ChartType.MARINE_WQT;
-import static com.google.common.collect.Lists.newLinkedList;
-import static java.lang.String.format;
 import static org.apache.commons.lang.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang.StringUtils.isBlank;
 
@@ -18,9 +16,6 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -31,7 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class MarineTrendsBuilder extends AbstractBuilder {
+public class MarineTrendsBuilder extends JFreeBuilder {
 
     private static final String WATER_QUALITY = "Water Quality";
     private static final String SEAGRASS = "Seagrass";
@@ -113,64 +108,6 @@ public class MarineTrendsBuilder extends AbstractBuilder {
         return false;
     }
 
-  @Override
-  public Chart
-      build(final SpreadsheetDataSource datasource, final ChartType type,
-          final Region region) {
-    if (type == MARINE_CT
-        && (region == Region.CAPE_YORK || region == Region.BURNETT_MARY)) {
-      return null;
-    } else {
-      return new AbstractChart() {
-
-        @Override
-        public ChartDescription getDescription() {
-          return new ChartDescription(type, region);
-        }
-
-        @Override
-        public Drawable getChart() {
-          return MarineTrends.createChart(getDataset(datasource, type, region),
-              type, region, new Dimension(750, 500));
-        }
-
-        @Override
-        public String getCSV() throws UnsupportedFormatException {
-          final StringWriter sw = new StringWriter();
-          try {
-            final CategoryDataset dataset =
-                getDataset(datasource, type, region);
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            @SuppressWarnings("unchecked")
-            List<String> columnKeys = dataset.getColumnKeys();
-            @SuppressWarnings("unchecked")
-            List<String> rowKeys = dataset.getRowKeys();
-            final List<String> heading = ImmutableList.<String>builder()
-                .add(format("%s %s", region.getProperName(), type.getLabel()))
-                .addAll(columnKeys)
-                .build();
-            csv.write(heading);
-            for (String row : rowKeys) {
-              List<String> line = newLinkedList();
-              line.add(row);
-              for (String col : columnKeys) {
-                final Number n = dataset.getValue(row, col);
-                line.add(n == null ? "" : format("%.1f", n.doubleValue()));
-              }
-              csv.write(line);
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
-        }
-      };
-    }
-  }
-
     private int getRow(SpreadsheetDataSource ds, ChartType type) {
         return ROWS.get(type);
     }
@@ -223,26 +160,71 @@ public class MarineTrendsBuilder extends AbstractBuilder {
         return l;
     }
 
-    private CategoryDataset getDataset(SpreadsheetDataSource ds, ChartType type, Region region) {
-        try {
-            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-            int row = getRow(ds, type, region);
-            for(Indicator i : Indicator.forType(type)) {
-                int col = getColumnStart(ds, i);
-                for(String s : getCategories(ds, i)) {
-                    try {
-                        double d = ds.select(row, col).asDouble();
-                        dataset.addValue(d, i.getLabel(), s);
-                    } catch(Exception e) {
-                        dataset.addValue(null, i.getLabel(), s);
-                    }
-                    col++;
-                }
+    @Override
+    protected CategoryDataset createDataset(Context ctx) {
+      if (ctx.type() == MARINE_CT
+          && (ctx.region() == Region.CAPE_YORK || ctx.region() == Region.BURNETT_MARY)) {
+        return null;
+      }
+      SpreadsheetDataSource ds = ctx.datasource();
+      try {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        int row = getRow(ds, ctx.type(), ctx.region());
+        for(Indicator i : Indicator.forType(ctx.type())) {
+          int col = getColumnStart(ds, i);
+          for(String s : getCategories(ds, i)) {
+            try {
+              double d = ds.select(row, col).asDouble();
+              dataset.addValue(d, i.getLabel(), s);
+            } catch(Exception e) {
+              dataset.addValue(null, i.getLabel(), s);
             }
-            return dataset;
-        } catch(MissingDataException e) {
-            throw new RuntimeException(e);
+            col++;
+          }
         }
+        return dataset;
+      } catch(MissingDataException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    protected Drawable getDrawable(JFreeContext ctx) {
+      return MarineTrends.createChart((CategoryDataset)ctx.dataset(),
+          ctx.type(), ctx.region(), new Dimension(750, 500));
+    }
+
+    @Override
+    protected String getCsv(JFreeContext ctx) {
+      final StringWriter sw = new StringWriter();
+      try {
+        final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+        final CsvListWriter csv = new CsvListWriter(sw,
+            CsvPreference.STANDARD_PREFERENCE);
+        @SuppressWarnings("unchecked")
+        List<String> columnKeys = dataset.getColumnKeys();
+        @SuppressWarnings("unchecked")
+        List<String> rowKeys = dataset.getRowKeys();
+        final List<String> heading = ImmutableList.<String>builder()
+            .add(String.format("%s %s", ctx.region().getProperName(), ctx.type().getLabel()))
+            .addAll(columnKeys)
+            .build();
+        csv.write(heading);
+        for (String row : rowKeys) {
+          List<String> line = Lists.newArrayList();
+          line.add(row);
+          for (String col : columnKeys) {
+            final Number n = dataset.getValue(row, col);
+            line.add(n == null ? "" : String.format("%.1f", n.doubleValue()));
+          }
+          csv.write(line);
+        }
+        csv.close();
+      } catch (IOException e) {
+        // How on earth would you get an IOException with a StringWriter?
+        throw new RuntimeException(e);
+      }
+      return sw.toString();
     }
 
 }

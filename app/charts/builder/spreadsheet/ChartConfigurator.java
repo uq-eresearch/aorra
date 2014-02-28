@@ -94,7 +94,7 @@ public class ChartConfigurator {
   @SuppressWarnings("unchecked")
   private AttributeMap readConfiguration(int row,
       int column) throws MissingDataException {
-    AttributeMap m = new AttributeMap();
+    AttributeMap.Builder mb = new AttributeMap.Builder();
     for(int r = row;true;r++) {
       if((r-row) >= 100) {
         throw new RuntimeException("expected less than 100 chart config entries");
@@ -109,14 +109,14 @@ public class ChartConfigurator {
       }
       Value val = ds.select(r, column+1);
       if(attribute.getType() == String.class) {
-        m.put((Attribute<String>)attribute, val.asString());
+        mb.put((Attribute<String>)attribute, val.asString());
       } else if(attribute.getName().equals("type")) {
-        m.put((Attribute<ChartType>)attribute, ChartType.lookup(val.asString()));
+        mb.put((Attribute<ChartType>)attribute, ChartType.lookup(val.asString()));
       } else if(attribute.getType().equals(Color.class)) {
-        m.put((Attribute<Color>)attribute, val.asColor());
+        mb.put((Attribute<Color>)attribute, val.asColor());
       }
     }
-    return m;
+    return mb.build();
   }
 
 }

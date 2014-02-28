@@ -17,12 +17,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
+import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -36,7 +34,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class PSIITrendsBuilder extends AbstractBuilder {
+public class PSIITrendsBuilder extends JFreeBuilder {
 
     private static final String TITLE = "Maximum concentration of individual PSII herbicides";
 
@@ -54,65 +52,6 @@ public class PSIITrendsBuilder extends AbstractBuilder {
             throw new RuntimeException(e);
         }
     }
-
-  @Override
-  public Chart build(SpreadsheetDataSource datasource,
-      final ChartType type, final Region region) {
-    if (region == Region.GBR) {
-      final ADCDataset dataset = getDataset(datasource);
-      configurator(datasource, type, region).configure(dataset);
-      final Drawable drawable = PSIITrends.createChart(dataset, new Dimension(1000, 500));
-       return new AbstractChart() {
-
-        @Override
-        public ChartDescription getDescription() {
-          return new ChartDescription(type, region);
-        }
-
-        @Override
-        public Drawable getChart() {
-          return drawable;
-        }
-
-        @Override
-        public String getCSV() throws UnsupportedFormatException {
-          final StringWriter sw = new StringWriter();
-          try {
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            @SuppressWarnings("unchecked")
-            List<String> columnKeys = dataset.getColumnKeys();
-            @SuppressWarnings("unchecked")
-            List<String> rowKeys = dataset.getRowKeys();
-            final List<String> heading = ImmutableList.<String>builder()
-                .add(format("%s %s", region, type.getLabel()))
-                .add("Region")
-                .add("Subregion")
-                .add("Period")
-                .addAll(rowKeys)
-                .build();
-            csv.write(heading);
-            for (String col : columnKeys) {
-              List<String> line = newLinkedList();
-              line.addAll(asList(col.split("\\_\\|\\|\\_")));
-              for (String row : rowKeys) {
-                line.add(format("%.1f",
-                    dataset.getValue(row, col).doubleValue()));
-              }
-              csv.write(line);
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
-        }
-      };
-    } else {
-      return null;
-    }
-  }
 
     private String getYear(String s) {
         Matcher m = YEAR_PATTERN.matcher(s);
@@ -138,7 +77,12 @@ public class PSIITrendsBuilder extends AbstractBuilder {
         return true;
     }
 
-    private ADCDataset getDataset(SpreadsheetDataSource ds) {
+    @Override
+    protected ADCDataset createDataset(Context ctx) {
+      if(ctx.region() != Region.GBR) {
+        return null;
+      }
+      final SpreadsheetDataSource ds = ctx.datasource();
         try {
           ADCDataset dataset = new ADCDataset();
             String cRegion = null;
@@ -203,5 +147,47 @@ public class PSIITrendsBuilder extends AbstractBuilder {
           put(Attribute.X_AXIS_LABEL, "").
           put(Attribute.Y_AXIS_LABEL, "Concentration in water (ng/L)").
           build();
+    }
+
+    @Override
+    protected Drawable getDrawable(JFreeContext ctx) {
+      return PSIITrends.createChart((ADCDataset)ctx.dataset(), new Dimension(1000, 500));
+    }
+
+    @Override
+    protected String getCsv(JFreeContext ctx) {
+      final StringWriter sw = new StringWriter();
+      try {
+        final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+        final CsvListWriter csv = new CsvListWriter(sw,
+            CsvPreference.STANDARD_PREFERENCE);
+        @SuppressWarnings("unchecked")
+        List<String> columnKeys = dataset.getColumnKeys();
+        @SuppressWarnings("unchecked")
+        List<String> rowKeys = dataset.getRowKeys();
+        final List<String> heading = ImmutableList.<String>builder()
+            .add(format("%s %s", ctx.region(), ctx.type().getLabel()))
+            .add("Region")
+            .add("Subregion")
+            .add("Period")
+            .addAll(rowKeys)
+            .build();
+        csv.write(heading);
+        for (String col : columnKeys) {
+          List<String> line = newLinkedList();
+          line.add("");
+          line.addAll(asList(col.split("\\_\\|\\|\\_")));
+          for (String row : rowKeys) {
+            line.add(format("%.1f",
+                dataset.getValue(row, col).doubleValue()));
+          }
+          csv.write(line);
+        }
+        csv.close();
+      } catch (IOException e) {
+        // How on earth would you get an IOException with a StringWriter?
+        throw new RuntimeException(e);
+      }
+      return sw.toString();
     }
 }

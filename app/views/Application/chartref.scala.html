@@ -11,6 +11,11 @@
         $.each(chartref.defaults, function(key, val) {
             content += '<tr><td>'+key+'</td><td>&rarr;</td><td>'+val+'</td>';
         });
+        content += '</table><br>';
+        content += '<table style="border : 1px solid black"><tr><td colspan=3>substitution keys supported by this chart</td></tr>';
+        $.each(chartref.substitutions, function(key, val) {
+            content += '<tr><td>'+key+'</td><td>&rarr;</td><td>'+val+'</td>';
+        });
         content += '</table>';
       } else {
         content += '<p>chart configuration is not supported for this chart</p>';

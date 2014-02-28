@@ -4,15 +4,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
+import play.Logger;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -23,8 +22,36 @@ import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
-public class AnnualRainfallBuilder extends AbstractBuilder {
+public class AnnualRainfallBuilder extends JFreeBuilder {
+
+  private static final SubstitutionKey START_YEAR = new SubstitutionKey("startYear",
+      "first year of annual rainfall data in the spreadsheet",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          CategoryDataset dataset = (CategoryDataset)((JFreeContext)ctx).dataset();
+          if(!dataset.getColumnKeys().isEmpty()) {
+            return dataset.getColumnKeys().get(0).toString();
+          } else {
+            return "";
+          }
+        }
+      });
+  private static final SubstitutionKey END_YEAR = new SubstitutionKey("endYear",
+      "last year of annual rainfall data in the spreadsheet",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          CategoryDataset dataset = (CategoryDataset)((JFreeContext)ctx).dataset();
+          if(!dataset.getColumnKeys().isEmpty()) {
+            return dataset.getColumnKeys().get(dataset.getColumnKeys().size()-1).toString();
+          } else {
+            return "";
+          }
+        }
+      });
 
   private static final ImmutableMap<Region, Integer> ROW =
       new ImmutableMap.Builder<Region, Integer>()
@@ -40,18 +67,21 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
     super(ChartType.ANNUAL_RAINFALL);
   }
 
-  private ADCDataset createDataset(
-      SpreadsheetDataSource datasource, Region region) {
-    ADCDataset dataset = new ADCDataset();
+  @Override
+  protected ADCDataset createDataset(Context ctx) {
+    Integer row = ROW.get(ctx.region());
+    if(row == null) {
+      return null;
+    }
     final String series = "rainfall";
-    Integer row = ROW.get(region);
+    ADCDataset dataset = new ADCDataset();
     try {
       for (int i = 1; true; i++) {
-        String year = datasource.select(0, i).asString();
+        String year = ctx.datasource().select(0, i).asString();
         if (StringUtils.equalsIgnoreCase("Annual Average", year)) {
           break;
         }
-        String rainfall = datasource.select(row, i).asString();
+        String rainfall = ctx.datasource().select(row, i).asString();
         if (StringUtils.isBlank(year) || StringUtils.isBlank(rainfall)) {
           break;
         }
@@ -59,7 +89,7 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
         dataset.addValue(val, series, Integer.toString(parseYear(year)));
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      Logger.debug("while building dataset for the annual rainfall chart", e);
     }
     return dataset;
   }
@@ -83,65 +113,6 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
   }
 
   @Override
-  public Chart build(final SpreadsheetDataSource datasource, ChartType type,
-      final Region region) {
-    if (!ROW.containsKey(region)) {
-      return null;
-    }
-    final ADCDataset dataset = createDataset(datasource, region);
-    configurator(datasource, type, region, ImmutableMap.of(
-        "startYear", startYear(dataset),
-        "endYear", endYear(dataset))).configure(dataset);
-    final Drawable d = new AnnualRainfall().createChart(dataset, new Dimension(750, 500));
-    final Chart chart = new AbstractChart() {
-      @Override
-      public ChartDescription getDescription() {
-        return new ChartDescription(ChartType.ANNUAL_RAINFALL, region);
-      }
-
-      @Override
-      public Drawable getChart() {
-        return d;
-      }
-
-      @Override
-      public String getCSV() {
-        final StringWriter sw = new StringWriter();
-        try {
-          final CsvListWriter csv = new CsvListWriter(sw,
-              CsvPreference.STANDARD_PREFERENCE);
-          csv.write("Year", "Rainfall (mm)");
-          for (int i = 0; i < dataset.getColumnCount(); i++) {
-            csv.write(dataset.getColumnKey(i), dataset.getValue(0, i));
-          }
-          csv.close();
-        } catch (IOException e) {
-          // How on earth would IOException occur with a StringWriter?
-          throw new RuntimeException(e);
-        }
-        return sw.toString();
-      }
-    };
-    return chart;
-  }
-
-  private String startYear(CategoryDataset dataset) {
-    if(!dataset.getColumnKeys().isEmpty()) {
-      return dataset.getColumnKeys().get(0).toString();
-    } else {
-      return "";
-    }
-  }
-
-  private String endYear(CategoryDataset dataset) {
-    if(!dataset.getColumnKeys().isEmpty()) {
-      return dataset.getColumnKeys().get(dataset.getColumnKeys().size()-1).toString();
-    } else {
-      return "";
-    }
-  }
-
-  @Override
   public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         put(Attribute.TITLE, "Mean annual rainfall for ${startYear}-${endYear} - ${region}").
@@ -151,4 +122,33 @@ public class AnnualRainfallBuilder extends AbstractBuilder {
         build();
   }
 
+  @Override
+  protected Drawable getDrawable(JFreeContext ctx) {
+    return new AnnualRainfall().createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500));
+  }
+
+  @Override
+  protected String getCsv(JFreeContext ctx) {
+    CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+    final StringWriter sw = new StringWriter();
+    try {
+      final CsvListWriter csv = new CsvListWriter(sw,
+          CsvPreference.STANDARD_PREFERENCE);
+      csv.write("Year", "Rainfall (mm)");
+      for (int i = 0; i < dataset.getColumnCount(); i++) {
+        csv.write(dataset.getColumnKey(i), dataset.getValue(0, i));
+      }
+      csv.close();
+    } catch (IOException e) {
+      // How on earth would IOException occur with a StringWriter?
+      throw new RuntimeException(e);
+    }
+    return sw.toString();
+  }
+
+  @Override
+  public Set<SubstitutionKey> substitutionKeys() {
+    return ImmutableSet.<SubstitutionKey>builder().
+        addAll(super.substitutionKeys()).add(START_YEAR).add(END_YEAR).build();
+  }
 }

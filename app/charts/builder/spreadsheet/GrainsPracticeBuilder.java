@@ -2,6 +2,8 @@ package charts.builder.spreadsheet;
 
 import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
+import charts.graphics.GrainsPracticeSystems;
+import charts.graphics.ManagementPracticeSystems;
 import charts.jfree.ADCDataset;
 
 public class GrainsPracticeBuilder extends LandPracticeBuilder {
@@ -36,6 +38,11 @@ public class GrainsPracticeBuilder extends LandPracticeBuilder {
     for(int i=0;i<9;i++) {
       dataset.addValue(values[i], String.format("%s_%s", ABCD[i%3], year), PS[i/3]);
     }
+  }
+
+  @Override
+  protected ManagementPracticeSystems renderer() {
+    return new GrainsPracticeSystems();
   }
 
 }

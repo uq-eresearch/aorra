@@ -12,5 +12,4 @@ public class SPracticeBuilder extends HSPracticeBuilder {
   protected boolean canHandle(SpreadsheetDataSource datasource) {
     return super.canHandle(datasource) && cellEquals(datasource, "Sugarcane", "A1");
   }
-
 }

@@ -4,8 +4,6 @@ import static charts.ChartType.CORAL_HCC;
 import static charts.ChartType.CORAL_JUV;
 import static charts.ChartType.CORAL_MA;
 import static charts.ChartType.CORAL_SCC;
-import static com.google.common.collect.Lists.newLinkedList;
-import static java.lang.String.format;
 
 import java.awt.Dimension;
 import java.io.IOException;
@@ -20,9 +18,6 @@ import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -34,7 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-public class CoralCoverBuilder extends AbstractBuilder {
+public class CoralCoverBuilder extends JFreeBuilder {
 
     private static final String HC_MEAN = "HC mean";
     private static final String HC_SE = "HC se";
@@ -71,75 +66,6 @@ public class CoralCoverBuilder extends AbstractBuilder {
         }
     }
 
-  @Override
-  public Chart build(final SpreadsheetDataSource datasource,
-      final ChartType type, final Region region) {
-    if (((region == Region.GBR) || containsRegion(datasource, region)) &&
-            containsChart(datasource, type)) {
-      return new AbstractChart() {
-
-        @Override
-        public ChartDescription getDescription() {
-          return new ChartDescription(type, region);
-        }
-
-        @Override
-        public Drawable getChart() {
-          return CoralCover.createChart(getDataset(datasource, type, region),
-              type, region, new Dimension(750, 500));
-        }
-
-        @Override
-        public String getCSV() throws UnsupportedFormatException {
-          final StringWriter sw = new StringWriter();
-          try {
-            final DefaultStatisticalCategoryDataset dataset = getDataset(
-                datasource, type, region);
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            @SuppressWarnings("unchecked")
-            List<String> columnKeys = dataset.getColumnKeys();
-            @SuppressWarnings("unchecked")
-            List<String> rowKeys = dataset.getRowKeys();
-            final List<String> heading = ImmutableList
-                .<String> builder()
-                .add(format("%s %s", type.getLabel(), region))
-                .addAll(columnKeys)
-                .build();
-            csv.write(heading);
-            for (String row : rowKeys) {
-              {
-                List<String> line = newLinkedList();
-                line.add(row + " (Mean)");
-                for (String col : columnKeys) {
-                  line.add(format("%.3f",
-                      dataset.getMeanValue(row, col).doubleValue()));
-                }
-                csv.write(line);
-              }
-              {
-                List<String> line = newLinkedList();
-                line.add(row + " (Std Dev)");
-                for (String col : columnKeys) {
-                  line.add(format("%.3f",
-                      dataset.getStdDevValue(row, col).doubleValue()));
-                }
-                csv.write(line);
-              }
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
-        }
-      };
-    } else {
-      return null;
-    }
-  }
-
     private boolean eof(SpreadsheetDataSource ds, int row) throws MissingDataException {
         if(StringUtils.isBlank(ds.select(row, 0).asString()) &&
                 StringUtils.isBlank(ds.select(row+1, 0).asString())) {
@@ -172,8 +98,13 @@ public class CoralCoverBuilder extends AbstractBuilder {
                 getColumn(ds, COLUMNS.get(type).getRight()) != null;
     }
 
-    private DefaultStatisticalCategoryDataset getDataset(SpreadsheetDataSource ds,
-            ChartType type, Region region) {
+    @Override
+    protected DefaultStatisticalCategoryDataset createDataset(Context ctx) {
+      SpreadsheetDataSource ds = ctx.datasource();
+      ChartType type = ctx.type();
+      Region region = ctx.region();
+      if (((region == Region.GBR) || containsRegion(ds, region)) &&
+          containsChart(ds, type)) {
         Integer meanColumn = getColumn(ds, COLUMNS.get(type).getLeft());
         Integer deviationColumn = getColumn(ds, COLUMNS.get(type).getRight());
         if(meanColumn == null || deviationColumn == null) {
@@ -206,6 +137,9 @@ public class CoralCoverBuilder extends AbstractBuilder {
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
         }
+      } else {
+        return null;
+      }
     }
 
     private int getRegionStart(SpreadsheetDataSource ds, Region region) throws MissingDataException {
@@ -229,6 +163,56 @@ public class CoralCoverBuilder extends AbstractBuilder {
             }
         }
         return null;
+    }
+
+    @Override
+    protected Drawable getDrawable(JFreeContext ctx) {
+      return CoralCover.createChart((DefaultStatisticalCategoryDataset)ctx.dataset(),
+          ctx.type(), ctx.region(), new Dimension(750, 500));
+    }
+
+    @Override
+    protected String getCsv(JFreeContext ctx) {
+      final StringWriter sw = new StringWriter();
+      try {
+        final DefaultStatisticalCategoryDataset dataset = 
+            (DefaultStatisticalCategoryDataset)ctx.dataset(); 
+        final CsvListWriter csv = new CsvListWriter(sw,
+            CsvPreference.STANDARD_PREFERENCE);
+        @SuppressWarnings("unchecked")
+        List<String> columnKeys = dataset.getColumnKeys();
+        @SuppressWarnings("unchecked")
+        List<String> rowKeys = dataset.getRowKeys();
+        final List<String> heading = ImmutableList
+            .<String> builder()
+            .add(String.format("%s %s", ctx.type().getLabel(), ctx.region()))
+            .addAll(columnKeys)
+            .build();
+        csv.write(heading);
+        for (String row : rowKeys) {
+          {
+            List<String> line = Lists.newLinkedList();
+            line.add(row + " (Mean)");
+            for (String col : columnKeys) {
+              line.add(formatNumber("%.3f", dataset.getMeanValue(row, col)));
+            }
+            csv.write(line);
+          }
+          {
+            List<String> line = Lists.newLinkedList();
+            line.add(row + " (Std Dev)");
+            for (String col : columnKeys) {
+              line.add(formatNumber("%.3f", dataset.getStdDevValue(row, col)));
+            }
+            csv.write(line);
+          }
+        }
+        csv.close();
+      } catch (IOException e) {
+        // How on earth would you get an IOException with a StringWriter?
+        throw new RuntimeException(e);
+      }
+      return sw.toString();
     }
 
 }

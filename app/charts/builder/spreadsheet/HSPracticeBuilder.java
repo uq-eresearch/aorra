@@ -2,6 +2,8 @@ package charts.builder.spreadsheet;
 
 import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
+import charts.graphics.HSLandPracticeSystems;
+import charts.graphics.ManagementPracticeSystems;
 import charts.jfree.ADCDataset;
 
 public abstract class HSPracticeBuilder extends LandPracticeBuilder {
@@ -35,6 +37,11 @@ public abstract class HSPracticeBuilder extends LandPracticeBuilder {
     for(int i=0;i<12;i++) {
       dataset.addValue(values[i], String.format("%s_%s", ABCD[i%4], year), PS[i/4]);
     }
+  }
+
+  @Override
+  protected ManagementPracticeSystems renderer() {
+    return new HSLandPracticeSystems();
   }
 
 }

@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jcrom.Jcrom;
 
@@ -19,6 +20,7 @@ import charts.builder.ChartTypeBuilder;
 import charts.builder.DefaultChartBuilder;
 import charts.builder.spreadsheet.AbstractBuilder;
 import charts.builder.spreadsheet.ChartConfigurationNotSupported;
+import charts.builder.spreadsheet.SubstitutionKey;
 import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
 
@@ -33,10 +35,13 @@ public class ChartReferenceController extends SessionAwareController {
     public String type;
     public String label;
     public Map<String, String> defaults;
-    public ChartReference(String type, String label, Map<String, String> defaults) {
+    public Map<String, String> substitutions;
+    public ChartReference(String type, String label,
+        Map<String, String> defaults, Map<String, String> substitutions) {
       this.type = type;
       this.label = label;
       this.defaults = defaults;
+      this.substitutions = substitutions;
     }
   }
 
@@ -68,7 +73,8 @@ public class ChartReferenceController extends SessionAwareController {
     for(ChartType type : ChartType.values()) {
       AbstractBuilder builder = getChartBuilder(type);
       if(builder != null) {
-        result.add(new ChartReference(type.name(), type.getLabel(), defaults(builder, type)));
+        result.add(new ChartReference(type.name(), type.getLabel(),
+            defaults(builder, type), substMap(builder)));
       }
     }
     Collections.sort(result, new Comparator<ChartReference>() {
@@ -111,6 +117,15 @@ public class ChartReferenceController extends SessionAwareController {
       } else {
         m.put(a.getName(), null);
       }
+    }
+    return m;
+  }
+
+  private Map<String, String> substMap(AbstractBuilder builder) {
+    Map<String, String> m = Maps.newTreeMap();
+    Set<SubstitutionKey> set = builder.substitutionKeys();
+    for(SubstitutionKey s : set) {
+      m.put(s.getName(), s.getDescription());
     }
     return m;
   }

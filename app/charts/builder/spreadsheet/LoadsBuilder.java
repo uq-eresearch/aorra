@@ -1,45 +1,29 @@
 package charts.builder.spreadsheet;
 
-import static charts.ChartType.LOADS;
 import static charts.ChartType.LOADS_DIN;
 import static charts.ChartType.LOADS_PSII;
 import static charts.ChartType.LOADS_TN;
 import static charts.ChartType.LOADS_TSS;
-import static com.google.common.collect.Lists.newLinkedList;
-import static java.lang.String.format;
 
-import java.awt.Dimension;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
-import charts.AbstractChart;
-import charts.Chart;
-import charts.ChartDescription;
 import charts.ChartType;
-import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
-import charts.graphics.Loads;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class LoadsBuilder extends AbstractBuilder {
+public abstract class LoadsBuilder extends JFreeBuilder {
 
-    private static final String PERIOD = "period";
+    protected static final String PERIOD = "period";
 
-    private static final String TOTAL = "Total";
+    protected static final String TOTAL = "Total";
 
-    private static enum Indicator {
+    protected static enum Indicator {
         TSS("Total suspended solids", true),
         TP("Total phosphorus", true),
         PP("Particulate phosphorus", true),
@@ -72,7 +56,7 @@ public class LoadsBuilder extends AbstractBuilder {
         }
     }
 
-    private static final ImmutableMap<Region, Integer> ROWS =
+    protected static final ImmutableMap<Region, Integer> ROWS =
             new ImmutableMap.Builder<Region, Integer>()
               .put(Region.CAPE_YORK, 5)
               .put(Region.WET_TROPICS, 6)
@@ -83,7 +67,7 @@ public class LoadsBuilder extends AbstractBuilder {
               .put(Region.GBR, 12)
               .build();
 
-    private static final ImmutableMap<ChartType, Indicator> INDICATORS =
+    protected static final ImmutableMap<ChartType, Indicator> INDICATORS =
             new ImmutableMap.Builder<ChartType, Indicator>()
               .put(LOADS_DIN, Indicator.DIN)
               .put(LOADS_TN, Indicator.TN)
@@ -91,8 +75,12 @@ public class LoadsBuilder extends AbstractBuilder {
               .put(LOADS_TSS, Indicator.TSS)
               .build();
 
-    public LoadsBuilder() {
-        super(Lists.newArrayList(LOADS, LOADS_DIN, LOADS_TN, LOADS_PSII, LOADS_TSS));
+    public LoadsBuilder(ChartType type) {
+      super(type);
+    }
+
+    public LoadsBuilder(List<ChartType> types) {
+      super(types);
     }
 
     @Override
@@ -130,176 +118,7 @@ public class LoadsBuilder extends AbstractBuilder {
         }
     }
 
-    @Override
-    public Chart build(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Map<String, String> parameters) {
-        if(type == LOADS) {
-            return buildLoads(datasource, type, region, parameters);
-        } else if(region == Region.GBR) {
-            return buildLoadRegions(datasource, type, region, parameters);
-        } else {
-            return null;
-        }
-    }
-
-    public Chart buildLoadRegions(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Map<String, String> parameters ) {
-        final String period = (String)parameters.get(PERIOD);
-        if(StringUtils.isBlank(period)) {
-            return null;
-        }
-        final Indicator indicator = INDICATORS.get(type);
-        if(indicator == null) {
-            throw new RuntimeException(String.format("chart type %s not implemented", type.name()));
-        }
-        return new AbstractChart() {
-
-            @Override
-            public ChartDescription getDescription() {
-                return new ChartDescription(type, region, parameters);
-            }
-
-            @Override
-            public Drawable getChart() {
-                return Loads.createChart(getTitle(datasource, indicator, period),
-                        "Region",
-                        getRegionsDataset(datasource, indicator, period),
-                        new Dimension(750, 500));
-            }
-
-            @Override
-            public String getCSV() throws UnsupportedFormatException {
-              final StringWriter sw = new StringWriter();
-              try {
-                final CategoryDataset dataset =
-                    getRegionsDataset(datasource, indicator, period);
-                final CsvListWriter csv = new CsvListWriter(sw,
-                    CsvPreference.STANDARD_PREFERENCE);
-                @SuppressWarnings("unchecked")
-                List<String> columnKeys = dataset.getColumnKeys();
-                @SuppressWarnings("unchecked")
-                List<String> rowKeys = dataset.getRowKeys();
-                final List<String> heading = ImmutableList.<String>builder()
-                    .add(format("%s %s %s load reductions",
-                        region, indicator, period))
-                    .addAll(rowKeys)
-                    .build();
-                csv.write(heading);
-                for (String col : columnKeys) {
-                  List<String> line = newLinkedList();
-                  line.add(col);
-                  for (String row : rowKeys) {
-                    line.add(format("%.1f",
-                        dataset.getValue(row, col).doubleValue()));
-                  }
-                  csv.write(line);
-                }
-                csv.close();
-              } catch (IOException e) {
-                // How on earth would you get an IOException with a StringWriter?
-                throw new RuntimeException(e);
-              }
-              return sw.toString();
-            }
-        };
-    }
-
-    private Chart buildLoads(final SpreadsheetDataSource datasource, final ChartType type,
-            final Region region, final Map<String, String> parameters) {
-        final String period = (String)parameters.get(PERIOD);
-        if(StringUtils.isBlank(period)) {
-            return null;
-        }
-        return new AbstractChart() {
-
-            @Override
-            public ChartDescription getDescription() {
-                return new ChartDescription(type, region, parameters);
-            }
-
-            @Override
-            public Drawable getChart() {
-                return Loads.createChart(getTitle(datasource, region, period),
-                        "Pollutants", getDataset(datasource, region, period),
-                        new Dimension(750, 500));
-            }
-
-            @Override
-            public String getCSV() throws UnsupportedFormatException {
-              final StringWriter sw = new StringWriter();
-              try {
-                final CategoryDataset dataset =
-                    getDataset(datasource, region, period);
-                final CsvListWriter csv = new CsvListWriter(sw,
-                    CsvPreference.STANDARD_PREFERENCE);
-                @SuppressWarnings("unchecked")
-                List<String> columnKeys = dataset.getColumnKeys();
-                @SuppressWarnings("unchecked")
-                List<String> rowKeys = dataset.getRowKeys();
-                final List<String> heading = ImmutableList.<String>builder()
-                    .add(format("%s %s load reductions", region, period))
-                    .addAll(rowKeys)
-                    .build();
-                csv.write(heading);
-                for (String col : columnKeys) {
-                  List<String> line = newLinkedList();
-                  line.add(col);
-                  for (String row : rowKeys) {
-                    line.add(format("%.1f",
-                        dataset.getValue(row, col).doubleValue()));
-                  }
-                  csv.write(line);
-                }
-                csv.close();
-              } catch (IOException e) {
-                // How on earth would you get an IOException with a StringWriter?
-                throw new RuntimeException(e);
-              }
-              return sw.toString();
-            }
-
-        };
-    }
-
-    private CategoryDataset getRegionsDataset(SpreadsheetDataSource ds,
-            Indicator indicator, String period) {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        for(Region region : Region.values()) {
-            Integer row = ROWS.get(region);
-            if(row == null) {
-                throw new RuntimeException(String.format("region %s not configured", region.getName()));
-            }
-            try {
-                double val = selectAsDouble(ds, region, indicator, period);
-                dataset.addValue(val, indicator.getLabel(), region.getProperName());
-            } catch(Exception e) {
-                throw new RuntimeException("region "+region.getName(), e);
-            }
-        }
-        return dataset;
-    }
-
-    private CategoryDataset getDataset(SpreadsheetDataSource ds, Region region, String period) {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        Integer row = ROWS.get(region);
-        if(row == null) {
-            throw new RuntimeException("unknown region "+region);
-        }
-        row--;
-        try {
-            for(Indicator indicator : Indicator.values()) {
-                if(indicator.include()) {
-                    dataset.addValue(selectAsDouble(ds, region, indicator, period),
-                            region.getProperName() , indicator.getLabel());
-                }
-            }
-            return dataset;
-        } catch(MissingDataException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Double selectAsDouble(SpreadsheetDataSource ds, Region region,
+    protected Double selectAsDouble(SpreadsheetDataSource ds, Region region,
             Indicator indicator, String period) throws MissingDataException {
         List<String> periods = getPeriods(ds);
         int row = ROWS.get(region) - 1;
@@ -307,11 +126,11 @@ public class LoadsBuilder extends AbstractBuilder {
         return ds.select(row, col).asDouble();
     }
 
-    private String getTitle(SpreadsheetDataSource ds, Indicator indicator, String period) {
+    protected String getTitle(SpreadsheetDataSource ds, Indicator indicator, String period) {
         return getTitle(ds, indicator.getLabel() + " load reductions from\n", period);
     }
 
-    private String getTitle(SpreadsheetDataSource ds, Region region, String period) {
+    protected String getTitle(SpreadsheetDataSource ds, Region region, String period) {
         String title = region.getProperName() + " total load reductions from\n";
         return getTitle(ds, title, period);
     }

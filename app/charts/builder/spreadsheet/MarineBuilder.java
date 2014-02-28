@@ -53,15 +53,13 @@ public class MarineBuilder extends AbstractBuilder {
   }
 
   @Override
-  public Chart build(final SpreadsheetDataSource datasource,
-      final ChartType type,
-      final Region region) {
-    final BeerCoaster beercoaster = getDrawable(datasource, region);
+  public Chart build(final Context context) {
+    final BeerCoaster beercoaster = getDrawable(context.datasource(), context.region());
     if (beercoaster != null) {
       return new AbstractChart() {
         @Override
         public ChartDescription getDescription() {
-          return new ChartDescription(ChartType.MARINE, region);
+          return new ChartDescription(ChartType.MARINE, context.region());
         }
 
         @Override

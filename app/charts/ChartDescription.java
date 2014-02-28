@@ -30,7 +30,9 @@ public class ChartDescription {
 
     public ChartDescription(ChartType type, Region region, Map<String, String> parameters) {
         this(type, region);
-        this.parameters = parameters;
+        if(parameters != null) {
+          this.parameters = parameters;
+        }
     }
 
     public ChartDescription(ChartType type, Region region, Map<String, String> parameters, String title) {
