@@ -219,6 +219,11 @@ public class ChartTest {
           assertThat(status(result)).isEqualTo(200);
           assertThat(contentType(result)).isEqualTo("image/svg+xml");
         }
+        try {
+          f.delete();
+        } catch(RepositoryException e) {
+          throw new RuntimeException("while delete file with id "+f.getIdentifier(), e);
+        }
       }
     });
     asAdminUserSession(
@@ -250,6 +255,11 @@ public class ChartTest {
             loggedInRequest(new FakeRequest("GET", "?"+qs), httpSession));
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("image/svg+xml");
+        try {
+          f.delete();
+        } catch(RepositoryException e) {
+          throw new RuntimeException("while delete file with id "+f.getIdentifier(), e);
+        }
       }
     });
   }
