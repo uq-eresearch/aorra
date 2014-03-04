@@ -52,7 +52,7 @@ public class CoralCover {
         String rangeAxisLabel = (type == ChartType.CORAL_JUV)?JUVENILE:COVER;
         JFreeChart chart;
         if(region == Region.GBR) {
-            chart = createChart(rearrange(dataset), title, rangeAxisLabel);
+            chart = createChart(rearrange(dataset), title, rangeAxisLabel, type);
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
             CategoryAxis cAxis = getSubCategoryAxis(dataset);
             cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
@@ -63,7 +63,7 @@ public class CoralCover {
             plot.setDomainAxis(cAxis);
         } else {
             title = String.format(title + " in the %s region", region.getProperName());
-            chart = createChart(dataset, title, rangeAxisLabel);
+            chart = createChart(dataset, title, rangeAxisLabel, type);
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
             plot.getDomainAxis().setLabel("Year");
         }
@@ -71,7 +71,7 @@ public class CoralCover {
     }
 
     private static JFreeChart createChart(final DefaultStatisticalCategoryDataset dataset, String title,
-            String rangeAxisLabel) {
+            String rangeAxisLabel, ChartType type) {
         JFreeChart chart = ChartFactory.createLineChart(
                 title,  // title
                 "",             // x-axis label
@@ -128,8 +128,13 @@ public class CoralCover {
         renderer.setBaseOutlinePaint(Color.black);
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
-        rangeAxis.setTickUnit(new NumberTickUnit(
-            (Math.round(Math.floor(getMax(dataset)))/20)+1, new DecimalFormat("0")));
+        if(type == ChartType.CORAL_JUV) {
+          rangeAxis.setRange(0, 10.0);
+          rangeAxis.setTickUnit(new NumberTickUnit(1, new DecimalFormat("0")));
+        } else {
+          rangeAxis.setTickUnit(new NumberTickUnit(
+              (Math.round(Math.floor(getMax(dataset)))/20)+1, new DecimalFormat("0")));
+        }
         chart.getTitle().setFont(rangeAxis.getLabelFont());
         chart.addLegend(ErrorIndicatorLegend.createLegend());
         return chart;
