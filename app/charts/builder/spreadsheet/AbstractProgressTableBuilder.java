@@ -40,6 +40,7 @@ public abstract class AbstractProgressTableBuilder extends AbstractBuilder {
     SpreadsheetDataSource,
     Map<java.awt.Color, ProgressTable.Condition>
   > conditionColorCache = CacheBuilder.newBuilder()
+      .weakKeys()
       .maximumSize(100)
       .build(
           new CacheLoader<
@@ -184,7 +185,7 @@ public abstract class AbstractProgressTableBuilder extends AbstractBuilder {
       m.put(distance(c, otherColor), otherColor);
     }
     final java.awt.Color closest = m.get(m.firstKey());
-    Logger.debug(String.format("Closest match for %s is %s => %s",
+    Logger.trace(String.format("Closest match for %s is %s => %s",
         c, closest, conditions.get(closest)));
     // Get the closest colour
     return conditions.get(closest);
