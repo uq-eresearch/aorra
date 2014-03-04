@@ -2,6 +2,7 @@ package charts.builder;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import play.Logger;
 import play.Play;
@@ -20,10 +21,13 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.cache.Weigher;
+import com.google.common.collect.Maps;
 
 public class ChartCacheImpl implements ChartCache {
 
   private final DefaultChartBuilder chartBuilder;
+
+  private final Map<String, F.Promise<List<Chart>>> pmap = Maps.newHashMap();
 
   private final Cache<String, List<Chart>> cache = CacheBuilder.newBuilder()
       .maximumWeight(maxSize())
@@ -99,20 +103,31 @@ public class ChartCacheImpl implements ChartCache {
   }
 
   private F.Promise<List<Chart>> getPromiseOfCharts(final String id) {
-    // Get reference to ourself, so we can update the cache asynchronously
-    final ChartCache self = TypedActor.self();
-    // Create a promise based on an asynchronous operation
-    return F.Promise.promise(new F.Function0<List<Chart>>() {
-      @Override
-      public List<Chart> apply() throws Throwable {
-        // Get the charts (non-modifying operation)
-        final List<Chart> charts = actuallyGetCharts(id);
-        // Schedule update of self with new cache value
-        self.update(id, charts);
-        // Fulfil promise with charts
-        return charts;
-      }
-    }, TypedActor.dispatcher()); // Execute on our own thread-pool
+    // are the charts currently fetched by an already created promise?
+    // if so reuse that promise to avoid multiple datasources to be opened.
+    F.Promise<List<Chart>> p = pmap.get(id);
+    if(p == null) {
+      // Get reference to ourself, so we can update the cache asynchronously
+      final ChartCache self = TypedActor.self();
+      // Create a promise based on an asynchronous operation
+      p = F.Promise.promise(new F.Function0<List<Chart>>() {
+        @Override
+        public List<Chart> apply() throws Throwable {
+          try {
+            // Get the charts (non-modifying operation)
+            final List<Chart> charts = actuallyGetCharts(id);
+            // Schedule update of self with new cache value
+            self.update(id, charts);
+            // Fulfil promise with charts
+            return charts;
+          } finally {
+            pmap.remove(id);
+          }
+        }
+      }, TypedActor.dispatcher()); // Execute on our own thread-pool
+      pmap.put(id, p);
+    }
+    return p;
   }
 
   private int maxSize() {
