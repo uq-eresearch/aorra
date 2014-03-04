@@ -8,6 +8,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.core.security.authentication.CryptedSimpleCredentials;
 import org.jcrom.JcrMappingException;
@@ -48,8 +49,15 @@ public class UserDAO extends AbstractJcrDAO<User> {
   }
 
   public User findByEmail(String email) {
-    final String nodeName = User.generateNodeName(email);
-    return get(USER_PATH+"/"+nodeName);
+    for(User u : list()) {
+      if(StringUtils.equalsIgnoreCase(email, u.getEmail())) {
+        return u;
+      }
+    }
+    return null;
+    // the following is case sensitive but emails are case insensitive (in practice)
+//    final String nodeName = User.generateNodeName(email);
+//    return get(USER_PATH+"/"+nodeName);
   }
 
   public List<User> list() {

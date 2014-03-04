@@ -117,14 +117,16 @@ public class JackrabbitEmailPasswordAuthProvider
       public SignupUser apply(final Session session) {
         final UserDAO dao = new UserDAO(session, getJcrom());
         final User u = dao.findByEmail(email);
-        return new SignupUser(u.getEmail(), u.getName());
+        return u!=null?new SignupUser(u.getEmail(), u.getName()):null;
       }
     });
-    final String record = generateVerificationRecord(user);
-    final Body body = getVerifyEmailMailingBody(record, user, ctx);
-    final Mail verifyMail = new Mail("Password reset for AORRA", body,
-        new String[] { getEmailName(user) });
-    mailer.sendMail(verifyMail);
+    if(user != null) {
+      final String record = generateVerificationRecord(user);
+      final Body body = getVerifyEmailMailingBody(record, user, ctx);
+      final Mail verifyMail = new Mail("Password reset for AORRA", body,
+          new String[] { getEmailName(user) });
+      mailer.sendMail(verifyMail);
+    }
   }
 
 
@@ -238,16 +240,23 @@ public class JackrabbitEmailPasswordAuthProvider
 
   @Override
   protected String generateVerificationRecord(final SignupUser user) {
+    if(user == null) {
+      return null;
+    }
     return getSessionFactory().inSession(
         new F.Function<Session, String>() {
       @Override
       public String apply(final Session session) {
         UserDAO dao = getUserDAO(session);
         User u = dao.findByEmail(user.getEmail());
-        try {
-          return u.createVerificationToken();
-        } finally {
-          dao.update(u);
+        if(u!=null) {
+          try {
+            return u.createVerificationToken();
+          } finally {
+            dao.update(u);
+          }
+        } else {
+          return null;
         }
       }
     });
