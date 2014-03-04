@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.jfree.data.general.Dataset;
 
+import play.Logger;
+
 import charts.AbstractChart;
 import charts.Chart;
 import charts.ChartDescription;
@@ -44,22 +46,34 @@ public abstract class JFreeBuilder extends AbstractBuilder {
       if(ctx.dataset() instanceof AttributedDataset) {
         configurator(ctx).configure((AttributedDataset)ctx.dataset(), ctx.type());
       }
+      final ChartDescription description = new ChartDescription(ctx.type(), ctx.region(),
+          ctx.parameters(), title(ctx));
+      final Drawable drawable = getDrawable(ctx);
+      final String csv = fetchCsv(ctx);
       return new AbstractChart() {
         @Override
         public ChartDescription getDescription() {
-          return new ChartDescription(ctx.type(), ctx.region(),
-              ctx.parameters(), title(ctx));
+          return description;
         }
 
         @Override
         public Drawable getChart() {
-          return getDrawable(ctx);
+          return drawable;
         }
 
         @Override
         public String getCSV() throws UnsupportedFormatException {
-          return getCsv(ctx);
+          return csv;
         }};
+    }
+  }
+
+  private String fetchCsv(JFreeContext ctx) {
+    try {
+      return getCsv(ctx);
+    } catch(RuntimeException e) {
+      Logger.debug("while fetching csv for "+ctx.toString(), e);
+      return "";
     }
   }
 
