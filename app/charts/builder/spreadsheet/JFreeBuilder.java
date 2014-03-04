@@ -17,7 +17,7 @@ import charts.jfree.AttributedDataset;
 
 public abstract class JFreeBuilder extends AbstractBuilder {
 
-  public static class JFreeContext extends AbstractBuilder.Context {
+  public static class JFreeContext extends Context {
     private final Dataset dataset;
     public JFreeContext(SpreadsheetDataSource datasource, ChartType type,
         Region region, Map<String, String> parameters, Dataset dataset) {
@@ -88,7 +88,7 @@ public abstract class JFreeBuilder extends AbstractBuilder {
   protected abstract Dataset createDataset(Context ctx);
 
   @Override
-  protected charts.builder.spreadsheet.AbstractBuilder.Context context(
+  protected charts.builder.spreadsheet.Context context(
       SpreadsheetDataSource datasource, ChartType type, Region region,
       Map<String, String> parameters) {
     Dataset dataset = createDataset(new Context(datasource, type, region, parameters));
