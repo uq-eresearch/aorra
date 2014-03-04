@@ -55,7 +55,8 @@ public class UserDAO extends AbstractJcrDAO<User> {
       }
     }
     return null;
-    // the following is case sensitive but emails are case insensitive (in practice)
+    // issue #158, the following code compares emails case sensitive
+    // but they are case insensitive (in practice)
 //    final String nodeName = User.generateNodeName(email);
 //    return get(USER_PATH+"/"+nodeName);
   }
