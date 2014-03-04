@@ -17,18 +17,6 @@ import charts.jfree.AttributedDataset;
 
 public abstract class JFreeBuilder extends AbstractBuilder {
 
-  public static class JFreeContext extends Context {
-    private final Dataset dataset;
-    public JFreeContext(SpreadsheetDataSource datasource, ChartType type,
-        Region region, Map<String, String> parameters, Dataset dataset) {
-      super(datasource, type, region, parameters);
-      this.dataset = dataset;
-    }
-    public Dataset dataset() {
-      return dataset;
-    }
-  }
-
   public JFreeBuilder(ChartType type) {
     super(type);
   }
