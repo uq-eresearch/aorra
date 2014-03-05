@@ -6,13 +6,13 @@ import static charts.ChartType.MARINE_WQT;
 import static org.apache.commons.lang.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang.StringUtils.isBlank;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
@@ -20,7 +20,11 @@ import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.graphics.Colors;
 import charts.graphics.MarineTrends;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -161,14 +165,14 @@ public class MarineTrendsBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected CategoryDataset createDataset(Context ctx) {
+    protected ADCDataset createDataset(Context ctx) {
       if (ctx.type() == MARINE_CT
           && (ctx.region() == Region.CAPE_YORK || ctx.region() == Region.BURNETT_MARY)) {
         return null;
       }
       SpreadsheetDataSource ds = ctx.datasource();
       try {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        ADCDataset dataset = new ADCDataset();
         int row = getRow(ds, ctx.type(), ctx.region());
         for(Indicator i : Indicator.forType(ctx.type())) {
           int col = getColumnStart(ds, i);
@@ -190,8 +194,7 @@ public class MarineTrendsBuilder extends JFreeBuilder {
 
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
-      return MarineTrends.createChart((CategoryDataset)ctx.dataset(),
-          ctx.type(), ctx.region(), new Dimension(750, 500));
+      return MarineTrends.createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500));
     }
 
     @Override
@@ -227,4 +230,14 @@ public class MarineTrendsBuilder extends JFreeBuilder {
       return sw.toString();
     }
 
+    @Override
+    public AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.TITLE, "${region} ${type}").
+          put(Attribute.Y_AXIS_LABEL, "Score").
+          put(Attribute.X_AXIS_LABEL, "Year").
+          put(Attribute.SERIES_COLORS, new Color[] {Colors.BLUE, Colors.DARK_RED,
+              Colors.RED, Colors.VIOLET, Colors.GREEN}).
+          build();
+    }
 }

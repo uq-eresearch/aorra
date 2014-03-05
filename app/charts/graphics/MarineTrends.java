@@ -9,20 +9,18 @@ import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
-import org.jfree.data.category.CategoryDataset;
 
-import charts.ChartType;
 import charts.Drawable;
-import charts.Region;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 public class MarineTrends {
 
-    public static Drawable createChart(final CategoryDataset dataset, ChartType type,
-            Region region, Dimension dimension) {
+    public static Drawable createChart(final ADCDataset dataset, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createLineChart(
-                region.getProperName()+" "+type.getLabel().toLowerCase(),
-                "Year",
-                "Score",
+                dataset.get(Attribute.TITLE),
+                dataset.get(Attribute.X_AXIS_LABEL),
+                dataset.get(Attribute.Y_AXIS_LABEL),
                 dataset,
                 PlotOrientation.VERTICAL,
                 true, false, false);
@@ -33,11 +31,9 @@ public class MarineTrends {
         ValueAxis raxis = plot.getRangeAxis();
         raxis.setRange(0, 100.0);
         CategoryItemRenderer renderer = plot.getRenderer();
-        renderer.setSeriesPaint(0, Colors.BLUE);
-        renderer.setSeriesPaint(1, Colors.DARK_RED);
-        renderer.setSeriesPaint(2, Colors.RED);
-        renderer.setSeriesPaint(3, Colors.VIOLET);
-        renderer.setSeriesPaint(4, Colors.GREEN);
+        for(int i=0;i<dataset.get(Attribute.SERIES_COLORS).length;i++) {
+          renderer.setSeriesPaint(i, dataset.get(Attribute.SERIES_COLORS)[i]);
+        }
         return new JFreeChartDrawable(chart, dimension);
     }
 
