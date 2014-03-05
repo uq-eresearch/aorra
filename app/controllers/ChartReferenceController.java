@@ -1,5 +1,6 @@
 package controllers;
 
+import java.awt.Color;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -30,14 +31,27 @@ import com.google.inject.Inject;
 
 @With(UncacheableAction.class)
 public class ChartReferenceController extends SessionAwareController {
+
+  public static class Colors {
+    public final String[] colors;
+    public Colors(Color color) {
+      colors = new String[] {charts.graphics.Colors.toHex(color)};
+    }
+    public Colors(Color[] colors) {
+      this.colors = new String[colors.length];
+      for(int i=0;i<colors.length;i++) {
+        this.colors[i] = charts.graphics.Colors.toHex(colors[i]);
+      }
+    }
+  }
   
   public static class ChartReference {
     public String type;
     public String label;
-    public Map<String, String> defaults;
+    public Map<String, Object> defaults;
     public Map<String, String> substitutions;
     public ChartReference(String type, String label,
-        Map<String, String> defaults, Map<String, String> substitutions) {
+        Map<String, Object> defaults, Map<String, String> substitutions) {
       this.type = type;
       this.label = label;
       this.defaults = defaults;
@@ -97,7 +111,7 @@ public class ChartReferenceController extends SessionAwareController {
     return null;
   }
 
-  private Map<String, String> defaults(AbstractBuilder builder, ChartType type) {
+  private Map<String, Object> defaults(AbstractBuilder builder, ChartType type) {
     try {
       return asMap(builder.defaults(type));
     } catch(ChartConfigurationNotSupported e) {
@@ -105,15 +119,21 @@ public class ChartReferenceController extends SessionAwareController {
     }
   }
 
-  private Map<String, String> asMap(AttributeMap map) {
+  private Map<String, Object> asMap(AttributeMap map) {
     if(map == null) {
       return null;
     }
-    Map<String, String> m = Maps.newTreeMap();
+    Map<String, Object> m = Maps.newTreeMap();
     for(Attribute<?> a : map.keySet()) {
       Object o = map.get(a);
       if(o!=null) {
-        m.put(a.getName(), o.toString());
+        if(o instanceof Color) {
+          m.put(a.getName(), new Colors((Color)o));
+        } else if(o instanceof Color[]) {
+          m.put(a.getName(), new Colors((Color[])o));
+        } else {
+          m.put(a.getName(), o.toString());
+        }
       } else {
         m.put(a.getName(), null);
       }

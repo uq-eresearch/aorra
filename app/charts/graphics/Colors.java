@@ -38,4 +38,8 @@ public class Colors {
         }
     }
 
+    public static String toHex(Color c) {
+      return String.format("#%02X%02X%02X", c.getRed(), c.getGreen(), c.getBlue());
+    }
+
 }
