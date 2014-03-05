@@ -6,8 +6,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import charts.ChartType;
-
 import com.google.common.collect.Lists;
 
 public class Attribute<T> {
@@ -15,7 +13,6 @@ public class Attribute<T> {
   private static final List<Attribute<?>> ATTRIBUTES = Lists.newArrayList();
 
   public static final Attribute<String> TITLE = strAttr("title");
-  public static final Attribute<ChartType> TYPE = attr("type", ChartType.class);
   public static final Attribute<String> Y_AXIS_LABEL = strAttr("y-axis label",
       "range axis label", "range axis title");
   public static final Attribute<String> X_AXIS_LABEL = strAttr("x-axis label",

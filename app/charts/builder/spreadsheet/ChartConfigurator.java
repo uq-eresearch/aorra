@@ -19,6 +19,34 @@ public class ChartConfigurator {
 
   private static final int SEARCH_DEPTH = 100;
 
+  private static class Configuration {
+
+    private final String types;
+    private final AttributeMap attributes;
+
+    public Configuration(String types, AttributeMap attributes) {
+      this.types = types;
+      this.attributes = attributes;
+    }
+
+    public boolean isFor(ChartType type) {
+      if(StringUtils.isBlank(types) || (type == null) || StringUtils.equals("*", types)) {
+        return true;
+      }
+      String[] types = StringUtils.split(this.types, ',');
+      for(String s : types) {
+        if(type==ChartType.lookup(StringUtils.strip(s))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public AttributeMap attributes() {
+      return attributes;
+    }
+  }
+
   private final AttributeMap defaults;
 
   private final SpreadsheetDataSource ds;
@@ -45,9 +73,7 @@ public class ChartConfigurator {
 
   private boolean isChartConfiguration(SpreadsheetDataSource ds, int row, int col, ChartType type) {
     try {
-      return isChartConfiguration(ds, row, col) &&
-          ((type == null) ||
-              readConfiguration(row, col).get(Attribute.TYPE) == type);
+      return isChartConfiguration(ds, row, col) && readConfiguration(row, col).isFor(type);
     } catch(MissingDataException e) {
       return false;
     }
@@ -55,21 +81,23 @@ public class ChartConfigurator {
 
   private boolean isChartConfiguration(SpreadsheetDataSource ds, int row, int col) {
     try {
-    return (StringUtils.equalsIgnoreCase("type", ds.select(row, col).asString()) &&
-        (ChartType.lookup(ds.select(row, col+1).asString()) != null));
-      } catch(MissingDataException e) {
+      return isChartConfiguration(ds.select(row, col).asString());
+    } catch(MissingDataException e) {
       return false;
     }
   }
 
-  public void configure(AttributedDataset dataset) {
-    configure(dataset, null);
+  private boolean isChartConfiguration(String key) {
+    return (StringUtils.equalsIgnoreCase("type", key) ||
+        StringUtils.equalsIgnoreCase("chart configuration", key));
   }
 
   public void configure(AttributedDataset dataset, ChartType type) {
     dataset.attrMap().putAll(substitute(defaults));
-    dataset.attrMap().putAll(substitute(getConfiguration(type)));
-    
+    Configuration cfg = getConfiguration(type);
+    if(cfg != null) {
+      dataset.attrMap().putAll(substitute(cfg.attributes()));
+    }
   }
 
   private AttributeMap substitute(AttributeMap m) {
@@ -81,7 +109,7 @@ public class ChartConfigurator {
     return m;
   }
 
-  public AttributeMap getConfiguration(ChartType type) {
+  public Configuration getConfiguration(ChartType type) {
     try {
       Pair<Integer, Integer> p = search(ds, type);
       if(p != null) {
@@ -92,8 +120,9 @@ public class ChartConfigurator {
   }
 
   @SuppressWarnings("unchecked")
-  private AttributeMap readConfiguration(int row,
+  private Configuration readConfiguration(int row,
       int column) throws MissingDataException {
+    String types = null;
     AttributeMap.Builder mb = new AttributeMap.Builder();
     for(int r = row;true;r++) {
       if((r-row) >= 100) {
@@ -103,20 +132,26 @@ public class ChartConfigurator {
       if(StringUtils.isBlank(key)) {
         break;
       }
-      Attribute<?> attribute = Attribute.lookup(key);
-      if(attribute == null) {
-        continue;
-      }
       Value val = ds.select(r, column+1);
-      if(attribute.getType() == String.class) {
-        mb.put((Attribute<String>)attribute, val.asString());
-      } else if(attribute.getName().equals("type")) {
-        mb.put((Attribute<ChartType>)attribute, ChartType.lookup(val.asString()));
-      } else if(attribute.getType().equals(Color.class)) {
-        mb.put((Attribute<Color>)attribute, val.asColor());
+      if(isChartConfiguration(key)) {
+        if(types != null) {
+          break;
+        } else {
+          types = val.asString();
+        }
+      } else {
+        Attribute<?> attribute = Attribute.lookup(key);
+        if(attribute == null) {
+          continue;
+        }
+        if(attribute.getType() == String.class) {
+          mb.put((Attribute<String>)attribute, val.asString());
+        } else if(attribute.getType().equals(Color.class)) {
+          mb.put((Attribute<Color>)attribute, val.asColor());
+        }
       }
     }
-    return mb.build();
+    return new Configuration(types, mb.build());
   }
 
 }
