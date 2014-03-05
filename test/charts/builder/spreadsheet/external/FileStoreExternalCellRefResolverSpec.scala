@@ -71,5 +71,30 @@ class FileStoreExternalCellRefResolverSpec extends Specification {
       }
     }
 
+    "can resolve absolute-URL name-based UnresolvedRef" in new FakeAorraApp {
+      asAdminUser { (session, u, fh) =>
+        val fh = filestore.getManager(session)
+        val userId = u.getJackrabbitUserId
+        val baseFileId = fh.getRoot().createFile(
+            "base.xlsx", XLSX_MIME_TYPE, dummySpreadsheet).getIdentifier
+        val unresolvedRefs = (1 to 3).map { (i) =>
+          val file = fh.getRoot()
+              .createFolder(i.toString)
+              .createFile(s"test.xlsx", XLSX_MIME_TYPE, dummySpreadsheet)
+          val absPath = "file://C:/foo/Downloads/" + file.getPath.substring(1)
+          UnresolvedRef(absPath, DummyCellLink)
+        }.toSet
+
+        val resolver = new FileStoreExternalCellRefResolver(
+            sessionFactory, filestore, userId)
+        val resolvedRefs: Set[ResolvedRef] =
+            resolver.resolve(baseFileId, unresolvedRefs)
+
+        resolvedRefs.foreach { (ref) =>
+          ref.source must beSome
+        }
+      }
+    }
+
   }
 }

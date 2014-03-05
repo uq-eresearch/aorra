@@ -11,6 +11,7 @@ import javax.jcr.Session
 import org.jcrom.util.JcrUtils
 import org.jcrom.util.PathUtils
 import scala.collection.mutable.{Map => MutableMap}
+import scala.util.{Try, Success, Failure}
 
 class FileStoreExternalCellRefResolver @Inject()(
     sessionFactory: JcrSessionFactory,
@@ -63,6 +64,27 @@ class FileStoreExternalCellRefResolver @Inject()(
       }
 
     def getFileByPath(
+        file: FileStore.File, path: String): Option[FileStore.File] = {
+      // Detect absolute URL
+      Try(new java.net.URL(path)) match {
+        case Success(url) =>
+          // Get path from absolute
+          val parts = url.getPath.split("/")
+          // Assume intended relative path is progressively further up the tree
+          (1 until parts.length).toStream
+            // Turn parts into a relative path guess
+            .map(parts.takeRight(_).mkString("/"))
+            // Check that guess
+            .map(getFileByRelPath(file, _))
+            // Stop at the first guess that produces something
+            .find(_.isDefined)
+            // None if no guesses resolve
+            .getOrElse(None)
+        case Failure(_) => getFileByRelPath(file, path)
+      }
+    }
+
+    protected def getFileByRelPath(
         file: FileStore.File, path: String): Option[FileStore.File] = {
       def followPath(
           folder: FileStore.Folder,
