@@ -132,8 +132,8 @@ public class CoralCover {
           rangeAxis.setRange(0, 10.0);
           rangeAxis.setTickUnit(new NumberTickUnit(1, new DecimalFormat("0")));
         } else {
-          rangeAxis.setTickUnit(new NumberTickUnit(
-              (Math.round(Math.floor(getMax(dataset)))/20)+1, new DecimalFormat("0")));
+          rangeAxis.setRange(0, 100.0);
+          rangeAxis.setTickUnit(new NumberTickUnit(10, new DecimalFormat("0")));
         }
         chart.getTitle().setFont(rangeAxis.getLabelFont());
         chart.addLegend(ErrorIndicatorLegend.createLegend());
@@ -158,26 +158,6 @@ public class CoralCover {
             }
         }
         return ds;
-    }
-
-    public static double getMax(DefaultStatisticalCategoryDataset dataset) {
-      double max = 0;
-      for(int r = 0;r<dataset.getRowCount();r++) {
-        for(int c = 0;c<dataset.getColumnCount();c++) {
-          Comparable<?> row = dataset.getRowKey(r);
-          Comparable<?> col = dataset.getColumnKey(c);
-          Number mean = dataset.getMeanValue(row, col);
-          Number stddev = dataset.getStdDevValue(row, col);
-          if(mean != null) {
-            if(stddev != null) {
-              max = Math.max(max, mean.doubleValue()+stddev.doubleValue());
-            } else {
-              max = Math.max(max, mean.doubleValue());
-            }
-          }
-        }
-      }
-      return max;
     }
 
     private static CategoryAxis getSubCategoryAxis(final DefaultStatisticalCategoryDataset dataset) {
