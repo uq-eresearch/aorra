@@ -1,19 +1,25 @@
 package charts.builder.spreadsheet;
 
 import java.awt.Color;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.poi.hssf.util.CellReference;
 
 import charts.ChartType;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
+import charts.graphics.Colors;
 import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
 import charts.jfree.AttributedDataset;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 public class ChartConfigurator {
 
@@ -148,10 +154,76 @@ public class ChartConfigurator {
           mb.put((Attribute<String>)attribute, val.asString());
         } else if(attribute.getType().equals(Color.class)) {
           mb.put((Attribute<Color>)attribute, val.asColor());
+        } else if(attribute.getType().equals(Color[].class)) {
+          mb.put((Attribute<Color[]>)attribute, getColors(val.asString()));
         }
       }
     }
     return new Configuration(types, mb.build());
   }
 
+  private Color[] getColors(String s) {
+    if(StringUtils.startsWith(StringUtils.strip(s), "#")) {
+      return fromHex(s);
+    } else if(StringUtils.startsWithIgnoreCase(StringUtils.strip(s), "from")) {
+      return fromCells(s);
+    } else {
+      return new Color[0];
+    }
+  }
+
+  private Color[] fromHex(String s) {
+    List<Color> colors = Lists.newArrayList();
+    for(String color : StringUtils.split(s, ',')) {
+      Color c = Colors.fromHex(StringUtils.strip(color));
+      if(c != null) {
+        colors.add(c);
+      }
+    }
+    return colors.toArray(new Color[colors.size()]);
+  }
+
+  private Color[] fromCells(String s) {
+    List<Color> colors = Lists.newArrayList();
+    Pattern p = Pattern.compile("from.*([a-z]+)([0-9]+).*([a-z]+)([0-9]+)", Pattern.CASE_INSENSITIVE);
+    Matcher m = p.matcher(s);
+    if(m.matches()) {
+      String c1 = m.group(1);
+      String r1 = m.group(2);
+      String c2 = m.group(3);
+      String r2 = m.group(4);
+      CellReference cr1 = new CellReference(c1+r1);
+      CellReference cr2 = new CellReference(c2+r2);
+      if(cr1.getRow() == cr2.getRow()) {
+        if(Math.abs(cr1.getCol()-cr2.getCol()) < 100) {
+          for(int col = cr1.getCol();true;col += (cr1.getCol()<cr2.getCol()?1:-1)) {
+            try {
+              Color c = ds.select(cr1.getRow(), col).asColor();
+              if(c!=null) {
+                colors.add(c);
+              }
+            } catch(MissingDataException e) {}
+            if(col == cr2.getCol()) {
+              break;
+            }
+          }
+        }
+      } else if(cr1.getCol() == cr2.getCol()) {
+        if(Math.abs(cr1.getRow()-cr2.getRow()) < 100) {
+          for(int row = cr1.getRow();true;row += (cr1.getRow()<cr2.getRow()?1:-1)) {
+            try {
+              Color c = ds.select(row, cr1.getCol()).asColor();
+              if(c!=null) {
+                colors.add(c);
+              }
+            } catch(MissingDataException e) {}
+            if(row == cr2.getRow()) {
+              break;
+            }
+          }
+        }
+      }
+    }
+    return colors.toArray(new Color[colors.size()]);
+  }
 }
