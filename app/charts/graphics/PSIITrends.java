@@ -306,14 +306,12 @@ public class PSIITrends {
       if(colors == null) {
         return SERIES_PAINT;
       }
-      Paint[] p = new Paint[colors.length];
-      for(int i=0;i<colors.length;i++) {
-        if(colors[i] == null) {
-          if(i < SERIES_PAINT.length) {
-            p[i] = SERIES_PAINT[i];
-          }
-        } else {
+      Paint[] p = new Paint[SERIES_PAINT.length];
+      for(int i=0;i<p.length;i++) {
+        if(i<colors.length && (colors[i] != null)) {
           p[i] = colors[i];
+        } else {
+          p[i] = SERIES_PAINT[i];
         }
       }
       return p;
