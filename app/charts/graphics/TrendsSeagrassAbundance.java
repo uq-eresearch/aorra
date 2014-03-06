@@ -14,7 +14,6 @@ import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.StatisticalLineAndShapeRenderer;
-import org.jfree.data.category.CategoryDataset;
 import org.jfree.text.TextBlock;
 import org.jfree.text.TextUtilities;
 import org.jfree.ui.RectangleEdge;
@@ -50,8 +49,8 @@ public class TrendsSeagrassAbundance {
         plot.setBackgroundPaint(Color.white);
         renderer.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-        rangeAxis.setTickUnit(new NumberTickUnit(5));
-        rangeAxis.setRange(0.0, upperRange(dataset));
+        rangeAxis.setTickUnit(new NumberTickUnit(10));
+        rangeAxis.setRange(0.0, 100.0);
         rangeAxis.setTickMarksVisible(false);
         chart.getTitle().setFont(rangeAxis.getLabelFont());
         CategoryAxis cAxis = new CategoryAxis() {
@@ -75,19 +74,6 @@ public class TrendsSeagrassAbundance {
         plot.setDomainAxis(cAxis);
         chart.addLegend(ErrorIndicatorLegend.createLegend());
         return new JFreeChartDrawable(chart, dimension);
-    }
-
-    private static double upperRange(CategoryDataset dataset) {
-        double max = 0.0;
-        for(int i = 0;i<dataset.getColumnCount();i++) {
-            max = Math.max(max, dataset.getValue(0, i).doubleValue());
-        }
-        double result = ((int)(max / 10.0)+1)*10;
-        if(result > 100.0 && max < 100.0) {
-            return 100.0;
-        } else {
-            return result;
-        }
     }
 
 }
