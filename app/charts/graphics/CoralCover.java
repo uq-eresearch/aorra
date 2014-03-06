@@ -40,42 +40,35 @@ import boxrenderer.TextBox;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
+import charts.jfree.ADSCDataset;
+import charts.jfree.Attribute;
 
 public class CoralCover {
 
-    private static final String COVER = "Cover (%)";
-    private static final String JUVENILE = "Juveniles/m\u00b2";
-
-    public static Drawable createChart(final DefaultStatisticalCategoryDataset dataset,
-            ChartType type, Region region, Dimension dimension) {
-        String title = String.format("%s (mean)", type.getLabel());
-        String rangeAxisLabel = (type == ChartType.CORAL_JUV)?JUVENILE:COVER;
+    public static Drawable createChart(final ADSCDataset dataset, ChartType type,
+        Region region, Dimension dimension) {
         JFreeChart chart;
         if(region == Region.GBR) {
-            chart = createChart(rearrange(dataset), title, rangeAxisLabel, type);
+            chart = createChart(rearrange(dataset), type);
             CategoryPlot plot = (CategoryPlot)chart.getPlot();
             CategoryAxis cAxis = getSubCategoryAxis(dataset);
             cAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
-            cAxis.setLabel("Region");
             cAxis.setLabelFont(plot.getRangeAxis().getLabelFont());
             cAxis.setTickLabelFont(plot.getRangeAxis().getTickLabelFont());
             cAxis.setTickMarksVisible(false);
+            cAxis.setLabel(dataset.get(Attribute.X_AXIS_LABEL));
             plot.setDomainAxis(cAxis);
         } else {
-            title = String.format(title + " in the %s region", region.getProperName());
-            chart = createChart(dataset, title, rangeAxisLabel, type);
-            CategoryPlot plot = (CategoryPlot)chart.getPlot();
-            plot.getDomainAxis().setLabel("Year");
+            chart = createChart(dataset, type);
         }
         return new JFreeChartDrawable(chart, dimension);
     }
 
-    private static JFreeChart createChart(final DefaultStatisticalCategoryDataset dataset, String title,
-            String rangeAxisLabel, ChartType type) {
+    private static JFreeChart createChart(final ADSCDataset dataset, ChartType type) {
         JFreeChart chart = ChartFactory.createLineChart(
-                title,  // title
-                "",             // x-axis label
-                rangeAxisLabel,   // y-axis label
+                dataset.get(Attribute.TITLE),  // title
+                dataset.get(Attribute.X_AXIS_LABEL),  // x-axis label
+                dataset.get(Attribute.Y_AXIS_LABEL),  // y-axis label
                 dataset,            // data
                 PlotOrientation.VERTICAL,
                 false,               // create legend?
@@ -98,7 +91,7 @@ public class CoralCover {
         plot.setDrawingSupplier(new DrawingSupplier() {
             @Override
             public Paint getNextPaint() {
-                return new Color(187, 34, 51);
+              return dataset.get(Attribute.SERIES_COLOR);
             }
 
             @Override
@@ -128,7 +121,7 @@ public class CoralCover {
         renderer.setBaseOutlinePaint(Color.black);
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
-        if(type == ChartType.CORAL_JUV) {
+        if(type == ChartType.CORAL_JUV || type == ChartType.CORAL_JUV_GBR) {
           rangeAxis.setRange(0, 10.0);
           rangeAxis.setTickUnit(new NumberTickUnit(1, new DecimalFormat("0")));
         } else {
@@ -142,8 +135,9 @@ public class CoralCover {
 
     // rearrange the dataset so, that the lines are drawn next to each other
     // (and not on top of each other)
-    private static DefaultStatisticalCategoryDataset rearrange(DefaultStatisticalCategoryDataset d) {
-        DefaultStatisticalCategoryDataset ds = new DefaultStatisticalCategoryDataset();
+    private static ADSCDataset rearrange(ADSCDataset d) {
+      ADSCDataset ds = new ADSCDataset();
+      ds.attrMap().putAll(d.attrMap());
         int space = 0;
         for(int r = 0;r<d.getRowCount();r++) {
             for(int c = 0;c<d.getColumnCount();c++) {

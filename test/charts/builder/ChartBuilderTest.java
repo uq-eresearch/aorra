@@ -72,6 +72,11 @@ public class ChartBuilderTest {
       return Region.BURDEKIN;
     case GRAINS_PS:
       return Region.FITZROY;
+    case CORAL_HCC:
+    case CORAL_SCC:
+    case CORAL_JUV:
+    case CORAL_MA:
+      return Region.WET_TROPICS;
     //$CASES-OMITTED$
     default:
       return Region.GBR;
@@ -119,6 +124,10 @@ public class ChartBuilderTest {
     case CORAL_SCC:
     case CORAL_MA:
     case CORAL_JUV:
+    case CORAL_HCC_GBR:
+    case CORAL_SCC_GBR:
+    case CORAL_MA_GBR:
+    case CORAL_JUV_GBR:
       return "test/coral.xls";
     case PSII_MAX_HEQ:
       return "test/PSII.xlsx";

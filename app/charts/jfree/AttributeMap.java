@@ -15,6 +15,12 @@ public class AttributeMap {
       m.m.put(key, value);
       return this;
     }
+    public <T> Builder putAll(AttributeMap amap) {
+      if(amap != null) {
+        m.m.putAll(amap.m);
+      }
+      return this;
+    }
     public AttributeMap build() {
       return m;
     }

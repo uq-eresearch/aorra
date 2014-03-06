@@ -29,6 +29,10 @@ public enum ChartType {
     CORAL_SCC("Soft coral cover"),
     CORAL_MA("Macroalgae"),
     CORAL_JUV("Juvenile density"),
+    CORAL_HCC_GBR("Hard coral cover"),
+    CORAL_SCC_GBR("Soft coral cover"),
+    CORAL_MA_GBR("Macroalgae"),
+    CORAL_JUV_GBR("Juvenile density"),
     PSII_TRENDS("PSII Trends"),
     PSII_MAX_HEQ("Maximum PSII Herbicide Equivalent Concentrations"),
     MARINE_WQT("Water quality trend"),
@@ -50,6 +54,15 @@ public enum ChartType {
 
     public String getLabel() {
       return label;
+    }
+
+    public boolean hasUniqueLabel() {
+      for(ChartType t : ChartType.values()) {
+        if(this != t && StringUtils.equals(getLabel(), t.getLabel())) {
+          return false;
+        }
+      }
+      return true;
     }
 
     public static ChartType getChartType(String str) {

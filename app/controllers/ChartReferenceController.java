@@ -48,14 +48,16 @@ public class ChartReferenceController extends SessionAwareController {
   public static class ChartReference {
     public String type;
     public String label;
+    public String title;
     public Map<String, Object> defaults;
     public Map<String, String> substitutions;
     public ChartReference(String type, String label,
-        Map<String, Object> defaults, Map<String, String> substitutions) {
+        Map<String, Object> defaults, Map<String, String> substitutions, String title) {
       this.type = type;
       this.label = label;
       this.defaults = defaults;
       this.substitutions = substitutions;
+      this.title = title;
     }
   }
 
@@ -88,7 +90,9 @@ public class ChartReferenceController extends SessionAwareController {
       AbstractBuilder builder = getChartBuilder(type);
       if(builder != null) {
         result.add(new ChartReference(type.name(), type.getLabel(),
-            defaults(builder, type), substMap(builder)));
+            defaults(builder, type), substMap(builder),
+            type.hasUniqueLabel()?type.getLabel():String.format("%s (%s)",
+                type.getLabel(), type.name())));
       }
     }
     Collections.sort(result, new Comparator<ChartReference>() {

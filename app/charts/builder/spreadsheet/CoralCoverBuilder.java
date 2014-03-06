@@ -1,10 +1,6 @@
 package charts.builder.spreadsheet;
 
-import static charts.ChartType.CORAL_HCC;
-import static charts.ChartType.CORAL_JUV;
-import static charts.ChartType.CORAL_MA;
-import static charts.ChartType.CORAL_SCC;
-
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -13,7 +9,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
@@ -23,28 +18,28 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.graphics.CoralCover;
+import charts.jfree.ADSCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-public class CoralCoverBuilder extends JFreeBuilder {
+public abstract class CoralCoverBuilder extends JFreeBuilder {
 
-    private static final String HC_MEAN = "HC mean";
-    private static final String HC_SE = "HC se";
-    private static final String SC_MEAN = "SC mean";
-    private static final String SC_SE = "SC se";
-    private static final String MA_MEAN = "MA mean";
-    private static final String MA_SE = "MA se";
-    private static final String JUV_DEN = "Juv density";
-    private static final String JUV_DEN_SE = "Juv Den (se)";
+    protected static final String HC_MEAN = "HC mean";
+    protected static final String HC_SE = "HC se";
+    protected static final String SC_MEAN = "SC mean";
+    protected static final String SC_SE = "SC se";
+    protected static final String MA_MEAN = "MA mean";
+    protected static final String MA_SE = "MA se";
+    protected static final String JUV_DEN = "Juv density";
+    protected static final String JUV_DEN_SE = "Juv Den (se)";
 
-    private static final ImmutableMap<ChartType, Pair<String, String>> COLUMNS =
-            ImmutableMap.of(CORAL_HCC, Pair.of(HC_MEAN, HC_SE),
-                    CORAL_SCC, Pair.of(SC_MEAN, SC_SE),
-                    CORAL_MA, Pair.of(MA_MEAN, MA_SE),
-                    CORAL_JUV, Pair.of(JUV_DEN, JUV_DEN_SE));
+    protected static final String COVER = "Cover (%)";
+    protected static final String JUVENILE = "Juveniles/m\u00b2";
 
     private static final  ImmutableMap<String, Region> REGIONS = ImmutableMap.of(
              "Wet Tropics", Region.WET_TROPICS,
@@ -52,8 +47,11 @@ public class CoralCoverBuilder extends JFreeBuilder {
              "Whitsunday", Region.MACKAY_WHITSUNDAY,
              "Fitzroy", Region.FITZROY);
 
-    public CoralCoverBuilder() {
-        super(Lists.newArrayList(CORAL_HCC, CORAL_SCC, CORAL_MA, CORAL_JUV));
+    protected abstract String getMeanColumn();
+    protected abstract String getSeColumn();
+
+    public CoralCoverBuilder(ChartType type) {
+      super(type);
     }
 
     @Override
@@ -94,19 +92,19 @@ public class CoralCoverBuilder extends JFreeBuilder {
     }
 
     private boolean containsChart(SpreadsheetDataSource ds, ChartType type) {
-        return getColumn(ds, COLUMNS.get(type).getLeft()) != null &&
-                getColumn(ds, COLUMNS.get(type).getRight()) != null;
+        return getColumn(ds, getMeanColumn()) != null &&
+                getColumn(ds, getSeColumn()) != null;
     }
 
     @Override
-    protected DefaultStatisticalCategoryDataset createDataset(Context ctx) {
+    protected ADSCDataset createDataset(Context ctx) {
       SpreadsheetDataSource ds = ctx.datasource();
       ChartType type = ctx.type();
       Region region = ctx.region();
       if (((region == Region.GBR) || containsRegion(ds, region)) &&
           containsChart(ds, type)) {
-        Integer meanColumn = getColumn(ds, COLUMNS.get(type).getLeft());
-        Integer deviationColumn = getColumn(ds, COLUMNS.get(type).getRight());
+        Integer meanColumn = getColumn(ds, getMeanColumn());
+        Integer deviationColumn = getColumn(ds, getSeColumn());
         if(meanColumn == null || deviationColumn == null) {
             throw new RuntimeException(String.format("data not found for ChartType %s", type.name()));
         }
@@ -122,7 +120,7 @@ public class CoralCoverBuilder extends JFreeBuilder {
             }
         }
         try {
-            DefaultStatisticalCategoryDataset d = new DefaultStatisticalCategoryDataset();
+          ADSCDataset d = new ADSCDataset();
             for(Region r : regions) {
                 for(int row = getRegionStart(ds, r);
                         StringUtils.isNotBlank(ds.select(row, 0).asString());row++) {
@@ -167,8 +165,8 @@ public class CoralCoverBuilder extends JFreeBuilder {
 
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
-      return CoralCover.createChart((DefaultStatisticalCategoryDataset)ctx.dataset(),
-          ctx.type(), ctx.region(), new Dimension(750, 500));
+      return CoralCover.createChart((ADSCDataset)ctx.dataset(), ctx.type(),
+          ctx.region(), new Dimension(750, 500));
     }
 
     @Override
@@ -213,6 +211,13 @@ public class CoralCoverBuilder extends JFreeBuilder {
         throw new RuntimeException(e);
       }
       return sw.toString();
+    }
+
+    @Override
+    public AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.SERIES_COLOR, new Color(187, 34, 51)).
+          build();
     }
 
 }
