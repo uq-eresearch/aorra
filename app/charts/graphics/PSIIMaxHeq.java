@@ -137,7 +137,7 @@ public class PSIIMaxHeq {
             if(plot.getRangeAxis() instanceof PartitionedNumberAxis) {
                 PartitionedNumberAxis vAxis = (PartitionedNumberAxis)plot.getRangeAxis();
                 vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(0,55.0),0.5));
-                vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(85.0,500.0),0.5));
+                vAxis.addPartition(new PartitionedNumberAxis.Partition(new Range(85.0,1005.0),0.5));
             }
         }
         {
