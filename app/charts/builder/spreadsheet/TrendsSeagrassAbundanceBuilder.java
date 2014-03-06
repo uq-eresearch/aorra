@@ -148,40 +148,6 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         }
         return Subregion.valueOf(subregion.toUpperCase());
     }
-/*
-    @Override
-  public Chart build(final SpreadsheetDataSource ds, final ChartType type,
-      final Region region, final Map<String, String> parameters) {
-    final Subregion subregion = getSubregion(ds, parameters);
-    if (subregion == null) {
-      return null;
-    }
-    if (subregion.getRegion() == region) {
-      final ADSCDataset dataset = createDataset(ds, subregion);
-      configurator(ds, type, region,
-          ImmutableMap.of("subregion", subregion.getLabel())).configure(dataset);
-      final Drawable d = TrendsSeagrassAbundance.createChart(dataset, new Dimension(750, 500));
-      return new AbstractChart() {
-        @Override
-        public ChartDescription getDescription() {
-          return new ChartDescription(type, region, parameters, "TSA at "+subregion.getLabel());
-        }
-
-        @Override
-        public Drawable getChart() {
-          return d;
-        }
-
-        @Override
-        public String getCSV() throws UnsupportedFormatException {
-        }
-
-      };
-    } else {
-      return null;
-    }
-  }
-*/
 
   private int
       getSubregionRowStart(SpreadsheetDataSource ds, Subregion subregion) {
