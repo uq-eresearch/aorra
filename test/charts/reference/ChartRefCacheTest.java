@@ -10,7 +10,7 @@ import charts.ChartType;
 public class ChartRefCacheTest {
 
   @Test
-  public void testRefenceCache() {
+  public void testReferenceCache() {
     final ChartRefCache cache = new ChartRefCache();
     try {
       cache.start();
