@@ -182,8 +182,7 @@ public class GroundcoverBuilder extends JFreeBuilder {
           List<String> line = newLinkedList();
           line.add(row);
           for (String col : columnKeys) {
-            line.add(format("%.1f",
-                dataset.getValue(row, col).doubleValue()));
+            line.add(formatNumber("%.1f", dataset.getValue(row, col)));
           }
           csv.write(line);
         }
