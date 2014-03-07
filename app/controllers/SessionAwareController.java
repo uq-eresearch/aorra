@@ -61,4 +61,13 @@ public abstract class SessionAwareController extends Controller {
     return cal;
   }
 
+  protected boolean modified(Date date) throws ParseException {
+    String clientcached = ctx().request().getHeader("If-Modified-Since");
+    if(clientcached != null) {
+      return fromHttpDate(asHttpDate(date)).getTime().after(
+          fromHttpDate(clientcached).getTime());
+    }
+    return true;
+  }
+
 }

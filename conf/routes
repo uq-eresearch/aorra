@@ -92,3 +92,4 @@ GET    /search                      @controllers.Search.search(q: String ?="")
 
 GET    /chartref                    @controllers.ChartReferenceController.index
 GET    /chartref/config             @controllers.ChartReferenceController.config
+GET    /chartref/charts/:chart      @controllers.ChartReferenceController.chart(chart)

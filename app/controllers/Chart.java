@@ -6,7 +6,6 @@ import helpers.FileStoreHelper;
 
 import java.awt.Dimension;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,7 +116,7 @@ public class Chart extends SessionAwareController {
         type, getRegions(request().queryString()), getParameters());
     for (charts.Chart chart : charts) {
       try {
-        if(!modified(chart)) {
+        if(!modified(chart.created())) {
           return status(NOT_MODIFIED);
         }
       } catch(Exception e) {}
@@ -142,15 +141,6 @@ public class Chart extends SessionAwareController {
         return fof != null && fof instanceof FileStore.File;
       }
     });
-  }
-
-  private boolean modified(charts.Chart chart) throws ParseException {
-    String clientcached = ctx().request().getHeader("If-Modified-Since");
-    if(clientcached != null) {
-      return fromHttpDate(asHttpDate(chart.created())).getTime().after(
-          fromHttpDate(clientcached).getTime());
-    }
-    return true;
   }
 
   private String buildUrl(charts.Chart chart, String format, String id)

@@ -21,7 +21,8 @@ import com.google.inject.Singleton;
 @Singleton
 public class DefaultChartBuilder implements ChartBuilder {
 
-  private final List<ChartTypeBuilder> builders = detectBuilders();
+  private static final ImmutableList<ChartTypeBuilder> builders = detectBuilders();
+
   private final DataSourceFactory dataSourceFactory;
 
   @Inject
@@ -70,7 +71,7 @@ public class DefaultChartBuilder implements ChartBuilder {
     return builders;
   }
 
-  private static List<ChartTypeBuilder> detectBuilders() {
+  private static ImmutableList<ChartTypeBuilder> detectBuilders() {
     final ImmutableList.Builder<ChartTypeBuilder> b =
         new ImmutableList.Builder<ChartTypeBuilder>();
     for (Class<? extends ChartTypeBuilder> builderClass : new Reflections(

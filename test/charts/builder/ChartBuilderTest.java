@@ -138,7 +138,7 @@ public class ChartBuilderTest {
       return "test/riparian_2010.xlsx";
     case WETLANDS_LOSS:
     case WETLANDS_REMAINING:
-      return "test/wetlands_2010.xls";
+      return "test/wetlands.xlsx";
     case TOTAL_SUSPENDED_SEDIMENT:
       return "test/TSS.xlsx";
     case CHLOROPHYLL_A:
