@@ -1,13 +1,11 @@
 package charts.builder.spreadsheet;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -16,6 +14,8 @@ import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.ProgressTable;
 
 import com.google.common.collect.ImmutableSet;
@@ -69,36 +69,30 @@ public class ProgressTableBuilder extends AbstractProgressTableBuilder {
 
         @Override
         public String getCSV() throws UnsupportedFormatException {
-          final StringWriter sw = new StringWriter();
-          try {
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            {
-              final List<String> cList = Lists.newLinkedList();
-              cList.add("");
-              for (ProgressTable.Column c : ds.columns) {
-                cList.add(c.header);
-              }
-              csv.write(cList);
-            }
-            for (ProgressTable.Row r : ds.rows) {
-              final List<String> rList = Lists.newLinkedList();
-              rList.add(r.header);
-              for (ProgressTable.Cell c : r.cells) {
-                if (c.condition == null) {
-                  rList.add("");
-                } else {
-                  rList.add(String.format("%s (%s)", c.condition, c.progress));
+          return Csv.write(new CsvWriter() {
+            @Override
+            public void write(CsvListWriter csv) throws IOException {
+              {
+                final List<String> cList = Lists.newLinkedList();
+                cList.add("");
+                for (ProgressTable.Column c : ds.columns) {
+                  cList.add(c.header);
                 }
+                csv.write(cList);
               }
-              csv.write(rList);
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
+              for (ProgressTable.Row r : ds.rows) {
+                final List<String> rList = Lists.newLinkedList();
+                rList.add(r.header);
+                for (ProgressTable.Cell c : r.cells) {
+                  if (c.condition == null) {
+                    rList.add("");
+                  } else {
+                    rList.add(String.format("%s (%s)", c.condition, c.progress));
+                  }
+                }
+                csv.write(rList);
+              }
+            }});
         }
       };
     }

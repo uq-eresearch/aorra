@@ -3,7 +3,6 @@ package charts.builder.spreadsheet;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -11,12 +10,13 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.CoralCover;
 import charts.jfree.ADSCDataset;
 import charts.jfree.Attribute;
@@ -170,47 +170,41 @@ public abstract class CoralCoverBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected String getCsv(JFreeContext ctx) {
-      final StringWriter sw = new StringWriter();
-      try {
-        final DefaultStatisticalCategoryDataset dataset = 
-            (DefaultStatisticalCategoryDataset)ctx.dataset(); 
-        final CsvListWriter csv = new CsvListWriter(sw,
-            CsvPreference.STANDARD_PREFERENCE);
-        @SuppressWarnings("unchecked")
-        List<String> columnKeys = dataset.getColumnKeys();
-        @SuppressWarnings("unchecked")
-        List<String> rowKeys = dataset.getRowKeys();
-        final List<String> heading = ImmutableList
-            .<String> builder()
-            .add(String.format("%s %s", ctx.type().getLabel(), ctx.region()))
-            .addAll(columnKeys)
-            .build();
-        csv.write(heading);
-        for (String row : rowKeys) {
-          {
-            List<String> line = Lists.newLinkedList();
-            line.add(row + " (Mean)");
-            for (String col : columnKeys) {
-              line.add(formatNumber("%.3f", dataset.getMeanValue(row, col)));
+    protected String getCsv(final JFreeContext ctx) {
+      final DefaultStatisticalCategoryDataset dataset = 
+          (DefaultStatisticalCategoryDataset)ctx.dataset();
+      return Csv.write(new CsvWriter() {
+        @Override
+        public void write(CsvListWriter csv) throws IOException {
+          @SuppressWarnings("unchecked")
+          List<String> columnKeys = dataset.getColumnKeys();
+          @SuppressWarnings("unchecked")
+          List<String> rowKeys = dataset.getRowKeys();
+          final List<String> heading = ImmutableList
+              .<String> builder()
+              .add(String.format("%s %s", ctx.type().getLabel(), ctx.region()))
+              .addAll(columnKeys)
+              .build();
+          csv.write(heading);
+          for (String row : rowKeys) {
+            {
+              List<String> line = Lists.newLinkedList();
+              line.add(row + " (Mean)");
+              for (String col : columnKeys) {
+                line.add(formatNumber("%.3f", dataset.getMeanValue(row, col)));
+              }
+              csv.write(line);
             }
-            csv.write(line);
-          }
-          {
-            List<String> line = Lists.newLinkedList();
-            line.add(row + " (Std Dev)");
-            for (String col : columnKeys) {
-              line.add(formatNumber("%.3f", dataset.getStdDevValue(row, col)));
+            {
+              List<String> line = Lists.newLinkedList();
+              line.add(row + " (Std Dev)");
+              for (String col : columnKeys) {
+                line.add(formatNumber("%.3f", dataset.getStdDevValue(row, col)));
+              }
+              csv.write(line);
             }
-            csv.write(line);
           }
-        }
-        csv.close();
-      } catch (IOException e) {
-        // How on earth would you get an IOException with a StringWriter?
-        throw new RuntimeException(e);
-      }
-      return sw.toString();
+        }});
     }
 
     @Override

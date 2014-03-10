@@ -5,20 +5,20 @@ import static java.lang.String.format;
 
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.Groundcover;
 
 import com.google.common.collect.ImmutableList;
@@ -162,35 +162,28 @@ public class GroundcoverBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected String getCsv(JFreeContext ctx) {
-      
-      final StringWriter sw = new StringWriter();
-      try {
-        final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
-        final CsvListWriter csv = new CsvListWriter(sw,
-            CsvPreference.STANDARD_PREFERENCE);
-        @SuppressWarnings("unchecked")
-        List<String> columnKeys = dataset.getColumnKeys();
-        @SuppressWarnings("unchecked")
-        List<String> rowKeys = dataset.getRowKeys();
-        final List<String> heading = ImmutableList.<String>builder()
-            .add(String.format("%s %s", ctx.region(), ctx.type()))
-            .addAll(columnKeys)
-            .build();
-        csv.write(heading);
-        for (String row : rowKeys) {
-          List<String> line = newLinkedList();
-          line.add(row);
-          for (String col : columnKeys) {
-            line.add(formatNumber("%.1f", dataset.getValue(row, col)));
+    protected String getCsv(final JFreeContext ctx) {
+      final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+      return Csv.write(new CsvWriter() {
+        @Override
+        public void write(CsvListWriter csv) throws IOException {
+          @SuppressWarnings("unchecked")
+          List<String> columnKeys = dataset.getColumnKeys();
+          @SuppressWarnings("unchecked")
+          List<String> rowKeys = dataset.getRowKeys();
+          final List<String> heading = ImmutableList.<String>builder()
+              .add(String.format("%s %s", ctx.region(), ctx.type()))
+              .addAll(columnKeys)
+              .build();
+          csv.write(heading);
+          for (String row : rowKeys) {
+            List<String> line = newLinkedList();
+            line.add(row);
+            for (String col : columnKeys) {
+              line.add(formatNumber("%.1f", dataset.getValue(row, col)));
+            }
+            csv.write(line);
           }
-          csv.write(line);
-        }
-        csv.close();
-      } catch (IOException e) {
-        // How on earth would you get an IOException with a StringWriter?
-        throw new RuntimeException(e);
-      }
-      return sw.toString();
+        }});
     }
 }

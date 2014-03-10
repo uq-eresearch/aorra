@@ -1,10 +1,8 @@
 package charts.builder.spreadsheet;
 
 import java.io.IOException;
-import java.io.StringWriter;
 
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -14,6 +12,8 @@ import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.BeerCoaster;
 import charts.graphics.BeerCoaster.Category;
 import charts.graphics.BeerCoaster.Condition;
@@ -70,26 +70,20 @@ public class MarineBuilder extends AbstractBuilder {
 
         @Override
         public String getCSV() {
-          final StringWriter sw = new StringWriter();
-          try {
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            csv.write("Overall marine condition", beercoaster
-                .getOverallCondition().getLabel());
-            for (Category c : Category.values()) {
-              csv.write(c.getName(), beercoaster.getCondition(c).getLabel());
-              for (Indicator i : Indicator.values()) {
-                if (i.getCategory() == c) {
-                  csv.write(i.getName(), beercoaster.getCondition(i).getLabel());
+          return Csv.write(new CsvWriter() {
+            @Override
+            public void write(CsvListWriter csv) throws IOException {
+              csv.write("Overall marine condition", beercoaster
+                  .getOverallCondition().getLabel());
+              for (Category c : Category.values()) {
+                csv.write(c.getName(), beercoaster.getCondition(c).getLabel());
+                for (Indicator i : Indicator.values()) {
+                  if (i.getCategory() == c) {
+                    csv.write(i.getName(), beercoaster.getCondition(i).getLabel());
+                  }
                 }
               }
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
+            }});
         }
       };
     } else {

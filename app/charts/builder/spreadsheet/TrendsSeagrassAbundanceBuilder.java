@@ -9,7 +9,6 @@ import static org.apache.commons.lang3.StringUtils.strip;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -19,13 +18,14 @@ import java.util.Set;
 
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import play.Logger;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.TrendsSeagrassAbundance;
 import charts.jfree.ADSCDataset;
 import charts.jfree.Attribute;
@@ -223,38 +223,32 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
   }
 
   @Override
-  protected String getCsv(JFreeContext ctx) {
-    final StringWriter sw = new StringWriter();
-    try {
-      final StatisticalCategoryDataset dataset = (StatisticalCategoryDataset)ctx.dataset();
-      final CsvListWriter csv = new CsvListWriter(sw,
-          CsvPreference.STANDARD_PREFERENCE);
-      @SuppressWarnings("unchecked")
-      List<String> columnKeys = dataset.getColumnKeys();
-      @SuppressWarnings("unchecked")
-      List<Subregion> rowKeys = dataset.getRowKeys();
-      final List<String> heading = ImmutableList.<String> builder()
-          .add(format("%s %s %s", ctx.type(), ctx.region(),
-              rowKeys.get(0).getLabel()))
-          .add("Mean")
-          .add("Std Dev")
-          .build();
-      csv.write(heading);
-      for (String col : columnKeys) {
-        List<String> line = newLinkedList();
-        line.add(col);
-        line.add(format("%.3f",
-            dataset.getMeanValue(rowKeys.get(0), col).doubleValue()));
-        line.add(format("%.3f",
-            dataset.getStdDevValue(rowKeys.get(0), col).doubleValue()));
-        csv.write(line);
-      }
-      csv.close();
-    } catch (IOException e) {
-      // How on earth would you get an IOException with a StringWriter?
-      throw new RuntimeException(e);
-    }
-    return sw.toString();
+  protected String getCsv(final JFreeContext ctx) {
+    final StatisticalCategoryDataset dataset = (StatisticalCategoryDataset)ctx.dataset();
+    return Csv.write(new CsvWriter() {
+      @Override
+      public void write(CsvListWriter csv) throws IOException {
+        @SuppressWarnings("unchecked")
+        List<String> columnKeys = dataset.getColumnKeys();
+        @SuppressWarnings("unchecked")
+        List<Subregion> rowKeys = dataset.getRowKeys();
+        final List<String> heading = ImmutableList.<String> builder()
+            .add(format("%s %s %s", ctx.type(), ctx.region(),
+                rowKeys.get(0).getLabel()))
+            .add("Mean")
+            .add("Std Dev")
+            .build();
+        csv.write(heading);
+        for (String col : columnKeys) {
+          List<String> line = newLinkedList();
+          line.add(col);
+          line.add(format("%.3f",
+              dataset.getMeanValue(rowKeys.get(0), col).doubleValue()));
+          line.add(format("%.3f",
+              dataset.getStdDevValue(rowKeys.get(0), col).doubleValue()));
+          csv.write(line);
+        }
+      }});
   }
 
   @Override

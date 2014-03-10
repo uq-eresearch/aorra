@@ -3,19 +3,19 @@ package charts.builder.spreadsheet;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import play.Logger;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.AnnualRainfall;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
@@ -129,21 +129,15 @@ public class AnnualRainfallBuilder extends JFreeBuilder {
 
   @Override
   protected String getCsv(JFreeContext ctx) {
-    CategoryDataset dataset = (CategoryDataset)ctx.dataset();
-    final StringWriter sw = new StringWriter();
-    try {
-      final CsvListWriter csv = new CsvListWriter(sw,
-          CsvPreference.STANDARD_PREFERENCE);
-      csv.write("Year", "Rainfall (mm)");
-      for (int i = 0; i < dataset.getColumnCount(); i++) {
-        csv.write(dataset.getColumnKey(i), dataset.getValue(0, i));
-      }
-      csv.close();
-    } catch (IOException e) {
-      // How on earth would IOException occur with a StringWriter?
-      throw new RuntimeException(e);
-    }
-    return sw.toString();
+    final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+    return Csv.write(new CsvWriter() {
+      @Override
+      public void write(CsvListWriter csv) throws IOException {
+        csv.write("Year", "Rainfall (mm)");
+        for (int i = 0; i < dataset.getColumnCount(); i++) {
+          csv.write(dataset.getColumnKey(i), dataset.getValue(0, i));
+        }
+      }});
   }
 
   @Override

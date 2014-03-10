@@ -10,7 +10,6 @@ import static org.apache.commons.lang.StringUtils.isBlank;
 
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,12 +17,13 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.PSIIMaxHeq;
 import charts.graphics.PSIIMaxHeq.Condition;
 import charts.jfree.ADCDataset;
@@ -142,44 +142,38 @@ public class PSIIMaxHeqBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected String getCsv(JFreeContext ctx) {
-      final StringWriter sw = new StringWriter();
-      try {
-        final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
-        final CsvListWriter csv = new CsvListWriter(sw,
-            CsvPreference.STANDARD_PREFERENCE);
-        @SuppressWarnings("unchecked")
-        List<String> columnKeys = dataset.getColumnKeys();
-        @SuppressWarnings("unchecked")
-        List<Condition> rowKeys = dataset.getRowKeys();
-        final List<String> heading = ImmutableList.<String>builder()
-            .add(format("%s %s", ctx.region(), ctx.type().getLabel()))
-            .add("Region")
-            .add("Subregion")
-            .add("Period")
-            .add("ng/L")
-            .add("Rating")
-            .build();
-        csv.write(heading);
-        for (String col : columnKeys) {
-          List<String> line = newLinkedList();
-          line.add("");
-          line.addAll(asList(col.split("\\_\\|\\|\\_")));
-          for (Condition row : rowKeys) {
-            final Number n = dataset.getValue(row, col);
-            if (n == null)
-              continue;
-            line.add(format("%.1f", n.doubleValue()));
-            line.add(row.getLabel());
+    protected String getCsv(final JFreeContext ctx) {
+      final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+      return Csv.write(new CsvWriter() {
+        @Override
+        public void write(CsvListWriter csv) throws IOException {
+          @SuppressWarnings("unchecked")
+          List<String> columnKeys = dataset.getColumnKeys();
+          @SuppressWarnings("unchecked")
+          List<Condition> rowKeys = dataset.getRowKeys();
+          final List<String> heading = ImmutableList.<String>builder()
+              .add(format("%s %s", ctx.region(), ctx.type().getLabel()))
+              .add("Region")
+              .add("Subregion")
+              .add("Period")
+              .add("ng/L")
+              .add("Rating")
+              .build();
+          csv.write(heading);
+          for (String col : columnKeys) {
+            List<String> line = newLinkedList();
+            line.add("");
+            line.addAll(asList(col.split("\\_\\|\\|\\_")));
+            for (Condition row : rowKeys) {
+              final Number n = dataset.getValue(row, col);
+              if (n == null)
+                continue;
+              line.add(format("%.1f", n.doubleValue()));
+              line.add(row.getLabel());
+            }
+            csv.write(line);
           }
-          csv.write(line);
-        }
-        csv.close();
-      } catch (IOException e) {
-        // How on earth would you get an IOException with a StringWriter?
-        throw new RuntimeException(e);
-      }
-      return sw.toString();
+        }});
     }
 
 }

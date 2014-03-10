@@ -2,20 +2,20 @@ package charts.builder.spreadsheet;
 
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.RiparianFLT;
 
 public class RiparianFLTBuilder extends JFreeBuilder {
@@ -81,24 +81,18 @@ public class RiparianFLTBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected String getCsv(JFreeContext ctx) {
-      CategoryDataset dataset = (CategoryDataset)ctx.dataset();
-      final StringWriter sw = new StringWriter();
-      try {
-        final CsvListWriter csv = new CsvListWriter(sw,
-            CsvPreference.STANDARD_PREFERENCE);
-        csv.writeHeader((ctx.region() == Region.GBR?"Region":"Catchment"), TITLE);
-        for(int cat=0;cat<dataset.getColumnCount();cat++) {
-            Object o = dataset.getColumnKey(cat);
-            Number n = dataset.getValue(0, cat);
-            csv.write(o,n);
-        }
-        csv.close();
-      } catch (IOException e) {
-        // How on earth would you get an IOException with a StringWriter?
-        throw new RuntimeException(e);
-      }
-      return sw.toString();
+    protected String getCsv(final JFreeContext ctx) {
+      final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
+      return Csv.write(new CsvWriter() {
+        @Override
+        public void write(CsvListWriter csv) throws IOException {
+          csv.writeHeader((ctx.region() == Region.GBR?"Region":"Catchment"), TITLE);
+          for(int cat=0;cat<dataset.getColumnCount();cat++) {
+              Object o = dataset.getColumnKey(cat);
+              Number n = dataset.getValue(0, cat);
+              csv.write(o,n);
+          }
+        }});
     }
 
 }

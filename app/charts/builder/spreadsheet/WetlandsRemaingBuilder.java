@@ -2,7 +2,6 @@ package charts.builder.spreadsheet;
 
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.util.List;
 
@@ -10,13 +9,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.WetlandsRemaing;
 
 public class WetlandsRemaingBuilder extends JFreeBuilder {
@@ -96,25 +96,19 @@ public class WetlandsRemaingBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected String getCsv(JFreeContext ctx) {
+    protected String getCsv(final JFreeContext ctx) {
       final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
-      final StringWriter sw = new StringWriter();
-      try {
-        final CsvListWriter csv = new CsvListWriter(sw,
-            CsvPreference.STANDARD_PREFERENCE);
-        csv.writeHeader((ctx.region() == Region.GBR?"Region":"Catchment"),
-            (String)dataset.getRowKey(0), (String)dataset.getRowKey(1));
-        DecimalFormat f = new DecimalFormat(".##");
-        for(int cat=0;cat<dataset.getColumnCount();cat++) {
-            csv.write(dataset.getColumnKey(cat), f.format(dataset.getValue(0, cat)),
-                f.format(dataset.getValue(1, cat)));
-        }
-        csv.close();
-      } catch (IOException e) {
-        // How on earth would you get an IOException with a StringWriter?
-        throw new RuntimeException(e);
-      }
-      return sw.toString();
+      return Csv.write(new CsvWriter() {
+        @Override
+        public void write(CsvListWriter csv) throws IOException {
+          csv.writeHeader((ctx.region() == Region.GBR?"Region":"Catchment"),
+              (String)dataset.getRowKey(0), (String)dataset.getRowKey(1));
+          DecimalFormat f = new DecimalFormat(".##");
+          for(int cat=0;cat<dataset.getColumnCount();cat++) {
+              csv.write(dataset.getColumnKey(cat), f.format(dataset.getValue(0, cat)),
+                  f.format(dataset.getValue(1, cat)));
+          }
+        }});
     }
 
 }

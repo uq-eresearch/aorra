@@ -5,18 +5,18 @@ import static java.lang.String.format;
 
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.ManagementPracticeSystems;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
@@ -90,40 +90,34 @@ public abstract class ManagementPracticeBuilder extends JFreeBuilder {
   }
 
   @Override
-  protected String getCsv(JFreeContext ctx) {
+  protected String getCsv(final JFreeContext ctx) {
     final ADCDataset dataset = (ADCDataset)ctx.dataset();
-    final StringWriter sw = new StringWriter();
-    try {
-      final CsvListWriter csv = new CsvListWriter(sw,
-          CsvPreference.STANDARD_PREFERENCE);
-      @SuppressWarnings("unchecked")
-      List<String> columnKeys = dataset.getColumnKeys();
-      @SuppressWarnings("unchecked")
-      List<String> rowKeys = dataset.getRowKeys();
-      final List<String> heading = ImmutableList.<String>builder()
-          .add(format("%s %s practices", ctx.region(), ctx.type()))
-          .addAll(rowKeys)
-          .build();
-      csv.write(heading);
-      for (String col : columnKeys) {
-        List<String> line = newLinkedList();
-        line.add(col);
-        for (String row : rowKeys) {
-          Number n = dataset.getValue(row, col);
-          if(n != null) {
-            line.add(format("%.1f",n.doubleValue() * 100));
-          } else {
-            line.add("");
+    return Csv.write(new CsvWriter() {
+      @Override
+      public void write(CsvListWriter csv) throws IOException {
+        @SuppressWarnings("unchecked")
+        List<String> columnKeys = dataset.getColumnKeys();
+        @SuppressWarnings("unchecked")
+        List<String> rowKeys = dataset.getRowKeys();
+        final List<String> heading = ImmutableList.<String>builder()
+            .add(format("%s %s practices", ctx.region(), ctx.type()))
+            .addAll(rowKeys)
+            .build();
+        csv.write(heading);
+        for (String col : columnKeys) {
+          List<String> line = newLinkedList();
+          line.add(col);
+          for (String row : rowKeys) {
+            Number n = dataset.getValue(row, col);
+            if(n != null) {
+              line.add(format("%.1f",n.doubleValue() * 100));
+            } else {
+              line.add("");
+            }
           }
+          csv.write(line);
         }
-        csv.write(line);
-      }
-      csv.close();
-    } catch (IOException e) {
-      // How on earth would you get an IOException with a StringWriter?
-      throw new RuntimeException(e);
-    }
-    return sw.toString();
+      }});
   }
 
   protected abstract ManagementPracticeSystems renderer();

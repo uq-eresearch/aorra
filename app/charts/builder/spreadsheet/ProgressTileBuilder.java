@@ -3,13 +3,11 @@ package charts.builder.spreadsheet;
 import static com.google.common.collect.Lists.newArrayList;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.AbstractChart;
 import charts.Chart;
@@ -18,6 +16,8 @@ import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.ProgressTable;
 import charts.graphics.ProgressTable.Indicator;
 
@@ -73,34 +73,28 @@ public class ProgressTileBuilder extends AbstractProgressTableBuilder {
 
         @Override
         public String getCSV() throws UnsupportedFormatException {
-          final StringWriter sw = new StringWriter();
-          try {
-            final CsvListWriter csv = new CsvListWriter(sw,
-                CsvPreference.STANDARD_PREFERENCE);
-            {
-              final List<String> cList = Lists.newLinkedList();
-              cList.add("Indicator");
-              cList.add(indicator.getLabel());
-              csv.write(cList);
-            }
-            {
-              final List<String> cList = Lists.newLinkedList();
-              cList.add("Progress");
-              cList.add(cell.progress.toString());
-              csv.write(cList);
-            }
-            {
-              final List<String> cList = Lists.newLinkedList();
-              cList.add("Condition");
-              cList.add(cell.condition.toString());
-              csv.write(cList);
-            }
-            csv.close();
-          } catch (IOException e) {
-            // How on earth would you get an IOException with a StringWriter?
-            throw new RuntimeException(e);
-          }
-          return sw.toString();
+          return Csv.write(new CsvWriter() {
+            @Override
+            public void write(CsvListWriter csv) throws IOException {
+              {
+                final List<String> cList = Lists.newLinkedList();
+                cList.add("Indicator");
+                cList.add(indicator.getLabel());
+                csv.write(cList);
+              }
+              {
+                final List<String> cList = Lists.newLinkedList();
+                cList.add("Progress");
+                cList.add(cell.progress.toString());
+                csv.write(cList);
+              }
+              {
+                final List<String> cList = Lists.newLinkedList();
+                cList.add("Condition");
+                cList.add(cell.condition.toString());
+                csv.write(cList);
+              }
+            }});
         }
       };
     } catch (MissingDataException e) {

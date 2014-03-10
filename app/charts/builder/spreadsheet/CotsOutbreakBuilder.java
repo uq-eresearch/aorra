@@ -3,7 +3,6 @@ package charts.builder.spreadsheet;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -13,12 +12,13 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesDataItem;
 import org.jfree.data.time.Year;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.CotsOutbreak;
 import charts.jfree.ATSCollection;
 import charts.jfree.Attribute;
@@ -95,25 +95,19 @@ public class CotsOutbreakBuilder extends JFreeBuilder {
 
   @SuppressWarnings("unchecked")
   @Override
-  protected String getCsv(JFreeContext ctx) {
-    final StringWriter sw = new StringWriter();
-    try {
-      final CsvListWriter csv = new CsvListWriter(sw,
-          CsvPreference.STANDARD_PREFERENCE);
-      final DateFormat yearOnly = new SimpleDateFormat("YYYY");
-      csv.write("Year", "Outbreaks");
-      final List<TimeSeriesDataItem> items = ((ATSCollection)ctx.dataset()).getSeries(0)
-          .getItems();
-      for (TimeSeriesDataItem i : items) {
-        csv.write(yearOnly.format(i.getPeriod().getStart()), i.getValue()
-            .intValue() + "");
-      }
-      csv.close();
-    } catch (IOException e) {
-      // How on earth would you get an IOException with a StringWriter?
-      throw new RuntimeException(e);
-    }
-    return sw.toString();
+  protected String getCsv(final JFreeContext ctx) {
+    return Csv.write(new CsvWriter() {
+      @Override
+      public void write(CsvListWriter csv) throws IOException {
+        final DateFormat yearOnly = new SimpleDateFormat("YYYY");
+        csv.write("Year", "Outbreaks");
+        final List<TimeSeriesDataItem> items = ((ATSCollection)ctx.dataset()).getSeries(0)
+            .getItems();
+        for (TimeSeriesDataItem i : items) {
+          csv.write(yearOnly.format(i.getPeriod().getStart()), i.getValue()
+              .intValue() + "");
+        }
+      }});
   }
 
 }

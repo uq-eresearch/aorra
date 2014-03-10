@@ -4,19 +4,19 @@ import static charts.ChartType.RIPARIAN_FOREST_LOSS;
 
 import java.awt.Dimension;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.RiparianFL;
 
 public class RiparianFLBuilder extends JFreeBuilder {
@@ -94,21 +94,15 @@ public class RiparianFLBuilder extends JFreeBuilder {
     @Override
     protected String getCsv(JFreeContext ctx) {
       final CategoryDataset dataset = (CategoryDataset)ctx.dataset();
-      final StringWriter sw = new StringWriter();
-      try {
-        final CsvListWriter csv = new CsvListWriter(sw,
-            CsvPreference.STANDARD_PREFERENCE);
-        csv.writeHeader(TITLE, (String)dataset.getRowKey(0), (String)dataset.getRowKey(1));
-        for(int cat=0;cat<dataset.getColumnCount();cat++) {
-            csv.write(dataset.getColumnKey(cat),
-                    dataset.getValue(0, cat), dataset.getValue(1, cat));
-        }
-        csv.close();
-      } catch (IOException e) {
-        // How on earth would you get an IOException with a StringWriter?
-        throw new RuntimeException(e);
-      }
-      return sw.toString();
+      return Csv.write(new CsvWriter() {
+        @Override
+        public void write(CsvListWriter csv) throws IOException {
+          csv.writeHeader(TITLE, (String)dataset.getRowKey(0), (String)dataset.getRowKey(1));
+          for(int cat=0;cat<dataset.getColumnCount();cat++) {
+              csv.write(dataset.getColumnKey(cat),
+                      dataset.getValue(0, cat), dataset.getValue(1, cat));
+          }
+        }});
     }
 
 }

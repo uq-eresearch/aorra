@@ -4,17 +4,17 @@ import static com.google.common.collect.Lists.newLinkedList;
 import static java.lang.String.format;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.io.CsvListWriter;
-import org.supercsv.prefs.CsvPreference;
 
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.csv.Csv;
+import charts.builder.csv.CsvWriter;
 import charts.graphics.MarineBarChart;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
@@ -69,36 +69,30 @@ public abstract class MarineBarChartBuilder extends JFreeBuilder {
   }
 
   @Override
-  protected String getCsv(JFreeContext ctx) {
-    ADCDataset dataset = (ADCDataset)ctx.dataset();
-    final StringWriter sw = new StringWriter();
-    try {
-      final CsvListWriter csv = new CsvListWriter(sw,
-          CsvPreference.STANDARD_PREFERENCE);
-      @SuppressWarnings("unchecked")
-      List<String> columnKeys = dataset.getColumnKeys();
-      @SuppressWarnings("unchecked")
-      List<String> rowKeys = dataset.getRowKeys();
-      final List<String> heading = ImmutableList.<String>builder()
-          .add(format("%s %s", ctx.region().getProperName(), ctx.type().getLabel()))
-          .addAll(columnKeys)
-          .build();
-      csv.write(heading);
-      for (String row : rowKeys) {
-        List<String> line = newLinkedList();
-        line.add(row);
-        for (String col : columnKeys) {
-          final Number n = dataset.getValue(row, col);
-          line.add(n == null ? "" : format("%.1f", n.doubleValue()));
+  protected String getCsv(final JFreeContext ctx) {
+    final ADCDataset dataset = (ADCDataset)ctx.dataset();
+    return Csv.write(new CsvWriter() {
+      @Override
+      public void write(CsvListWriter csv) throws IOException {
+        @SuppressWarnings("unchecked")
+        List<String> columnKeys = dataset.getColumnKeys();
+        @SuppressWarnings("unchecked")
+        List<String> rowKeys = dataset.getRowKeys();
+        final List<String> heading = ImmutableList.<String>builder()
+            .add(format("%s %s", ctx.region().getProperName(), ctx.type().getLabel()))
+            .addAll(columnKeys)
+            .build();
+        csv.write(heading);
+        for (String row : rowKeys) {
+          List<String> line = newLinkedList();
+          line.add(row);
+          for (String col : columnKeys) {
+            final Number n = dataset.getValue(row, col);
+            line.add(n == null ? "" : format("%.1f", n.doubleValue()));
+          }
+          csv.write(line);
         }
-        csv.write(line);
-      }
-      csv.close();
-    } catch (IOException e) {
-      // How on earth would you get an IOException with a StringWriter?
-      throw new RuntimeException(e);
-    }
-    return sw.toString();
+      }});
   }
 
 }
