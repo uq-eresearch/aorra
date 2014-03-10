@@ -1,15 +1,14 @@
 package charts.builder.spreadsheet;
 
 import static com.google.common.collect.Lists.newLinkedList;
-import static java.lang.String.format;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
 import charts.ChartType;
@@ -20,15 +19,19 @@ import charts.builder.Value;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
 import charts.graphics.Groundcover;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-public class GroundcoverBuilder extends JFreeBuilder {
+public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
 
-    private static final String GC_SHEETNAME = "avgCover_ordered";
-    private static final String GCB50_SHEETNAME = "areaBelow50_ordered";
+  protected static final String GC_SHEETNAME = "avgCover_ordered";
+  protected static final String GCB50_SHEETNAME = "areaBelow50_ordered";
 
     private static final ImmutableMap<Region, List<Integer>> ROWS =
             new ImmutableMap.Builder<Region, List<Integer>>()
@@ -40,8 +43,33 @@ public class GroundcoverBuilder extends JFreeBuilder {
               .put(Region.BURNETT_MARY, Lists.newArrayList(18,19,20,21,22))
               .build();
 
-    public GroundcoverBuilder() {
-        super(Lists.newArrayList(ChartType.GROUNDCOVER, ChartType.GROUNDCOVER_BELOW_50));
+    private static final SubstitutionKey FIRST_YEAR = new SubstitutionKey("firstYear",
+        "first year of groundcover data in the spreadsheet",
+        new SubstitutionKey.Val() {
+          @Override
+          public String value(Context ctx) {
+            try {
+              return getFirstYear(ctx.datasource());
+            } catch (MissingDataException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        });
+    private static final SubstitutionKey LAST_YEAR = new SubstitutionKey("lastYear",
+        "last year of groundcover data in the spreadsheet",
+        new SubstitutionKey.Val() {
+          @Override
+          public String value(Context ctx) {
+            try {
+              return getLastYear(ctx.datasource());
+            } catch (MissingDataException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        });
+
+    public AbstractGroundCoverBuilder(ChartType type) {
+      super(type);
     }
 
     @Override
@@ -60,62 +88,16 @@ public class GroundcoverBuilder extends JFreeBuilder {
         return false;
     }
 
-    private String valueAxisLabel(ChartType type) {
-        if(type == ChartType.GROUNDCOVER) {
-            return "Groundcover (%)";
-        } else if(type == ChartType.GROUNDCOVER_BELOW_50) {
-            return "Area (%)";
-        } else {
-            throw new RuntimeException(format("type %s not implemented", type.name()));
-        }
-    }
-
-    private String getTitle(SpreadsheetDataSource ds, ChartType type, Region region) {
-        try {
-            String start = getStartYear(ds);
-            String last = getLastYear(ds);
-            if(type == ChartType.GROUNDCOVER) {
-                if(region == Region.GBR) {
-                    return format("Mean late dry season groundcover in the Great Barrier Reef" +
-                        " catchment and regions for %s-%s", start, last);
-                } else {
-                    return format("Mean late dry season groundcover in the %s" +
-                        " catchment for %s-%s", region.getProperName(), start, last);
-                }
-            } else if(type == ChartType.GROUNDCOVER_BELOW_50) {
-                String s = "Percentage of the reporting area with groundcover below 50 per cent in the ";
-                if(region == Region.GBR) {
-                    return format(s+"Great Barrier Reef catchment and regions for %s-%s", start, last);
-                } else {
-                    return format(s+"%s catchment for %s-%s", region.getProperName(), start, last);
-                }
-            }
-        } catch(MissingDataException e) {
-            throw new RuntimeException(e);
-        }
-        throw new RuntimeException(String.format("getTitle not implemented for " +
-                "region %s chart type %s", region, type));
-    }
-
     @Override
-    protected CategoryDataset createDataset(Context ctx) {
+    protected ADCDataset createDataset(Context ctx) {
       SpreadsheetDataSource ds = ctx.datasource();
-      ChartType type = ctx.type();
       Region region = ctx.region();
       if(!ROWS.containsKey(region)) {
         return null;
       }
-      if(type == ChartType.GROUNDCOVER &&
-          !StringUtils.equalsIgnoreCase(ds.getDefaultSheet(), GC_SHEETNAME)) {
-        return null;
-      }
-      if(type == ChartType.GROUNDCOVER_BELOW_50 &&
-          !StringUtils.equalsIgnoreCase(ds.getDefaultSheet(), GCB50_SHEETNAME)) {
-        return null;
-      }
       List<Integer> rows = ROWS.get(region);
       try {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        ADCDataset dataset = new ADCDataset();
         for(Integer row : rows) {
           row--;
           String rowName = ds.select(row, 0).toString();
@@ -134,15 +116,26 @@ public class GroundcoverBuilder extends JFreeBuilder {
       }
     }
 
-    public String getStartYear(SpreadsheetDataSource ds) throws MissingDataException {
+    @Override
+    public AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.X_AXIS_LABEL, "Year").
+          put(Attribute.SERIES_COLORS, new Color[] {
+              new Color(29,107,171), new Color(134,177,56),
+              new Color(87,88,71), new Color(150,116,52),
+              new Color(103,42,4), new Color(208,162,33)}).
+          build();
+    }
+
+    private static String getFirstYear(SpreadsheetDataSource ds) throws MissingDataException {
         return ds.select(0, 2).asInteger() + "";
     }
 
-    public String getLastYear(SpreadsheetDataSource ds) throws MissingDataException {
+    private static String getLastYear(SpreadsheetDataSource ds) throws MissingDataException {
         return ds.select(0, getLastColumn(ds)).asInteger() + "";
     }
 
-    public int getLastColumn(SpreadsheetDataSource ds) throws MissingDataException {
+    private static int getLastColumn(SpreadsheetDataSource ds) throws MissingDataException {
       for(int col=ds.getColumns(0)-1;col > 0;col--) {
         if(ds.select(0, col).asInteger() != null) {
           return col;
@@ -154,11 +147,7 @@ public class GroundcoverBuilder extends JFreeBuilder {
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
       return Groundcover.createChart(
-          (CategoryDataset)ctx.dataset(),
-          getTitle(ctx.datasource(), ctx.type(), ctx.region()),
-          valueAxisLabel(ctx.type()),
-          ctx.type(),
-          new Dimension(750,500));
+          (ADCDataset)ctx.dataset(), ctx.type(), new Dimension(750,500));
     }
 
     @Override
@@ -185,5 +174,11 @@ public class GroundcoverBuilder extends JFreeBuilder {
             csv.write(line);
           }
         }});
+    }
+
+    @Override
+    public Set<SubstitutionKey> substitutionKeys() {
+      return ImmutableSet.<SubstitutionKey>builder().
+          addAll(super.substitutionKeys()).add(FIRST_YEAR).add(LAST_YEAR).build();
     }
 }

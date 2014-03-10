@@ -77,6 +77,9 @@ public class ChartBuilderTest {
     case CORAL_JUV:
     case CORAL_MA:
       return Region.WET_TROPICS;
+    case GROUNDCOVER:
+    case GROUNDCOVER_BELOW_50:
+      return Region.WET_TROPICS;
     //$CASES-OMITTED$
     default:
       return Region.GBR;
@@ -111,8 +114,10 @@ public class ChartBuilderTest {
     case TTT_SEDIMENT:
       return "test/tracking_towards_targets.xlsx";
     case GROUNDCOVER:
+    case GROUNDCOVER_GBR:
       return "test/groundcover.xlsx";
     case GROUNDCOVER_BELOW_50:
+    case GROUNDCOVER_BELOW_50_GBR:
       return "test/groundcover_below_50.xlsx";
     case LOADS:
     case LOADS_DIN:

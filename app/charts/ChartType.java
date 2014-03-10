@@ -20,6 +20,8 @@ public enum ChartType {
     TSA("Trends in seagrass abundance"),
     GROUNDCOVER("Groundcover"),
     GROUNDCOVER_BELOW_50("Groundcover below 50%"),
+    GROUNDCOVER_GBR("Groundcover"),
+    GROUNDCOVER_BELOW_50_GBR("Groundcover below 50%"),
     LOADS("Loads"),
     LOADS_DIN("Loads Dissolved Inorganic nitrogen"),
     LOADS_TN("Loads Total nitrogen"),

@@ -22,28 +22,30 @@ import org.jfree.ui.RectangleInsets;
 
 import charts.ChartType;
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 public class Groundcover {
 
-    public static Drawable createChart(final CategoryDataset dataset, String title,
-            String valueAxisLabel, ChartType type, Dimension dimension) {
-        JFreeChart chart = ChartFactory.createLineChart(title,
-                "Year", valueAxisLabel, dataset, PlotOrientation.VERTICAL, false, false, false);
+    public static Drawable createChart(final ADCDataset dataset,
+        ChartType type, Dimension dimension) {
+        JFreeChart chart = ChartFactory.createLineChart(
+            dataset.get(Attribute.TITLE),
+            dataset.get(Attribute.X_AXIS_LABEL),
+            dataset.get(Attribute.Y_AXIS_LABEL),
+            dataset, PlotOrientation.VERTICAL, false, false, false);
         final CategoryPlot plot = chart.getCategoryPlot();
         plot.setBackgroundPaint(Color.white);
         plot.setRangeGridlinesVisible(true);
         plot.setRangeGridlinePaint(Color.lightGray);
         plot.setRangeGridlineStroke(new BasicStroke(1));
         CategoryItemRenderer r = plot.getRenderer();
-        r.setSeriesPaint(0, new Color(29,107,171));
-        r.setSeriesPaint(1, new Color(134,177,56));
-        r.setSeriesPaint(2, new Color(87,88,71));
-        r.setSeriesPaint(3, new Color(150,116,52));
-        r.setSeriesPaint(4, new Color(103,42,4));
-        r.setSeriesPaint(5, new Color(208,162,33));
+        for(int i = 0;i<dataset.get(Attribute.SERIES_COLORS).length;i++) {
+          r.setSeriesPaint(i, dataset.get(Attribute.SERIES_COLORS)[i]);
+        }
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
-        if(type == ChartType.GROUNDCOVER_BELOW_50) {
+        if(type == ChartType.GROUNDCOVER_BELOW_50 || type == ChartType.GROUNDCOVER_BELOW_50_GBR) {
           rangeAxis.setTickUnit(new NumberTickUnit(
               (Math.round(Math.floor(getMaxValue(dataset)))/10)+1, new DecimalFormat("0")));
         } else {

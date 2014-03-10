@@ -83,8 +83,4 @@ public abstract class JFreeBuilder extends AbstractBuilder {
     return dataset != null?new JFreeContext(datasource, type, region, parameters, dataset) : null;
   }
 
-  protected Dataset getDataset(Context context) {
-    return ((JFreeContext)context).dataset();
-  }
-
 }
