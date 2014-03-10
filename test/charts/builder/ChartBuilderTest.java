@@ -130,9 +130,8 @@ public class ChartBuilderTest {
     case CORAL_JUV_GBR:
       return "test/coral.xls";
     case PSII_MAX_HEQ:
-      return "test/PSII.xlsx";
     case PSII_TRENDS:
-      return "test/Max conc.xlsx";
+      return "test/pesticides.xlsx";
     case RIPARIAN_FOREST_LOSS_TOTAL:
     case RIPARIAN_FOREST_LOSS:
       return "test/riparian_2010.xlsx";
