@@ -12,18 +12,18 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.GroupedStackedBarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.KeyToGroupMap;
-import org.jfree.data.category.CategoryDataset;
 
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 public class WetlandLoss {
 
-    public static Drawable createChart(String title, String vAxisTitle,
-            CategoryDataset dataset, Dimension dimension) {
+    public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createBarChart(
-                title,       // chart title
-                "Region",               // domain axis label
-                vAxisTitle,                  // range axis label
+                dataset.get(Attribute.TITLE),       // chart title
+                dataset.get(Attribute.X_AXIS_LABEL),// domain axis label
+                dataset.get(Attribute.Y_AXIS_LABEL),// range axis label
                 dataset,                  // data
                 PlotOrientation.VERTICAL, // orientation
                 true,                    // include legend
@@ -42,10 +42,7 @@ public class WetlandLoss {
         map.mapKeyToGroup(dataset.getRowKey(2), "Y2");
         map.mapKeyToGroup(dataset.getRowKey(3), "Y2");
         renderer.setSeriesToGroupMap(map);
-        renderer.setSeriesPaint(0, Colors.RED);
-        renderer.setSeriesPaint(1, Colors.LIGHT_RED);
-        renderer.setSeriesPaint(2, Colors.BLUE);
-        renderer.setSeriesPaint(3, Colors.LIGHT_BLUE);
+        Colors.setSeriesPaint(renderer, dataset.get(Attribute.SERIES_COLORS));
         renderer.setItemMargin(0);
         renderer.setBarPainter(new StandardBarPainter());
         plot.setRenderer(renderer);

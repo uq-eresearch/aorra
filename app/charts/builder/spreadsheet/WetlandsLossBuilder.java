@@ -1,9 +1,11 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
@@ -17,7 +19,13 @@ import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
+import charts.graphics.Colors;
 import charts.graphics.WetlandLoss;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
+
+import com.google.common.collect.ImmutableSet;
 
 public class WetlandsLossBuilder extends JFreeBuilder {
 
@@ -88,11 +96,11 @@ public class WetlandsLossBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected CategoryDataset createDataset(Context ctx) {
+    protected ADCDataset createDataset(Context ctx) {
       SpreadsheetDataSource ds = ctx.datasource();
       if(canHandle(ds) && matchesRegion(ds, ctx.region())) {
         try {
-          DefaultCategoryDataset d = new DefaultCategoryDataset();
+          ADCDataset d = new ADCDataset();
           int fc = findFirstColumn(ds);
           for(int col=1;col<5;col++) {
             String series = ds.select(0, fc+col).asString();
@@ -113,8 +121,7 @@ public class WetlandsLossBuilder extends JFreeBuilder {
 
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
-      return WetlandLoss.createChart(title(ctx.datasource(), ctx.region()),
-          WETLANDS_LOSS, (CategoryDataset)ctx.dataset(), new Dimension(750, 500));
+      return WetlandLoss.createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500));
     }
 
     @Override
@@ -133,6 +140,23 @@ public class WetlandsLossBuilder extends JFreeBuilder {
                   f.format(dataset.getValue(3, cat)));
           }
         }});
+    }
+
+    @Override
+    public AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.TITLE, TITLE+"\n${region}").
+          put(Attribute.X_AXIS_LABEL, "${catchment}").
+          put(Attribute.Y_AXIS_LABEL, WETLANDS_LOSS).
+          put(Attribute.SERIES_COLORS, new Color[] {Colors.RED, Colors.LIGHT_RED,
+              Colors.BLUE, Colors.LIGHT_BLUE}).
+          build();
+    }
+
+    @Override
+    public Set<SubstitutionKey> substitutionKeys() {
+      return ImmutableSet.<SubstitutionKey>builder().
+          addAll(super.substitutionKeys()).add(SubstitutionKeys.CATCHMENT).build();
     }
 
 }
