@@ -1,13 +1,14 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
 import charts.ChartType;
@@ -17,7 +18,13 @@ import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
+import charts.graphics.Colors;
 import charts.graphics.WetlandsRemaing;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
+
+import com.google.common.collect.ImmutableSet;
 
 public class WetlandsRemaingBuilder extends JFreeBuilder {
 
@@ -61,16 +68,12 @@ public class WetlandsRemaingBuilder extends JFreeBuilder {
         }
     }
 
-    private String title(SpreadsheetDataSource ds, Region region) {
-        return String.format("%s\n%s",TITLE, region.getProperName());
-    }
-
     @Override
-    protected CategoryDataset createDataset(Context ctx) {
+    protected ADCDataset createDataset(Context ctx) {
       final SpreadsheetDataSource ds = ctx.datasource();
       if(canHandle(ds) && matchesRegion(ds, ctx.region())) {
         try {
-          DefaultCategoryDataset d = new DefaultCategoryDataset();
+          ADCDataset d = new ADCDataset();
           for(int col=1;col<3;col++) {
             String series = ds.select(0, col).asString();
             for(int row = 1;StringUtils.isNotBlank(ds.select(row, 0).asString());row++) {
@@ -90,9 +93,7 @@ public class WetlandsRemaingBuilder extends JFreeBuilder {
 
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
-      return WetlandsRemaing.createChart(title(ctx.datasource(), ctx.region()),
-          "Region", "Wetlands remaining (%)",
-          (CategoryDataset)ctx.dataset(), new Dimension(750, 500));
+      return WetlandsRemaing.createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500));
     }
 
     @Override
@@ -109,6 +110,22 @@ public class WetlandsRemaingBuilder extends JFreeBuilder {
                   f.format(dataset.getValue(1, cat)));
           }
         }});
+    }
+
+    @Override
+    public AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.TITLE, TITLE+"\n${region}").
+          put(Attribute.X_AXIS_LABEL, "${catchment}").
+          put(Attribute.Y_AXIS_LABEL, "Wetlands remaining (%)").
+          put(Attribute.SERIES_COLORS, new Color[] {Colors.BLUE, Colors.RED}).
+          build();
+    }
+
+    @Override
+    public Set<SubstitutionKey> substitutionKeys() {
+      return ImmutableSet.<SubstitutionKey>builder().
+          addAll(super.substitutionKeys()).add(SubstitutionKeys.CATCHMENT).build();
     }
 
 }
