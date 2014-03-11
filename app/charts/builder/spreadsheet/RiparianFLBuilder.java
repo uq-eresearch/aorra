@@ -2,22 +2,30 @@ package charts.builder.spreadsheet;
 
 import static charts.ChartType.RIPARIAN_FOREST_LOSS;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
+import com.google.common.collect.ImmutableSet;
+
+import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.Value;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
+import charts.graphics.Colors;
 import charts.graphics.RiparianFL;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 public class RiparianFLBuilder extends JFreeBuilder {
 
@@ -55,11 +63,11 @@ public class RiparianFLBuilder extends JFreeBuilder {
     }
 
     @Override
-    protected CategoryDataset createDataset(Context ctx) {
+    protected ADCDataset createDataset(Context ctx) {
       final SpreadsheetDataSource ds = ctx.datasource();
       if(canHandle(ds) && matchesRegion(ds, ctx.region())) {
         try {
-            DefaultCategoryDataset d = new DefaultCategoryDataset();
+          ADCDataset d = new ADCDataset();
             String[] cols;
             if(StringUtils.equalsIgnoreCase(ds.select("A2").asString(), "Region")) {
                 cols = new String[] {"B", "C"};
@@ -85,10 +93,7 @@ public class RiparianFLBuilder extends JFreeBuilder {
 
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
-      Region region = ctx.region();
-      return RiparianFL.createChart(String.format("%s\n%s",TITLE,
-          region.getProperName()), region == Region.GBR?"Region":"Catchment", TITLE,
-          (CategoryDataset)ctx.dataset(), new Dimension(750,500));
+      return RiparianFL.createChart((ADCDataset)ctx.dataset(), new Dimension(750,500));
     }
 
     @Override
@@ -105,4 +110,19 @@ public class RiparianFLBuilder extends JFreeBuilder {
         }});
     }
 
+    @Override
+    public AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.TITLE, "${type} (%)\n${region}").
+          put(Attribute.X_AXIS_LABEL, "${catchment}").
+          put(Attribute.Y_AXIS_LABEL, "${type} (%)").
+          put(Attribute.SERIES_COLORS, new Color[] {Colors.BLUE, Colors.RED}).
+          build();
+    }
+
+    @Override
+    public Set<SubstitutionKey> substitutionKeys() {
+      return ImmutableSet.<SubstitutionKey>builder().
+          addAll(super.substitutionKeys()).add(SubstitutionKeys.CATCHMENT).build();
+    }
 }

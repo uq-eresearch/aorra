@@ -11,18 +11,18 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
-import org.jfree.data.category.CategoryDataset;
 
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 public class RiparianFL {
 
-    public static Drawable createChart(String title, String cAxisTitle, String vAxisTitle,
-            CategoryDataset dataset, Dimension dimension) {
+    public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createBarChart(
-                title,       // chart title
-                cAxisTitle,               // domain axis label
-                vAxisTitle,                  // range axis label
+                dataset.get(Attribute.TITLE),        // chart title
+                dataset.get(Attribute.X_AXIS_LABEL), // domain axis label
+                dataset.get(Attribute.Y_AXIS_LABEL),// range axis label
                 dataset,                  // data
                 PlotOrientation.VERTICAL, // orientation
                 true,                    // include legend
@@ -35,8 +35,7 @@ public class RiparianFL {
         plot.setDomainGridlinePaint(Color.lightGray);
         plot.setRangeGridlinePaint(Color.lightGray);
         final BarRenderer renderer = (BarRenderer)plot.getRenderer();
-        renderer.setSeriesPaint(0, Colors.BLUE);
-        renderer.setSeriesPaint(1, Colors.RED);
+        Colors.setSeriesPaint(renderer, dataset.get(Attribute.SERIES_COLORS));
         renderer.setItemMargin(0);
         renderer.setBarPainter(new StandardBarPainter());
         final CategoryAxis cAxis = plot.getDomainAxis();

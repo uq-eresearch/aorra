@@ -3,6 +3,7 @@ package charts.graphics;
 import java.awt.Color;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jfree.chart.renderer.category.CategoryItemRenderer;
 
 public class Colors {
 
@@ -42,4 +43,13 @@ public class Colors {
       return String.format("#%02X%02X%02X", c.getRed(), c.getGreen(), c.getBlue());
     }
 
+    public static void setSeriesPaint(CategoryItemRenderer renderer,Color[] colors) {
+      if(colors != null) {
+        for(int i=0;i<colors.length;i++) {
+          if(colors[i] != null) {
+            renderer.setSeriesPaint(i, colors[i]);
+          }
+        }
+      }
+    }
 }
