@@ -16,15 +16,16 @@ import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.CategoryDataset;
 
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 public class RiparianFLT {
 
-    public static Drawable createChart(String title, String cAxisTitle, 
-            CategoryDataset dataset, Dimension dimension) {
+    public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createBarChart(
-            title,       // chart title
-            cAxisTitle,               // domain axis label
-            "Riparian forest loss (%)",                  // range axis label
+            dataset.get(Attribute.TITLE),   // chart title
+            dataset.get(Attribute.X_AXIS_LABEL),// domain axis label
+            dataset.get(Attribute.Y_AXIS_LABEL),// range axis label
             dataset,                  // data
             PlotOrientation.VERTICAL, // orientation
             false,                    // include legend
@@ -42,7 +43,7 @@ public class RiparianFLT {
         rangeAxis.setRange(0.0, upperRange(dataset));
         final BarRenderer renderer = (BarRenderer)plot.getRenderer();
         renderer.setSeriesItemLabelsVisible(0, Boolean.TRUE);
-        renderer.setSeriesPaint(0, Colors.BLUE);
+        renderer.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
         renderer.setBarPainter(new StandardBarPainter());
         CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setMaximumCategoryLabelLines(3);
