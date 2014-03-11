@@ -8,11 +8,10 @@ import static charts.ChartType.LOADS_TSS;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.data.general.Dataset;
 import org.supercsv.io.CsvListWriter;
 
 import charts.ChartType;
@@ -21,11 +20,24 @@ import charts.Region;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
 import charts.graphics.Loads;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
 public class LoadsRegionsBuilder extends LoadsBuilder {
+
+  private final SubstitutionKey INDICATOR = new SubstitutionKey("indicator",
+      "the pollutant indicator of this chart",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          return getIndicator(ctx.type()).getLabel();
+        }
+      });
 
   public LoadsRegionsBuilder() {
     super(Lists.newArrayList(LOADS_DIN, LOADS_TN, LOADS_PSII, LOADS_TSS));
@@ -33,11 +45,7 @@ public class LoadsRegionsBuilder extends LoadsBuilder {
 
   @Override
   protected Drawable getDrawable(JFreeContext ctx) {
-    final String period = ctx.parameters().get(PERIOD);
-    return Loads.createChart(getTitle(ctx.datasource(), INDICATORS.get(ctx.type()), period),
-        "Region",
-        (CategoryDataset)ctx.dataset(),
-        new Dimension(750, 500));
+    return Loads.createChart((ADCDataset)ctx.dataset(),new Dimension(750, 500));
   }
 
   @Override
@@ -69,7 +77,7 @@ public class LoadsRegionsBuilder extends LoadsBuilder {
   }
 
   @Override
-  protected Dataset createDataset(Context ctx) {
+  protected ADCDataset createDataset(Context ctx) {
     if(ctx.region() != Region.GBR) {
       return null;
     }
@@ -82,14 +90,14 @@ public class LoadsRegionsBuilder extends LoadsBuilder {
     if(indicator == null) {
         throw new RuntimeException(String.format("chart type %s not implemented", type.name()));
     }
-    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+    ADCDataset dataset = new ADCDataset();
     for(Region region : Region.values()) {
         Integer row = ROWS.get(region);
         if(row == null) {
             throw new RuntimeException(String.format("region %s not configured", region.getName()));
         }
         try {
-            double val = selectAsDouble(ctx.datasource(), region, indicator, period);
+            Double val = selectAsDouble(ctx.datasource(), region, indicator, period);
             dataset.addValue(val, indicator.getLabel(), region.getProperName());
         } catch(Exception e) {
             throw new RuntimeException("region "+region.getName(), e);
@@ -98,4 +106,19 @@ public class LoadsRegionsBuilder extends LoadsBuilder {
     return dataset;
   }
 
+  @Override
+  public AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().
+        putAll(super.defaults(type)).
+        put(Attribute.TITLE, "${indicator} load reductions from\n"
+            + "the baseline (2008-2009) to ${lastPeriodyyyy}").
+        put(Attribute.X_AXIS_LABEL, "Region").
+        build();
+  }
+
+  @Override
+  public Set<SubstitutionKey> substitutionKeys() {
+    return ImmutableSet.<SubstitutionKey>builder().
+        addAll(super.substitutionKeys()).add(INDICATOR).build();
+  }
 }

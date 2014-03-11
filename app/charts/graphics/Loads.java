@@ -17,15 +17,16 @@ import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.CategoryDataset;
 
 import charts.Drawable;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
 
 public class Loads {
 
-    public static Drawable createChart(String title, String cAxisTitle, 
-            CategoryDataset dataset, Dimension dimension) {
+    public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createBarChart(
-            title,       // chart title
-            cAxisTitle,               // domain axis label
-            "% Load reduction",                  // range axis label
+            dataset.get(Attribute.TITLE),       // chart title
+            dataset.get(Attribute.X_AXIS_LABEL),               // domain axis label
+            dataset.get(Attribute.Y_AXIS_LABEL), // range axis label
             dataset,                  // data
             PlotOrientation.VERTICAL, // orientation
             false,                    // include legend
@@ -43,7 +44,7 @@ public class Loads {
         rangeAxis.setRange(0.0, upperRange(dataset));
         final CategoryItemRenderer renderer = plot.getRenderer();
         renderer.setSeriesItemLabelsVisible(0, Boolean.TRUE);
-        renderer.setSeriesPaint(0, Color.blue);
+        renderer.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
         ((BarRenderer)renderer).setBarPainter(new StandardBarPainter());
         CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setMaximumCategoryLabelLines(3);
@@ -58,7 +59,9 @@ public class Loads {
     private static double upperRange(CategoryDataset dataset) {
         double max = 0.0;
         for(int i = 0;i<dataset.getColumnCount();i++) {
+          if(dataset.getValue(0, i) != null) {
             max = Math.max(max, dataset.getValue(0, i).doubleValue());
+          }
         }
         double result = ((int)(max / 10.0)+1)*10;
         if(result > 100.0 && max < 100.0) {

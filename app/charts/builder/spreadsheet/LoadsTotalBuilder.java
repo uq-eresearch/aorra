@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
 import charts.ChartType;
@@ -16,6 +15,9 @@ import charts.builder.DataSource.MissingDataException;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
 import charts.graphics.Loads;
+import charts.jfree.ADCDataset;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -28,10 +30,7 @@ public class LoadsTotalBuilder extends LoadsBuilder {
 
   @Override
   protected Drawable getDrawable(JFreeContext ctx) {
-    final String period = ctx.parameters().get(PERIOD); 
-    return Loads.createChart(getTitle(ctx.datasource(), ctx.region(), period),
-        "Pollutants", (CategoryDataset)ctx.dataset(),
-        new Dimension(750, 500));
+    return Loads.createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500));
   }
 
   @Override
@@ -64,30 +63,40 @@ public class LoadsTotalBuilder extends LoadsBuilder {
   }
 
   @Override
-  public CategoryDataset createDataset(Context ctx) {
+  public ADCDataset createDataset(Context ctx) {
     final String period = ctx.parameters().get(PERIOD); 
     if(StringUtils.isBlank(period)) {
-        return null;
+      return null;
     }
     SpreadsheetDataSource ds = ctx.datasource();
     Region region = ctx.region();
-    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+    ADCDataset dataset = new ADCDataset();
     Integer row = ROWS.get(region);
     if(row == null) {
-        throw new RuntimeException("unknown region "+region);
+      throw new RuntimeException("unknown region "+region);
     }
     row--;
     try {
-        for(Indicator indicator : Indicator.values()) {
-            if(indicator.include()) {
-                dataset.addValue(selectAsDouble(ds, region, indicator, period),
-                        region.getProperName() , indicator.getLabel());
-            }
+      for(Indicator indicator : Indicator.values()) {
+        if(indicator.include()) {
+          dataset.addValue(selectAsDouble(ds, region, indicator, period),
+              region.getProperName() , indicator.getLabel());
         }
-        return dataset;
+      }
+      return dataset;
     } catch(MissingDataException e) {
-        throw new RuntimeException(e);
+      throw new RuntimeException(e);
     }
-}
+  }
+
+  @Override
+  public AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().
+        putAll(super.defaults(type)).
+        put(Attribute.TITLE, "${region} total load reductions from\n"
+            + " the baseline (2008-2009) to ${lastPeriodyyyy}").
+        put(Attribute.X_AXIS_LABEL, "Pollutants").
+        build();
+  }
 
 }

@@ -5,17 +5,23 @@ import static charts.ChartType.LOADS_PSII;
 import static charts.ChartType.LOADS_TN;
 import static charts.ChartType.LOADS_TSS;
 
+import java.awt.Color;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
 import charts.ChartType;
 import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public abstract class LoadsBuilder extends JFreeBuilder {
 
@@ -75,6 +81,24 @@ public abstract class LoadsBuilder extends JFreeBuilder {
               .put(LOADS_TSS, Indicator.TSS)
               .build();
 
+    private final SubstitutionKey LAST_PERIOD = new SubstitutionKey("lastPeriod",
+        "last period of loads data in the spreadsheet",
+        new SubstitutionKey.Val() {
+          @Override
+          public String value(Context ctx) {
+            return lastPeriod(ctx);
+          }
+        });
+
+    private final SubstitutionKey LAST_PERIOD_YYYY = new SubstitutionKey("lastPeriodyyyy",
+        "last period of loads data in the spreadsheet format with 4 digit year",
+        new SubstitutionKey.Val() {
+          @Override
+          public String value(Context ctx) {
+            return formatPeriod(lastPeriod(ctx));
+          }
+        });
+
     public LoadsBuilder(ChartType type) {
       super(type);
     }
@@ -86,87 +110,135 @@ public abstract class LoadsBuilder extends JFreeBuilder {
     @Override
     public boolean canHandle(SpreadsheetDataSource ds) {
         try {
-            if(StringUtils.equalsIgnoreCase("Region", ds.select("C3").asString()) &&
-                    StringUtils.equalsIgnoreCase("Total Change (%)", ds.select("C12").asString())) {
-                return true;
-            }
-        } catch(MissingDataException e) {}
-        return false;
+          return StringUtils.containsIgnoreCase(ds.select("C1").asString(),
+              "Summary of Load Reductions") && indicatorsOk(ds);
+        } catch(MissingDataException e) {
+          return false;
+        }
+    }
+
+    private boolean indicatorsOk(SpreadsheetDataSource ds) throws MissingDataException {
+      Set<Indicator> iset = Sets.newHashSet();
+      for(Indicator i : INDICATORS.values()) {
+        if(i.include()) {
+          iset.add(i);
+        }
+      }
+      for(int col = 0; col< ds.getColumnCount(1);col++) {
+        String s = StringUtils.strip(ds.select(1, col).asString());
+        if(StringUtils.isNotBlank(s)) {
+          Indicator i = Indicator.valueOf(StringUtils.upperCase(s));
+          if(i != null) {
+            iset.remove(i);
+          }
+        }
+      }
+      return iset.isEmpty();
     }
 
     @Override
     protected Map<String, List<String>> getParameters(SpreadsheetDataSource datasource, ChartType type) {
+      // only the 'Total' period can be selected currently. 
         return new ImmutableMap.Builder<String, List<String>>()
                 .put(PERIOD, Lists.newArrayList(TOTAL))
                 .build();
     }
 
-    private List<String> getPeriods(SpreadsheetDataSource ds) {
-        try {
-            List<String> periods = Lists.newArrayList();
-            int row = 2;
-            for(int col = 3;true;col++) {
-                String s = ds.select(row, col).asString();
-                if(StringUtils.isBlank(s) || periods.contains(s)) {
-                    return periods;
-                } else {
-                    periods.add(s);
-                }
-            }
-        } catch(MissingDataException e) {
-            throw new RuntimeException(e);
+    private List<String> getPeriods(SpreadsheetDataSource ds, Indicator indicator) {
+      try {
+        List<String> periods = Lists.newArrayList();
+        for(int col = findIndicatorStartColumn(ds, indicator);
+            col<=findIndicatorEndColumn(ds, indicator);col++) {
+          periods.add(ds.select(2, col).asString());
         }
+        return periods;
+      } catch(MissingDataException e) {
+        throw new RuntimeException(e);
+      }
     }
 
     protected Double selectAsDouble(SpreadsheetDataSource ds, Region region,
             Indicator indicator, String period) throws MissingDataException {
-        List<String> periods = getPeriods(ds);
+        List<String> periods = getPeriods(ds, indicator);
         int row = ROWS.get(region) - 1;
-        int col = indicator.ordinal() * periods.size() + periods.indexOf(period) + 3;
-        return ds.select(row, col).asDouble();
+        int col =  findIndicatorStartColumn(ds, indicator) + periods.indexOf(period);
+        Double val = ds.select(row, col).asDouble();
+        return val;
     }
 
-    protected String getTitle(SpreadsheetDataSource ds, Indicator indicator, String period) {
-        return getTitle(ds, indicator.getLabel() + " load reductions from\n", period);
-    }
-
-    protected String getTitle(SpreadsheetDataSource ds, Region region, String period) {
-        String title = region.getProperName() + " total load reductions from\n";
-        return getTitle(ds, title, period);
-    }
-
-    private String getTitle(SpreadsheetDataSource ds, String prefix, String period) {
-        String title = prefix;
-        List<String> periods = getPeriods(ds);
-        if(StringUtils.equalsIgnoreCase(period, TOTAL)) {
-            title += formatPeriods(periods, -1, periods.size()-2);
-        } else {
-            int start = periods.indexOf(period);
-            title += formatPeriods(periods, start-1, start);
+    private int findIndicatorStartColumn(SpreadsheetDataSource ds,
+        Indicator indicator) throws MissingDataException {
+      for(int i=0;i<ds.getColumns(1);i++) {
+        if(StringUtils.equalsIgnoreCase(indicator.name(), ds.select(1, i).asString())) {
+          return findIndicatorStartColumn(ds, i, indicator);
         }
-        return title;
+      }
+      throw new RuntimeException("can't find column start for indicator "+indicator);
     }
 
-    private String formatPeriods(List<String> periods, int start, int end) {
-        if(start == -1) {
-            return " the baseline (2008-2009) to " + formatPeriod(periods.get(end));
-        } else {
-            return formatPeriod(periods.get(start)) + " to " +
-                    formatPeriod(periods.get(end));
+    private int findIndicatorStartColumn(SpreadsheetDataSource ds,
+        int col, Indicator indicator) throws MissingDataException {
+      for(int i=col;i>=0;i--) {
+        String s = StringUtils.strip(ds.select(2, i-1).asString());
+        if(StringUtils.equalsIgnoreCase("total", s) || (i <= 3)) {
+          return i;
         }
+      }
+      throw new RuntimeException("can't find column start for indicator (0) "+indicator);
+    }
+
+    private int findIndicatorEndColumn(SpreadsheetDataSource ds,
+        Indicator indicator) throws MissingDataException {
+      int start = findIndicatorStartColumn(ds, indicator);
+      for(int i = start;i<ds.getColumnCount(2);i++) {
+        String s = StringUtils.strip(ds.select(2, i).asString());
+        if(StringUtils.equalsIgnoreCase("total", s)) {
+          return i;
+        }
+      }
+      throw new RuntimeException("can't find column end for indicator "+indicator);
+    }
+
+    @Override
+    public AttributeMap defaults(ChartType type) {
+      return new AttributeMap.Builder().
+          put(Attribute.Y_AXIS_LABEL, "% Load reduction").
+          put(Attribute.SERIES_COLOR, Color.blue).
+          build();
+    }
+
+    @Override
+    public Set<SubstitutionKey> substitutionKeys() {
+      return ImmutableSet.<SubstitutionKey>builder().
+          addAll(super.substitutionKeys()).add(LAST_PERIOD).add(LAST_PERIOD_YYYY).build();
+    }
+
+    private String lastPeriod(Context ctx) {
+      Indicator indicator = getIndicator(ctx.type());
+      List<String> periods = getPeriods(ctx.datasource(), indicator);
+      if(periods.size() >= 2) {
+        return periods.get(periods.size()-2);
+      } else {
+        return "";
+      }
     }
 
     private String formatPeriod(String period) {
-        try {
-            String p = StringUtils.substringBetween(period, "(", ")");
-            String[] sa =  StringUtils.split(p, "/");
-            if(sa[0].length() == 2 && sa[1].length() == 2) {
-                return "20"+sa[0]+"-"+"20"+sa[1];
-            }
-            return period;
-        } catch(Exception e) {
-            return period;
-        }
+      try {
+          String p = StringUtils.substringBetween(period, "(", ")");
+          String[] sa =  StringUtils.split(p, "/");
+          if(sa[0].length() == 2 && sa[1].length() == 2) {
+              return "20"+sa[0]+"-"+"20"+sa[1];
+          }
+          return period;
+      } catch(Exception e) {
+          return period;
+      }
+  }
+
+    protected Indicator getIndicator(ChartType type) {
+      Indicator indicator = INDICATORS.get(type);
+      return indicator != null ? indicator : Indicator.TSS;
     }
 
 }
