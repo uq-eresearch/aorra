@@ -113,9 +113,9 @@ public class RiparianFLBuilder extends JFreeBuilder {
     @Override
     public AttributeMap defaults(ChartType type) {
       return new AttributeMap.Builder().
-          put(Attribute.TITLE, "${type} (%)\n${region}").
+          put(Attribute.TITLE, TITLE+"\n${region}").
           put(Attribute.X_AXIS_LABEL, "${catchment}").
-          put(Attribute.Y_AXIS_LABEL, "${type} (%)").
+          put(Attribute.Y_AXIS_LABEL, TITLE).
           put(Attribute.SERIES_COLORS, new Color[] {Colors.BLUE, Colors.RED}).
           build();
     }

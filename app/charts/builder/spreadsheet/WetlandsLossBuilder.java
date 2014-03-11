@@ -9,7 +9,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
 import charts.ChartType;
@@ -89,10 +88,6 @@ public class WetlandsLossBuilder extends JFreeBuilder {
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String title(SpreadsheetDataSource ds, Region region) {
-        return String.format("%s\n%s",TITLE, region.getProperName());
     }
 
     @Override
