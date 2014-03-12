@@ -68,8 +68,15 @@ class FileStoreExternalCellRefResolver @Inject()(
       // Detect absolute URL
       Try(new java.net.URL(path)) match {
         case Success(url) =>
-          // Get path from absolute
-          val parts = url.getPath.split("/")
+          // Get path parts from absolute
+          val parts = url.getPath match {
+            // Windows mangled
+            case path: String if "^/[A-Z]:\\\\".r.findFirstIn(path).isDefined =>
+              path.split('\\')
+            // Normal
+            case path: String if path.startsWith("/") =>
+              path.split("/")
+          }
           // Assume intended relative path is progressively further up the tree
           (1 until parts.length).toStream
             // Turn parts into a relative path guess
