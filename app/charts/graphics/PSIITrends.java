@@ -56,7 +56,7 @@ public class PSIITrends {
 
     public static final String SEPARATOR = AutoSubCategoryAxis.DEFAULT_SEPARATOR;
 
-    private static final Paint[] SERIES_PAINT = new Paint[] {
+    public static final Color[] SERIES_PAINT = new Color[] {
         PINK, LIGHT_BROWN, BLUE, LIGHT_PURPLE, YELLOW, BROWN, ORANGE, LIGHT_BLUE, GREEN, RED, BLACK };
 
     private static class Renderer extends StackedBarRenderer {

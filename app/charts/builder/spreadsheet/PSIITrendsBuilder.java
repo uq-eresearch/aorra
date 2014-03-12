@@ -126,14 +126,6 @@ public class PSIITrendsBuilder extends JFreeBuilder {
                     dataset.addValue(v, p, key);
                 }
             }
-            Color[] colors = new Color[pesticides.size()];
-            for(int i=0;i<pesticides.size();i++) {
-              Color c = seriesColors.get(pesticides.get(i));
-              if(c!=null) {
-                colors[i] = c;
-              }
-            }
-            dataset.attrMap().put(Attribute.SERIES_COLORS, colors);
             return dataset;
         } catch(MissingDataException e) {
             throw new RuntimeException(e);
@@ -146,6 +138,7 @@ public class PSIITrendsBuilder extends JFreeBuilder {
           put(Attribute.TITLE, TITLE).
           put(Attribute.X_AXIS_LABEL, "").
           put(Attribute.Y_AXIS_LABEL, "Concentration in water (ng/L)").
+          put(Attribute.SERIES_COLORS, PSIITrends.SERIES_PAINT).
           build();
     }
 
