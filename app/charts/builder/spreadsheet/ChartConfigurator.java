@@ -185,42 +185,16 @@ public class ChartConfigurator {
 
   private Color[] fromCells(String s) {
     List<Color> colors = Lists.newArrayList();
-    Pattern p = Pattern.compile("from.*([a-z]+)([0-9]+).*([a-z]+)([0-9]+)", Pattern.CASE_INSENSITIVE);
+    Pattern p = Pattern.compile(
+        "from.*([a-z]+)([0-9]+).*([a-z]+)([0-9]+)", Pattern.CASE_INSENSITIVE);
     Matcher m = p.matcher(s);
     if(m.matches()) {
-      String c1 = m.group(1);
-      String r1 = m.group(2);
-      String c2 = m.group(3);
-      String r2 = m.group(4);
-      CellReference cr1 = new CellReference(c1+r1);
-      CellReference cr2 = new CellReference(c2+r2);
-      if(cr1.getRow() == cr2.getRow()) {
-        if(Math.abs(cr1.getCol()-cr2.getCol()) < 100) {
-          for(int col = cr1.getCol();true;col += (cr1.getCol()<cr2.getCol()?1:-1)) {
-            try {
-              Color c = ds.select(cr1.getRow(), col).asColor();
-              if(c!=null) {
-                colors.add(c);
-              }
-            } catch(MissingDataException e) {}
-            if(col == cr2.getCol()) {
-              break;
-            }
-          }
-        }
-      } else if(cr1.getCol() == cr2.getCol()) {
-        if(Math.abs(cr1.getRow()-cr2.getRow()) < 100) {
-          for(int row = cr1.getRow();true;row += (cr1.getRow()<cr2.getRow()?1:-1)) {
-            try {
-              Color c = ds.select(row, cr1.getCol()).asColor();
-              if(c!=null) {
-                colors.add(c);
-              }
-            } catch(MissingDataException e) {}
-            if(row == cr2.getRow()) {
-              break;
-            }
-          }
+      CellReference cr1 = new CellReference(m.group(1)+m.group(2));
+      CellReference cr2 = new CellReference(m.group(3)+m.group(4));
+      for(Value v : ds.rangeSelect(cr1.getRow(), cr1.getCol(), cr2.getRow(), cr2.getCol())) {
+        Color c = v.asColor();
+        if(c!=null) {
+          colors.add(c);
         }
       }
     }

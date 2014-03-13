@@ -6,7 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -653,6 +655,77 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
   public int getColumns(int row) {
     return workbook.getSheetAt(defaultSheet).getRow(row).getLastCellNum();
+  }
+
+  public Iterable<Value> rangeSelect(final int row1, final int column1,
+      final int row2, final int column2) {
+    if(row1 == row2) {
+      return rangeColumnSelect(row1, column1, column2);
+    } else if(column1 == column2 ) {
+      return rangeRowSelect(column1, row1, row2);
+    } else {
+      throw new IllegalArgumentException("can only select from 1 row or 1 column");
+    }
+  }
+
+  public Iterable<Value> rangeRowSelect(final int column, final int row1, final int row2) {
+    return new Iterable<Value>() {
+      @Override
+      public Iterator<Value> iterator() {
+        return rangeIterator(row1, row2, new ValueSelector() {
+          @Override
+          public Value select(int i) throws MissingDataException {
+            return SpreadsheetDataSource.this.select(i, column);
+          }});
+      }};
+  }
+
+  public Iterable<Value> rangeColumnSelect(final int row, final int column1, final int column2) {
+    return new Iterable<Value>() {
+      @Override
+      public Iterator<Value> iterator() {
+        return rangeIterator(column1, column2, new ValueSelector() {
+          @Override
+          public Value select(int i) throws MissingDataException {
+            return SpreadsheetDataSource.this.select(row, i);
+          }});
+      }};
+  }
+
+  private interface ValueSelector {
+    public Value select(int i) throws MissingDataException;
+  }
+
+  private Iterator<Value> rangeIterator(final int from, final int to,
+      final ValueSelector selector) {
+    return new Iterator<Value> () {
+      boolean hasNext = true;
+      int i = from;
+      @Override
+      public boolean hasNext() {
+        return hasNext;
+      }
+
+      @Override
+      public Value next() {
+        if(hasNext) {
+          hasNext = !(i == to);
+          try {
+            return selector.select(i);
+          } catch(MissingDataException e) {
+            return new EmptyCell();
+          } finally {
+            i += from < to ? 1 : -1;
+          }
+        } else {
+          throw new NoSuchElementException();
+        }
+      }
+
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }};
   }
 
 }
