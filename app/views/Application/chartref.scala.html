@@ -2,46 +2,17 @@
     <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
     <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
     <script>
-    function colors(colors) {
-      var result = '';
-      $.each(colors, function(index, color) {
-        result += '<div style="background-color:'+color+';width: 20px;height: 20px;display: inline-block;margin:4px"></div>';
-      });
-      return result;
-    }
-
-    function content(chartref) {
-      var content = '<h2>'+chartref.label+'</h2>';
-      content += '<p>type: '+chartref.type+'</p>';
-      content += '<h3>chart configuration</h3>';
-      if(chartref.defaults) {
-        content += '<table style="border : 1px solid black"><tr><td colspan=3>attributes and their default values</td></tr>';
-        $.each(chartref.defaults, function(key, val) {
-            if(val['colors']) {
-              content += '<tr><td>'+key+'</td><td>&rarr;</td><td>'+colors(val['colors'])+'</td>';
-            } else {
-              content += '<tr><td>'+key+'</td><td>&rarr;</td><td>'+val+'</td>';
-            }
-        });
-        content += '</table><br>';
-        content += '<table style="border : 1px solid black"><tr><td colspan=3>substitution keys supported by this chart</td></tr>';
-        $.each(chartref.substitutions, function(key, val) {
-            content += '<tr><td>'+key+'</td><td>&rarr;</td><td>'+val+'</td>';
-        });
-        content += '</table>';
-      } else {
-        content += '<p>chart configuration is not supported for this chart</p>';
-      }
-      content += '<h3>chart example</h3>';
-      var imgSrc = '/chartref/charts/'+chartref.type.toLowerCase();
-      content += '<a href="'+imgSrc+'" target="_blank"><img src="'+imgSrc+'" width="250"></a>';
-      return content;
-    }
+    
+    var tExampleImage = _.template('<h3>chart example</h3><% var imgSrc = "/chartref/charts/"+type.toLowerCase(); %><a href="<%=imgSrc%>" target="_blank"><img src="<%=imgSrc%>" width="250"></a>');
+    var tColors = _.template('<% $.each(colors, function(index, color) { %><div style="background-color:<%= color %>;width: 20px;height: 20px;display: inline-block;margin:4px"></div><% }); %>');
+    var tDefaults = _.template('<table style="border : 1px solid black;margin-bottom:20px;"><tr><td colspan=3>attributes and their default values</td></tr><% $.each(defaults, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><% if(val["colors"]) { print(tColors(val)); } else { print(val); } %></td><% }); %></table>');
+    var tSubstKeys = _.template('<table style="border : 1px solid black"><tr><td colspan=3>substitution keys supported by this chart</td></tr><% $.each(substitutions, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><%=val%></td><% }); %></table>');
+    var tContent = _.template('<h2><%=label%></h2><p>type: <%=type%></p><h3>chart configuration</h3><% if(defaults) { print(tDefaults({defaults: defaults})); print(tSubstKeys({substitutions: substitutions})); } else { %><p>chart configuration is not supported for this chart</p><% }%><%=tExampleImage({type: type})%>');
     $(function() {
         $.get( "/chartref/config", function( data ) {
           $.each(data, function( index, chartref ) {
             $( "#tabs ul" ).append('<li><a href="#tabs-'+index+'">'+chartref.title+'</a></li>')
-            $( "#tabs" ).append('<div id="tabs-'+index+'">'+content(chartref)+'</div>');
+            $( "#tabs" ).append('<div id="tabs-'+index+'">'+tContent(chartref)+'</div>');
           });
           $( "#tabs" ).tabs().addClass( "ui-tabs-vertical ui-helper-clearfix" );
           $( "#tabs li" ).removeClass( "ui-corner-top" ).addClass( "ui-corner-left" );
