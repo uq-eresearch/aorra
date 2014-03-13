@@ -1,36 +1,23 @@
 @main("Chart Reference") {
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
-    <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
     <script>
-    
     var tExampleImage = _.template('<h3>chart example</h3><% var imgSrc = "/chartref/charts/"+type.toLowerCase(); %><a href="<%=imgSrc%>" target="_blank"><img src="<%=imgSrc%>" width="250"></a>');
     var tColors = _.template('<% $.each(colors, function(index, color) { %><div style="background-color:<%= color %>;width: 20px;height: 20px;display: inline-block;margin:4px"></div><% }); %>');
     var tDefaults = _.template('<table style="border : 1px solid black;margin-bottom:20px;"><tr><td colspan=3>attributes and their default values</td></tr><% $.each(defaults, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><% if(val["colors"]) { print(tColors(val)); } else { print(val); } %></td><% }); %></table>');
     var tSubstKeys = _.template('<table style="border : 1px solid black"><tr><td colspan=3>substitution keys supported by this chart</td></tr><% $.each(substitutions, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><%=val%></td><% }); %></table>');
     var tContent = _.template('<h2><%=label%></h2><p>type: <%=type%></p><h3>chart configuration</h3><% if(defaults) { print(tDefaults({defaults: defaults})); print(tSubstKeys({substitutions: substitutions})); } else { %><p>chart configuration is not supported for this chart</p><% }%><%=tExampleImage({type: type})%>');
     $(function() {
-        $.get( "/chartref/config", function( data ) {
-          $.each(data, function( index, chartref ) {
-            $( "#tabs ul" ).append('<li><a href="#tabs-'+index+'">'+chartref.title+'</a></li>')
-            $( "#tabs" ).append('<div id="tabs-'+index+'">'+tContent(chartref)+'</div>');
-          });
-          $( "#tabs" ).tabs().addClass( "ui-tabs-vertical ui-helper-clearfix" );
-          $( "#tabs li" ).removeClass( "ui-corner-top" ).addClass( "ui-corner-left" );
-          $( "#tabs" ).tabs({ active: 0 });
+      $.get( "/chartref/config", function( data ) {
+        $.each(data, function( index, chartref ) {
+          $( "#cr-tab-content" ).append('<div class="tab-pane" id="cr-tabs-'+index+'">'+tContent(chartref)+'</div>');
+          $( "#cr-tabs ul" ).append('<li><a style="padding: 0px;font-size: 12px;" href="#cr-tabs-'+index+'" data-toggle="tab">'+chartref.title+'</a></li>')
         });
-    });
+      });
+  });
     </script>
-    <style>
-    .ui-tabs-vertical { }
-    .ui-tabs-vertical .ui-tabs-nav { padding: .2em .1em .2em .2em; float: left; }
-    .ui-tabs-vertical .ui-tabs-nav li { clear: left; width: 100%; border-bottom-width: 1px !important; border-right-width: 0 !important; margin: 0 -1px .2em 0; }
-    .ui-tabs-vertical .ui-tabs-nav li a { display:block; }
-    .ui-tabs-vertical .ui-tabs-nav li.ui-tabs-active { padding-bottom: 0; padding-right: .1em; border-right-width: 1px; border-right-width: 1px; }
-    .ui-tabs-vertical .ui-tabs-panel { padding: 1em; }
-    .ui-tabs .ui-tabs-nav .ui-tabs-anchor { padding: 0em; font-size: 75%; }
-    </style>
-<div id="tabs">
-    <ul>
-    </ul>
+<div id="cr-tabs" style="float:left;">
+<ul class="nav nav-tabs nav-stacked">
+</ul>
+</div>
+<div id="cr-tab-content" class="tab-content">
 </div>
 }
