@@ -1,8 +1,6 @@
 package charts.jfree;
 
-import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
-
-public class ADSCDataset extends DefaultStatisticalCategoryDataset implements AttributedDataset {
+public class AttributedDatasetImpl implements AttributedDataset {
 
   private AttributeMap attrMap = new AttributeMap();
 

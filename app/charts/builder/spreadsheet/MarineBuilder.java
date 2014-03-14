@@ -1,6 +1,8 @@
 package charts.builder.spreadsheet;
 
+import java.awt.Color;
 import java.io.IOException;
+import java.util.Map;
 
 import org.supercsv.io.CsvListWriter;
 
@@ -18,8 +20,14 @@ import charts.graphics.BeerCoaster;
 import charts.graphics.BeerCoaster.Category;
 import charts.graphics.BeerCoaster.Condition;
 import charts.graphics.BeerCoaster.Indicator;
+import charts.graphics.Colors;
+import charts.jfree.Attribute;
+import charts.jfree.AttributeMap;
+import charts.jfree.AttributedDataset;
+import charts.jfree.AttributedDatasetImpl;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 public class MarineBuilder extends AbstractBuilder {
 
@@ -33,6 +41,81 @@ public class MarineBuilder extends AbstractBuilder {
         .put(Region.BURNETT_MARY, 5)
         .put(Region.GBR, 6)
         .build();
+
+  private static enum Field {
+    WATER_QUALITY(Category.WATER_QUALITY, "E", 9),
+    CORAL(Category.CORAL, "P", 9),
+    SEAGRASS(Category.SEAGRASS, "J", 9),
+    CHLOROPHYLL_A(Indicator.CHLOROPHYLL_A, "C", 9),
+    TOTAL_SUSPENDED_SOLIDS(Indicator.TOTAL_SUSPENDED_SOLIDS, "D", 9),
+    SETTLEMENT(Indicator.SETTLEMENT, "M", 9),
+    JUVENILE(Indicator.JUVENILE, "O", 9),
+    ALGAE(Indicator.ALGAE, "N", 9),
+    COVER(Indicator.COVER, "L", 9),
+    ABUNDANCE(Indicator.ABUNDANCE, "G", 9),
+    REPRODUCTION(Indicator.REPRODUCTION, "H", 9),
+    NUTRIENT_STATUS(Indicator.NUTRIENT_STATUS, "I", 9),
+    OVERALL("F", 20)
+    ;
+    private Category category;
+    private Indicator indicator;
+    private String column;
+    private int row;
+
+    private Field(String column, int row) {
+      this.column = column;
+      this.row = row;
+    }
+    
+    private Field(Category category, String column, int row) {
+      this(column, row);
+      this.category = category;
+    }
+
+    private Field(Indicator indicator, String column, int row) {
+      this(column, row);
+      this.indicator = indicator;
+    }
+
+    public void setCondition(BeerCoaster bc, DataSource datasource, Region region) {
+      Condition c = condition(datasource, region);
+      if(category != null) {
+        bc.setCondition(category, c);
+      } else if(indicator != null) {
+        bc.setCondition(indicator, c);
+      } else {
+        bc.setOverallCondition(c);
+      }
+    }
+
+    private Condition condition(DataSource datasource, Region region) {
+      return determineCondition(getValue(datasource, column, row, OFFSETS.get(region)));
+    }
+
+    private Double getValue(DataSource ds, String column, int row, int rowOffset) {
+      try {
+        return ds.select(String.format("%s%s", column, row+rowOffset)).asDouble();
+      } catch(MissingDataException e) {
+        return null;
+      }
+    }
+
+    private Condition determineCondition(Double index) {
+      if (index == null) {
+        return Condition.NOT_EVALUATED;
+      } else if (index >= 80) {
+        return Condition.VERY_GOOD;
+      } else if (index >= 60) {
+        return Condition.GOOD;
+      } else if (index >= 40) {
+        return Condition.MODERATE;
+      } else if (index >= 20) {
+        return Condition.POOR;
+      } else {
+        return Condition.VERY_POOR;
+      }
+    }
+  }
 
   public MarineBuilder() {
     super(ChartType.MARINE);
@@ -54,8 +137,11 @@ public class MarineBuilder extends AbstractBuilder {
 
   @Override
   public Chart build(final Context context) {
-    final BeerCoaster beercoaster = getDrawable(context.datasource(), context.region());
+    AttributedDataset a = new AttributedDatasetImpl();
+    configurator(context).configure(a, context.type());
+    final BeerCoaster beercoaster = getDrawable(context.datasource(), context.region(), a);
     if (beercoaster != null) {
+      
       final ChartDescription description = new ChartDescription(context.type(), context.region());
       return new AbstractChart() {
         @Override
@@ -91,78 +177,35 @@ public class MarineBuilder extends AbstractBuilder {
     }
   }
 
-  private BeerCoaster getDrawable(DataSource datasource, Region region) {
-    try {
-      Integer offset = OFFSETS.get(region);
-      if (offset == null) {
-        throw new Exception("unknown region " + region);
-      }
-      Double wa = getValue(datasource, "E", 9, offset);
-      Double coral = getValue(datasource, "P", 9, offset);
-      Double seag = getValue(datasource, "J", 9, offset);
-      Double chla = getValue(datasource, "C", 9, offset);
-      Double tss = getValue(datasource, "D", 9, offset);
-      Double cs = getValue(datasource, "M", 9, offset);
-      Double juv = getValue(datasource, "O", 9, offset);
-      Double alg = getValue(datasource, "N", 9, offset);
-      Double cover = getValue(datasource, "L", 9, offset);
-      Double abu = getValue(datasource, "G", 9, offset);
-      Double rep = getValue(datasource, "H", 9, offset);
-      Double nut = getValue(datasource, "I", 9, offset);
-      Double mc = getValue(datasource, "F", 20, offset);
-      BeerCoaster bc = configureInternal(wa, coral, seag, chla, tss, cs, juv,
-          alg, cover, abu, rep, nut, mc);
-      return bc;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+  private BeerCoaster getDrawable(DataSource datasource, Region region, AttributedDataset a) {
+    BeerCoaster bc = new BeerCoaster(conditionColors(a));
+    for(Field f : Field.values()) {
+      f.setCondition(bc, datasource, region);
     }
+    return bc;
   }
 
-  private Condition determineCondition(Double index) {
-    if (index == null) {
-      return Condition.NOT_EVALUATED;
-    } else if (index >= 80) {
-      return Condition.VERY_GOOD;
-    } else if (index >= 60) {
-      return Condition.GOOD;
-    } else if (index >= 40) {
-      return Condition.MODERATE;
-    } else if (index >= 20) {
-      return Condition.POOR;
-    } else {
-      return Condition.VERY_POOR;
-    }
+  private Map<Condition, Color> conditionColors(AttributedDataset a) {
+    Map<Condition, Color> m = Maps.newHashMap();
+    m.put(Condition.NOT_EVALUATED, a.get(Attribute.CONDITION_NOT_EVALUATED));
+    m.put(Condition.VERY_GOOD, a.get(Attribute.CONDITION_VERY_GOOD));
+    m.put(Condition.GOOD, a.get(Attribute.CONDITION_GOOD));
+    m.put(Condition.MODERATE, a.get(Attribute.CONDITION_MODERATE));
+    m.put(Condition.POOR, a.get(Attribute.CONDITION_POOR));
+    m.put(Condition.VERY_POOR, a.get(Attribute.CONDITION_VERY_POOR));
+    return m;
   }
 
-  private BeerCoaster configureInternal(Double wa, Double coral, Double seag,
-      Double chla, Double tss, Double cs, Double juv, Double alg, Double cover,
-      Double abu, Double rep, Double nut, Double mc) {
-    BeerCoaster chart = new BeerCoaster();
-    chart.setCondition(Category.WATER_QUALITY, determineCondition(wa));
-    chart.setCondition(Category.CORAL, determineCondition(coral));
-    chart.setCondition(Category.SEAGRASS, determineCondition(seag));
-    chart.setCondition(Indicator.CHLOROPHYLL_A, determineCondition(chla));
-    chart.setCondition(Indicator.TOTAL_SUSPENDED_SOLIDS,
-        determineCondition(tss));
-    chart.setCondition(Indicator.SETTLEMENT, determineCondition(cs));
-    chart.setCondition(Indicator.JUVENILE, determineCondition(juv));
-    chart.setCondition(Indicator.ALGAE, determineCondition(alg));
-    chart.setCondition(Indicator.COVER, determineCondition(cover));
-    chart.setCondition(Indicator.ABUNDANCE, determineCondition(abu));
-    chart.setCondition(Indicator.REPRODUCTION, determineCondition(rep));
-    chart.setCondition(Indicator.NUTRIENT_STATUS, determineCondition(nut));
-    chart.setOverallCondition(determineCondition(mc));
-    return chart;
-  }
-
-  private Double getValue(DataSource ds, String column, int row, int rowOffset)
-      throws Exception {
-    String str = ds.select("Summary!" + column + (row + rowOffset)).getValue();
-    try {
-      return Double.parseDouble(str);
-    } catch (NumberFormatException e) {
-      return null;
-    }
+  @Override
+  public AttributeMap defaults(ChartType type) {
+    return new AttributeMap.Builder().
+        put(Attribute.CONDITION_NOT_EVALUATED, Colors.NOT_EVALUATED).
+        put(Attribute.CONDITION_VERY_GOOD, Colors.VERY_GOOD).
+        put(Attribute.CONDITION_GOOD, Colors.GOOD).
+        put(Attribute.CONDITION_MODERATE, Colors.MODERATE).
+        put(Attribute.CONDITION_POOR, Colors.POOR).
+        put(Attribute.CONDITION_VERY_POOR, Colors.VERY_POOR).
+        build();
   }
 
 }

@@ -11,6 +11,7 @@ public class ATSCollection extends TimeSeriesCollection implements AttributedDat
     return attrMap;
   }
 
+  @Override
   public <T> T get(Attribute<T> attribute) {
     return attrMap().get(attribute);
   }

@@ -23,6 +23,13 @@ public class Colors {
     public static final Color LIGHT_RED = fromHex("#FF7C7C");
     public static final Color BLACK = fromHex("#000000");
 
+    public static final Color NOT_EVALUATED = new Color(229,229,229);
+    public static final Color VERY_GOOD = new Color(0,118,70);
+    public static final Color GOOD = new Color(168,198,162);
+    public static final Color MODERATE = new Color(252,203,38);
+    public static final Color POOR = new Color(244,141,64);
+    public static final Color VERY_POOR = new Color(233,44,48);
+
     public static Color fromHex(String s) {
         String c = StringUtils.strip(StringUtils.strip(s), "#");
         if(c.length()>=6) {

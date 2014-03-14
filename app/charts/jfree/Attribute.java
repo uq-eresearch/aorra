@@ -17,8 +17,14 @@ public class Attribute<T> {
       "range axis label", "range axis title");
   public static final Attribute<String> X_AXIS_LABEL = strAttr("x-axis label",
       "domain axis label", "domain axis title");
-  public static final Attribute<Color> SERIES_COLOR = attr("series color", Color.class);
+  public static final Attribute<Color> SERIES_COLOR = colorAttr("series color");
   public static final Attribute<Color[]> SERIES_COLORS = attr("series colors", Color[].class);
+  public static final Attribute<Color> CONDITION_NOT_EVALUATED = colorAttr("not evaluated");
+  public static final Attribute<Color> CONDITION_VERY_GOOD = colorAttr("very good");
+  public static final Attribute<Color> CONDITION_GOOD = colorAttr("good");
+  public static final Attribute<Color> CONDITION_MODERATE = colorAttr("moderate");
+  public static final Attribute<Color> CONDITION_POOR = colorAttr("poor");
+  public static final Attribute<Color> CONDITION_VERY_POOR = colorAttr("very poor");
 
   private final String name;
   private final Class<T> type;
@@ -75,6 +81,10 @@ public class Attribute<T> {
 
   private static Attribute<String> strAttr(String label, String... synonyms) {
     return attr(label, String.class, synonyms);
+  }
+
+  private static Attribute<Color> colorAttr(String label) {
+    return attr(label, Color.class);
   }
 
   private static <T> Attribute<T> attr(String label, Class<T> type) {

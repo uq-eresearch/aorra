@@ -1,7 +1,6 @@
 package charts.graphics;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
 import graphics.GraphUtils;
 
 import java.awt.BasicStroke;
@@ -18,6 +17,7 @@ import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.Collections;
+import java.util.Map;
 
 import org.jfree.text.TextUtilities;
 import org.jfree.ui.TextAnchor;
@@ -28,12 +28,12 @@ public class BeerCoaster implements Drawable {
 
     public static enum Condition {
 
-      NOT_EVALUATED("Not evaluated", new Color(229,229,229)),
-      VERY_GOOD("Very good", new Color(0,118,70)),
-      GOOD("Good", new Color(168,198,162)),
-      MODERATE("Moderate", new Color(252,203,38)),
-      POOR("Poor", new Color(244,141,64)),
-      VERY_POOR("Very poor", new Color(233,44,48));
+      NOT_EVALUATED("Not evaluated", Colors.NOT_EVALUATED),
+      VERY_GOOD("Very good", Colors.VERY_GOOD),
+      GOOD("Good", Colors.GOOD),
+      MODERATE("Moderate", Colors.MODERATE),
+      POOR("Poor", Colors.POOR),
+      VERY_POOR("Very poor", Colors.VERY_POOR);
 
       private final String label;
       private final Color color;
@@ -178,7 +178,13 @@ public class BeerCoaster implements Drawable {
 
     private Condition overall = Condition.NOT_EVALUATED;
 
+    private Map<Condition, Color> colors;
+
     public BeerCoaster() {}
+
+    public BeerCoaster(Map<Condition, Color> colors) {
+      this.colors = colors;
+    }
 
     public Condition getCondition(Indicator indicator) {
       return iCondition[indicator.ordinal()];
@@ -208,7 +214,7 @@ public class BeerCoaster implements Drawable {
             String label, float labelRadius, int labelAngle, Rotation labelDirection,
             Color fc, GraphUtils.TextAnchor anchor) {
       Stroke stroke = g.getGraphics().getStroke();
-      g.getGraphics().setColor(condition.getColor());
+      g.getGraphics().setColor(getColor(condition));
       g.fillArc(bcx, bcy, radius, startAngle, arcAngle);
       g.getGraphics().setColor(Color.WHITE);
       g.getGraphics().setStroke(new BasicStroke(BORDER_WIDTH));
@@ -276,7 +282,7 @@ public class BeerCoaster implements Drawable {
             Shape glyph;
             if(i==0) {
                 glyph = gv.getGlyphVisualBounds(i);
-                g.setColor(condition.getColor());
+                g.setColor(getColor(condition));
             } else {
                 glyph = gv.getGlyphOutline(i);
                 g.setColor(LEGEND_FONT_COLOR);
@@ -291,7 +297,7 @@ public class BeerCoaster implements Drawable {
     }
 
     private void drawMarineCondition(GraphUtils g) {
-      g.setColor(getOverallCondition().getColor());
+      g.setColor(getColor(getOverallCondition()));
       g.fillCircle(bcx, bcy, bcr/3);
       g.setStroke(CATEGORY_BORDER_WIDTH);
       g.setColor(Color.white);
@@ -343,5 +349,13 @@ public class BeerCoaster implements Drawable {
     @Override
     public Dimension getDimension(Graphics2D graphics) {
         return new Dimension(dimension);
+    }
+
+    private Color getColor(Condition c) {
+      if((colors == null) || (colors.get(c) == null)) {
+        return c.getColor();
+      } else {
+        return colors.get(c);
+      }
     }
 }
