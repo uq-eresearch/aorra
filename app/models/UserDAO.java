@@ -144,7 +144,7 @@ public class UserDAO extends AbstractJcrDAO<User> {
   // This is relying on knowing how getJackrabbitUserId() works, which is
   // probably something that should be fixed.
   public User findByJackrabbitID(String userId) {
-    // check if it's admin and don't log the exception in this case.
+    // if it's admin don't log the exception
     if("admin".equals(userId)) {
       return null;
     }
