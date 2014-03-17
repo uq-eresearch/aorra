@@ -71,7 +71,7 @@ requirejs.config({
     waitSeconds: 20
 });
 
-define('jquery', ['webjars!jquery.js'], function() {
+define('jquery', ['webjars!jquery.min.js'], function() {
   return jQuery;
 });
 
