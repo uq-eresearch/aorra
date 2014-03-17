@@ -5,14 +5,22 @@
     var tDefaults = _.template('<table style="border : 1px solid black;margin-bottom:20px;"><tr><td colspan=3>attributes and their default values</td></tr><% $.each(defaults, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><% if(val["colors"]) { print(tColors(val)); } else { print(val); } %></td><% }); %></table>');
     var tSubstKeys = _.template('<table style="border : 1px solid black"><tr><td colspan=3>substitution keys supported by this chart</td></tr><% $.each(substitutions, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><%=val%></td><% }); %></table>');
     var tContent = _.template('<h2><%=label%></h2><p>type: <%=type%></p><h3>chart configuration</h3><% if(defaults) { print(tDefaults({defaults: defaults})); print(tSubstKeys({substitutions: substitutions})); } else { %><p>chart configuration is not supported for this chart</p><% }%><%=tExampleImage({type: type})%>');
-    $(function() {
+    function initcr($) {
+      $('#cr-tabs ul').empty();
+      $('#cr-tab-content').empty();
       $.get( "/chartref/config", function( data ) {
         $.each(data, function( index, chartref ) {
           $( "#cr-tab-content" ).append('<div class="tab-pane" id="cr-tabs-'+index+'">'+tContent(chartref)+'</div>');
           $( "#cr-tabs ul" ).append('<li><a style="padding: 0px;font-size: 12px;" href="#cr-tabs-'+index+'" data-toggle="tab">'+chartref.title+'</a></li>')
         });
+        $('#cr-tabs a:first').click();
       });
-  });
+    }
+    $(window).on('load', function() {
+      requirejs(['main'], function() {
+        requirejs(['jquery.bootstrap'], initcr);
+      });
+    });
     </script>
 <div id="cr-tabs" style="float:left;">
 <ul class="nav nav-tabs nav-stacked">
