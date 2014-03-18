@@ -75,4 +75,23 @@ public class ChartReferenceController extends SessionAwareController {
     }
   }
 
+  @SubjectPresent
+  public Result datasource(final String chartType) {
+    final ChartType type;
+    try {
+      type = ChartType.getChartType(chartType);
+    } catch (IllegalArgumentException e) {
+      return notFound("unknown chart type " + chartType);
+    }
+    CacheResult r = cache.cached(type);
+    if(r != null) {
+      ctx().response().setHeader("Content-Disposition",
+          String.format("attachment; filename=%s.%s",
+              type.name().toLowerCase(), r.datasourceExtension()));
+      return ok(r.datasource()).as(r.datasourceMimetype());
+    } else {
+      return notFound("not in cache");
+    }
+  }
+
 }

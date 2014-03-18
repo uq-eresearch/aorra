@@ -1,30 +1,104 @@
 @main("Chart Reference") {
-    <script>
-    var tExampleImage = _.template('<h3>chart example</h3><% var imgSrc = "/chartref/charts/"+type.toLowerCase(); %><a href="<%=imgSrc%>" target="_blank"><img src="<%=imgSrc%>" width="250"></a>');
-    var tColors = _.template('<% $.each(colors, function(index, color) { %><div style="background-color:<%= color %>;width: 20px;height: 20px;display: inline-block;margin:4px"></div><% }); %>');
-    var tDefaults = _.template('<table style="border : 1px solid black;margin-bottom:20px;"><tr><td colspan=3>attributes and their default values</td></tr><% $.each(defaults, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><% if(val["colors"]) { print(tColors(val)); } else { print(val); } %></td><% }); %></table>');
-    var tSubstKeys = _.template('<table style="border : 1px solid black"><tr><td colspan=3>substitution keys supported by this chart</td></tr><% $.each(substitutions, function(key, val) { %><tr><td><%=key%></td><td>&rarr;</td><td><%=val%></td><% }); %></table>');
-    var tContent = _.template('<h2><%=label%></h2><p>type: <%=type%></p><h3>chart configuration</h3><% if(defaults) { print(tDefaults({defaults: defaults})); print(tSubstKeys({substitutions: substitutions})); } else { %><p>chart configuration is not supported for this chart</p><% }%><%=tExampleImage({type: type})%>');
-    function initcr($) {
+
+<style>
+#cr-tab-content td,th {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+#cr-tab-content th {
+  background-color: #66CCFF;
+}
+
+</style>
+
+<script id="cr-template" type="text/html">
+<h2>{{label}}</h2>
+<p>type: {{type}}</p>
+
+<h3>chart configuration</h3>
+{{#defaults}}
+<table style="border : 1px solid black;margin-bottom:20px;width:50%;">
+<tr><th colspan=2>attributes and their default values</th></tr>
+{{#defaults_list}}
+<tr><td>{{key}}</td><td>
+{{#value.colors}}
+<div style="background-color:{{.}};width: 20px;height: 20px;display: inline-block;margin:4px">
+</div>
+{{/value.colors}}
+{{^value.colors}}
+{{value}}
+{{/value.colors}}
+</td></tr>
+{{/defaults_list}}
+</table>
+{{/defaults}}
+{{^defaults}}
+<p>chart configuration is not supported for this chart</p>
+{{/defaults}}
+
+{{#substitutions}}
+<table style="border : 1px solid black;width:50%;">
+<tr><th colspan=2>substitution keys supported by this chart</th></tr>
+{{#substitutions_list}}
+<tr><td>{{key}}</td><td>{{value}}</td></tr>
+{{/substitutions_list}}
+</table>
+{{/substitutions}}
+
+<h3>chart example</h3>
+<a href="{{imgsrc}}" target="_blank"><img src="{{imgsrc}}" width="250"></a>
+<h3>spreadsheet example</h3>
+<a href="{{spreadsheet}}">spreadsheet example</a>
+</script>
+
+<script>
+
+    // it seems you can't iterate through keys/values in mustache
+    // workaround inspired by http://stackoverflow.com/a/13531992
+    function miterable(o) {
+      _.each(_.keys(o), function (k) {
+        var v = o[k];
+        if(_.isObject(v) && !_.isArray(v) && !_.isFunction(v)) {
+          var list = [];
+          _.each(_.keys(v), function (key) {
+            list.push({ key: key, value: v[key] });
+          });
+          miterable(v);
+          v[k+'_list'] = list;
+        }
+      });
+    }
+
+    function initcr($, hogan) {
+      var template = hogan.compile($('#cr-template').text());
       $('#cr-tabs ul').empty();
       $('#cr-tab-content').empty();
       $.get( "/chartref/config", function( data ) {
         $.each(data, function( index, chartref ) {
-          $( "#cr-tab-content" ).append('<div class="tab-pane" id="cr-tabs-'+index+'">'+tContent(chartref)+'</div>');
-          $( "#cr-tabs ul" ).append('<li><a style="padding: 0px;font-size: 12px;" href="#cr-tabs-'+index+'" data-toggle="tab">'+chartref.title+'</a></li>')
+          miterable(chartref);
+          chartref.imgsrc = '/chartref/charts/'+chartref.type.toLowerCase();
+          chartref.spreadsheet = '/chartref/spreadsheets/'+chartref.type.toLowerCase();
+          $( "#cr-tab-content" ).append('<div class="tab-pane" id="cr-tabs-'+index+'">'+
+              template.render(chartref)+'</div>');
+          $( "#cr-tabs ul" ).append('<li><a style="padding: 0px;font-size: 12px;" href="#cr-tabs-'+
+              index+'" data-toggle="tab">'+chartref.title+'</a></li>')
         });
         $('#cr-tabs a:first').click();
       });
     }
     $(window).on('load', function() {
       requirejs(['main'], function() {
-        requirejs(['jquery.bootstrap'], initcr);
+        requirejs(['jquery.bootstrap', 'hogan'], initcr);
       });
     });
-    </script>
+</script>
+
 <div id="cr-tabs" style="float:left;">
-<ul class="nav nav-tabs nav-stacked">
-</ul>
+  <ul class="nav nav-tabs nav-stacked">
+  </ul>
 </div>
 <div id="cr-tab-content" class="tab-content">
 </div>

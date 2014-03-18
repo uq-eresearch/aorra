@@ -90,6 +90,8 @@ GET    /file/:fileId/pdf            @controllers.HtmlController.toPdf(fileId, co
 
 GET    /search                      @controllers.Search.search(q: String ?="")
 
-GET    /chartref                    @controllers.ChartReferenceController.index
-GET    /chartref/config             @controllers.ChartReferenceController.config
-GET    /chartref/charts/:chart      @controllers.ChartReferenceController.chart(chart)
+GET    /chartref                     @controllers.ChartReferenceController.index
+GET    /chartref/config              @controllers.ChartReferenceController.config
+GET    /chartref/charts/:chart       @controllers.ChartReferenceController.chart(chart)
+GET    /chartref/spreadsheets/:chart @controllers.ChartReferenceController.datasource(chart)
+

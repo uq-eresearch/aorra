@@ -9,4 +9,10 @@ public interface CacheResult {
 
   public InputStream content();
 
+  public InputStream datasource();
+
+  public String datasourceMimetype();
+
+  public String datasourceExtension();
+
 }

@@ -11,9 +11,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import play.Logger;
+import play.api.libs.MimeTypes;
 import charts.Chart;
 import charts.ChartType;
 import charts.Region;
@@ -30,6 +32,25 @@ import com.google.inject.Singleton;
 
 @Singleton
 public class ChartRefCache {
+
+  private static class CacheEntry {
+    private final String resource;
+    private final File svgChart;
+
+    public CacheEntry(String resource, File svgChart) {
+      super();
+      this.resource = resource;
+      this.svgChart = svgChart;
+    }
+
+    public String resource() {
+      return resource;
+    }
+
+    public File svgChart() {
+      return svgChart;
+    }
+  }
 
   private static final String[] RESOURCES = new String[] {
     "coral.xls",
@@ -52,7 +73,7 @@ public class ChartRefCache {
 
   private final DefaultChartBuilder chartBuilder;
 
-  private Map<ChartType, File> cache = Maps.newHashMap();
+  private Map<ChartType, CacheEntry> cache = Maps.newHashMap();
 
   private volatile boolean run;
 
@@ -64,16 +85,14 @@ public class ChartRefCache {
     this.chartBuilder = new DefaultChartBuilder(new DataSourceFactory() {
       @Override
       public DataSource getDataSource(String id) throws Exception {
-        final String resource = "/chartref/"+id;
-        InputStream in = this.getClass().getResourceAsStream(resource);
+        InputStream in = getResource(id);
         if(in != null) {
-          if(StringUtils.endsWithIgnoreCase(resource, "xlsx")) {
+          if(StringUtils.endsWithIgnoreCase(id, "xlsx")) {
             return new XlsxDataSource(in);
           } else {
             return new XlsDataSource(in);
           }
         } else {
-          Logger.warn("resource not found "+resource);
           return null;
         }
       }});
@@ -113,12 +132,23 @@ public class ChartRefCache {
     }
   }
 
+  private InputStream getResource(String name) {
+    final String resource = "/chartref/"+name;
+    InputStream in = this.getClass().getResourceAsStream(resource);
+    if(in == null) {
+      Logger.warn("resource not found "+resource);
+    }
+    return in;
+  }
+
   public CacheResult cached(final ChartType type) {
     final File f;
+    final CacheEntry entry;
     synchronized(cache) {
-      f = cache.get(type);
+      entry = cache.get(type);
+      f = getSvgChart(entry);
     }
-    if(f == null || !f.exists()) {
+    if(entry == null || !f.exists()) {
       return null;
     } else {
       return new CacheResult() {
@@ -136,6 +166,18 @@ public class ChartRefCache {
             return null;
           }
         }
+        @Override
+        public InputStream datasource() {
+          return getResource(entry.resource());
+        }
+        @Override
+        public String datasourceMimetype() {
+          return mimetype(entry.resource());
+        }
+        @Override
+        public String datasourceExtension() {
+          return FilenameUtils.getExtension(entry.resource());
+        }
       };
     }
   }
@@ -149,12 +191,13 @@ public class ChartRefCache {
   }
 
   private boolean needsRebuild() {
-    if(cache.isEmpty()) {
-      return true;
-    }
     synchronized(cache) {
-      for(File f : cache.values()) {
-        if(!f.exists()) {
+      if(cache.isEmpty()) {
+        return true;
+      }
+      for(CacheEntry entry : cache.values()) {
+        final File f = getSvgChart(entry);
+        if( (f!= null) && !f.exists()) {
           return true;
         }
       }
@@ -171,7 +214,7 @@ public class ChartRefCache {
           if(!run) {
             return;
           }
-          updateCache(c);
+          updateCache(r, c);
         }
       } catch (Exception e) {
         Logger.warn("while rebuilding chart reference cache", e);
@@ -183,7 +226,7 @@ public class ChartRefCache {
   private void checkComplete() {
     for(ChartType type : ChartType.values()) {
       synchronized(cache) {
-        final File f = cache.get(type);
+        final File f = getSvgChart(cache.get(type));
         if(f == null) {
           Logger.warn(String.format("chart type %s missing in chart reference."
               + " please add a spreadsheet into resources/chartref"
@@ -196,31 +239,40 @@ public class ChartRefCache {
     }
   }
 
+  private File getSvgChart(CacheEntry entry) {
+    return entry != null? entry.svgChart() : null;
+  }
+
   private void clearCache() {
     synchronized(cache) {
-      for(File f : cache.values()) {
+      for(CacheEntry entry : cache.values()) {
+        final File f = getSvgChart(entry);
         FileUtils.deleteQuietly(f);
       }
     }
   }
 
-  private void updateCache(final Chart chart) {
-    // TODO instead of synchronized try ReadWriteLock
+  private void updateCache(final String resource, final Chart chart) {
     synchronized(cache) {
       final ChartType type = chart.getDescription().getType();
-      File f = cache.get(type);
+      File f = getSvgChart(cache.get(type));
       if(f == null || !f.exists()) {
         try {
           Representation r = chart.outputAs(Format.SVG, new Dimension());
           f = File.createTempFile(type.name(), ".svg");
           f.deleteOnExit();
           FileUtils.writeByteArrayToFile(f, r.getContent());
-          cache.put(type, f);
+          cache.put(type, new CacheEntry(resource, f));
         } catch(Exception e) {
           Logger.warn("while updating chart reference cache", e);
         }
       }
     }
+  }
+
+  private String mimetype(String filename) {
+    final scala.Option<String> guessed = MimeTypes.forFileName(filename);
+    return guessed.nonEmpty() ? guessed.get() : null;
   }
 
 }

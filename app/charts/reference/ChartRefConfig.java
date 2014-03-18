@@ -36,7 +36,7 @@ public class ChartRefConfig {
       AbstractBuilder builder = getChartBuilder(type);
       if(builder != null) {
         result.add(new ChartReference(type.name(), type.getLabel(),
-            defaults(builder, type), substMap(builder),
+            defaults(builder, type), (defaults(builder, type) != null?substMap(builder):null),
             type.hasUniqueLabel()?type.getLabel():String.format("%s (%s)",
                 type.getLabel(), type.name())));
       }
