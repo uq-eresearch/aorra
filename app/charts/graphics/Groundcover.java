@@ -11,7 +11,6 @@ import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
-import org.jfree.chart.block.GridArrangement;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
@@ -53,7 +52,7 @@ public class Groundcover {
         }
         final CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
-        LegendTitle legend = new LegendTitle(plot, new GridArrangement(3, 2), new GridArrangement(3, 2));
+        LegendTitle legend = new LegendTitle(plot, new TwoColumnArrangement(), null);
         legend.setLegendItemGraphicPadding(new RectangleInsets(0,20,0,0));
         legend.setPosition(RectangleEdge.BOTTOM);
         chart.addLegend(legend);
