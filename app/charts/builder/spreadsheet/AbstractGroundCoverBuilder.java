@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
+import play.Logger;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -67,6 +69,34 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
             }
           }
         });
+    private static final SubstitutionKey GC_REGION = new SubstitutionKey("gcRegion",
+        "groundcover region copied from spreadsheet A23-A28",
+        new SubstitutionKey.Val() {
+          @Override
+          public String value(Context ctx) {
+            for(int row=22;row<28;row++) {
+              String gcRegion = regionString(ctx, row);
+              if(gcRegion.contains(ctx.region().getProperName())) {
+                return gcRegion;
+              }
+            }
+            for(int row=22;row<28;row++) {
+              String gcRegion = regionString(ctx, row);
+              if(gcRegion.contains(StringUtils.split(ctx.region().getProperName())[0])) {
+                return gcRegion;
+              }
+            }
+            Logger.debug("gcRegion not found for region "+ctx.region().name());
+            return ctx.region().getProperName();
+          }
+          private String regionString(Context ctx, int row) {
+            try {
+              return ctx.datasource().select(row, 0).asString();
+            } catch (MissingDataException e) {
+              return "";
+            }
+          }
+    });
 
     public AbstractGroundCoverBuilder(ChartType type) {
       super(type);
@@ -179,6 +209,6 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
     @Override
     public Set<SubstitutionKey> substitutionKeys() {
       return ImmutableSet.<SubstitutionKey>builder().
-          addAll(super.substitutionKeys()).add(FIRST_YEAR).add(LAST_YEAR).build();
+          addAll(super.substitutionKeys()).add(FIRST_YEAR).add(LAST_YEAR).add(GC_REGION).build();
     }
 }

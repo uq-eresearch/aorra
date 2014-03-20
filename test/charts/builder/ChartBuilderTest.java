@@ -114,10 +114,8 @@ public class ChartBuilderTest {
     case TTT_SEDIMENT:
       return "test/tracking_towards_targets.xlsx";
     case GROUNDCOVER:
-    case GROUNDCOVER_GBR:
       return "test/groundcover.xlsx";
     case GROUNDCOVER_BELOW_50:
-    case GROUNDCOVER_BELOW_50_GBR:
       return "test/groundcover_below_50.xlsx";
     case LOADS:
     case LOADS_DIN:

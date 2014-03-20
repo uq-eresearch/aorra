@@ -7,13 +7,13 @@ import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
 
-public abstract class GroundCoverBelow50Builder extends AbstractGroundCoverBuilder {
+public class GroundCoverBelow50Builder extends AbstractGroundCoverBuilder {
 
   protected static final String TITLE_START =
       "Percentage of the reporting area with groundcover below 50 per cent in the ";
 
-  public GroundCoverBelow50Builder(ChartType type) {
-    super(type);
+  public GroundCoverBelow50Builder() {
+    super(ChartType.GROUNDCOVER_BELOW_50);
   }
 
   @Override
@@ -30,6 +30,8 @@ public abstract class GroundCoverBelow50Builder extends AbstractGroundCoverBuild
     return new AttributeMap.Builder().
         putAll(super.defaults(type)).
         put(Attribute.Y_AXIS_LABEL, "Area (%)").
+        put(Attribute.TITLE, TITLE_START
+            + "${gcRegion} for ${firstYear}-${lastYear}").
         build();
   }
 }

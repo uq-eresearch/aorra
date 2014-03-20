@@ -44,7 +44,7 @@ public class Groundcover {
         }
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
-        if(type == ChartType.GROUNDCOVER_BELOW_50 || type == ChartType.GROUNDCOVER_BELOW_50_GBR) {
+        if(type == ChartType.GROUNDCOVER_BELOW_50) {
           rangeAxis.setTickUnit(new NumberTickUnit(
               (Math.round(Math.floor(getMaxValue(dataset)))/10)+1, new DecimalFormat("0")));
         } else {
