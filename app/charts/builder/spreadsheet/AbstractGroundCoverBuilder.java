@@ -38,7 +38,7 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
               .put(Region.GBR, Lists.newArrayList(28, 27, 23, 25, 24, 26))
               .put(Region.WET_TROPICS, Lists.newArrayList(2))
               .put(Region.MACKAY_WHITSUNDAY, Lists.newArrayList(3,4,5,6))
-              .put(Region.BURDEKIN, Lists.newArrayList(6,7,8,9,10,11))
+              .put(Region.BURDEKIN, Lists.newArrayList(7,8,9,10,11))
               .put(Region.FITZROY, Lists.newArrayList(12,13,14,15,16,17))
               .put(Region.BURNETT_MARY, Lists.newArrayList(18,19,20,21,22))
               .build();
