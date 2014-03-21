@@ -74,6 +74,7 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
         new SubstitutionKey.Val() {
           @Override
           public String value(Context ctx) {
+            // region row is A23-A28 but not fixed e.g. Wet Tropics could be in A23, A24, etc.
             for(int row=22;row<28;row++) {
               String gcRegion = regionString(ctx, row);
               if(gcRegion.contains(ctx.region().getProperName())) {
