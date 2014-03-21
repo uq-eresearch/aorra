@@ -105,16 +105,27 @@
       $('#cr-tabs ul').empty();
       $('#cr-tab-content').empty();
       $.get( "/chartref/config", function( data ) {
-        $.each(data, function( index, chartref ) {
+        $.each(data, function(index, chartref) {
           miterable(chartref);
           chartref.imgsrc = '/chartref/charts/'+chartref.type.toLowerCase();
           chartref.spreadsheet = '/chartref/spreadsheets/'+chartref.type.toLowerCase();
-          $( "#cr-tab-content" ).append('<div class="tab-pane" id="cr-tabs-'+index+'">'+
+          $( "#cr-tab-content" ).append('<div class="tab-pane" id="cr-tabs-'+chartref.type+'">'+
               template.render(chartref)+'</div>');
           $( "#cr-tabs ul" ).append('<li><a style="padding: 0px;font-size: 12px;" href="#cr-tabs-'+
-              index+'" data-toggle="tab">'+chartref.title+'</a></li>')
+              chartref.type+'">'+chartref.title+'</a></li>')
         });
-        $('#cr-tabs a:first').click();
+        $(window).on('hashchange', function(e) {
+          location.hash && $('#cr-tabs a[href="' + location.hash + '"]').tab('show');
+        });
+        $('#cr-tabs a').click(function (e) {
+          e.preventDefault();
+          location.hash = this.hash;
+        });
+        if(location.hash) {
+          $('#cr-tabs a[href="' + location.hash + '"]').tab('show');
+        } else {
+          $('#cr-tabs a:first').click();
+        }
       });
     }
     $(window).on('load', function() {
