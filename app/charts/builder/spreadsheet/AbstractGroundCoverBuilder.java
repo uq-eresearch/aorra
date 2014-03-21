@@ -28,22 +28,26 @@ import charts.jfree.AttributeMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 
 public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
 
   protected static final String GC_SHEETNAME = "avgCover_ordered";
   protected static final String GCB50_SHEETNAME = "areaBelow50_ordered";
 
-    private static final ImmutableMap<Region, List<Integer>> ROWS =
-            new ImmutableMap.Builder<Region, List<Integer>>()
-              .put(Region.GBR, Lists.newArrayList(28, 27, 23, 25, 24, 26))
-              .put(Region.WET_TROPICS, Lists.newArrayList(2))
-              .put(Region.MACKAY_WHITSUNDAY, Lists.newArrayList(3,4,5,6))
-              .put(Region.BURDEKIN, Lists.newArrayList(7,8,9,10,11))
-              .put(Region.FITZROY, Lists.newArrayList(12,13,14,15,16,17))
-              .put(Region.BURNETT_MARY, Lists.newArrayList(18,19,20,21,22))
-              .build();
+  private static final int MAX_ROW = 27;
+
+  private static final ImmutableMap<Region, Set<String>> CATCHMENTS =
+      new ImmutableMap.Builder<Region, Set<String>>()
+      .put(Region.WET_TROPICS, ImmutableSet.of("Herbert"))
+      .put(Region.BURDEKIN, ImmutableSet.of("Black", "Burdekin",
+          "Don", "Haughton", "Ross"))
+      .put(Region.MACKAY_WHITSUNDAY, ImmutableSet.of("Proserpine",
+          "Pioneer", "Plane", "Oconnell"))
+      .put(Region.FITZROY, ImmutableSet.of("Boyne", "Calliope",
+          "Fitzroy", "Shoalwater", "Styx", "Waterpark"))
+      .put(Region.BURNETT_MARY, ImmutableSet.of("Baffle", "Burnett",
+          "Burrum", "Kolan", "Mary"))
+      .build();
 
     private static final SubstitutionKey FIRST_YEAR = new SubstitutionKey("firstYear",
         "first year of groundcover data in the spreadsheet",
@@ -70,33 +74,19 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
           }
         });
     private static final SubstitutionKey GC_REGION = new SubstitutionKey("gcRegion",
-        "groundcover region copied from spreadsheet A23-A28",
+        "groundcover region copied from spreadsheet A2-A28",
         new SubstitutionKey.Val() {
-          @Override
-          public String value(Context ctx) {
-            // region row is A23-A28 but not fixed e.g. Wet Tropics could be in A23, A24, etc.
-            for(int row=22;row<28;row++) {
-              String gcRegion = regionString(ctx, row);
-              if(gcRegion.contains(ctx.region().getProperName())) {
-                return gcRegion;
-              }
-            }
-            for(int row=22;row<28;row++) {
-              String gcRegion = regionString(ctx, row);
-              if(gcRegion.contains(StringUtils.split(ctx.region().getProperName())[0])) {
-                return gcRegion;
-              }
-            }
-            Logger.debug("gcRegion not found for region "+ctx.region().name());
-            return ctx.region().getProperName();
-          }
-          private String regionString(Context ctx, int row) {
-            try {
-              return ctx.datasource().select(row, 0).asString();
-            } catch (MissingDataException e) {
-              return "";
-            }
-          }
+      @Override
+      public String value(Context ctx) {
+        Integer row = findRow(ctx, ctx.region());
+        if(row != null) {
+          try {
+            return ctx.datasource().select(row, 0).asString();
+          } catch (MissingDataException e) {}
+        }
+        Logger.debug("gcRegion not found for region "+ctx.region().name());
+        return ctx.region().getProperName();
+      }
     });
 
     public AbstractGroundCoverBuilder(ChartType type) {
@@ -119,25 +109,68 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
         return false;
     }
 
+    private static Integer findRow(Context ctx, Region region) {
+      for(int row=1;row<=MAX_ROW;row++) {
+        try {
+          String type = ctx.datasource().select(row, 1).asString();
+          if(StringUtils.isBlank(type) || StringUtils.equalsIgnoreCase("Region", type)) {
+            String r = ctx.datasource().select(row, 0).asString();
+            if(StringUtils.containsIgnoreCase(r, StringUtils.split(region.getProperName())[0])) {
+              return row;
+            }
+          }
+        } catch(MissingDataException e) {}
+      }
+      return null;
+    }
+
+    private boolean contains(Region region, String catchment) {
+      if(CATCHMENTS.get(region) != null) {
+        for(String s : CATCHMENTS.get(region)) {
+          if(StringUtils.containsIgnoreCase(catchment, s)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    private void addRow(Context ctx, ADCDataset dataset, int row) throws MissingDataException {
+      SpreadsheetDataSource ds = ctx.datasource();
+      String rowKey = ds.select(row, 0).asString();
+      for(int column = 2;column<=getLastColumn(ds);column++) {
+        String columnKey = ds.select(0, column).asInteger() + "";
+        if(ds.select(row, column).getValue() == null) {
+          dataset.addValue(null, rowKey, columnKey);
+        } else {
+          dataset.addValue(ds.select(row, column).asDouble(), rowKey, columnKey);
+        }
+      }
+    }
+
     @Override
     protected ADCDataset createDataset(Context ctx) {
-      SpreadsheetDataSource ds = ctx.datasource();
-      Region region = ctx.region();
-      if(!ROWS.containsKey(region)) {
-        return null;
-      }
-      List<Integer> rows = ROWS.get(region);
       try {
+        SpreadsheetDataSource ds = ctx.datasource();
         ADCDataset dataset = new ADCDataset();
-        for(Integer row : rows) {
-          row--;
-          String rowName = ds.select(row, 0).toString();
-          for(int column = 2;column<=getLastColumn(ds);column++) {
-            String series = ds.select(0, column).asInteger() + "";
-            if(ds.select(row, column).getValue() == null) {
-              dataset.addValue(null, rowName, series);
-            } else {
-              dataset.addValue(ds.select(row, column).asDouble(), rowName, series);
+        if(ctx.region() == Region.GBR) {
+          for(Region region : Region.values()) {
+            Integer row = findRow(ctx, region);
+            if(row!=null) {
+              addRow(ctx, dataset, row);
+            }
+          }
+        } else {
+          if(!CATCHMENTS.containsKey(ctx.region())) {
+            return null;
+          }
+          for(int row=1;row<=MAX_ROW;row++) {
+            String type = ds.select(row, 1).asString();
+            if(StringUtils.equalsIgnoreCase("catchment", type)) {
+              String catchment = ds.select(row, 0).asString();
+              if(contains(ctx.region(), catchment)) {
+                addRow(ctx, dataset, row);
+              }
             }
           }
         }
