@@ -12,8 +12,8 @@ import org.supercsv.io.CsvListWriter;
 import play.Logger;
 import charts.ChartType;
 import charts.Drawable;
-import charts.Region;
 import charts.builder.DataSource.MissingDataException;
+import charts.builder.Value;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
 import charts.graphics.AnnualRainfall;
@@ -21,7 +21,6 @@ import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class AnnualRainfallBuilder extends JFreeBuilder {
@@ -52,16 +51,18 @@ public class AnnualRainfallBuilder extends JFreeBuilder {
           }
         }
       });
-
-  private static final ImmutableMap<Region, Integer> ROW =
-      new ImmutableMap.Builder<Region, Integer>()
-        .put(Region.BURDEKIN, 1)
-        .put(Region.FITZROY, 2)
-        .put(Region.MACKAY_WHITSUNDAY, 3)
-        .put(Region.BURNETT_MARY, 4)
-        .put(Region.WET_TROPICS, 5)
-        .put(Region.GBR, 6)
-        .build();
+  private static final SubstitutionKey MAR_REGION = new SubstitutionKey("marRegion",
+      "mean annual rainfall region copied from spreadsheet A2-A7",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          try {
+            return ctx.datasource().select(regionRow(ctx), 0).asString();
+          } catch (MissingDataException e) {
+            return ctx.region().getProperName();
+          }
+        }
+      });
 
   public AnnualRainfallBuilder() {
     super(ChartType.ANNUAL_RAINFALL);
@@ -69,7 +70,7 @@ public class AnnualRainfallBuilder extends JFreeBuilder {
 
   @Override
   protected ADCDataset createDataset(Context ctx) {
-    Integer row = ROW.get(ctx.region());
+    Integer row = regionRow(ctx);
     if(row == null) {
       return null;
     }
@@ -105,17 +106,20 @@ public class AnnualRainfallBuilder extends JFreeBuilder {
   @Override
   public boolean canHandle(SpreadsheetDataSource datasource) {
     try {
-      return "Great Barrier Reef".equalsIgnoreCase(datasource.select("A7")
-          .getValue());
-    } catch (MissingDataException e) {
-      return false;
-    }
+      for(int column = 1; column<datasource.getColumnCount(0);column++) {
+        Value v = datasource.select(0, column);
+        if(v.asInteger() == null) {
+          return StringUtils.equalsIgnoreCase("Annual Average", StringUtils.strip(v.asString()));
+        }
+      }
+    } catch (MissingDataException e) {}
+    return false;
   }
 
   @Override
   public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
-        put(Attribute.TITLE, "Mean annual rainfall for ${startYear}-${endYear} - ${region}").
+        put(Attribute.TITLE, "Mean annual rainfall for ${startYear}-${endYear} - ${marRegion}").
         put(Attribute.X_AXIS_LABEL, "Year").
         put(Attribute.Y_AXIS_LABEL, "Rainfall (mm)").
         put(Attribute.SERIES_COLOR, Color.blue).
@@ -143,6 +147,19 @@ public class AnnualRainfallBuilder extends JFreeBuilder {
   @Override
   public Set<SubstitutionKey> substitutionKeys() {
     return ImmutableSet.<SubstitutionKey>builder().
-        addAll(super.substitutionKeys()).add(START_YEAR).add(END_YEAR).build();
+        addAll(super.substitutionKeys()).add(START_YEAR).add(END_YEAR).add(MAR_REGION).build();
+  }
+
+  private static Integer regionRow(Context ctx) {
+    int row = 1;
+    for(Value v : ctx.datasource().rangeRowSelect(0, 1, 6)) {
+      if(StringUtils.containsIgnoreCase(v.asString(), ctx.region().getProperName()) || 
+          StringUtils.containsIgnoreCase(
+              v.asString(), StringUtils.split(ctx.region().getProperName())[0])) {
+        return row;
+      }
+      row++;
+    }
+    return null;
   }
 }
