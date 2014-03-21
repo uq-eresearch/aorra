@@ -18,7 +18,6 @@ import org.apache.poi.ss.formula.eval.ErrorEval;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.Color;
-import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.FormulaError;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
@@ -113,10 +112,7 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
     @Override
     public String toString() {
-      String result;
-      DataFormatter df = new DataFormatter();
-      result = df.formatCellValue(cell, evaluator());
-      return result;
+      return asString();
     }
 
     @Override
