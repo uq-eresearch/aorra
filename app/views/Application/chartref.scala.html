@@ -1,6 +1,18 @@
 @main("Chart Reference") {
 
 <style>
+#cr-tabs {
+  border-right: 4px solid #eeeeee;
+  margin-right: 4px;
+  float:left;
+}
+
+#cr-tab-content table {
+  border: 1px solid black;
+  margin-bottom:20px;
+  width:50%;
+}
+
 #cr-tab-content td,th {
   padding-left: 5px;
   padding-right: 5px;
@@ -12,6 +24,22 @@
   background-color: #66CCFF;
 }
 
+.cr-label {
+  white-space: nowrap
+}
+
+.cr-max-width {
+  width:100%;
+}
+
+.cr-colorbox {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  margin-top:4px;
+  margin-right:4px
+}
+
 </style>
 
 <script id="cr-template" type="text/html">
@@ -20,12 +48,12 @@
 
 <h3>chart configuration</h3>
 {{#defaults}}
-<table style="border : 1px solid black;margin-bottom:20px;width:50%;">
+<table>
 <tr><th colspan=2>attributes and their default values</th></tr>
 {{#defaults_list}}
-<tr><td>{{key}}</td><td>
+<tr><td class="cr-label">{{key}}</td><td class="cr-max-width">
 {{#value.colors}}
-<div style="background-color:{{.}};width: 20px;height: 20px;display: inline-block;margin:4px">
+<div class="cr-colorbox" style="background-color:{{.}};">
 </div>
 {{/value.colors}}
 {{^value.colors}}
@@ -40,10 +68,10 @@
 {{/defaults}}
 
 {{#substitutions}}
-<table style="border : 1px solid black;width:50%;">
+<table>
 <tr><th colspan=2>substitution keys supported by this chart</th></tr>
 {{#substitutions_list}}
-<tr><td>{{key}}</td><td>{{value}}</td></tr>
+<tr><td class="cr-label">{{key}}</td><td>{{value}}</td></tr>
 {{/substitutions_list}}
 </table>
 {{/substitutions}}
@@ -96,7 +124,7 @@
     });
 </script>
 
-<div id="cr-tabs" style="float:left;">
+<div id="cr-tabs">
   <ul class="nav nav-tabs nav-stacked">
   </ul>
 </div>
