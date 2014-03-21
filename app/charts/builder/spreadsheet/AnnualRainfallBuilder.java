@@ -106,10 +106,13 @@ public class AnnualRainfallBuilder extends JFreeBuilder {
   @Override
   public boolean canHandle(SpreadsheetDataSource datasource) {
     try {
-      for(int column = 1; column<datasource.getColumnCount(0);column++) {
-        Value v = datasource.select(0, column);
-        if(v.asInteger() == null) {
-          return StringUtils.equalsIgnoreCase("Annual Average", StringUtils.strip(v.asString()));
+      if(datasource.getColumnCount(0) != null) {
+        for(int column = 1; column<datasource.getColumnCount(0);column++) {
+          Value v = datasource.select(0, column);
+          if(v.asInteger() == null) {
+            return StringUtils.equalsIgnoreCase(
+                "Annual Average", StringUtils.strip(v.asString()));
+          }
         }
       }
     } catch (MissingDataException e) {}
