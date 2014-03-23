@@ -135,15 +135,17 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
       return false;
     }
 
-    private void addRow(Context ctx, ADCDataset dataset, int row) throws MissingDataException {
-      SpreadsheetDataSource ds = ctx.datasource();
-      String rowKey = ds.select(row, 0).asString();
-      for(int column = 2;column<=getLastColumn(ds);column++) {
-        String columnKey = ds.select(0, column).asInteger() + "";
-        if(ds.select(row, column).getValue() == null) {
-          dataset.addValue(null, rowKey, columnKey);
-        } else {
-          dataset.addValue(ds.select(row, column).asDouble(), rowKey, columnKey);
+    private void addRow(Context ctx, ADCDataset dataset, Integer row) throws MissingDataException {
+      if(row != null) {
+        SpreadsheetDataSource ds = ctx.datasource();
+        String rowKey = ds.select(row, 0).asString();
+        for(int column = 2;column<=getLastColumn(ds);column++) {
+          String columnKey = ds.select(0, column).asInteger() + "";
+          if(ds.select(row, column).getValue() == null) {
+            dataset.addValue(null, rowKey, columnKey);
+          } else {
+            dataset.addValue(ds.select(row, column).asDouble(), rowKey, columnKey);
+          }
         }
       }
     }
@@ -152,24 +154,26 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
     protected ADCDataset createDataset(Context ctx) {
       try {
         SpreadsheetDataSource ds = ctx.datasource();
-        ADCDataset dataset = new ADCDataset();
+        ADCDataset dataset = null;
         if(ctx.region() == Region.GBR) {
+          dataset = new ADCDataset();
           for(Region region : Region.values()) {
-            Integer row = findRow(ctx, region);
-            if(row!=null) {
-              addRow(ctx, dataset, row);
-            }
+            addRow(ctx, dataset, findRow(ctx, region));
           }
         } else {
-          if(!CATCHMENTS.containsKey(ctx.region())) {
-            return null;
-          }
-          for(int row=1;row<=MAX_ROW;row++) {
-            String type = ds.select(row, 1).asString();
-            if(StringUtils.equalsIgnoreCase("catchment", type)) {
-              String catchment = ds.select(row, 0).asString();
-              if(contains(ctx.region(), catchment)) {
-                addRow(ctx, dataset, row);
+          Set<String> catchments = CATCHMENTS.get(ctx.region());
+          if(catchments != null) {
+            dataset = new ADCDataset();
+            if(catchments.size() > 1) {
+              addRow(ctx, dataset, findRow(ctx, ctx.region()));
+            }
+            for(int row=1;row<=MAX_ROW;row++) {
+              String type = ds.select(row, 1).asString();
+              if(StringUtils.equalsIgnoreCase("catchment", type)) {
+                String catchment = ds.select(row, 0).asString();
+                if(contains(ctx.region(), catchment)) {
+                  addRow(ctx, dataset, row);
+                }
               }
             }
           }
