@@ -42,7 +42,7 @@ public abstract class AbstractGroundCoverBuilder extends JFreeBuilder {
       .put(Region.BURDEKIN, ImmutableSet.of("Black", "Burdekin",
           "Don", "Haughton", "Ross"))
       .put(Region.MACKAY_WHITSUNDAY, ImmutableSet.of("Proserpine",
-          "Pioneer", "Plane", "Oconnell"))
+          "Pioneer", "Plane", "Oconnell", "O'Connell"))
       .put(Region.FITZROY, ImmutableSet.of("Boyne", "Calliope",
           "Fitzroy", "Shoalwater", "Styx", "Waterpark"))
       .put(Region.BURNETT_MARY, ImmutableSet.of("Baffle", "Burnett",
