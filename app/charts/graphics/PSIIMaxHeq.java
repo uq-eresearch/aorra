@@ -40,12 +40,12 @@ public class PSIIMaxHeq {
 
     public static enum Condition {
 
-        NOT_EVALUATED("Not evaluated", new Color(229,229,229)),
-        VERY_POOR("Very poor", new Color(233,44,48)),
-        POOR("Poor", new Color(244,141,64)),
-        MODERATE("Moderate", new Color(252,203,38)),
-        GOOD("Good", new Color(168,198,162)),
-        VERY_GOOD("Very good", new Color(0,118,70));
+        NOT_EVALUATED("Not evaluated", Colors.NOT_EVALUATED),
+        VERY_POOR("Category 1", Colors.VERY_POOR),
+        POOR("Category 2", Colors.POOR),
+        MODERATE("Category 3", Colors.MODERATE),
+        GOOD("Category 4", Colors.GOOD),
+        VERY_GOOD("Category 5", Colors.VERY_GOOD);
 
         private final String label;
         private final Color color;
