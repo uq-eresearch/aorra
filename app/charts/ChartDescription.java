@@ -3,9 +3,11 @@ package charts;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class ChartDescription {
@@ -64,16 +66,30 @@ public class ChartDescription {
       return Collections.unmodifiableMap(parameters);
     }
 
+    public boolean hasParameters() {
+      return (parameters != null) && !parameters.isEmpty();
+    }
+
+    public String getParameterString() {
+      final StringBuffer sb = new StringBuffer();
+      if(hasParameters()) {
+        List<String> keys = Lists.newArrayList(parameters.keySet());
+        Collections.sort(keys);
+        for(String key : keys) {
+          String val = parameters.get(key);
+          sb.append(String.format("[%s-%s]", key, val));
+        }
+      }
+      return sb.toString();
+    }
+
     @Override
     public String toString() {
       final StringBuffer sb = new StringBuffer();
       sb.append(type+"-"+region);
-      if (!parameters.isEmpty()) {
+      if(hasParameters()) {
         sb.append("-");
-        for (final Map.Entry<String, ?> e : parameters.entrySet()) {
-          sb.append(String.format("[%s-%s]",
-              e.getKey(), e.getValue().toString()));
-        }
+        sb.append(getParameterString());
       }
       if(title!=null) {
           sb.append("-");

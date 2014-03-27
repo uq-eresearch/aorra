@@ -1,25 +1,30 @@
 package controllers
 
 import java.io.ByteArrayInputStream
-import scala.collection.JavaConversions.iterableAsScalaIterable
+import java.io.FileInputStream
+import java.util.concurrent.TimeUnit
+import java.util.zip.ZipInputStream
+
+import scala.Array.canBuildFrom
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+
 import org.specs2.mutable.Specification
+
+import akka.util.Timeout
+import helpers.FileStoreHelper.XLSX_MIME_TYPE
+import helpers.FileStoreHelper.XLS_MIME_TYPE
 import javax.jcr.Session
 import models.User
-import scala.concurrent.Await
-import scala.concurrent.Promise
-import scala.concurrent.duration.Duration
+import play.api.libs.iteratee.Iteratee
 import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.AsyncResult
-import play.api.mvc.ChunkedResult
 import play.api.mvc.Results
 import play.api.mvc.SimpleResult
-import play.api.mvc.Results.EmptyContent
 import play.api.test.FakeHeaders
 import play.api.test.FakeRequest
 import play.api.test.Helpers.GET
 import play.api.test.Helpers.OK
-import play.api.test.Helpers.charset
-import play.api.test.Helpers.contentAsString
 import play.api.test.Helpers.contentType
 import play.api.test.Helpers.header
 import play.api.test.Helpers.route
@@ -28,15 +33,6 @@ import play.api.test.Helpers.writeableOf_AnyContentAsEmpty
 import test.AorraScalaHelper.FakeAorraApp
 import test.AorraScalaHelper.asAdminUser
 import test.AorraScalaHelper.filestore
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.TimeUnit
-import play.api.libs.iteratee.{Enumeratee, Iteratee}
-import scala.concurrent.Future
-import java.util.zip.{ZipInputStream, ZipEntry}
-import helpers.FileStoreHelper.{XLS_MIME_TYPE, XLSX_MIME_TYPE}
-import java.io.FileInputStream
-import scala.collection.immutable.StringOps
-import akka.util.Timeout
 
 class ArchiveAsyncSpec extends Specification {
 
@@ -61,11 +57,11 @@ class ArchiveAsyncSpec extends Specification {
         import scala.concurrent.ExecutionContext.Implicits.global
 
         val folder = filestore.getManager(session).getRoot()
-        folder.createFile("marine.xlsx", XLSX_MIME_TYPE,
+        val file = folder.createFile("marine.xlsx", XLSX_MIME_TYPE,
             new FileInputStream("test/marine.xlsx"))
 
         val Some(futureResult: Future[SimpleResult]) = route(FakeRequest(GET,
-            routes.ArchiveAsync.chartArchive(folder.getIdentifier).toString,
+            routes.ArchiveAsync.chartArchive(file.getIdentifier).toString,
             rh, AnyContentAsEmpty))
 
         status(futureResult) must equalTo(OK);
@@ -87,6 +83,7 @@ class ArchiveAsyncSpec extends Specification {
         // Check magic number of sent file
         zipBytes.slice(0, 2) must equalTo("PK".getBytes)
 
+        
         val filepaths: Set[String] = {
           val zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))
           Stream.continually(zis.getNextEntry)
@@ -98,7 +95,7 @@ class ArchiveAsyncSpec extends Specification {
         val filenamesByExt = filepaths.map { filepath =>
           filepath.split("/") match {
             case Array(folderId, filename) =>
-              folderId must equalTo(folder.getIdentifier())
+              folderId must equalTo(file.getName())
               filename
           }
         }.groupBy { filename =>
@@ -116,11 +113,11 @@ class ArchiveAsyncSpec extends Specification {
     "handle charts with extra parameters" in new FakeAorraApp {
       asAdminUser { (session: Session, user: User, rh: FakeHeaders) =>
         val folder = filestore.getManager(session).getRoot()
-        folder.createFile("seagrass_cover.xls", XLS_MIME_TYPE,
+        val file = folder.createFile("seagrass_cover.xls", XLS_MIME_TYPE,
             new FileInputStream("test/seagrass_cover.xls"))
 
         val Some(futureResult: Future[SimpleResult]) = route(FakeRequest(GET,
-            routes.ArchiveAsync.chartArchive(folder.getIdentifier).toString,
+            routes.ArchiveAsync.chartArchive(file.getIdentifier).toString,
             rh, AnyContentAsEmpty))
 
         status(futureResult) must equalTo(OK);
@@ -153,7 +150,7 @@ class ArchiveAsyncSpec extends Specification {
         val filenamesByExt = filepaths.map { filepath =>
           filepath.split("/") match {
             case Array(folderId, filename) =>
-              folderId must equalTo(folder.getIdentifier())
+              folderId must equalTo(file.getName())
               filename
           }
         }.groupBy { filename =>
@@ -166,7 +163,6 @@ class ArchiveAsyncSpec extends Specification {
           v must haveSize(15)
         }
       }
-
     }
 
   }
