@@ -1,5 +1,7 @@
 package html;
 
+import helpers.ZipHelper;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -11,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -57,13 +59,13 @@ public class HtmlZip {
     private File zip(File destination, String name) {
         try {
             File z = new File(Files.createTempDir(), name+".zip");
-            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(z));
+            ZipArchiveOutputStream out = ZipHelper.setupZipOutputStream(new FileOutputStream(z)); 
             for(String f : files(destination, "")) {
-                out.putNextEntry(new ZipEntry(f));
-                FileInputStream in = new FileInputStream(new File(destination, f));
-                IOUtils.copy(in, out);
-                in.close();
-                out.closeEntry();
+              out.putArchiveEntry(new ZipArchiveEntry(f));
+              FileInputStream in = new FileInputStream(new File(destination, f));
+              IOUtils.copy(in, out);
+              in.close();
+              out.closeArchiveEntry();
             }
             out.close();
             return z;

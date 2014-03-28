@@ -3,16 +3,12 @@ package controllers
 import java.awt.Dimension
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
 import scala.util.Try
-
 import org.apache.commons.io.FilenameUtils
 import org.jcrom.Jcrom
-
 import com.google.inject.Inject
-
 import ScalaSecured.isAuthenticated
 import charts.ChartDescription
 import charts.Region
@@ -26,6 +22,9 @@ import play.api.mvc.Controller
 import play.api.mvc.EssentialAction
 import play.libs.F
 import service.filestore.FileStore
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
+import helpers.ZipHelper
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 
 class ArchiveAsync @Inject() (
   val jcrom: Jcrom,
@@ -44,17 +43,15 @@ class ArchiveAsync @Inject() (
     }
   }
 
-  protected def zipEnumerator(f: (ZipOutputStream) => Unit) =
+  protected def zipEnumerator(f: (ZipArchiveOutputStream) => Unit) =
     Enumerator.outputStream { os =>
-      val zip = new ZipOutputStream(os);
-      zip.setMethod(ZipOutputStream.DEFLATED);
-      zip.setLevel(9);
+      val zip = ZipHelper.setupZipOutputStream(os)
       f(zip)
       zip.close()
     }
 
   protected def addChartFilesToArchive(
-    user: CacheableUser, id: String)(zos: ZipOutputStream) {
+    user: CacheableUser, id: String)(zos: ZipArchiveOutputStream) {
     inSession(user) { session =>
       val manager = filestore.getManager(session)
       for (
@@ -68,9 +65,9 @@ class ArchiveAsync @Inject() (
           path(manager, id, file.getIdentifier()),
           name(chart.getDescription()),
           f.name()).toLowerCase()
-        zos.putNextEntry(new ZipEntry(filepath))
+        zos.putArchiveEntry(new ZipArchiveEntry(filepath))
         zos.write(data)
-        zos.closeEntry
+        zos.closeArchiveEntry()
       }
     }
   }

@@ -20,12 +20,13 @@ import java.util.SortedSet;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -129,10 +130,8 @@ public class FileStoreHelper {
   public InputStream createZipFile(final FileStore.Folder folder)
       throws IOException, RepositoryException {
     final File tempFile = File.createTempFile("zipfile", "");
-    final ZipOutputStream zos =
-        new ZipOutputStream(new FileOutputStream(tempFile));
-    zos.setMethod(ZipOutputStream.DEFLATED);
-    zos.setLevel(5);
+    final ZipArchiveOutputStream zos =
+        ZipHelper.setupZipOutputStream(new FileOutputStream(tempFile));
     addFolderToZip(zos, folder, folder);
     zos.close();
     return new FileInputStream(tempFile) {
@@ -167,7 +166,7 @@ public class FileStoreHelper {
     }
   }
 
-  protected void addFolderToZip(final ZipOutputStream zos,
+  protected void addFolderToZip(final ZipArchiveOutputStream zos,
       final FileStore.Folder folder,
       final FileStore.Folder baseFolder)
           throws IOException, RepositoryException {
@@ -180,12 +179,12 @@ public class FileStoreHelper {
     }
   }
 
-  protected void addToZip(final ZipOutputStream zos,
+  protected void addToZip(final ZipArchiveOutputStream zos,
       String filename, String mimeType,
       InputStream data) throws IOException {
-    zos.putNextEntry(new ZipEntry(getNameWithExt(filename, mimeType)));
+    zos.putArchiveEntry(new ZipArchiveEntry(getNameWithExt(filename, mimeType)));
     IOUtils.copy(data, zos);
-    zos.closeEntry();
+    zos.closeArchiveEntry();
     data.close();
   }
 
