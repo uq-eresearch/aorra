@@ -1,7 +1,6 @@
 package controllers;
 
 import static helpers.FileStoreHelper.getNameWithExt;
-import static org.apache.commons.httpclient.util.URIUtil.encodeQuery;
 import static service.filestore.roles.Admin.isAdmin;
 import helpers.ExtractionHelper;
 import helpers.FileStoreHelper;
@@ -360,7 +359,7 @@ public final class FileStoreController extends SessionAwareController {
         final FileStoreHelper fh = new FileStoreHelper(session);
         ctx().response().setContentType("application/zip");
         ctx().response().setHeader("Content-Disposition",
-            "attachment; filename="+encodeQuery(folder.getName())+".zip");
+            ContentDispositionSupport.attachment(folder.getName()+".zip"));
         return ok(fh.createZipFile(folder));
       }
     });
@@ -405,7 +404,7 @@ public final class FileStoreController extends SessionAwareController {
         ctx().response().setHeader("Last-Modified",
             asHttpDate(version.getModificationTime()));
         ctx().response().setHeader("Content-Disposition",
-            "attachment; filename="+encodeQuery(filename));
+            ContentDispositionSupport.attachment(filename));
         return ok(version.getData());
       }
 

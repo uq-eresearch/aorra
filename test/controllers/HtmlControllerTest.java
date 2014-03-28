@@ -66,7 +66,7 @@ public class HtmlControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/zip");
         assertThat(header("Content-Disposition", result)).startsWith(
-            "attachment; filename=foo.html.zip");
+            "attachment; filename=\"foo.html.zip\"");
         byte[] zip = play.test.Helpers.contentAsBytes(result);
         assertThat(containsFile(zip, "foo.html")).isTrue();
         return session;
@@ -91,7 +91,7 @@ public class HtmlControllerTest {
         assertThat(status(result)).isEqualTo(200);
         assertThat(contentType(result)).isEqualTo("application/pdf");
         assertThat(header("Content-Disposition", result)).startsWith(
-            "attachment; filename=foo.html.pdf");
+            "attachment; filename=\"foo.html.pdf\"");
         byte[] pdf = play.test.Helpers.contentAsBytes(result);
         assertThat(Hex.encodeHexString(ArrayUtils.subarray(pdf, 0, 4)))
             .isEqualTo("25504446");

@@ -86,8 +86,8 @@ public class ChartReferenceController extends SessionAwareController {
     CacheResult r = cache.cached(type);
     if(r != null) {
       ctx().response().setHeader("Content-Disposition",
-          String.format("attachment; filename=%s.%s",
-              type.name().toLowerCase(), r.datasourceExtension()));
+          ContentDispositionSupport.attachment(
+              String.format("%s.%s", type.name().toLowerCase(), r.datasourceExtension())));
       return ok(r.datasource()).as(r.datasourceMimetype());
     } else {
       return notFound("not in cache");

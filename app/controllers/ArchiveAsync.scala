@@ -39,8 +39,7 @@ class ArchiveAsync @Inject() (
       val enumerator = zipEnumerator(addChartFilesToArchive(user, id))
       Ok.chunked(enumerator).withHeaders(
         "Content-Type" -> "application/zip",
-        "Content-Disposition" -> s"attachment; filename=\042${
-          filename(user, id)}.zip\042",
+        "Content-Disposition" -> ContentDispositionSupport.attachment(filename(user, id)+".zip"),
         "Cache-Control" -> "max-age=0, must-revalidate")
     }
   }

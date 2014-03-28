@@ -1178,7 +1178,7 @@ public class FileStoreControllerTest {
             .isEqualTo("max-age=604800, private");
           assertThat(header("Last-Modified", result)).isNotNull();
           assertThat(header("Content-Disposition", result))
-            .startsWith("attachment; filename=test%20file");
+            .startsWith("attachment; filename=\"test file");
           assertThat(header("Content-Disposition", result))
             .endsWith(".txt");
           // ETag & Last Modified tests
@@ -1278,7 +1278,8 @@ public class FileStoreControllerTest {
           assertThat(header("Cache-Control", result))
             .isEqualTo("max-age=0, must-revalidate");
           assertThat(header("Content-Disposition", result))
-            .isEqualTo("attachment; filename=Test%20Folder.zip");
+            .isEqualTo("attachment; filename=\"Test Folder.zip\";"
+                + " filename*=UTF-8''Test%20Folder.zip");
           // File result is async
           //assertThat(result.getWrappedResult()).isInstanceOf(
           //    play.api.mvc.AsyncResult.class);

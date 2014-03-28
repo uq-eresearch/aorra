@@ -45,7 +45,7 @@ public class HtmlController extends SessionAwareController {
         try (TempFiles files = new HtmlZip().toHtmlZip(filename(fileId),
             h, request().cookie("PLAY_SESSION").value())) {
           ctx().response().setHeader("Content-Disposition",
-              "attachment; filename="+filename(fileId)+".zip");
+              ContentDispositionSupport.attachment(filename(fileId)+".zip"));
           return ok(files.result()).as("application/zip");
         } catch(Exception e) {
           throw new RuntimeException(e);
@@ -62,7 +62,7 @@ public class HtmlController extends SessionAwareController {
         try (TempFiles files = new HtmlToPdf().toPdf(filename(fileId),
             h, request().cookie("PLAY_SESSION").value(), copts)) {
           ctx().response().setHeader("Content-Disposition",
-              "attachment; filename="+filename(fileId)+".pdf");
+              ContentDispositionSupport.attachment(filename(fileId)+".pdf"));
           return ok(files.result()).as("application/pdf");
         } catch(Exception e) {
           throw new RuntimeException(e);
