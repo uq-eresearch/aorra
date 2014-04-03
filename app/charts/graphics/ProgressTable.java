@@ -30,11 +30,11 @@ public class ProgressTable implements Drawable {
   }
 
   public static enum Condition {
-    VERYPOOR ("Very Poor"),
+    VERYPOOR ("Very poor"),
     POOR ("Poor"),
     MODERATE ("Moderate"),
     GOOD ("Good"),
-    VERYGOOD ("Very Good"),
+    VERYGOOD ("Very good"),
     UNDECIDED ("Undecided");
 
     private final String label;

@@ -28,6 +28,8 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Writes
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsNull
+import charts.builder.spreadsheet.ProgressTableBuilder
+import charts.graphics.ProgressTable
 
 class InfographicController @Inject()(
       val jcrom: Jcrom,
@@ -83,7 +85,13 @@ class InfographicController @Inject()(
 
     views.js.InfographicController.data(
       yamlDoc("base_year").toString(),
-      getId("marine_spreadsheet_id").flatMap(marineJson(_))
+      "2011",
+      getId("marine_spreadsheet_id").map(marineJson(_))
+        .getOrElse(Json.obj()),
+      getId("progress_spreadsheet_id").map(managementJson(_))
+        .getOrElse(Json.obj()),
+      getId("progress_spreadsheet_id").map(catchmentJson(_))
+        .getOrElse(Json.obj())
     )
   }
 
@@ -112,7 +120,7 @@ class InfographicController @Inject()(
   }
 
 
-  def hdl(chart: charts.Chart): Option[(Region, JsValue)] = {
+  def marineHdl(chart: charts.Chart): Option[(Region, JsValue)] = {
     import MarineBuilder.MarineChart
     val beercoaster = chart.asInstanceOf[MarineChart].beercoaster()
 
@@ -142,17 +150,104 @@ class InfographicController @Inject()(
     Some((chart.getDescription().getRegion(), Json.toJson(beercoaster)))
   }
 
-  private def marineJson(fileId: String): Option[JsValue] = {
+  def getPtdWrites(includeIndicators: Set[String]): Writes[ProgressTable.Dataset] = {
+    import scala.collection.JavaConversions._
+    new Writes[ProgressTable.Dataset] {
+      override def writes(dataset: ProgressTable.Dataset) = {
+        val row = dataset.rows.toSeq.head
 
-    val charts = { chartBuilder.getCharts(fileId, ChartType.MARINE, null, null) }
+        val indicators =
+          dataset.columns.toList.zipWithIndex.flatMap { case (column, i) =>
+            val indicator = column.header.toLowerCase
+            val cell = row.cells.get(i)
+            if (cell != null && includeIndicators.contains(indicator)) {
+              val target = column.target
+                .replaceAll("Target: ", "")
+                .replaceAll(" per cent", "%")
+                .replaceAll("\n", " ")
+              Seq(indicator -> Json.obj(
+                "qualitative" -> toJs(cell.condition),
+                "quantitative" -> JsString(cell.progress),
+                "target" -> JsString(target)
+              ))
+            } else {
+              Seq()
+            }
+          }
 
-    val regions: Seq[Option[(Region, JsValue)]] = charts.toList.map(hdl(_))
+        indicators.foldLeft(Json.obj()) { (o, v) =>
+          o ++ Json.obj( v._1 -> v._2 )
+        }
+      }
 
-    Some(JsObject(regions.flatten.map { p =>
+      def toJs(condition: ProgressTable.Condition) = {
+        condition match {
+          case null => JsNull
+          case ProgressTable.Condition.UNDECIDED => JsNull
+          case _ => JsString(condition.toString())
+        }
+      }
+    }
+  }
+
+  def managementHdl(chart: charts.Chart): Option[(Region, JsValue)] = {
+    import ProgressTableBuilder.ProgressTableChart
+    val dataset = chart.asInstanceOf[ProgressTableChart].dataset
+
+    implicit def ptdWrites = getPtdWrites(Set(
+      "grazing", "sugarcane", "horticulture"
+    ))
+
+    Some((chart.getDescription().getRegion(), Json.toJson(dataset)))
+  }
+
+  def catchmentHdl(chart: charts.Chart): Option[(Region, JsValue)] = {
+    import ProgressTableBuilder.ProgressTableChart
+    val dataset = chart.asInstanceOf[ProgressTableChart].dataset
+
+    implicit def ptdWrites = getPtdWrites(Set(
+      "groundcover", "nitrogen", "sediment", "pesticides"
+    ))
+
+    Some((chart.getDescription().getRegion(), Json.toJson(dataset)))
+  }
+
+  private def marineJson(fileId: String): JsValue = {
+
+    val charts = chartBuilder.getCharts(fileId, ChartType.MARINE, null, null)
+
+    val regions: Seq[Option[(Region, JsValue)]] = charts.toList.map(marineHdl(_))
+
+    JsObject(regions.flatten.map { p =>
       val regionName = p._1.toString().toLowerCase().replaceAll("_", "-")
       (regionName, p._2)
-    }))
+    })
   }
+
+  private def managementJson(fileId: String): JsValue = {
+
+    val charts = chartBuilder.getCharts(fileId, ChartType.PROGRESS_TABLE_REGION, null, null)
+
+    val regions: Seq[Option[(Region, JsValue)]] = charts.toList.map(managementHdl(_))
+
+    JsObject(regions.flatten.map { p =>
+      val regionName = p._1.toString().toLowerCase().replaceAll("_", "-")
+      (regionName, p._2)
+    })
+  }
+
+  private def catchmentJson(fileId: String): JsValue = {
+
+    val charts = chartBuilder.getCharts(fileId, ChartType.PROGRESS_TABLE_REGION, null, null)
+
+    val regions: Seq[Option[(Region, JsValue)]] = charts.toList.map(catchmentHdl(_))
+
+    JsObject(regions.flatten.map { p =>
+      val regionName = p._1.toString().toLowerCase().replaceAll("_", "-")
+      (regionName, p._2)
+    })
+  }
+
 
 
 

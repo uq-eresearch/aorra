@@ -17,6 +17,7 @@ import charts.builder.DataSource.MissingDataException;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
 import charts.graphics.ProgressTable;
+import charts.graphics.ProgressTable.Dataset;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -41,6 +42,10 @@ public class ProgressTableBuilder extends AbstractProgressTableBuilder {
         ChartType.PROGRESS_TABLE_REGION));
   }
 
+  public abstract static class ProgressTableChart extends AbstractChart {
+    public abstract ProgressTable.Dataset dataset();
+  }
+
   @Override
   public Chart build(Context ctx) {
     final SpreadsheetDataSource datasource = ctx.datasource();
@@ -56,7 +61,7 @@ public class ProgressTableBuilder extends AbstractProgressTableBuilder {
     if (region == Region.GBR
         || type == ChartType.PROGRESS_TABLE_REGION) {
       final ProgressTable pt = new ProgressTable(ds);
-      return new AbstractChart() {
+      return new ProgressTableChart() {
         @Override
         public ChartDescription getDescription() {
           return new ChartDescription(type, region);
@@ -65,6 +70,11 @@ public class ProgressTableBuilder extends AbstractProgressTableBuilder {
         @Override
         public Drawable getChart() {
           return pt;
+        }
+
+        @Override
+        public Dataset dataset() {
+          return ds;
         }
 
         @Override

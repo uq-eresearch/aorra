@@ -1,6 +1,9 @@
 @(
   baseYear: String,
-  marineData: Option[play.api.libs.json.JsValue]
+  reportYears: String,
+  marineData: play.api.libs.json.JsValue,
+  managementData: play.api.libs.json.JsValue,
+  catchmentData: play.api.libs.json.JsValue
 )
 
 @import play.api.libs.json.Json
@@ -8,7 +11,7 @@
 @import play.api.templates.JavaScript
 
 var baseYear = @JavaScript(Json.prettyPrint(JsString(baseYear)));
-var reportYears = "2011";
+var reportYears = @JavaScript(Json.prettyPrint(JsString(reportYears)));
 
 var regionNames = {
   'cape-york': 'Cape York',
@@ -55,8 +58,8 @@ var marineCaptions = {
   'burnett-mary':       ''
 };
 
-var marineData = @JavaScript(Json.prettyPrint(marineData.getOrElse(Json.obj())));
+var marineData = @JavaScript(Json.prettyPrint(marineData));
 
-var managementData = {};
+var managementData = @JavaScript(Json.prettyPrint(managementData));
 
-var catchmentData = {};
+var catchmentData = @JavaScript(Json.prettyPrint(catchmentData));
