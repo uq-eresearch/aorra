@@ -50,7 +50,7 @@ object ApplicationBuild extends Build {
       exclude("org.apache.poi", "poi-ooxml-schemas")
       exclude("org.apache.poi", "poi-scratchpad"),
     "org.apache.xmlbeans" % "xmlbeans" % "2.3.0", // POI dependency
-    "org.jsoup" % "jsoup" % "1.7.2" % "test",
+    "org.jsoup" % "jsoup" % "1.7.2",
     "org.jfree" % "jfreechart" % "1.0.15",
     "org.apache.xmlgraphics" % "batik-codec" % BatikVersion,
     "org.apache.xmlgraphics" % "batik-rasterizer" % BatikVersion,

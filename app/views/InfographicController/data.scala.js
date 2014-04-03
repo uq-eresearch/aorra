@@ -1,17 +1,17 @@
 @(
-  baseYear: String,
-  reportYears: String,
+  baseYear: play.api.libs.json.JsString,
+  reportYears: play.api.libs.json.JsString,
   marineData: play.api.libs.json.JsValue,
   managementData: play.api.libs.json.JsValue,
-  catchmentData: play.api.libs.json.JsValue
+  catchmentData: play.api.libs.json.JsValue,
+  marineCaptions: play.api.libs.json.JsValue
 )
 
 @import play.api.libs.json.Json
-@import play.api.libs.json.JsString
 @import play.api.templates.JavaScript
 
-var baseYear = @JavaScript(Json.prettyPrint(JsString(baseYear)));
-var reportYears = @JavaScript(Json.prettyPrint(JsString(reportYears)));
+var baseYear = @JavaScript(Json.prettyPrint(baseYear));
+var reportYears = @JavaScript(Json.prettyPrint(reportYears));
 
 var regionNames = {
   'cape-york': 'Cape York',
@@ -48,15 +48,7 @@ var indicatorNames = {
   "water-chlorophyll": "Chlorophyll &alpha;"
 };
 
-var marineCaptions = {
-  'gbr':                '',
-  'cape-york':          '',
-  'wet-tropics':        '',
-  'burdekin':           '',
-  'mackay-whitsunday':  '',
-  'fitzroy':            '',
-  'burnett-mary':       ''
-};
+var marineCaptions = @JavaScript(Json.prettyPrint(marineCaptions));
 
 var marineData = @JavaScript(Json.prettyPrint(marineData));
 

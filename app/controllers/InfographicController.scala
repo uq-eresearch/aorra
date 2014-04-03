@@ -30,6 +30,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.JsNull
 import charts.builder.spreadsheet.ProgressTableBuilder
 import charts.graphics.ProgressTable
+import org.jsoup.Jsoup
 
 class InfographicController @Inject()(
       val jcrom: Jcrom,
@@ -84,13 +85,15 @@ class InfographicController @Inject()(
     }
 
     views.js.InfographicController.data(
-      yamlDoc("base_year").toString(),
-      "2011",
+      JsString(yamlDoc("base_year").toString()),
+      JsString(yamlDoc("report_year").toString()),
       getId("marine_spreadsheet_id").map(marineJson(_))
         .getOrElse(Json.obj()),
       getId("progress_spreadsheet_id").map(managementJson(_))
         .getOrElse(Json.obj()),
       getId("progress_spreadsheet_id").map(catchmentJson(_))
+        .getOrElse(Json.obj()),
+      getId("marine_captions_id").map(captionJson(fsm)(_))
         .getOrElse(Json.obj())
     )
   }
@@ -246,6 +249,43 @@ class InfographicController @Inject()(
       val regionName = p._1.toString().toLowerCase().replaceAll("_", "-")
       (regionName, p._2)
     })
+  }
+
+  private def captionJson(fsm: FileStore.Manager)(fileId: String): JsValue = {
+
+    val file = fsm.getByIdentifier(fileId).asInstanceOf[FileStore.File]
+
+    val regions = Map(
+      "gbr" -> "Great Barrier Reef",
+      "cape-york" -> "Cape York",
+      "wet-tropics" -> "Wet Tropics",
+      "burdekin" -> "Burdekin",
+      "mackay-whitsunday" -> "Mackay-Whitsunday",
+      "fitzroy" -> "Fitzroy",
+      "burnett-mary" -> "Burnett-Mary"
+    )
+
+    val doc = Jsoup.parse(file.getData, "UTF-8", "/")
+
+    JsObject(
+      regions.toSeq.map { case (regionId, regionName) =>
+        val searchStr = regionName.replaceAll("[\\- ]", ".")
+        // Find header
+        Option(doc.select("h3:matches("+searchStr+")").first)
+          // Look for the next element
+          .flatMap(e => Option(e.nextElementSibling))
+          // It should be a <figure />
+          .filter(e => e.tagName == "figure")
+          // Find the caption
+          .flatMap(e => Option(e.select("figcaption").first))
+          // Get the text
+          .map(_.text)
+          // Output a pair with the text
+          .map(text => (regionId, JsString(text)))
+          // If it we didn't find what we were after, output nothing
+          .getOrElse((regionId, JsString("")))
+      }
+    )
   }
 
 
