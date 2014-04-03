@@ -27,6 +27,7 @@ import play.api.libs.json.JsString
 import play.api.libs.json.JsObject
 import play.api.libs.json.Writes
 import play.api.libs.json.JsValue
+import play.api.libs.json.JsNull
 
 class InfographicController @Inject()(
       val jcrom: Jcrom,
@@ -82,8 +83,7 @@ class InfographicController @Inject()(
 
     views.js.InfographicController.data(
       yamlDoc("base_year").toString(),
-      getId("marine_spreadsheet_id").flatMap(marineJson(_)),
-      getId("progress_spreadsheet_id").flatMap(progressJson(_))
+      getId("marine_spreadsheet_id").flatMap(marineJson(_))
     )
   }
 
@@ -118,8 +118,12 @@ class InfographicController @Inject()(
 
     implicit val bccWrites: Writes[BeerCoaster.Condition] = new Writes[BeerCoaster.Condition] {
       override def writes(condition: BeerCoaster.Condition) =
-        Json.obj("qualitative" ->
-          JsString(condition.toString().toLowerCase().replaceAll("_", "-")))
+        Json.obj("qualitative" -> asJsValue(condition))
+
+      def asJsValue(condition: BeerCoaster.Condition): JsValue = condition match {
+        case BeerCoaster.Condition.NOT_EVALUATED => JsNull
+        case _ => JsString(condition.getLabel())
+      }
     }
 
     implicit val bcWrites: Writes[BeerCoaster] = new Writes[BeerCoaster] {
@@ -149,8 +153,6 @@ class InfographicController @Inject()(
       (regionName, p._2)
     }))
   }
-
-  private def progressJson(fileId: String): Option[JsObject] = None
 
 
 
