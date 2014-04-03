@@ -66,7 +66,7 @@ public class MarineBuilder extends AbstractBuilder {
       this.column = column;
       this.row = row;
     }
-    
+
     private Field(Category category, String column, int row) {
       this(column, row);
       this.category = category;
@@ -135,15 +135,19 @@ public class MarineBuilder extends AbstractBuilder {
     }
   }
 
+  public abstract static class MarineChart extends AbstractChart {
+    public abstract BeerCoaster beercoaster();
+  }
+
   @Override
   public Chart build(final Context context) {
     AttributedDataset a = new AttributedDatasetImpl();
     configurator(context).configure(a, context.type());
     final BeerCoaster beercoaster = getDrawable(context.datasource(), context.region(), a);
     if (beercoaster != null) {
-      
+
       final ChartDescription description = new ChartDescription(context.type(), context.region());
-      return new AbstractChart() {
+      return new MarineChart() {
         @Override
         public ChartDescription getDescription() {
           return description;
@@ -151,6 +155,11 @@ public class MarineBuilder extends AbstractBuilder {
 
         @Override
         public Drawable getChart() {
+          return beercoaster;
+        }
+
+        @Override
+        public BeerCoaster beercoaster() {
           return beercoaster;
         }
 
