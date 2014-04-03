@@ -45,7 +45,7 @@ public class LoadsRegionsBuilder extends LoadsBuilder {
 
   @Override
   protected Drawable getDrawable(JFreeContext ctx) {
-    return Loads.createChart((ADCDataset)ctx.dataset(),new Dimension(750, 500));
+    return Loads.createChart((ADCDataset)ctx.dataset(),new Dimension(800, 500));
   }
 
   @Override
