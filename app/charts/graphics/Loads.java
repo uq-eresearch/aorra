@@ -2,7 +2,6 @@ package charts.graphics;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -48,12 +47,7 @@ public class Loads {
         ((BarRenderer)renderer).setBarPainter(new StandardBarPainter());
         CategoryAxis domainAxis = plot.getDomainAxis();
         domainAxis.setMaximumCategoryLabelLines(3);
-        domainAxis.setTickLabelFont(getSmallerFont(rangeAxis.getTickLabelFont()));
         return new JFreeChartDrawable(chart, dimension);
-    }
-
-    private static Font getSmallerFont(Font f) {
-        return new Font(f.getName(), Font.PLAIN, f.getSize()-2);
     }
 
     private static double upperRange(CategoryDataset dataset) {
