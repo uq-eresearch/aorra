@@ -8,6 +8,7 @@ import scala.util.Try
 
 import org.yaml.snakeyaml.Yaml
 
+import play.api.libs.json._
 import play.api.templates.JavaScript
 
 object Infographic {

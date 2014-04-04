@@ -1,16 +1,24 @@
 package controllers
 
+import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{future, Future}
-import com.google.inject.Inject
+import scala.concurrent.future
+import scala.language.implicitConversions
+
 import org.jcrom.Jcrom
+
+import com.google.inject.Inject
+
+import charts.ChartType
 import charts.builder.ChartBuilder
+import controllers.ScalaSecured.isAuthenticatedAsync
+import infographic.Infographic
+import infographic.InfographicConfig
+import infographic.InfographicData
+import javax.jcr.Session
 import play.api.mvc.Controller
 import play.libs.F
 import service.filestore.FileStore
-import infographic._
-import charts.ChartType
-import scala.collection.JavaConversions._
 
 class InfographicController @Inject()(
       val jcrom: Jcrom,
