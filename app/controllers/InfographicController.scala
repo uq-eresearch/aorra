@@ -11,7 +11,6 @@ import javax.jcr.Session
 import models.CacheableUser
 import play.api.mvc.Controller
 import play.libs.F
-import org.yaml.snakeyaml.Yaml
 import service.filestore.FileStore
 import org.apache.commons.io.IOUtils
 import scala.collection.JavaConversions.{mapAsScalaMap, iterableAsScalaIterable}
@@ -31,6 +30,8 @@ import play.api.libs.json.JsNull
 import charts.builder.spreadsheet.ProgressTableBuilder
 import charts.graphics.ProgressTable
 import org.jsoup.Jsoup
+import infographic.Infographic
+import infographic.InfographicConfig
 
 class InfographicController @Inject()(
       val jcrom: Jcrom,
@@ -59,11 +60,9 @@ class InfographicController @Inject()(
         val fsm = filestore.getManager(session)
         fsm.getByIdentifier(fileId) match {
           case file: FileStore.File if file.getMimeType == YAML_MIMETYPE =>
-            val yaml = new Yaml
-            val document = IOUtils.toString(file.getData)
-            yaml.load(document) match {
-              case map: java.util.Map[String, Any] =>
-                Ok(infographicJs(fsm, map.toMap)).as("application/javascript")
+            Infographic.parseConfig(file.getData) match {
+              case Some(config) =>
+                Ok(infographicJs(fsm, config)).as("application/javascript")
               case _ =>
                 NotFound
             }
@@ -75,9 +74,8 @@ class InfographicController @Inject()(
 
   private def infographicJs(
       fsm: FileStore.Manager,
-      yamlDoc: Map[String, Any]): JavaScript = {
-    def getId(key: String): Option[String] = {
-      val id = yamlDoc(key).asInstanceOf[String]
+      config: InfographicConfig): JavaScript = {
+    def getId(id: String): Option[String] = {
       fsm.getByIdentifier(id) match {
         case file: FileStore.File => Some(file.getIdentifier)
         case _ => None
@@ -85,15 +83,15 @@ class InfographicController @Inject()(
     }
 
     views.js.InfographicController.data(
-      JsString(yamlDoc("base_year").toString()),
-      JsString(yamlDoc("report_year").toString()),
-      getId("marine_spreadsheet_id").map(marineJson(_))
+      JsString(config.baseYear),
+      JsString(config.reportYears),
+      getId(config.marineChartFileId).map(marineJson(_))
         .getOrElse(Json.obj()),
-      getId("progress_spreadsheet_id").map(managementJson(_))
+      getId(config.progressTableFileId).map(managementJson(_))
         .getOrElse(Json.obj()),
-      getId("progress_spreadsheet_id").map(catchmentJson(_))
+      getId(config.progressTableFileId).map(catchmentJson(_))
         .getOrElse(Json.obj()),
-      getId("marine_captions_id").map(captionJson(fsm)(_))
+      getId(config.marineCaptionsFileId).map(captionJson(fsm)(_))
         .getOrElse(Json.obj())
     )
   }
