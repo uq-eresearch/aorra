@@ -2,32 +2,15 @@ package controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{future, Future}
-import java.io.InputStream
-import org.jcrom.Jcrom
 import com.google.inject.Inject
-import charts.builder.FileStoreDataSourceFactory.getDataSource
-import controllers.ScalaSecured.isAuthenticatedAsync
-import javax.jcr.Session
-import models.CacheableUser
+import org.jcrom.Jcrom
+import charts.builder.ChartBuilder
 import play.api.mvc.Controller
 import play.libs.F
 import service.filestore.FileStore
-import org.apache.commons.io.IOUtils
-import scala.collection.JavaConversions.{mapAsScalaMap, iterableAsScalaIterable}
-import play.api.templates.JavaScript
-import charts.ChartType
-import charts.Region
-import charts.builder.ChartBuilder
-import charts.builder.spreadsheet.MarineBuilder
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import charts.graphics.BeerCoaster
-import play.api.libs.json.JsString
-import play.api.libs.json.JsObject
-import play.api.libs.json.Writes
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsNull
 import infographic._
+import charts.ChartType
+import scala.collection.JavaConversions._
 
 class InfographicController @Inject()(
       val jcrom: Jcrom,

@@ -6,7 +6,6 @@ import charts.graphics.ProgressTable
 import charts.Region
 import play.api.libs.json._
 
-
 trait ProgressJsonBuilder extends ChartJsonBuilder {
 
   def apply(chartList: Seq[charts.Chart]): JsValue =

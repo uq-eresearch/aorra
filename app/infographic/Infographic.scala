@@ -1,17 +1,13 @@
 package infographic
 
-import org.yaml.snakeyaml.Yaml
 import java.io.InputStream
-import scala.collection.JavaConversions._
 import java.util.UUID
+
+import scala.collection.JavaConversions._
 import scala.util.Try
-import org.jsoup.Jsoup
-import play.api.libs.json._
-import charts.Region
-import charts.builder.spreadsheet.MarineBuilder
-import charts.graphics.BeerCoaster
-import charts.graphics.ProgressTable
-import charts.builder.spreadsheet.ProgressTableBuilder
+
+import org.yaml.snakeyaml.Yaml
+
 import play.api.templates.JavaScript
 
 object Infographic {

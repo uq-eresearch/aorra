@@ -1,9 +1,12 @@
 package infographic
 
-import org.jsoup.Jsoup
 import java.io.InputStream
-import play.api.libs.json._
 
+import org.jsoup.Jsoup
+
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
+import play.api.libs.json.JsValue
 
 object MarineCaptionsJsonBuilder {
 

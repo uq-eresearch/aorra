@@ -5,7 +5,6 @@ import charts.builder.spreadsheet.ProgressTableBuilder
 import charts.Region
 import play.api.libs.json.Json
 
-
 object ManagementJsonBuilder extends ProgressJsonBuilder {
 
   def hdl(chart: charts.Chart): Option[(Region, JsValue)] = {

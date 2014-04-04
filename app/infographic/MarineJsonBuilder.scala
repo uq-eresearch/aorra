@@ -5,7 +5,6 @@ import charts.Region
 import charts.builder.spreadsheet.MarineBuilder
 import charts.graphics.BeerCoaster
 
-
 object MarineJsonBuilder extends ChartJsonBuilder {
 
   def apply(chartList: Seq[charts.Chart]): JsValue =
