@@ -15,13 +15,14 @@ import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.data.category.CategoryDataset;
 
+import charts.ChartType;
 import charts.Drawable;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
 
 public class Loads {
 
-    public static Drawable createChart(ADCDataset dataset, Dimension dimension) {
+    public static Drawable createChart(ADCDataset dataset, ChartType type, Dimension dimension) {
         final JFreeChart chart = ChartFactory.createBarChart(
             dataset.get(Attribute.TITLE),       // chart title
             dataset.get(Attribute.X_AXIS_LABEL),               // domain axis label
@@ -39,8 +40,13 @@ public class Loads {
         plot.setRangeGridlinePaint(Color.lightGray);
         // set the range axis to display integers only...
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-        rangeAxis.setTickUnit(new NumberTickUnit(5));
-        rangeAxis.setRange(0.0, upperRange(dataset));
+        if(type == ChartType.LOADS_TSS) {
+          rangeAxis.setTickUnit(new NumberTickUnit(5));
+          rangeAxis.setRange(0.0, upperRange(dataset));
+        } else {
+          rangeAxis.setRange(0.0, 50.0);
+          rangeAxis.setTickUnit(new NumberTickUnit(10));
+        }
         final CategoryItemRenderer renderer = plot.getRenderer();
         renderer.setSeriesItemLabelsVisible(0, Boolean.TRUE);
         renderer.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
