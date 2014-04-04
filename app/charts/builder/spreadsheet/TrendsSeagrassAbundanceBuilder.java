@@ -45,33 +45,52 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         }
       });
 
+  private final SubstitutionKey S_HABITAT = new SubstitutionKey("habitat",
+      "The habitat type of the location (fringing reef, coastal, reef and estuarine)",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          return getSubregion(ctx.datasource(), ctx.parameters()).getHabitat().getLabel();
+        }
+      });
+
     public static final String SUBREGION = "subregion";
+
+    public static enum Habitat {
+      REEF, COASTAL, ESTUARINE;
+
+      public String getLabel() {
+        return name().toLowerCase();
+      }
+    }
 
     public static enum Subregion {
 
-        AP(Region.CAPE_YORK, "Archer Point"),
-        YP(Region.WET_TROPICS, "Yule Point"),
-        LB(Region.WET_TROPICS, "Lugger Bay"),
-        GI(Region.WET_TROPICS, "Green Island"),
-        DI(Region.WET_TROPICS, "Dunk Island"),
-        TSV(Region.BURDEKIN, "Bushland and Shelly Beaches"),
-        MI(Region.BURDEKIN, "Magnetic Island"),
-        SI(Region.MACKAY_WHITSUNDAY, "Sarina Inlet"),
-        PI(Region.MACKAY_WHITSUNDAY, "Pioneer Bay"),
-        HM(Region.MACKAY_WHITSUNDAY, "Hamilton Island"),
-        GH(Region.FITZROY, "Gladstone Harbour"),
-        GK(Region.FITZROY, "Great Keppel Island"),
-        SWB(Region.FITZROY, "Shoalwater Bay"),
-        UG(Region.BURNETT_MARY, "Urangan"),
-        RD(Region.BURNETT_MARY, "Rodds Bay"),
+        AP(Region.CAPE_YORK, "Archer Point", Habitat.REEF),
+        YP(Region.WET_TROPICS, "Yule Point", Habitat. COASTAL),
+        LB(Region.WET_TROPICS, "Lugger Bay", Habitat.COASTAL),
+        GI(Region.WET_TROPICS, "Green Island", Habitat.REEF),
+        DI(Region.WET_TROPICS, "Dunk Island", Habitat.REEF),
+        TSV(Region.BURDEKIN, "Bushland and Shelly Beaches", Habitat.COASTAL),
+        MI(Region.BURDEKIN, "Magnetic Island", Habitat.REEF),
+        SI(Region.MACKAY_WHITSUNDAY, "Sarina Inlet", Habitat.COASTAL),
+        PI(Region.MACKAY_WHITSUNDAY, "Pioneer Bay", Habitat.COASTAL),
+        HM(Region.MACKAY_WHITSUNDAY, "Hamilton Island", Habitat.REEF),
+        GH(Region.FITZROY, "Gladstone Harbour", Habitat.ESTUARINE),
+        GK(Region.FITZROY, "Great Keppel Island", Habitat.REEF),
+        SWB(Region.FITZROY, "Shoalwater Bay", Habitat.COASTAL),
+        UG(Region.BURNETT_MARY, "Urangan", Habitat.ESTUARINE),
+        RD(Region.BURNETT_MARY, "Rodds Bay", Habitat.ESTUARINE),
         ;
 
-        private Region region;
-        private String label;
+        private final Region region;
+        private final String label;
+        private final Habitat habitat;
 
-        private Subregion(Region region, String label) {
+        private Subregion(Region region, String label, Habitat habitat) {
             this.region = region;
             this.label = label;
+            this.habitat = habitat;
         }
 
         public Region getRegion() {
@@ -80,6 +99,10 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
 
         public String getLabel() {
             return label;
+        }
+
+        public Habitat getHabitat() {
+          return habitat;
         }
 
         public static Subregion fromName(String name) {
@@ -209,8 +232,9 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
   @Override
   public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
-        put(Attribute.TITLE, "Trends in seagrass abundance (mean) at ${subregion}").
-        put(Attribute.X_AXIS_LABEL, "Year").
+        put(Attribute.TITLE, "Seagrass abundance at inshore intertidal ${habitat} habitat"
+            + "\nat ${subregion} in the ${region} region").
+        put(Attribute.X_AXIS_LABEL, "").
         put(Attribute.Y_AXIS_LABEL, "Seagrass abundance").
         put(Attribute.SERIES_COLOR, new Color(30, 172, 226)).
         build();
@@ -259,7 +283,7 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
   @Override
   public Set<SubstitutionKey> substitutionKeys() {
     return ImmutableSet.<SubstitutionKey>builder().
-        addAll(super.substitutionKeys()).add(S_SUBREGION).build();
+        addAll(super.substitutionKeys()).add(S_SUBREGION).add(S_HABITAT).build();
   }
 
 }
