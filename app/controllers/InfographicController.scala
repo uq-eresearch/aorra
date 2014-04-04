@@ -60,7 +60,8 @@ class InfographicController @Inject()(
           case file: FileStore.File if file.getMimeType == YAML_MIMETYPE =>
             Infographic.parseConfig(file.getData) match {
               case Some(config) =>
-                Ok(infographicJs(fsm, config)).as("application/javascript")
+                Ok(Infographic(config2data(fsm, config)))
+                  .as("application/javascript")
               case _ =>
                 NotFound
             }
@@ -70,9 +71,9 @@ class InfographicController @Inject()(
     }
   }
 
-  private def infographicJs(
+  private def config2data(
       fsm: FileStore.Manager,
-      config: InfographicConfig): JavaScript = {
+      config: InfographicConfig): InfographicData = {
     def checkIdExists(id: FileId): Option[FileId] = {
       fsm.getByIdentifier(id) match {
         case file: FileStore.File => Some(file.getIdentifier)
@@ -93,14 +94,14 @@ class InfographicController @Inject()(
         .map(getCharts(ChartType.PROGRESS_TABLE_REGION))
         .getOrElse(Seq())
 
-    Infographic(InfographicData(
+    InfographicData(
       config.baseYear,
       config.reportYears,
       marineCharts,
       progressCharts,
       checkIdExists(config.marineCaptionsFileId)
         .map(fsm.getByIdentifier(_).asInstanceOf[FileStore.File].getData)
-    ))
+    )
   }
 
 
