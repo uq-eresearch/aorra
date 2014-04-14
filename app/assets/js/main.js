@@ -6,7 +6,6 @@ var FileAPI = {
 
 requirejs.config({
     paths: {
-      'ace': '//cdnjs.cloudflare.com/ajax/libs/ace/1.1.01/ace',
       'backbone.projections': 'lib/backbone.projections',
       'ckeditor': '../ckeditor/ckeditor',
       'cryptojs-md5': 'lib/cryptojs-md5',
@@ -22,9 +21,6 @@ requirejs.config({
       'unstyler': 'lib/unstyler'
     },
     shim: {
-      'ace': {
-        exports: 'ace'
-      },
       'backbone.projections': {
         deps: ['backbone']
       },

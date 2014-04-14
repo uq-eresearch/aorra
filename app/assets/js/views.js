@@ -19,13 +19,12 @@ define([
         'htmldiff',
         'cryptojs-md5',
         'spin',
-        'ace',
         'jquery.ckeditor',
         'typeahead'
         ], function(App, models, templates, _, _s, Q, moment, DiffMatchPatch,
             glyphtree, $, Backbone, Marionette, LocalStorage,
             BackboneProjections,
-            unstyle, htmldiff, CryptoJS, Spinner, Ace) {
+            unstyle, htmldiff, CryptoJS, Spinner) {
   'use strict';
 
   // Clock with ticks once a second, for periodic checks
@@ -1690,26 +1689,16 @@ define([
       return Q(versions.fetch()).then(function() {
           return versions.last().content();
         }).then(_.bind(function(content) {
-          this._serverContent = content;
+          this._serverContent = content.data;
           this.render();
           return content;
         }, this));
     },
-    template: function() {
-      return templates.render('yaml_editor', {});
+    serializeData: function() {
+      return { content: this._serverContent };
     },
-    onRender: function() {
-      if (this._serverContent) {
-        var data = this._serverContent.data;
-        this.$('#yaml-editor').each(function(i, e) {
-          $(e).css('height', '20em');
-          var editor = Ace.edit(e.id);
-          editor.setTheme("ace/theme/monokai");
-          editor.getSession().setMode("ace/mode/yaml");
-          editor.setValue(data);
-          editor.setReadOnly(true);
-        });
-      }
+    template: function(serialized_model) {
+      return templates.render('yaml_editor', serialized_model);
     }
   });
 
