@@ -1695,7 +1695,7 @@ define([
         }, this));
     },
     serializeData: function() {
-      return { content: this._serverContent };
+      return { id: this.model.id, content: this._serverContent };
     },
     template: function(serialized_model) {
       return templates.render('yaml_editor', serialized_model);
