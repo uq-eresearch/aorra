@@ -1682,20 +1682,34 @@ define([
       "sync": "updatedOnServer"
     },
     initialize: function() {
+      this._isInfographic = false;
       this.updatedOnServer();
     },
     updatedOnServer: function() {
       var versions = this.model.versions();
-      return Q(versions.fetch()).then(function() {
-          return versions.last().content();
-        }).then(_.bind(function(content) {
+      var contentPromise = Q(versions.fetch()).then(function() {
+        return versions.last().content();
+      });
+      var dataPromise = Q($.get('/file/'+this.model.id+'/infographic/data.js'));
+      return Q.all(contentPromise).then(_.bind(function(content) {
           this._serverContent = content.data;
           this.render();
           return content;
+        }, this)).then(function() {
+          return dataPromise;
+        }).done(_.bind(function() {
+          this._isInfographic = true;
+          this.render();
+        }, this), _.bind(function() {
+          this._isInfographic = false;
         }, this));
     },
     serializeData: function() {
-      return { id: this.model.id, content: this._serverContent };
+      return {
+        id: this.model.id,
+        content: this._serverContent,
+        infographic: this._isInfographic
+      };
     },
     template: function(serialized_model) {
       return templates.render('yaml_editor', serialized_model);
