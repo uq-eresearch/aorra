@@ -475,7 +475,7 @@ public class ChartTest {
         // Progress
         {
           final String[] condStr = new String[] {
-            null, "Very Good", "Good", "Moderate", "Poor", "Very Poor"
+            null, "Very good", "Good", "Moderate", "Poor", "Very poor"
           };
           final int[][] expected = new int[][] {
             new int[] { 3, 2, 3, 1, 3, 1, 2, 2, 2 },
