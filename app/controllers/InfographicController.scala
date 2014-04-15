@@ -54,7 +54,7 @@ class InfographicController @Inject()(
   def dataFile(fileId: FileId) = isAuthenticatedAsync { user => implicit request =>
     future {
       withInfographicData[SimpleResult](user, fileId) { data =>
-        Ok(Infographic(data)).as("application/javascript")
+        Ok(Infographic(data)).as("application/json")
       }.getOrElse(NotFound)
     }
   }
@@ -135,6 +135,8 @@ class InfographicController @Inject()(
     InfographicData(
       config.baseYear,
       config.reportYears,
+      config.fullReportCardURL,
+      config.otherReportCardsJSONP,
       marineCharts,
       progressCharts,
       checkIdExists(config.marineCaptionsFileId)

@@ -1690,7 +1690,7 @@ define([
       var contentPromise = Q(versions.fetch()).then(function() {
         return versions.last().content();
       });
-      var dataPromise = Q($.get('/file/'+this.model.id+'/infographic/data.js'));
+      var dataPromise = Q($.get('/file/'+this.model.id+'/infographic/data.json'));
       return Q.all(contentPromise).then(_.bind(function(content) {
           this._serverContent = content.data;
           this.render();
