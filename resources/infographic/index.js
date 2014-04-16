@@ -465,13 +465,16 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
       
       Sammy('#main', function() {
         function addProgressButtons(data, regionName, e) {
+          function capitalize(str) {
+            return str.substring(0,1).toUpperCase() + str.substring(1);
+          }
           var region = data[regionName];
           Object.keys(region).forEach(function(indicator) {
             Sammy('#main', function() {
               var condition = region[indicator].qualitative || 'NA';
               var value = region[indicator].quantitative || '';
               var target = region[indicator].target || '';
-              var name = indicator.substring(0,1).toUpperCase() + indicator.substring(1);
+              var name = capitalize(region[indicator].name || indicator);
               var $button = $(template('progress-tile', {
                 conditionId: condition.toLowerCase().replace(' ', '-'),
                 conditionName: condition,

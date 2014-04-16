@@ -12,7 +12,10 @@ object CatchmentJsonBuilder extends ProgressJsonBuilder {
     val dataset = chart.asInstanceOf[ProgressTableChart].dataset
 
     implicit def ptdWrites = getPtdWrites(Set(
-      "groundcover", "nitrogen", "sediment", "pesticides"
+      SimpleIndicator("groundcover"),
+      SimpleIndicator("nitrogen"),
+      SimpleIndicator("sediment"),
+      SimpleIndicator("pesticides")
     ))
 
     Some((chart.getDescription().getRegion(), Json.toJson(dataset)))

@@ -12,7 +12,10 @@ object ManagementJsonBuilder extends ProgressJsonBuilder {
     val dataset = chart.asInstanceOf[ProgressTableChart].dataset
 
     implicit def ptdWrites = getPtdWrites(Set(
-      "grazing", "sugarcane", "horticulture"
+      SimpleIndicator("grazing"),
+      SimpleIndicator("sugarcane"),
+      RenamedIndicator("grain", "sugarcane"),
+      SimpleIndicator("horticulture")
     ))
 
     Some((chart.getDescription().getRegion(), Json.toJson(dataset)))
