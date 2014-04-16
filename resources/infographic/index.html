@@ -1,0 +1,342 @@
+<html>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="//cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+<link rel="stylesheet" type="text/css" href="leaflet.label.css" />
+<link rel="stylesheet" type="text/css" href="index.css" />
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/2.3.0/es5-shim.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/hogan.js/3.0.0/hogan.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/sammy.js/0.7.4/sammy.min.js"></script>
+<script src="jquery.svg.min.js"></script>
+<script src="jquery.svganim.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="//cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+<script src="leaflet.label.js"></script>
+<script src="index.js"></script>
+
+<body>
+
+<div id="map"></div>
+<div id="regions"></div>
+
+<ul id="legend">
+  <li class="condition very-good">Very good</li>
+  <li class="condition good">Good</li>
+  <li class="condition moderate">Moderate</li>
+  <li class="condition poor">Poor</li>
+  <li class="condition very-poor">Very poor</li>
+</ul>
+
+<div id="main" class="inset-paper">
+
+</div>
+
+
+<script id="tmpl-home" type="text/html">
+  <div class="container-fluid">
+  <h1>
+    Reef Report Card Summary
+    <span class="nobr">{{reportYears}}</span>
+  </h1>
+  <p>
+  This report card measures progress from the {{baseYear}} baseline towards 
+  Reef Water Quality Protection Plan (Reef Plan) targets. It assesses the
+  combined results of all Reef Plan actions up to June {{reportFinalYear}}.
+  Click on a region on the map for regional results or use the indicators
+  buttons below to explore the Great Barrier Reef-wide results.
+  </p>
+  <p>Click on a region, or explore the reef-wide view.</p>
+  <div class="row" style="padding-top: 2em; padding-bottom: 2em;">
+    <div class="col-xs-4 text-center">
+      <a class="btn btn-default" href="#/management">
+        Management <br /> Indicators
+      </a>
+    </div>
+    <div class="col-xs-4 text-center">
+      <a class="btn btn-default" href="#/catchment">
+        Catchment <br /> Indicators
+      </a>
+    </div>
+    <div class="col-xs-4 text-center">
+      <a class="btn btn-default" href="#/marine">
+        Marine <br /> Condition
+      </a>
+    </div>
+  </div>
+  <p>
+  You can view the full report card <a href="{{fullReportUrl}}">here</a>.
+  </p>
+  {{#otherYears}}
+    {{>other-years-nav}}
+  {{/otherYears}}
+  </div>
+</script>
+
+<div id="marine-chart"></div>
+
+<script id="tmpl-gbr-banner" type="text/html">
+  <div class="top-banner gbr">Great Barrier Reef</div>
+</script>
+
+<script id="tmpl-other-years-nav" type="text/html">
+  <nav class="navbar navbar-default navbar-fixed-bottom"
+    role="navigation"
+    style="position: absolute">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#other-years-navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        {{#isMostRecent}}
+        <div class="navbar-brand">Previous Years</div>
+        {{/isMostRecent}}
+        {{^isMostRecent}}
+        <div class="navbar-brand">Other Years</div>
+        {{/isMostRecent}}
+      </div>
+      <div class="collapse navbar-collapse" id="other-years-navbar-collapse">
+        <ul class="nav navbar-nav">
+          {{#otherYears}}
+          <li>
+            <a href="{{url}}">{{year}}</a>
+          </li>
+          {{/otherYears}}
+        </ul>
+      </div>
+    </div>
+  </nav>
+</script>
+
+<script id="tmpl-marine-select" type="text/html">
+  {{>gbr-banner}}
+  <div class="container-fluid">
+    <h1>Marine condition</h1>
+    <p>
+    Condition of the marine environment including results for water quality,
+    seagrass and coral.
+    </p>
+    <div class="marine-chart gbr"></div>
+    <a class="btn btn-default" href="#/">
+      Back
+    </a>
+  </div>
+</script>
+<script id="tmpl-management-select" type="text/html">
+  {{>gbr-banner}}
+  <div class="container-fluid">
+  <h1>Management practice indicators</h1>
+  <p>
+  Proportion of the agriculture industry that have adopted individual improved
+  land management practices that will reduce the amount of pollutants entering
+  the reef.
+  </p>
+  <div class="management-data" data-region="gbr"></div>
+  <a class="btn btn-default" href="#/">
+    Back
+  </a>
+  </div>
+</script>
+<script id="tmpl-catchment-select" type="text/html">
+  {{>gbr-banner}}
+  <div class="container-fluid">
+  <h1>Catchment indicators</h1>
+  <p>
+  Reductions in key pollutants leaving the end of catchments as a result of
+  changes in land management practices.
+  </p>
+  <div class="catchment-data" data-region="gbr"></div>
+  <a class="btn btn-default" href="#/">
+    Back
+  </a>
+  </div>
+</script>
+<!-- Management info -->
+<script id="tmpl-management-indicator-info" type="text/html">
+  {{>gbr-banner}}
+  <div class="container-fluid">
+  <h1>{{name}}</h1>
+  <p>
+  {{caption}}
+  </p>
+  <a class="btn btn-default" href="#/management">
+    Back
+  </a>
+  </div>
+</script>
+<script id="tmpl-grazing-caption" type="text/html">
+  The map shows the proportion of graziers in each region who adopted improved
+  practices between {{baseYear}} and {{reportFinalYear}}.
+  The target was {{target}}.
+</script>
+<script id="tmpl-sugarcane-caption" type="text/html">
+  The map shows the proportion of growers in each region who adopted improved
+  practices between {{baseYear}} and {{reportFinalYear}}.
+  The target was {{target}}.
+</script>
+<script id="tmpl-horticulture-caption" type="text/html">
+  The map shows the proportion of producers in each region who adopted improved
+  practices between {{baseYear}} and {{reportFinalYear}}.
+  The target was {{target}}.
+</script>
+<!-- Catchment info -->
+<script id="tmpl-catchment-indicator-info" type="text/html">
+  {{>gbr-banner}}
+  <div class="container-fluid">
+  <h1>{{name}}</h1>
+  <p>
+  {{caption}}
+  </p>
+  <a class="btn btn-default" href="#/catchment">
+    Back
+  </a>
+  </div>
+</script>
+<script id="tmpl-groundcover-caption" type="text/html">
+  The maps show late dry season groundcover for each region as at 
+  {{reportFinalYear}}. The target was {{target}}.
+</script>
+<script id="tmpl-nitrogen-caption" type="text/html">
+  Reduction in annual average total nitrogen load for each region between 
+  {{baseYear}} and {{reportFinalYear}}. The target was {{target}}.
+</script>
+<script id="tmpl-sediment-caption" type="text/html">
+  Reduction in annual average sediment load for each region between
+  {{baseYear}} and {{reportFinalYear}}. The target is {{target}}.
+</script>
+<script id="tmpl-pesticides-caption" type="text/html">
+  Reduction in annual average pesticide load for each region between
+  {{baseYear}} and {{reportFinalYear}}. The target was {{target}}.
+</script>
+<!-- Marine info -->
+<script id="tmpl-marine-indicator-info" type="text/html">
+  {{>gbr-banner}}
+  <div class="container-fluid">
+  <h1>{{{name}}}</h1>
+  <p>
+  {{{caption}}}
+  </p>
+  <a class="btn btn-default" href="#/marine">
+    Back
+  </a>
+  </div>
+</script>
+<script id="tmpl-overall-caption" type="text/html">
+  <!-- Description pending -->
+</script>
+<script id="tmpl-coral-caption" type="text/html">
+  <!-- Description pending -->
+</script>
+<script id="tmpl-seagrass-caption" type="text/html">
+  <!-- Description pending -->
+</script>
+<script id="tmpl-water-caption" type="text/html">
+  <!-- Description pending -->
+</script>
+<script id="tmpl-water-chlorophyll-caption" type="text/html">
+  Indicates nutrient availability and productivity.
+</script>
+<script id="tmpl-water-solids-caption" type="text/html">
+  Measures particulate matter in water.
+</script>
+<script id="tmpl-seagrass-abundance-caption" type="text/html">
+  Includes the cover and change in cover.
+</script>
+<script id="tmpl-seagrass-reproduction-caption" type="text/html">
+  Indicates the potential of seagrass meadows to recover from
+  disturbances.
+</script>
+<script id="tmpl-seagrass-nutrient-caption" type="text/html">
+  Nutrient status measures the response of seagrass to nutrient conditions
+  in surrounding waters.
+</script>
+<script id="tmpl-coral-cover-caption" type="text/html">
+  Coral cover is a measure of the percentage of coral across reefs, and
+  indicates the capacity of coral to persist under the current
+  environmental conditions and its potential to recover.
+</script>
+<script id="tmpl-coral-change-caption" type="text/html">
+  Coral change measures change in coral cover which indicates coral
+  resilience to disturbance.
+</script>
+<script id="tmpl-coral-macroalgae-caption" type="text/html">
+  Macroalgal cover - high abundance indicates poor water quality and
+  negatively affects the resilience of coral communities.
+</script>
+<script id="tmpl-coral-juvenile-caption" type="text/html">
+  Coral juvenile density measures the abundance of corals less than 10
+  centimetres in diameter which indicates the recovery potential from
+  disturbances.
+</script>
+<script id="tmpl-region-info" type="text/html">
+  <div class="top-banner {{id}}">{{name}}</div>
+  <div class="container-fluid">
+  <div class="carousel {{id}} slide" style="height: 80%"
+    data-ride="carousel" data-interval="false" data-wrap="true">
+    <!-- Wrapper for slides -->
+    <div class="carousel-inner">
+      <div class="item active">
+        <div class="marine-chart {{id}}"></div>
+        <div class="carousel-caption">
+          <h4>Marine Condition</h4>
+          <p>
+          {{caption}}
+          </p>
+        </div>
+      </div>
+      <div class="item">
+        <div class="management-data" data-region="{{id}}"></div>
+        <div class="carousel-caption">
+          <h4>Management practice indicators</h4>
+          <p>
+          Proportion of the agriculture industry that have adopted individual
+          improved land management practices that will reduce the amount of
+          pollutants entering the reef.
+          </p>
+        </div>
+      </div>
+      <div class="item">
+        <div class="catchment-data" data-region="{{id}}"></div>
+        <div class="carousel-caption">
+          <h4>Catchment indicators</h4>
+          <p>
+          Reductions in key pollutants leaving the end of catchments as a result
+          of changes in land management practices.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- Controls -->
+    <a class="left carousel-control" href=".carousel.{{id}}"
+      data-slide="prev" style="background-image: none">
+      <span class="glyphicon glyphicon-chevron-left"></span>
+    </a>
+    <a class="right carousel-control" href=".carousel.{{id}}"
+      data-slide="next" style="background-image: none">
+      <span class="glyphicon glyphicon-chevron-right"></span>
+    </a>
+  </div>
+  </div>
+</script>
+<script id="tmpl-progress-tile" type="text/html">
+  <button class="progress-indicator condition {{conditionId}}"
+    title="{{conditionName}}" data-indicator="{{indicatorId}}">
+    <div class="name">{{indicatorName}}</div>
+    {{{indicatorImage}}}
+    <div>{{value}}</div>
+    <div class="target" title="Target">
+      <i class="fa fa-dot-circle-o"></i>&ensp;{{target}}
+    </div>
+  </button>
+</script>
+
+
+</body>
+</html>
