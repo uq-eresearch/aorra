@@ -12,5 +12,7 @@ regions.geojson
 regions-simplified.geojson
 jquery.svganim.min.js
 jquery.svg.min.js
+leaflet.js
+leaflet.css
 leaflet.label.js
 leaflet.label.css
