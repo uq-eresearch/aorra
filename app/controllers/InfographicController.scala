@@ -67,7 +67,7 @@ class InfographicController @Inject()(
       }
       val enumerator = zipEnumerator { zos =>
         // Dynamic data file
-        zos.putArchiveEntry(new ZipArchiveEntry(s"$archiveName/data.js"))
+        zos.putArchiveEntry(new ZipArchiveEntry(s"$archiveName/data.json"))
         zos.write(Infographic(data).toString.getBytes)
         zos.closeArchiveEntry()
         // Static files
