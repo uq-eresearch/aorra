@@ -103,20 +103,22 @@ public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
     }
   }
 
-  private static final ImmutableMap<Series, Integer> ROW =
-    new ImmutableMap.Builder<Series, Integer>()
-      .put(Series.CANE, 1)
-      .put(Series.HORTICULTURE, 2)
-      .put(Series.GRAZING, 3)
-      .put(Series.SEDIMENT, 4)
-      .put(Series.TOTAL_NITROGEN, 5)
-      .put(Series.PESTICIDES, 6)
-      .build();
-
   public TrackingTowardsTargetsBuilder() {
     super(Lists.newArrayList(ChartType.TTT_CANE_AND_HORT,
         ChartType.TTT_GRAZING, ChartType.TTT_NITRO_AND_PEST,
         ChartType.TTT_SEDIMENT));
+  }
+
+  private static Integer row(SpreadsheetDataSource datasource, Series series) {
+    try {
+      for(int i = 1;i<10;i++) {
+        if(StringUtils.equalsIgnoreCase(datasource.select(i, 0).asString(), series.toString())) {
+          return i;
+        }
+      }
+    }
+    catch(MissingDataException e) {}
+    return null;
   }
 
   @Override
@@ -158,7 +160,11 @@ public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
       } catch (MissingDataException e) {
         throw new RuntimeException(e);
       }
-      return dataset;
+      if(dataset.getRowCount() > 0) {
+        return dataset;
+      } else {
+        return null;
+      }
     } else {
       return null;
     }
@@ -182,18 +188,17 @@ public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
 
   private void addSeries(SpreadsheetDataSource ds,
       ADCDataset dataset, Series series) throws MissingDataException {
-    Integer row = ROW.get(series);
-    if (row == null) {
-      throw new RuntimeException("no row configured for series " + series);
-    }
-    List<String> columns = getColumns(ds);
-    for (int col = 0; col < columns.size(); col++) {
-      String s = ds.select(row, col + 3).asString();
-      try {
-        Double value = new Double(s);
-        dataset.addValue(value, series.toString(), columns.get(col));
-      } catch (Exception e) {
-        dataset.addValue(null, series.toString(), columns.get(col));
+    Integer row = row(ds, series);
+    if (row != null) {
+      List<String> columns = getColumns(ds);
+      for (int col = 0; col < columns.size(); col++) {
+        String s = ds.select(row, col + 3).asString();
+        try {
+          Double value = new Double(s);
+          dataset.addValue(value, series.toString(), columns.get(col));
+        } catch (Exception e) {
+          dataset.addValue(null, series.toString(), columns.get(col));
+        }
       }
     }
   }
@@ -213,7 +218,7 @@ public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
   private static double getTarget(SpreadsheetDataSource ds, ChartType type) {
     try {
       Series series = getTargetSeries(type);
-      return ds.select(ROW.get(series), 1).asDouble();
+      return ds.select(row(ds, series), 1).asDouble();
     } catch(MissingDataException e) {
       throw new RuntimeException(e);
     }
@@ -223,7 +228,7 @@ public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
   private static String getTargetBy(SpreadsheetDataSource ds, ChartType type) {
     try {
       Series series = getTargetSeries(type);
-      return ds.select(ROW.get(series), 2).asInteger().toString();
+      return ds.select(row(ds, series), 2).asInteger().toString();
     } catch (MissingDataException e) {
       throw new RuntimeException(e);
     }
