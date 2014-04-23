@@ -17,6 +17,7 @@ import java.util.List;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.ValueAxis;
@@ -366,6 +367,9 @@ public class TrackingTowardsTargets {
         }
         vaxis.setTickUnit(new NumberTickUnit(tickSize, percentFormatter()));
         vaxis.setTickMarksVisible(false);
+        if(dataset.getColumnCount() > 5) {
+          plot.getDomainAxis().setCategoryLabelPositions(CategoryLabelPositions.UP_45);
+        }
         return new JFreeChartDrawable(chart, dimension);
     }
 
