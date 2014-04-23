@@ -16,9 +16,16 @@
 <td class="headercell"><div class="hcontainer">
 <span class="header">@column.header</span>
 <div class="text">@column.description</div>
-<div class="text-bold">@column.target</div></div>
+</div>
 </td>
-} 
+}
+</tr>
+<tr><td colspan="@{columns.size()+1}" class="fake-border"></td></tr>
+<tr>
+<td class="headercell "><div class="regionheader targets">Targets</div></td>
+@for(column <- columns) {
+<td class="headercell"><div class="hcontainer targets"><div class="text-bold">@column.target</div></div></td>
+}
 </tr>
 @for(row <- rows) {
 <tr><td colspan="@{columns.size()+1}" class="fake-border"></td></tr>
