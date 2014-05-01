@@ -175,9 +175,21 @@ var routesCreated = $.when(configLoaded).done(function(config) {
           reportFinalYear: reportFinalYear,
           target: indicatorData['target']
         });
+        var regionData = Object.keys(data)
+          .filter(function(k) {
+            return k != 'gbr';
+          }).map(function(k) {
+            return {
+              id: k,
+              name: config.names.regions[k],
+              data: data[k][indicator]
+            };
+          });
         this.$element().html(template(indicatorType+'-indicator-info', {
           name: config.names.indicators[indicator],
-          caption: caption
+          caption: caption,
+          regions: regionData,
+          'back-link': '#/'+indicatorType
         }));
         this.trigger('region:show', 'gbr');
         this.trigger('indicator:show', this.params['indicator']);
@@ -331,6 +343,9 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
           },
           regionToName: function regionToName(region) {
             return regionIdToName[getRegionId(region)];
+          },
+          regionToDisplayName: function regionToName(region) {
+            return config.names.regions[regionIdToName[getRegionId(region)]];
           }
         }
       })();
@@ -382,7 +397,7 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
       }); 
       regionsGeo.addTo(map);
       regionsGeo.getLayers().forEach(function(region) {
-        var displayName = region.feature.properties.Region;
+        var displayName = regionLookup.regionToDisplayName(region);
         var labelDir = displayName == 'Burdekin' ? 'left' : 'right';
         var label = new L.Label({
           clickable: true,
@@ -434,7 +449,7 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
         Object.keys(data).forEach(function(regionName) {
           var region = regionLookup.nameToRegion(regionName);
           if (region != null) {
-            var displayName = region.feature.properties.Region;
+            var displayName = regionLookup.regionToDisplayName(region);
             var condition = data[regionName][indicator].qualitative;
             var value = data[regionName][indicator].quantitative;
             if (condition == null) {

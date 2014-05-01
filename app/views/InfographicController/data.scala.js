@@ -17,9 +17,9 @@ var regionNames = {
   'cape-york': 'Cape York',
   'wet-tropics': 'Wet Tropics',
   'burdekin': 'Burdekin',
-  'mackay-whitsunday': 'Mackay-Whitsunday',
+  'mackay-whitsunday': 'Mackay Whitsunday',
   'fitzroy': 'Fitzroy',
-  'burnett-mary': 'Burnett-Mary'
+  'burnett-mary': 'Burnett Mary'
 };
 
 var indicatorNames = {

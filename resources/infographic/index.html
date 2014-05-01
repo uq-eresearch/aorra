@@ -21,17 +21,16 @@
 
 <body>
 
-<div id="map"></div>
+<div id="map">
+  <ul id="legend">
+    <li class="condition very-good">Very good</li>
+    <li class="condition good">Good</li>
+    <li class="condition moderate">Moderate</li>
+    <li class="condition poor">Poor</li>
+    <li class="condition very-poor">Very poor</li>
+  </ul>
+</div>
 <div id="regions"></div>
-
-<ul id="legend">
-  <li class="condition very-good">Very good</li>
-  <li class="condition good">Good</li>
-  <li class="condition moderate">Moderate</li>
-  <li class="condition poor">Poor</li>
-  <li class="condition very-poor">Very poor</li>
-</ul>
-
 <div id="main" class="inset-paper">
 
 </div>
@@ -158,6 +157,45 @@
   </a>
   </div>
 </script>
+<script id="tmpl-regional-indicator-info" type="text/html">
+  <div class="regional-data row">
+  {{#regions}}
+    <div class="col-xs-6 col-lg-4">
+      <div class="region-data">
+        <div class="{{id}}">{{name}}</div>
+        <div class="data">
+        {{#data}}
+          {{#qualitative}}
+          <span class="qualitative">{{qualitative}}</span>
+          {{/qualitative}}
+          {{^qualitative}}
+            N/A
+          {{/qualitative}}
+          {{#quantitative}}
+          -
+          <span class="quantitative">{{quantitative}}</span>
+          {{/quantitative}}
+        {{/data}}
+        </div>
+      </div>
+    </div>
+  {{/regions}}
+  </div>
+</script>
+<script id="tmpl-nav-buttons" type="text/html">
+  <p>
+    <div class="pull-left">
+      <a class="btn btn-default" href="{{back-link}}">
+        Back
+      </a>
+    </div>
+    <div class="pull-right">
+      <a class="btn btn-default" href="#/">
+        Back to reef-wide results
+      </a>
+    </div>
+  </p>
+</script>
 <!-- Management info -->
 <script id="tmpl-management-indicator-info" type="text/html">
   {{>gbr-banner}}
@@ -166,9 +204,8 @@
   <p>
   {{caption}}
   </p>
-  <a class="btn btn-default" href="#/management">
-    Back
-  </a>
+  {{>regional-indicator-info}}
+  {{>nav-buttons}}
   </div>
 </script>
 <script id="tmpl-grazing-caption" type="text/html">
@@ -194,9 +231,8 @@
   <p>
   {{caption}}
   </p>
-  <a class="btn btn-default" href="#/catchment">
-    Back
-  </a>
+  {{>regional-indicator-info}}
+  {{>nav-buttons}}
   </div>
 </script>
 <script id="tmpl-groundcover-caption" type="text/html">
@@ -223,22 +259,21 @@
   <p>
   {{{caption}}}
   </p>
-  <a class="btn btn-default" href="#/marine">
-    Back
-  </a>
+  {{>regional-indicator-info}}
+  {{>nav-buttons}}
   </div>
 </script>
 <script id="tmpl-overall-caption" type="text/html">
-  <!-- Description pending -->
+  Overall marine condition.
 </script>
 <script id="tmpl-coral-caption" type="text/html">
-  <!-- Description pending -->
+  Overall condition of inshore coral reefs
 </script>
 <script id="tmpl-seagrass-caption" type="text/html">
-  <!-- Description pending -->
+  Overall condition of inshore seagrass.
 </script>
 <script id="tmpl-water-caption" type="text/html">
-  <!-- Description pending -->
+  Overall inshore water quality.
 </script>
 <script id="tmpl-water-chlorophyll-caption" type="text/html">
   Indicates nutrient availability and productivity.
@@ -283,15 +318,6 @@
     <!-- Wrapper for slides -->
     <div class="carousel-inner">
       <div class="item active">
-        <div class="marine-chart {{id}}"></div>
-        <div class="carousel-caption">
-          <h4>Marine Condition</h4>
-          <p>
-          {{caption}}
-          </p>
-        </div>
-      </div>
-      <div class="item">
         <div class="management-data" data-region="{{id}}"></div>
         <div class="carousel-caption">
           <h4>Management practice indicators</h4>
@@ -312,6 +338,15 @@
           </p>
         </div>
       </div>
+      <div class="item">
+        <div class="marine-chart {{id}}"></div>
+        <div class="carousel-caption">
+          <h4>Marine Condition</h4>
+          <p>
+          {{caption}}
+          </p>
+        </div>
+      </div>
     </div>
     <!-- Controls -->
     <a class="left carousel-control" href=".carousel.{{id}}"
@@ -323,6 +358,13 @@
       <span class="glyphicon glyphicon-chevron-right"></span>
     </a>
   </div>
+  <p>
+    <div class="pull-left">
+      <a class="btn btn-default" href="#/">
+        Back to reef-wide results
+      </a>
+    </div>
+  </p>
   </div>
 </script>
 <script id="tmpl-progress-tile" type="text/html">

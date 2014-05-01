@@ -116,6 +116,15 @@ button.progress-indicator .target {
   background-color: black;
 }
 
+.top-banner {
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  font-weight: bold;
+  font-size: 150%;
+}
+
 @media all and (max-width: 1065px) {
   .marine-chart {
     max-height: 60%;
@@ -149,15 +158,19 @@ button.progress-indicator .target {
   .marine-chart {
     max-width: 60%;
   }
+  .top-banner {
+    font-size: 100%;
+  }
 }
 
 #legend {
   position: absolute;
-  bottom: 2em;
-  left: 2em;
+  top: 2em;
+  right: 2em;
   list-style-type: none;
   margin: 0;
   padding: 0;
+  z-index: 1;
 }
 
 #legend li {
@@ -183,21 +196,27 @@ div[id*="tmpl-"] {
   cursor: pointer;
 }
 
-.top-banner {
-  width: 100%;
-  text-align: center;
-  font-weight: bold;
-  color: white;
-  font-weight: bold;
+.top-banner.gbr                   { background-color:   black; }
+.top-banner.cape-york             { background-color: #ca6722; }
+.top-banner.wet-tropics           { background-color: #82be40; }
+.top-banner.burdekin              { background-color: #686a57; }
+.top-banner.mackay-whitsunday     { background-color: #dca256; }
+.top-banner.fitzroy               { background-color: #833e15; }
+.top-banner.burnett-mary          { background-color: #e4ac24; }
+.region-data .cape-york         { font-weight: bold; color: #ca6722; }
+.region-data .wet-tropics       { font-weight: bold; color: #82be40; }
+.region-data .burdekin          { font-weight: bold; color: #686a57; }
+.region-data .mackay-whitsunday { font-weight: bold; color: #dca256; }
+.region-data .fitzroy           { font-weight: bold; color: #833e15; }
+.region-data .burnett-mary      { font-weight: bold; color: #e4ac24; }
+
+.regional-data {
+  margin-bottom: 10px;
 }
 
-.top-banner.gbr                { background-color: black; }
-.top-banner.cape-york          { background-color: #ca6722; }
-.top-banner.wet-tropics        { background-color: #82be40; }
-.top-banner.burdekin           { background-color: #686a57; }
-.top-banner.mackay-whitsunday  { background-color: #dca256; }
-.top-banner.fitzroy            { background-color: #833e15; }
-.top-banner.burnett-mary       { background-color: #e4ac24; }
+.region-data {
+  margin: 10px;
+}
 
 path.cape-york, path.wet-tropics, path.burdekin,
 path.mackay-whitsunday, path.fitzroy, path.burnett-mary {
