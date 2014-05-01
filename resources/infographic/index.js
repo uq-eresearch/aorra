@@ -152,7 +152,9 @@ var routesCreated = $.when(configLoaded).done(function(config) {
     
     this.get('#/marine', function() {
       var context = this;
-      this.$element().html(template('marine-select'));
+      this.$element().html(template('marine-select', {
+        caption: config.captions.marine['gbr']
+      }));
       this.trigger('region:show', 'gbr');
       this.trigger('marine:show');
     });
