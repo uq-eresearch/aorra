@@ -118,6 +118,10 @@ var routesCreated = $.when(configLoaded).done(function(config) {
   var reportFinalYear = config['reportYears'].match(/\d{4}$/g)[0];
     
   Sammy('#main', function() {
+    var gbrBreadcrumb = { 
+      name: 'Great Barrier Reef',
+      href: '#/'
+    };
       
     // Default lander
     this.get('#/', function() {
@@ -138,14 +142,24 @@ var routesCreated = $.when(configLoaded).done(function(config) {
     
     this.get('#/management', function() {
       this.$element()
-          .html(template('management-select'));
+          .html(template('management-select', {
+            breadcrumbs: [
+              gbrBreadcrumb,
+              { name: 'Management practice indicators' }
+            ]
+          }));
       this.trigger('region:show', 'gbr');
       this.trigger('management:show');
     });
     
     this.get('#/catchment', function() {
       this.$element()
-          .html(template('catchment-select'));
+          .html(template('catchment-select', {
+            breadcrumbs: [
+              gbrBreadcrumb,
+              { name: 'Catchment indicators' }
+            ]
+          }));
       this.trigger('region:show', 'gbr');
       this.trigger('catchment:show');
     });
@@ -153,6 +167,10 @@ var routesCreated = $.when(configLoaded).done(function(config) {
     this.get('#/marine', function() {
       var context = this;
       this.$element().html(template('marine-select', {
+        breadcrumbs: [
+          gbrBreadcrumb,
+          { name: 'Marine condition' }
+        ],
         caption: config.captions.marine['gbr']
       }));
       this.trigger('region:show', 'gbr');
@@ -162,12 +180,13 @@ var routesCreated = $.when(configLoaded).done(function(config) {
     // Same handling for management and catchment indicators, just different
     // data sources and URLs.
     [
-      ['management', config.data.management], 
-      ['catchment', config.data.catchment],
-      ['marine', config.data.marine]
+      ['management', config.data.management, 'Management practice indicators'], 
+      ['catchment', config.data.catchment, 'Catchment indicators'],
+      ['marine', config.data.marine, 'Marine condition']
     ].forEach(function(args) {
       var indicatorType = args[0];
       var data = args[1];
+      var indicatorTypeTitle = args[2];
       this.get('#/'+indicatorType+'/:indicator', function() {
         var indicator = this.params['indicator'];
         var indicatorData = data['gbr'][indicator];
@@ -184,10 +203,16 @@ var routesCreated = $.when(configLoaded).done(function(config) {
             return {
               id: k,
               name: config.names.regions[k],
-              data: data[k][indicator]
+              data: data[k][indicator],
+              href: '#/region/'+k
             };
           });
         this.$element().html(template(indicatorType+'-indicator-info', {
+          breadcrumbs: [
+            gbrBreadcrumb,
+            { name: indicatorTypeTitle, href: '#/'+indicatorType },
+            { name: config.names.indicators[indicator] }
+          ],
           name: config.names.indicators[indicator],
           caption: caption,
           regions: regionData,
@@ -201,6 +226,10 @@ var routesCreated = $.when(configLoaded).done(function(config) {
     this.get('#/region/:region', function() {
       var regionId = this.params['region'];
       this.$element().html(template('region-info', {
+        breadcrumbs: [
+          gbrBreadcrumb,
+          { name: config.names.regions[regionId] }
+        ],
         id: regionId,
         name: config.names.regions[regionId],
         caption: config.captions.marine[regionId]

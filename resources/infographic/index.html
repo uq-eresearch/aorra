@@ -35,9 +35,22 @@
 
 </div>
 
+<script id="tmpl-breadcrumbs" type="text/html">
+  <ol class="breadcrumb">
+    {{#breadcrumbs}}
+    {{#href}}
+    <li><a href="{{href}}">{{{name}}}</a></li>
+    {{/href}}
+    {{^href}}
+    <li class="active">{{{name}}}</li>
+    {{/href}}
+    {{/breadcrumbs}}
+  </ol>
+</script>
 
 <script id="tmpl-home" type="text/html">
-  <div class="container-fluid">
+  {{>gbr-banner}}
+  <div class="container-fluid content">
   <h1>
     Reef Report Card Summary
     <span class="nobr">{{reportYears}}</span>
@@ -46,11 +59,10 @@
   This report card measures progress from the {{baseYear}} baseline towards 
   Reef Water Quality Protection Plan (Reef Plan) targets. It assesses the
   combined results of all Reef Plan actions up to June {{reportFinalYear}}.
-  Click on a region on the map for regional results or use the indicators
-  buttons below to explore the Great Barrier Reef-wide results.
   </p>
-  <p>Click on a region, or explore the reef-wide view.</p>
-  <div class="row" style="padding-top: 2em; padding-bottom: 2em;">
+  <p>Click on a region on the map for regional results or use the indicators
+  buttons below to explore the Great Barrier Reef-wide results.</p>
+  <div class="row indicator-groups">
     <div class="col-xs-4 text-center">
       <a class="btn btn-default" href="#/management">
         Management <br /> Indicators
@@ -116,19 +128,18 @@
 
 <script id="tmpl-marine-select" type="text/html">
   {{>gbr-banner}}
+  {{>breadcrumbs}}
   <div class="container-fluid">
     <h1>Marine condition</h1>
     <p>
     {{caption}}
     </p>
     <div class="marine-chart gbr"></div>
-    <a class="btn btn-default" href="#/">
-      Back
-    </a>
   </div>
 </script>
 <script id="tmpl-management-select" type="text/html">
   {{>gbr-banner}}
+  {{>breadcrumbs}}
   <div class="container-fluid">
   <h1>Management practice indicators</h1>
   <p>
@@ -137,13 +148,11 @@
   the reef.
   </p>
   <div class="management-data" data-region="gbr"></div>
-  <a class="btn btn-default" href="#/">
-    Back
-  </a>
   </div>
 </script>
 <script id="tmpl-catchment-select" type="text/html">
   {{>gbr-banner}}
+  {{>breadcrumbs}}
   <div class="container-fluid">
   <h1>Catchment indicators</h1>
   <p>
@@ -151,9 +160,6 @@
   changes in land management practices.
   </p>
   <div class="catchment-data" data-region="gbr"></div>
-  <a class="btn btn-default" href="#/">
-    Back
-  </a>
   </div>
 </script>
 <script id="tmpl-regional-indicator-info" type="text/html">
@@ -161,7 +167,7 @@
   {{#regions}}
     <div class="col-xs-6 col-lg-4">
       <div class="region-data">
-        <div class="{{id}}">{{name}}</div>
+        <div><a class="{{id}}" href="{{href}}">{{name}}</a></div>
         <div class="data">
         {{#data}}
           {{#qualitative}}
@@ -181,30 +187,16 @@
   {{/regions}}
   </div>
 </script>
-<script id="tmpl-nav-buttons" type="text/html">
-  <p>
-    <div class="pull-left">
-      <a class="btn btn-default" href="{{back-link}}">
-        Back
-      </a>
-    </div>
-    <div class="pull-right">
-      <a class="btn btn-default" href="#/">
-        Back to reef-wide results
-      </a>
-    </div>
-  </p>
-</script>
 <!-- Management info -->
 <script id="tmpl-management-indicator-info" type="text/html">
   {{>gbr-banner}}
+  {{>breadcrumbs}}
   <div class="container-fluid">
   <h1>{{name}}</h1>
   <p>
   {{caption}}
   </p>
   {{>regional-indicator-info}}
-  {{>nav-buttons}}
   </div>
 </script>
 <script id="tmpl-grazing-caption" type="text/html">
@@ -225,13 +217,13 @@
 <!-- Catchment info -->
 <script id="tmpl-catchment-indicator-info" type="text/html">
   {{>gbr-banner}}
+  {{>breadcrumbs}}
   <div class="container-fluid">
   <h1>{{name}}</h1>
   <p>
   {{caption}}
   </p>
   {{>regional-indicator-info}}
-  {{>nav-buttons}}
   </div>
 </script>
 <script id="tmpl-groundcover-caption" type="text/html">
@@ -253,13 +245,13 @@
 <!-- Marine info -->
 <script id="tmpl-marine-indicator-info" type="text/html">
   {{>gbr-banner}}
+  {{>breadcrumbs}}
   <div class="container-fluid">
   <h1>{{{name}}}</h1>
   <p>
   {{{caption}}}
   </p>
   {{>regional-indicator-info}}
-  {{>nav-buttons}}
   </div>
 </script>
 <script id="tmpl-overall-caption" type="text/html">
@@ -311,59 +303,37 @@
 </script>
 <script id="tmpl-region-info" type="text/html">
   <div class="top-banner {{id}}">{{name}}</div>
+  {{>breadcrumbs}}
   <div class="container-fluid">
-  <div class="carousel {{id}} slide" style="height: 80%"
-    data-ride="carousel" data-interval="false" data-wrap="true">
-    <!-- Wrapper for slides -->
-    <div class="carousel-inner">
-      <div class="item active">
-        <div class="management-data" data-region="{{id}}"></div>
-        <div class="carousel-caption">
-          <h4>Management practice indicators</h4>
-          <p>
-          Proportion of the agriculture industry that have adopted individual
-          improved land management practices that will reduce the amount of
-          pollutants entering the reef.
-          </p>
-        </div>
-      </div>
-      <div class="item">
-        <div class="catchment-data" data-region="{{id}}"></div>
-        <div class="carousel-caption">
-          <h4>Catchment indicators</h4>
-          <p>
-          Reductions in key pollutants leaving the end of catchments as a result
-          of changes in land management practices.
-          </p>
-        </div>
-      </div>
-      <div class="item">
-        <div class="marine-chart {{id}}"></div>
-        <div class="carousel-caption">
-          <h4>Marine Condition</h4>
-          <p>
-          {{caption}}
-          </p>
-        </div>
-      </div>
-    </div>
-    <!-- Controls -->
-    <a class="left carousel-control" href=".carousel.{{id}}"
-      data-slide="prev" style="background-image: none">
-      <span class="glyphicon glyphicon-chevron-left"></span>
-    </a>
-    <a class="right carousel-control" href=".carousel.{{id}}"
-      data-slide="next" style="background-image: none">
-      <span class="glyphicon glyphicon-chevron-right"></span>
-    </a>
-  </div>
-  <p>
-    <div class="pull-left">
-      <a class="btn btn-default" href="#/">
-        Back to reef-wide results
-      </a>
-    </div>
-  </p>
+    <section>
+      <h1>Management practice indicators</h1>
+      <p>
+      Proportion of the agriculture industry that have adopted individual
+      improved land management practices that will reduce the amount of
+      pollutants entering the reef.
+      </p>
+      <div class="management-data" data-region="{{id}}"></div>
+    </section>
+    
+    <hr/>
+    
+    <section>
+      <h1>Catchment indicators</h1>
+      <p>
+      Reductions in key pollutants leaving the end of catchments as a result
+      of changes in land management practices.
+      </p>
+      <div class="catchment-data" data-region="{{id}}"></div>
+    </section>
+    
+    <hr/>
+    <section>
+      <h1>Marine Condition</h1>
+      <p>
+      {{caption}}
+      </p>
+      <div class="marine-chart {{id}}"></div>
+    </section>
   </div>
 </script>
 <script id="tmpl-progress-tile" type="text/html">
