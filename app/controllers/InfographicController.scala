@@ -54,9 +54,31 @@ class InfographicController @Inject()(
   def dataFile(fileId: FileId) = isAuthenticatedAsync { user => implicit request =>
     future {
       withInfographicData[SimpleResult](user, fileId) { data =>
-        Ok(Infographic(data)).as("application/json")
+        val amendedData =
+          if (new java.net.URI(data.otherReportCardsJSONP).isAbsolute) {
+            data.copy(otherReportCardsJSONP = "./config.js")
+          } else data
+        Ok(Infographic(amendedData)).as("application/json")
       }.getOrElse(NotFound)
     }
+  }
+
+  def configFile(fileId: FileId): EssentialAction = isAuthenticatedAsync { user => implicit request =>
+    (future {
+      withInfographicData[String](user, fileId) { data =>
+        data.otherReportCardsJSONP
+      }
+    }.flatMap[SimpleResult] { urlOption =>
+      import play.api.libs.ws._
+      urlOption match {
+        case Some(url) =>
+          val holder : WS.WSRequestHolder = WS.url(url)
+          holder.get().map { response =>
+            Status(response.status)(response.body).as("text/javascript")
+          }
+        case None => Future.successful(NotFound)
+      }
+    })
   }
 
   def archiveFile(fileId: FileId): EssentialAction = isAuthenticated { user => implicit request =>

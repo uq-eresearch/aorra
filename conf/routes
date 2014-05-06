@@ -70,6 +70,7 @@ PUT     /file/:fileId/comments/:cId     @controllers.CommentController.update(cI
 DELETE  /file/:fileId/comments/:cId     @controllers.CommentController.delete(cId, fileId)
 GET     /file/:fileId/infographic.zip            @controllers.InfographicController.archiveFile(fileId)
 GET     /file/:fileId/infographic/               @controllers.InfographicController.staticFile(fileId, assetPath="index.html")
+GET     /file/:fileId/infographic/config.js      @controllers.InfographicController.configFile(fileId)
 GET     /file/:fileId/infographic/data.json      @controllers.InfographicController.dataFile(fileId)
 GET     /file/:fileId/infographic/*assetPath     @controllers.InfographicController.staticFile(fileId, assetPath)
 GET     /file/:fileId/spreadsheet-external-references         @controllers.SpreadsheetController.hasExternalRefs(fileId)
