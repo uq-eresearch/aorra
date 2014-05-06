@@ -503,9 +503,7 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
           setRegionFills(id);
         });
         this.bind('region:show', function(evt, id) {
-          if (id == 'gbr') {
-            clearRegionFills();
-          }
+          clearRegionFills();
         });
       });
       
