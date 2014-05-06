@@ -20,9 +20,9 @@ object Infographic {
       "cape-york" -> "Cape York",
       "wet-tropics" -> "Wet Tropics",
       "burdekin" -> "Burdekin",
-      "mackay-whitsunday" -> "Mackay-Whitsunday",
+      "mackay-whitsunday" -> "Mackay Whitsunday",
       "fitzroy" -> "Fitzroy",
-      "burnett-mary" -> "Burnett-Mary"
+      "burnett-mary" -> "Burnett Mary"
     )
     val indicatorNames = Map(
       // Management
