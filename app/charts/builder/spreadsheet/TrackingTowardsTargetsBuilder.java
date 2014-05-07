@@ -49,9 +49,9 @@ public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
   private static final String TITLE_TYPO = "tracking towards tagets";
   private static final String TITLE = "tracking towards targets";
 
-  private static final String IMPROVED_PRATICES = "% of farmers adopting improved practices";
   private static final String POLLUTANT_REDUCTION = "% reduction in pollutant load";
-  private static final String TARGET = " target (${target} by ${by})";
+  private static final String TARGET_ADOPTION = " target (${target} adoption by ${by})";
+  private static final String TARGET_REDUCTION = " target (${target} reduction by ${by})";
 
   private static class Title {
     private String title;
@@ -78,13 +78,13 @@ public class TrackingTowardsTargetsBuilder extends JFreeBuilder {
   private static final ImmutableMap<ChartType, Title> TITLES =
       new ImmutableMap.Builder<ChartType, Title>()
         .put(ChartType.TTT_CANE_AND_HORT, new Title(
-          "Cane and horticulture"+TARGET, IMPROVED_PRATICES))
+          "Cane and horticulture"+TARGET_ADOPTION, "% of farmers adopting improved practices"))
         .put(ChartType.TTT_GRAZING, new Title(
-          "Grazing"+TARGET, IMPROVED_PRATICES))
+          "Grazing"+TARGET_ADOPTION, "% of graziers adopting improved practices"))
         .put(ChartType.TTT_NITRO_AND_PEST, new Title(
-          "Total nitrogen and pesticide"+TARGET, POLLUTANT_REDUCTION))
+          "Total nitrogen and pesticide"+TARGET_REDUCTION, POLLUTANT_REDUCTION))
         .put(ChartType.TTT_SEDIMENT, new Title(
-          "Sediment"+TARGET, POLLUTANT_REDUCTION))
+          "Sediment"+TARGET_REDUCTION, POLLUTANT_REDUCTION))
         .build();
 
   private static enum Series {
