@@ -18,7 +18,9 @@ var indicatorImage = (function() {
   }
   return {
     'grazing': img('grazing'),
+    'sugarcane-grain': img('cane-grain'),
     'sugarcane': img('cane'),
+    'grain': img('grain'),
     'horticulture': img('banana'),
     'groundcover': img('groundcover'),
     'nitrogen': img('beaker'),
@@ -200,10 +202,26 @@ var routesCreated = $.when(configLoaded).done(function(config) {
           .filter(function(k) {
             return k != 'gbr';
           }).map(function(k) {
+            function getRegionData(region) {
+              var group = config.groups.indicators[indicator]
+              if (group) {
+                var firstNonEmpty = function(arr) {
+                  if (arr.length === 0) {
+                    return null;
+                  } else {
+                    var v = data[region][arr[0]];
+                    return v || firstNonEmpty(arr.slice(1));
+                  }
+                };
+                return firstNonEmpty(group);
+              } else {
+                return data[k][indicator];
+              }
+            }
             return {
               id: k,
               name: config.names.regions[k],
-              data: data[k][indicator],
+              data: getRegionData(k),
               href: '#/region/'+k
             };
           });
@@ -479,10 +497,26 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
         }
         Object.keys(data).forEach(function(regionName) {
           var region = regionLookup.nameToRegion(regionName);
+          function getRegionData(region) {
+            var group = config.groups.indicators[indicator]
+            if (group) {
+              var firstNonEmpty = function(arr) {
+                if (arr.length === 0) {
+                  return null;
+                } else {
+                  var v = data[region][arr[0]];
+                  return v || firstNonEmpty(arr.slice(1));
+                }
+              };
+              return firstNonEmpty(group);
+            } else {
+              return data[k][indicator];
+            }
+          }
           if (region != null) {
             var displayName = regionLookup.regionToDisplayName(region);
-            var condition = data[regionName][indicator].qualitative;
-            var value = data[regionName][indicator].quantitative;
+            var condition = getRegionData(regionName).qualitative;
+            var value = getRegionData(regionName).quantitative;
             if (condition == null) {
               $('.leaflet-label:contains("'+displayName+'")')
                 .addClass('condition na');
@@ -509,16 +543,13 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
       
       Sammy('#main', function() {
         function addProgressButtons(data, regionName, e) {
-          function capitalize(str) {
-            return str.substring(0,1).toUpperCase() + str.substring(1);
-          }
           var region = data[regionName];
           Object.keys(region).forEach(function(indicator) {
             Sammy('#main', function() {
               var condition = region[indicator].qualitative || 'NA';
               var value = region[indicator].quantitative || '';
               var target = region[indicator].target || '';
-              var name = capitalize(region[indicator].name || indicator);
+              var name = config.names.indicators[indicator];
               var $button = $(template('progress-tile', {
                 conditionId: condition.toLowerCase().replace(' ', '-'),
                 conditionName: condition,
@@ -548,7 +579,16 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
           this.bind(arg + ':show', function() {
             this.$element().find('button[data-indicator]').click(function(evt) {
               var $button = $(evt.delegateTarget);
-              this.redirect('#', arg, $button.attr('data-indicator'));
+              var indicator = $button.attr('data-indicator');
+              var gbrIndicator = (function() {
+                var groups = config.groups.indicators;
+                var group = Object.keys(groups).filter(function(k) {
+                  var members = groups[k];
+                  return members && members.indexOf(indicator) != -1;
+                })[0];
+                return group || indicator;
+              })();
+              this.redirect('#', arg, gbrIndicator);
             }.bind(this));
           });
         }.bind(this));

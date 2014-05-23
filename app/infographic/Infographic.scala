@@ -27,7 +27,9 @@ object Infographic {
     val indicatorNames = Map(
       // Management
       "grazing" -> "Grazing",
-      "sugarcane" -> "Sugarcane / Grains",
+      "sugarcane-grain" -> "Sugarcane / Grains",
+      "sugarcane" -> "Sugarcane",
+      "grain" -> "Grains",
       "horticulture" -> "Horticulture",
       // Catchment
       "groundcover" -> "Groundcover",
@@ -62,6 +64,11 @@ object Infographic {
       "captions" -> Map(
         "marine" -> data.marineCaptions.map(MarineCaptionsJsonBuilder(_))
                         .getOrElse(Json.obj())
+      ),
+      "groups" -> Map(
+        "indicators" -> Map(
+          "sugarcane-grain" -> List("sugarcane", "grain")
+        )
       ),
       "data" -> Map(
         "marine" -> MarineJsonBuilder(data.marineCharts),

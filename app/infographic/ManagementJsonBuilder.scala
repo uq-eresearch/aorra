@@ -10,15 +10,23 @@ object ManagementJsonBuilder extends ProgressJsonBuilder {
   def hdl(chart: charts.Chart): Option[(Region, JsValue)] = {
     import ProgressTableBuilder.ProgressTableChart
     val dataset = chart.asInstanceOf[ProgressTableChart].dataset
+    val region = chart.getDescription.getRegion
+    implicit def ptdWrites =
+      if (region == Region.GBR)
+        getPtdWrites(Set(
+          SimpleIndicator("grazing"),
+          RenamedIndicator("sugarcane", "sugarcane-grain"),
+          SimpleIndicator("horticulture")
+        ))
+      else
+        getPtdWrites(Set(
+          SimpleIndicator("grazing"),
+          SimpleIndicator("sugarcane"),
+          SimpleIndicator("grain"),
+          SimpleIndicator("horticulture")
+        ))
 
-    implicit def ptdWrites = getPtdWrites(Set(
-      SimpleIndicator("grazing"),
-      SimpleIndicator("sugarcane"),
-      RenamedIndicator("grain", "sugarcane"),
-      SimpleIndicator("horticulture")
-    ))
-
-    Some((chart.getDescription().getRegion(), Json.toJson(dataset)))
+    Some((region, Json.toJson(dataset)))
   }
 
 }
