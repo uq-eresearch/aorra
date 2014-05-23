@@ -131,7 +131,7 @@ var routesCreated = $.when(configLoaded).done(function(config) {
       this.$element() // $('#main')
           .html(template('home', {
         baseYear: config['baseYear'],
-        reportYears: config['reportYears'],
+        reportYears: config['reportYears'].replace("-", " and "),
         reportFinalYear: reportFinalYear,
         otherYears: otherInfographicYears,
         isMostRecent: otherInfographicYears.every(function(v) {
