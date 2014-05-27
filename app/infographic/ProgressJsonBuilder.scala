@@ -8,16 +8,14 @@ import play.api.libs.json._
 
 trait ProgressJsonBuilder extends ChartJsonBuilder {
 
-  sealed trait IndicatorName { def name: String }
-  case class SimpleIndicator(val name: String) extends IndicatorName
-  case class RenamedIndicator(val name: String, val as: String) extends IndicatorName
+  type IndicatorName = String
 
   def apply(chartList: Seq[charts.Chart]): JsValue =
     toJson(chartList.map(hdl(_)))
 
   def hdl(chart: charts.Chart): Option[(Region, JsValue)]
 
-  def getPtdWrites(includeIndicators: Set[IndicatorName]): Writes[ProgressTable.Dataset] = {
+  def getPtdWrites(includeIndicators: IndicatorName*): Writes[ProgressTable.Dataset] = {
     import scala.collection.JavaConversions._
     new Writes[ProgressTable.Dataset] {
       override def writes(dataset: ProgressTable.Dataset) = {
@@ -27,29 +25,23 @@ trait ProgressJsonBuilder extends ChartJsonBuilder {
             val indicator = column.header.toLowerCase
             val cell = row.cells.get(i)
             Option(cell) // Check cell isn't null
+              // Null condition means we can skip
+              .filter(_.condition != null)
               // Get matching indicator, if there is one
               .flatMap { cell =>
-                includeIndicators.find(i => i.name == indicator).map((cell, _))
+                includeIndicators.find(_ == indicator).map((cell, _))
               }
               // Use cell and indicator to produce data
-              .map { case (cell, indicator) =>
+              .map { case (cell, indicatorKey) =>
                 val target = column.target
                   .replaceAll("Target: ", "")
                   .replaceAll(" per cent", "%")
                   .replaceAll("\n", " ")
-                val indicatorKey = indicator match {
-                  case SimpleIndicator(name) => name
-                  case RenamedIndicator(_, as) => as
-                }
                 Seq(indicatorKey -> JsObject(List(
                     "qualitative" -> toJs(cell.condition),
                     "quantitative" -> JsString(cell.progress),
                     "target" -> JsString(target)
-                  ) ::: (indicator match {
-                    case SimpleIndicator(name) => Nil
-                    case RenamedIndicator(name, _) =>
-                      List("name" -> JsString(name))
-                  })))
+                  )))
               }
               .getOrElse(Seq[(String, JsValue)]())
           }

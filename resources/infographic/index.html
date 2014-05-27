@@ -203,7 +203,7 @@
   practices between {{baseYear}} and {{reportFinalYear}}.
   The target was {{target}}.
 </script>
-<script id="tmpl-sugarcane-grain-caption" type="text/html">
+<script id="tmpl-sugarcane-caption" type="text/html">
   The map shows the proportion of growers in each region who adopted improved
   practices between {{baseYear}} and {{reportFinalYear}}.
   The target was {{target}}.
@@ -336,7 +336,7 @@
   </div>
 </script>
 <script id="tmpl-progress-tile" type="text/html">
-  <button class="progress-indicator condition {{conditionId}}"
+  <button class="progress-indicator condition {{conditionId}} {{#local}}unclickable{{/local}}"
     title="{{conditionName}}" data-indicator="{{indicatorId}}">
     <div class="name">{{indicatorName}}</div>
     {{{indicatorImage}}}

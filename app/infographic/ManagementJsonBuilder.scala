@@ -11,21 +11,12 @@ object ManagementJsonBuilder extends ProgressJsonBuilder {
     import ProgressTableBuilder.ProgressTableChart
     val dataset = chart.asInstanceOf[ProgressTableChart].dataset
     val region = chart.getDescription.getRegion
-    implicit def ptdWrites =
-      if (region == Region.GBR)
-        getPtdWrites(Set(
-          SimpleIndicator("grazing"),
-          RenamedIndicator("sugarcane", "sugarcane-grain"),
-          SimpleIndicator("horticulture")
-        ))
-      else
-        getPtdWrites(Set(
-          SimpleIndicator("grazing"),
-          SimpleIndicator("sugarcane"),
-          SimpleIndicator("grain"),
-          SimpleIndicator("horticulture")
-        ))
-
+    implicit def ptdWrites = getPtdWrites(
+      "grazing",
+      "sugarcane",
+      "grain",
+      "horticulture"
+    )
     Some((region, Json.toJson(dataset)))
   }
 

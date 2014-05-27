@@ -91,6 +91,10 @@ button.progress-indicator {
   color: white;
 }
 
+button.progress-indicator.unclickable {
+  cursor: auto;
+}
+
 button.progress-indicator .name {
   font-weight: bold;
 }
