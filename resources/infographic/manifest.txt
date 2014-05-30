@@ -9,6 +9,7 @@ images/grazing.png
 images/groundcover.png
 marine.svg
 reef.svg
+reef-regions.geojson
 regions.geojson
 regions-simplified.geojson
 jquery.svganim.min.js
