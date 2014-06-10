@@ -120,7 +120,7 @@ class InfographicController @Inject()(
     sessionFactory.inSession(user.getJackrabbitUserId, { session: Session =>
       val fsm = filestore.getManager(session)
       fsm.getByIdentifier(fileId) match {
-        case file: FileStore.File if file.getMimeType == YAML_MIMETYPE =>
+        case file: FileStore.File if isYaml(file) =>
           Infographic.parseConfig(file.getData) match {
             case Some(config) =>
               Some(op(config2data(fsm, config)))
@@ -130,6 +130,9 @@ class InfographicController @Inject()(
         case _ => None
       }
     })
+
+  private def isYaml(file: FileStore.File): Boolean =
+    file.getMimeType == YAML_MIMETYPE || file.getName.endsWith(".yaml")
 
   private def config2data(
       fsm: FileStore.Manager,
