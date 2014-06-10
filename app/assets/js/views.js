@@ -1736,7 +1736,8 @@ define([
       case 'image':
         return new ImageElementView({ model: file });
       case 'file':
-        if (/yaml/.test(file.get('mime'))) {
+        if (/yaml/.test(file.get('mime')) ||
+            /.yaml$/.test(file.get('name'))) {
           return new YamlEditorView({ model: file, users: users });
         }
       }
