@@ -25,6 +25,8 @@ public class CoralCoverJuvRegionBuilder extends CoralCoverRegionBuilder {
     return new AttributeMap.Builder().
         putAll(super.defaults(type)).
         put(Attribute.Y_AXIS_LABEL, JUVENILE).
+        put(Attribute.Y_AXIS_RANGE, "10").
+        put(Attribute.Y_AXIS_TICKS, "1").
         build();
   }
 }

@@ -24,6 +24,8 @@ public abstract class CoralCoverGBRBuilder extends CoralCoverBuilder {
         put(Attribute.TITLE, "${type} (mean)").
         put(Attribute.X_AXIS_LABEL, "Region").
         put(Attribute.Y_AXIS_LABEL, COVER).
+        put(Attribute.Y_AXIS_RANGE, "100").
+        put(Attribute.Y_AXIS_TICKS, "10").
         build();
   }
 }

@@ -24,6 +24,8 @@ public abstract class CoralCoverRegionBuilder extends CoralCoverBuilder {
         put(Attribute.TITLE, "${type} (mean) in the ${region} region").
         put(Attribute.X_AXIS_LABEL, "Year").
         put(Attribute.Y_AXIS_LABEL, COVER).
+        put(Attribute.Y_AXIS_RANGE, "100").
+        put(Attribute.Y_AXIS_TICKS, "10").
         build();
   }
 }

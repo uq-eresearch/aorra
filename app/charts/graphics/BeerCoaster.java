@@ -58,7 +58,7 @@ public class BeerCoaster implements Drawable {
     }
 
     public static enum Indicator {
-      CHLOROPHYLL_A("Chlorophyll \u03b1", Category.WATER_QUALITY, 90, -60, Rotation.CLOCKWISE, 30),
+      CHLOROPHYLL_A("Chlorophyll a", Category.WATER_QUALITY, 90, -60, Rotation.CLOCKWISE, 30),
       TOTAL_SUSPENDED_SOLIDS("Total suspended solids", Category.WATER_QUALITY, 30, -60, Rotation.COUNTER_CLOCKWISE, 90),
       SETTLEMENT("Change", Category.CORAL, -30, -30, Rotation.COUNTER_CLOCKWISE, 135),
       JUVENILE("Juvenile", Category.CORAL, -60, -30, Rotation.COUNTER_CLOCKWISE, 165),

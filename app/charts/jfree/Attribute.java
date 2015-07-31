@@ -26,6 +26,9 @@ public class Attribute<T> {
   public static final Attribute<Color> CONDITION_POOR = colorAttr("poor");
   public static final Attribute<Color> CONDITION_VERY_POOR = colorAttr("very poor");
 
+  public static final Attribute<String> Y_AXIS_RANGE = strAttr("y-axis range");
+  public static final Attribute<String> Y_AXIS_TICKS = strAttr("y-axis ticks");
+
   private final String name;
   private final Class<T> type;
   private final String[] synonyms;

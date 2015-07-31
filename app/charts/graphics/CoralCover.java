@@ -121,16 +121,20 @@ public class CoralCover {
         renderer.setBaseOutlinePaint(Color.black);
         final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
         rangeAxis.setTickMarksVisible(false);
-        if(type == ChartType.CORAL_JUV || type == ChartType.CORAL_JUV_GBR) {
-          rangeAxis.setRange(0, 10.0);
-          rangeAxis.setTickUnit(new NumberTickUnit(1, new DecimalFormat("0")));
-        } else {
-          rangeAxis.setRange(0, 100.0);
-          rangeAxis.setTickUnit(new NumberTickUnit(10, new DecimalFormat("0")));
-        }
+        rangeAxis.setRange(0, parseDouble(dataset.get(Attribute.Y_AXIS_RANGE), 100.0));
+        rangeAxis.setTickUnit(new NumberTickUnit(parseDouble(
+            dataset.get(Attribute.Y_AXIS_TICKS), 10.0), new DecimalFormat("0")));
         chart.getTitle().setFont(rangeAxis.getLabelFont());
         chart.addLegend(ErrorIndicatorLegend.createLegend());
         return chart;
+    }
+
+    private static double parseDouble(String s, double def) {
+      try {
+        return Double.parseDouble(s);
+      } catch(NumberFormatException e) {
+        return def;
+      }
     }
 
     // rearrange the dataset so, that the lines are drawn next to each other

@@ -101,18 +101,20 @@ public class MarineBuilder extends AbstractBuilder {
     }
 
     private Condition determineCondition(Double index) {
-      if (index == null) {
+      if(index == null) {
         return Condition.NOT_EVALUATED;
-      } else if (index >= 80) {
-        return Condition.VERY_GOOD;
-      } else if (index >= 60) {
-        return Condition.GOOD;
-      } else if (index >= 40) {
-        return Condition.MODERATE;
-      } else if (index >= 20) {
-        return Condition.POOR;
-      } else {
+      }
+      long r = Math.round(index);
+      if(r <= 20) {
         return Condition.VERY_POOR;
+      } else if(r <= 40) {
+        return Condition.POOR;
+      } else if(r <= 60) {
+        return Condition.MODERATE;
+      } else if(r <= 80) {
+        return Condition.GOOD;
+      } else {
+        return Condition.VERY_GOOD;
       }
     }
   }
