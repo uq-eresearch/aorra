@@ -228,7 +228,7 @@ public class MarineTrendsBuilder extends JFreeBuilder {
     public AttributeMap defaults(ChartType type) {
       return new AttributeMap.Builder().
           put(Attribute.TITLE, "${region} inshore ${type}").
-          put(Attribute.Y_AXIS_LABEL, "P2R metric score (%)").
+          put(Attribute.Y_AXIS_LABEL, "Score").
           put(Attribute.X_AXIS_LABEL, "Reporting Year").
           put(Attribute.SERIES_COLORS, new Color[] {Colors.BLUE, Colors.DARK_RED,
               Colors.RED, Colors.VIOLET, Colors.GREEN}).
