@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -159,7 +160,20 @@ public abstract class SpreadsheetDataSource implements DataSource {
 
     @Override
     public Date asDate() {
+      try {
         return cell.getDateCellValue();
+      } catch(Exception e) {
+        final String s = getValue();
+        // TODO it would be better if we could somehow parse an arbitrary date format
+        // http://stackoverflow.com/questions/3850784/recognise-an-arbitrary-date-string
+        // http://stackoverflow.com/questions/3389348/parse-any-date-in-java
+        final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        try {
+          return sdf.parse(s);
+        } catch(Exception e2) {
+          throw e;
+        }
+      }
     }
 
     @Override

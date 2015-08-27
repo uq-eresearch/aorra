@@ -22,6 +22,14 @@ public class TableRowBox extends AbstractBox implements Box {
 
     }
 
+    public TableRowBox() {}
+
+    public TableRowBox(TableCellBox... cells) {
+      for(TableCellBox cell :cells) {
+        addCell(cell);
+      }
+    }
+
     public void addCell(TableCellBox cell) {
         cells.add(cell);
     }

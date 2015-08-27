@@ -23,6 +23,14 @@ public class TableBox extends AbstractBox implements Box {
         public boolean processed = false;
     }
 
+    public TableBox() {}
+
+    public TableBox(TableRowBox... rows) {
+      for(TableRowBox row : rows) {
+        addRow(row);
+      }
+    }
+
     @Override
     public Dimension getContentDimension(Graphics2D g2) throws Exception {
         if(borderCollapse) {

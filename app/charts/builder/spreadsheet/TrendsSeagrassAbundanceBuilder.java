@@ -16,10 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jfree.data.general.Dataset;
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
-import play.Logger;
 import charts.ChartType;
 import charts.Drawable;
 import charts.Region;
@@ -34,8 +34,31 @@ import charts.jfree.AttributeMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
+
+  private static class Entry {
+    final String name;
+    final Date date;
+    final Double mean;
+    final Double deviation;
+
+    public Entry(String name, Date date, Double mean, Double deviation) {
+      this.name = name;
+      this.date = date;
+      this.mean = mean;
+      this.deviation = deviation;
+    }
+  }
+
+  private static class DList {
+    final List<Entry> entries;
+
+    public DList(List<Entry> entries) {
+      this.entries = entries;
+    }
+  }
 
   private final SubstitutionKey S_SUBREGION = new SubstitutionKey("subregion",
       "Subregion e.g. Archer Point", new SubstitutionKey.Val() {
@@ -51,6 +74,17 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         @Override
         public String value(Context ctx) {
           return getSubregion(ctx.datasource(), ctx.parameters()).getHabitat().getLabel();
+        }
+      });
+
+  private final SubstitutionKey S_SUBTIDAL = new SubstitutionKey("subtidal",
+      "Used to show that this chart is also showing subtidal data in the title",
+      new SubstitutionKey.Val() {
+        @Override
+        public String value(Context ctx) {
+          Dataset d = ((JFreeContext)ctx).dataset();
+          ADSCDataset ad = (ADSCDataset)d;
+          return ad.getRowCount() == 1?"":"and subtidal ";
         }
       });
 
@@ -81,6 +115,13 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         SWB(Region.FITZROY, "Shoalwater Bay", Habitat.COASTAL),
         UG(Region.BURNETT_MARY, "Urangan", Habitat.ESTUARINE),
         RD(Region.BURNETT_MARY, "Rodds Bay", Habitat.ESTUARINE),
+
+        SR(Region.CAPE_YORK, "Shelbourne Bay", Habitat.COASTAL),
+        BY(Region.CAPE_YORK, "Bathurst Head", Habitat.COASTAL),
+        FR(Region.CAPE_YORK, "Farmer Island", Habitat.REEF),
+        ST(Region.CAPE_YORK, "Stanley Island", Habitat.COASTAL),
+        LI(Region.WET_TROPICS, "Low Island", Habitat.REEF),
+        JR(Region.BURDEKIN, "Jerona", Habitat.COASTAL),
         ;
 
         private final Region region;
@@ -172,8 +213,7 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         return Subregion.valueOf(subregion.toUpperCase());
     }
 
-  private int
-      getSubregionRowStart(SpreadsheetDataSource ds, Subregion subregion) {
+  private int getSubregionRowStart(SpreadsheetDataSource ds, String name) {
     for (int row = 1; true; row++) {
       try {
         String s = strip(ds.select(row, 0).asString());
@@ -184,7 +224,7 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
             continue;
           }
         }
-        if (equalsIgnoreCase(s, subregion.name())) {
+        if (equalsIgnoreCase(s, name)) {
           return row;
         }
       } catch (MissingDataException e) {
@@ -201,38 +241,104 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
       return null;
     }
     if (subregion.getRegion() == ctx.region()) {
-      final ADSCDataset d = new ADSCDataset();
-      SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
       try {
-        int row = getSubregionRowStart(ds, subregion);
-        if (row == -1) {
-          return d;
-        }
-        for (; true; row++) {
-          String subr = strip(ds.select(row, 0).asString());
-          if (!equalsIgnoreCase(subr, subregion.name())) {
-            break;
-          }
-          Date date = ds.select(row, 1).asDate();
-          Double mean = ds.select(row, 2).asDouble();
-          Double deviation = ds.select(row, 3).asDouble();
-          if (mean != null && deviation != null) {
-            d.add(mean, deviation, subregion, sdf.format(date));
-          }
-        }
+        List<Entry> intertidal = read(ctx, subregion.name());
+        List<Entry> subtidal = read(ctx, subregion.name()+"_sub");
+        final ADSCDataset d = toDataset(merge(intertidal, subtidal));
+        return d;
       } catch (MissingDataException e) {
-        Logger.debug("while building tracking towards targets dataset "+ctx.toString(), e);
+        throw new RuntimeException("while building trends in seagrass abundance dataset "
+            + ctx.toString(), e);
       }
-      return d;
     } else {
       return null;
     }
   }
 
+  private List<DList> merge(List<Entry> l1, List<Entry> l2) {
+    List<Entry> combined = Lists.newArrayList(l1);
+    combined.addAll(l2);
+    List<DList> dates = Lists.newArrayList();
+    for(Date date : dates(combined)) {
+      dates.add(new DList(entries(date, combined)));
+    }
+    return dates;
+  }
+
+  private List<Date> dates(List<Entry> l) {
+    Set<Date> dates = Sets.newHashSet();
+    for(Entry entry : l) {
+      dates.add(entry.date);
+    }
+    List<Date> result = Lists.newArrayList(dates);
+    Collections.sort(result);
+    return result;
+  }
+
+  private List<Entry> entries(Date date, List<Entry> l) {
+    List<Entry> entries = Lists.newArrayList();
+    for(Entry entry : l) {
+      if(entry.date.equals(date)) {
+        entries.add(entry);
+      }
+    }
+    return entries;
+  }
+
+  private Set<String> names(List<Entry> l) {
+    Set<String> names = Sets.newHashSet();
+    for(Entry entry : l) {
+      names.add(entry.name);
+    }
+    return names;
+  }
+
+  private boolean contains(String name, List<Entry> l) {
+    for(Entry entry : l) {
+      if(entry.name.equals(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private ADSCDataset toDataset(List<DList> dates) {
+    final ADSCDataset d = new ADSCDataset();
+    final SimpleDateFormat sdf = new SimpleDateFormat("MMMMM yyyy");
+    for(DList dlist : dates) {
+      for(Entry entry : dlist.entries) {
+        d.add(entry.mean, entry.deviation, entry.name, sdf.format(entry.date));
+      }
+    }
+    return d;
+  }
+
+  private List<Entry> read(Context ctx, String name) throws MissingDataException {
+    final List<Entry> entries = Lists.newArrayList();
+    final SpreadsheetDataSource ds = ctx.datasource();
+    int row = getSubregionRowStart(ds, name);
+    if (row == -1) {
+      return entries;
+    }
+    for (; true; row++) {
+      String subr = strip(ds.select(row, 0).asString());
+      if (!equalsIgnoreCase(subr, name)) {
+        break;
+      }
+      Date date = ds.select(row, 1).asDate();
+      Double mean = ds.select(row, 2).asDouble();
+      Double deviation = ds.select(row, 3).asDouble();
+      if (mean != null && deviation != null) {
+        entries.add(new Entry(name, date, mean, deviation));
+      }
+    }
+    return entries;
+  }
+
   @Override
   public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
-        put(Attribute.TITLE, "Seagrass abundance at inshore intertidal ${habitat} habitat"
+        put(Attribute.TITLE, "Seagrass abundance at inshore intertidal ${subtidal}${habitat} habitat"
             + "\nat ${subregion} in the ${region} region").
         put(Attribute.X_AXIS_LABEL, "").
         put(Attribute.Y_AXIS_LABEL, "Seagrass abundance").
@@ -255,10 +361,10 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         @SuppressWarnings("unchecked")
         List<String> columnKeys = dataset.getColumnKeys();
         @SuppressWarnings("unchecked")
-        List<Subregion> rowKeys = dataset.getRowKeys();
+        List<String> rowKeys = dataset.getRowKeys();
         final List<String> heading = ImmutableList.<String> builder()
             .add(format("%s %s %s", ctx.type(), ctx.region(),
-                rowKeys.get(0).getLabel()))
+                rowKeys.get(0)))
             .add("Mean")
             .add("Std Dev")
             .build();
@@ -266,10 +372,12 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         for (String col : columnKeys) {
           List<String> line = newLinkedList();
           line.add(col);
-          line.add(format("%.3f",
-              dataset.getMeanValue(rowKeys.get(0), col).doubleValue()));
-          line.add(format("%.3f",
-              dataset.getStdDevValue(rowKeys.get(0), col).doubleValue()));
+          if(dataset.getMeanValue(rowKeys.get(0), col) != null) {
+            line.add(format("%.3f",
+                dataset.getMeanValue(rowKeys.get(0), col).doubleValue()));
+            line.add(format("%.3f",
+                dataset.getStdDevValue(rowKeys.get(0), col).doubleValue()));
+          }
           csv.write(line);
         }
       }});
@@ -283,7 +391,7 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
   @Override
   public Set<SubstitutionKey> substitutionKeys() {
     return ImmutableSet.<SubstitutionKey>builder().
-        addAll(super.substitutionKeys()).add(S_SUBREGION).add(S_HABITAT).build();
+        addAll(super.substitutionKeys()).add(S_SUBREGION).add(S_HABITAT).add(S_SUBTIDAL).build();
   }
 
 }
