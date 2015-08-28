@@ -9,6 +9,7 @@ import java.awt.geom.Rectangle2D;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.CategoryPlot;
@@ -20,7 +21,10 @@ import org.jfree.text.TextUtilities;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.TextAnchor;
 
+import charts.ChartType;
 import charts.Drawable;
+import charts.Region;
+import charts.builder.spreadsheet.JFreeContext;
 import charts.graphics.BeerCoaster.Condition;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
@@ -28,6 +32,12 @@ import charts.jfree.Attribute;
 public class MarineTrends {
 
   private static class MarineTrendsRenderer extends LineAndShapeRenderer {
+
+    private boolean drawBreak;
+
+    public void setDrawBreak(boolean drawBreak) {
+      this.drawBreak = drawBreak;
+    }
 
     @Override
     public void drawBackground(Graphics2D g2, CategoryPlot plot,
@@ -45,6 +55,27 @@ public class MarineTrends {
             c.getColor(), dataArea);
         value-=20;
       }
+      if(drawBreak) {
+        Double x0 = getXOfCol("2012/13", dataArea);
+        Double x1 = getXOfCol("2013/14", dataArea);
+        if((x0 != null) && (x1 != null)) {
+          double xc = x0 + ((x1 - x0) / 2);
+          g2.setStroke(new BasicStroke(1, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f,
+              new float[] {5.0f, 5.0f}, 0.0f));
+          g2.setPaint(Color.lightGray);
+          g2.draw(new java.awt.geom.Line2D.Double(xc, dataArea.getMinY(), xc, dataArea.getMaxY()));
+        }
+      }
+    }
+
+    private Double getXOfCol(String s, Rectangle2D dataArea) {
+      try {
+        CategoryAxis axis = this.getPlot().getDomainAxis();
+        return axis.getCategoryMiddle(s, getPlot().getDataset().getColumnKeys(), dataArea,
+            getPlot().getDomainAxisEdge());
+      } catch(Exception e) {
+        return null;
+      }
     }
 
     private void drawCondition(Graphics2D g2, String text,
@@ -61,7 +92,8 @@ public class MarineTrends {
     }
   }
 
-    public static Drawable createChart(final ADCDataset dataset, Dimension dimension) {
+    public static Drawable createChart(final ADCDataset dataset,
+        Dimension dimension, JFreeContext ctx) {
         final JFreeChart chart = ChartFactory.createLineChart(
                 dataset.get(Attribute.TITLE),
                 dataset.get(Attribute.X_AXIS_LABEL),
@@ -73,12 +105,19 @@ public class MarineTrends {
         plot.setDrawingSupplier(drawingSupplier());
         plot.setBackgroundPaint(Color.white);
         plot.setDomainGridlinesVisible(false);
-        plot.setRangeGridlinePaint(Color.gray);
-        plot.setRangeGridlineStroke(new BasicStroke(1));
+        if(ChartType.MARINE_WQT.equals(ctx.type())) {
+          plot.setRangeGridlinesVisible(false);
+        } else {
+          plot.setRangeGridlinePaint(Color.gray);
+          plot.setRangeGridlineStroke(new BasicStroke(1));
+        }
         NumberAxis raxis = (NumberAxis)plot.getRangeAxis();
         raxis.setRange(0, 100.0);
         raxis.setTickUnit(new NumberTickUnit(20));
         MarineTrendsRenderer renderer = new MarineTrendsRenderer();
+        if(ChartType.MARINE_ST.equals(ctx.type()) && Region.CAPE_YORK.equals(ctx.region())) {
+          renderer.setDrawBreak(true);
+        }
         plot.setRenderer(renderer);
         for(int i=0;i<dataset.get(Attribute.SERIES_COLORS).length;i++) {
           renderer.setSeriesPaint(i, dataset.get(Attribute.SERIES_COLORS)[i]);

@@ -42,7 +42,7 @@ public class MarineTrendsBuilder extends JFreeBuilder {
     private static enum Indicator {
         OWQ_SCORE("Overall water quality score", new String[] 
             {"Water quality index", "WQI"}, MARINE_WQT),
-        CHLOROPHYLL_A("Chlorophyll \u03b1", "Chlorophyll a", MARINE_WQT),
+        CHLOROPHYLL_A("Chlorophyll a", "Chlorophyll a", MARINE_WQT),
         TOTAL_SUSPENDED_SOLIDS("Total suspended solids", new String[]
             {"Total suspended solids", "TSS"}, MARINE_WQT),
         OS_SCORE("Overall seagrass score", "Seagrass Index", MARINE_ST),
@@ -194,7 +194,7 @@ public class MarineTrendsBuilder extends JFreeBuilder {
 
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
-      return MarineTrends.createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500));
+      return MarineTrends.createChart((ADCDataset)ctx.dataset(), new Dimension(750, 500), ctx);
     }
 
     @Override
@@ -227,7 +227,8 @@ public class MarineTrendsBuilder extends JFreeBuilder {
     @Override
     public AttributeMap defaults(ChartType type) {
       return new AttributeMap.Builder().
-          put(Attribute.TITLE, "${region} inshore ${type}").
+          put(Attribute.TITLE, type.equals(ChartType.MARINE_WQT)?"${region} remote sensed water"
+              + " quality score":"${region} inshore ${type}").
           put(Attribute.Y_AXIS_LABEL, "Score").
           put(Attribute.X_AXIS_LABEL, "Reporting Year").
           put(Attribute.SERIES_COLORS, new Color[] {Colors.BLUE, Colors.DARK_RED,
