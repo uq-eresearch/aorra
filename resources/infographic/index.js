@@ -249,18 +249,16 @@ $.when(configLoaded, routesCreated, documentLoaded).done(function(args) {
   var config = args[0];
   
   function loadSvg(containerSelector, url, align) {
-    $(containerSelector).svg();
-    var svg = $(containerSelector).svg('get');
+    var svg = Snap(containerSelector);
     var d = $.Deferred();
-    svg.load(url, { 
-      onLoad: function() {
-        svg.configure({
-          'height': '100%',
-          'width': '100%',
-          'preserveAspectRatio': 'x'+align+'Y'+align+' meet'
-        }, false);
-        d.resolve(svg);
-      }
+    Snap.load(url, function (f) {
+      f.select("svg").attr({
+        'height': '100%',
+        'width': '100%',
+        'preserveAspectRatio': 'x'+align+'Y'+align+' meet'
+      });
+      svg.append(f);
+      d.resolve(svg);
     });
     return d.promise();
   }
