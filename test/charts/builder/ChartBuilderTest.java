@@ -120,7 +120,8 @@ public class ChartBuilderTest {
     case LOADS:
     case LOADS_DIN:
     case LOADS_PSII:
-    case LOADS_TN:
+    case LOADS_PN:
+    case LOADS_PP:
     case LOADS_TSS:
       return "test/loads.xlsx";
     case CORAL_HCC:

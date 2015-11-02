@@ -2,8 +2,10 @@ package charts.builder.spreadsheet;
 
 import static charts.ChartType.LOADS_DIN;
 import static charts.ChartType.LOADS_PSII;
-import static charts.ChartType.LOADS_TN;
 import static charts.ChartType.LOADS_TSS;
+import static charts.ChartType.LOADS_PN;
+import static charts.ChartType.LOADS_PP;
+
 
 import java.awt.Dimension;
 import java.io.IOException;
@@ -40,7 +42,7 @@ public class LoadsRegionsBuilder extends LoadsBuilder {
       });
 
   public LoadsRegionsBuilder() {
-    super(Lists.newArrayList(LOADS_DIN, LOADS_TN, LOADS_PSII, LOADS_TSS));
+    super(Lists.newArrayList(LOADS_DIN, LOADS_PSII, LOADS_TSS, LOADS_PN, LOADS_PP));
   }
 
   @Override
@@ -110,8 +112,7 @@ public class LoadsRegionsBuilder extends LoadsBuilder {
   public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         putAll(super.defaults(type)).
-        put(Attribute.TITLE, "${indicator} load reductions from\n"
-            + "the baseline (2008-2009) to ${lastPeriodyyyy}").
+        put(Attribute.TITLE, "Cumulative ${indicator} load reductions to ${lastPeriodyyyy}").
         put(Attribute.X_AXIS_LABEL, "Region").
         build();
   }

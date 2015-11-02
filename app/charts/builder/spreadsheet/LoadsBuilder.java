@@ -2,8 +2,9 @@ package charts.builder.spreadsheet;
 
 import static charts.ChartType.LOADS_DIN;
 import static charts.ChartType.LOADS_PSII;
-import static charts.ChartType.LOADS_TN;
 import static charts.ChartType.LOADS_TSS;
+import static charts.ChartType.LOADS_PN;
+import static charts.ChartType.LOADS_PP;
 
 import java.awt.Color;
 import java.util.List;
@@ -31,15 +32,15 @@ public abstract class LoadsBuilder extends JFreeBuilder {
 
     protected static enum Indicator {
         TSS("Total suspended solids", true),
-        TP("Total phosphorus", true),
+        TP("Total phosphorus", false),
         PP("Particulate phosphorus", true),
         DIP(false),
         DOP(false),
-        TN("Total nitrogen", true),
+        TN("Total nitrogen", false),
         PN("Particulate nitrogen", true),
         DIN("Dissolved Inorganic nitrogen", true),
         DON(false),
-        PSII("PSII pesticides", true);
+        PSII("Toxic pesticides", true);
 
         private String label;
         private boolean include;
@@ -76,9 +77,10 @@ public abstract class LoadsBuilder extends JFreeBuilder {
     protected static final ImmutableMap<ChartType, Indicator> INDICATORS =
             new ImmutableMap.Builder<ChartType, Indicator>()
               .put(LOADS_DIN, Indicator.DIN)
-              .put(LOADS_TN, Indicator.TN)
               .put(LOADS_PSII, Indicator.PSII)
               .put(LOADS_TSS, Indicator.TSS)
+              .put(LOADS_PN, Indicator.PN)
+              .put(LOADS_PP, Indicator.PP)
               .build();
 
     private final SubstitutionKey LAST_PERIOD = new SubstitutionKey("lastPeriod",

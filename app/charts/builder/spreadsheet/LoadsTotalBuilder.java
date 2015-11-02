@@ -93,8 +93,7 @@ public class LoadsTotalBuilder extends LoadsBuilder {
   public AttributeMap defaults(ChartType type) {
     return new AttributeMap.Builder().
         putAll(super.defaults(type)).
-        put(Attribute.TITLE, "${region} total load reductions from\n"
-            + " the baseline (2008-2009) to ${lastPeriodyyyy}").
+        put(Attribute.TITLE, "${region} cumulative load reductions to ${lastPeriodyyyy}").
         put(Attribute.X_AXIS_LABEL, "Pollutants").
         build();
   }
