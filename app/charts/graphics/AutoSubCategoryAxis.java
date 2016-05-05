@@ -10,6 +10,8 @@ import java.awt.Stroke;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -41,19 +43,20 @@ public class AutoSubCategoryAxis extends CategoryAxis {
     }
 
     public static class CategoryLabelConfig {
-        private CategoryLabelPositions position;
-        private Font font;
-        private Paint fontPaint;
-        private double marginTop;
-        private double marginBottom;
-        private Border border;
-        private Paint borderPaint; 
-        private Stroke borderStroke;
-        private Map<String, String> labels;
+        final private CategoryLabelPositions position;
+        final private Font font;
+        final private Paint fontPaint;
+        final private double marginTop;
+        final private double marginBottom;
+        final private Border border;
+        final private Paint borderPaint; 
+        final private Stroke borderStroke;
+        final private Map<String, String> abbrDict;
+        final private boolean wrap;
 
         public CategoryLabelConfig(CategoryLabelPositions position, Font font, Paint fontPaint,
                 double marginTop, double marginBottom, Border border, Paint borderPaint,
-                Stroke borderStroke, Map<String, String> labels) {
+                Stroke borderStroke, Map<String, String> abbrDict, boolean wrap) {
             super();
             this.position = position;
             this.font = font;
@@ -63,30 +66,31 @@ public class AutoSubCategoryAxis extends CategoryAxis {
             this.border = border;
             this.borderPaint = borderPaint;
             this.borderStroke = borderStroke;
-            this.labels = labels;
+            this.abbrDict = abbrDict;
+            this.wrap = wrap;
         }
 
         public CategoryLabelConfig(CategoryLabelPositions position, Font font, Paint fontPaint,
                 double marginTop, double marginBottom) {
             this(position, font, fontPaint, marginTop, marginBottom,
-                    Border.NONE, null, null, null);
+                    Border.NONE, null, null, null, false);
         }
 
         public CategoryLabelConfig(Font font, double marginTop, double marginBottom) {
             this(CategoryLabelPositions.STANDARD, font, Color.black, marginTop, marginBottom,
-                    Border.NONE, null, null, null);
+                    Border.NONE, null, null, null, false);
         }
 
         public CategoryLabelConfig(Font font, double marginTop, double marginBottom,
                 Border border, Paint borderPaint) {
             this(CategoryLabelPositions.STANDARD, font, Color.black, marginTop, marginBottom,
-                    border, borderPaint, new BasicStroke(1), null);
+                    border, borderPaint, new BasicStroke(1), null, false);
         }
 
         public CategoryLabelConfig(Font font, double marginTop, double marginBottom,
-                Border border, Paint borderPaint, Map<String, String> labels) {
+                Border border, Paint borderPaint, Map<String, String> abbrDict, boolean wrap) {
             this(CategoryLabelPositions.STANDARD, font, Color.black, marginTop, marginBottom,
-                    border, borderPaint, new BasicStroke(1), labels);
+                    border, borderPaint, new BasicStroke(1), abbrDict, wrap);
         }
 
         public CategoryLabelPositions getPosition() {
@@ -121,8 +125,8 @@ public class AutoSubCategoryAxis extends CategoryAxis {
             return borderStroke;
         }
 
-        public Map<String, String> labels() {
-            return labels;
+        public boolean wrap() {
+        	return wrap;
         }
 
     }
@@ -404,22 +408,61 @@ public class AutoSubCategoryAxis extends CategoryAxis {
         return drawCategoryLabels(g2, plotArea, dataArea, edge, state, plotState, true);
     }
 
-    private TextBlock fromName(String name, CategoryLabelConfig config) {
-        String label = null;
-        if(config.labels() != null) {
-            label = config.labels().get(name);
+    private String[] labelRows(String name, CategoryLabelConfig config) {
+//    TODO make number of rows configurable
+      return config.wrap?StringUtils.split(name, " ", 2):new String[] {name};
+    }
+
+    private TextBlock makeLabelBlock(String[] rows, CategoryLabelConfig config) {
+      Font f = config.getFont();
+      Paint p = config.getFontPaint();
+      TextBlock block = new TextBlock();
+      for(String s : rows) {
+        if(StringUtils.isNotBlank(s)) {
+          TextLine line = new TextLine(s, f, p);
+          block.addLine(line);
         }
-        if(StringUtils.isBlank(label)) {
-            label = name;
+      }
+      return block;
+    }
+
+    private String[] shortenLabel(String[] rows, CategoryLabelConfig config) {
+      if(config.abbrDict == null) {
+        return rows;
+      }
+      String[] result = new String[rows.length];
+      Map<String, String> abbrDict = config.abbrDict;
+      for(int i=0;i<rows.length;i++) {
+        if(StringUtils.isNotBlank(rows[i])) {
+          result[i] = rows[i];
+          for(Map.Entry<String, String> me : abbrDict.entrySet()) {
+            result[i] = StringUtils.replace(result[i], me.getKey(), me.getValue()); 
+          }
         }
-        Font f = config.getFont();
-        Paint p = config.getFontPaint();
-        TextBlock block = new TextBlock();
-        for(String s : StringUtils.split(label, '\n')) {
-            TextLine line = new TextLine(s, f, p);
-            block.addLine(line);
+      }
+      return result;
+    }
+
+    private String[] shortestLables(String[] rows) {
+      String[] result = new String[rows.length];
+      for(int i=0;i<rows.length;i++) {
+        if(StringUtils.isNotBlank(rows[i])) {
+          result[i] = rows[i].substring(0, 1);
         }
-        return block;
+      }
+      return result;
+    }
+
+    private List<TextBlock> labelAlternatives(String name, CategoryLabelConfig config) {
+      if(config.wrap) {
+        String[] rows = labelRows(name, config);
+        TextBlock b0 = makeLabelBlock(rows, config);
+        TextBlock b1 = makeLabelBlock(shortenLabel(rows, config), config);
+        TextBlock b2 = makeLabelBlock(shortestLables(rows), config);
+        return Lists.newArrayList(b0, b1, b2);
+      } else {
+        return Collections.singletonList(makeLabelBlock(labelRows(name, config), config));
+      }
     }
 
     private AxisState drawCategoryLabels(Graphics2D g2, Rectangle2D plotArea,
@@ -440,34 +483,33 @@ public class AutoSubCategoryAxis extends CategoryAxis {
                 if(config.position.equals(CategoryLabelPositions.UP_90)) {
                     angle = -Math.PI/2;
                 }
-                // TODO add the auto wrap here
-                //List<TextBlock> blocks = textBlocks(c.getName(), config);
-                //Iterator<TextBlock> iter = blocks.iterator();
-                //while(iter.hasNext()) {
-                  //  TextBlock block = iter.next();
-                    TextBlock block = fromName(c.getName(), config);
-                    int categoryStartIndex = getCategoryStartIndex(c);
-                    int categoryEndIndex = getCategoryEndIndex(c);
-                    double start = getCategoryStart(categoryStartIndex, dataset.getColumnCount(), dataArea, edge);
-                    double end = getCategoryEnd(categoryEndIndex, dataset.getColumnCount(), dataArea, edge);
-                    double middle = start + (end-start)/2;
-//                    double maxWidth = end-start;
-                    g2.setFont(config.getFont());
-                    g2.setPaint(config.getFontPaint());
-                    Shape b = block.calculateBounds(g2, (float)middle, (float)state.getCursor(),
-                            TextBlockAnchor.CENTER, (float)middle, (float)state.getCursor(), angle);
-                    Rectangle2D bounds = b.getBounds2D();
-//                    if(bounds.getWidth() > maxWidth && config.wrap() && iter.hasNext()) {
-//                        continue;
-//                    }
-                    float height = (float)(bounds.getMaxY() - bounds.getMinY());
-                    maxHeight = Math.max(height, maxHeight);
-                    if(render) {
-                        block.draw(g2, (float)middle, (float)state.getCursor()+height/2,
-                            TextBlockAnchor.CENTER, (float)middle, (float)state.getCursor()+height/2, angle);
-                    }
-//                    break;
-//                }
+                int categoryStartIndex = getCategoryStartIndex(c);
+                int categoryEndIndex = getCategoryEndIndex(c);
+                double start = getCategoryStart(categoryStartIndex, dataset.getColumnCount(), dataArea, edge);
+                double end = getCategoryEnd(categoryEndIndex, dataset.getColumnCount(), dataArea, edge);
+                double middle = start + (end-start)/2;
+                double maxWidth = end-start;
+                g2.setFont(config.getFont());
+                g2.setPaint(config.getFontPaint());
+                List<TextBlock> blocks = labelAlternatives(c.getName(), config);
+                Iterator<TextBlock> iter = blocks.iterator();
+                while(iter.hasNext()) {
+                  TextBlock block = iter.next();
+                  Shape b = block.calculateBounds(g2, (float)middle, (float)state.getCursor(),
+                      TextBlockAnchor.CENTER, (float)middle, (float)state.getCursor(), angle);
+                  Rectangle2D bounds = b.getBounds2D();
+                  if(bounds.getWidth() > maxWidth && config.wrap() && iter.hasNext()) {
+                    continue;
+                  }
+                  float height = (float)(bounds.getMaxY() - bounds.getMinY());
+                  maxHeight = Math.max(height, maxHeight);
+                  if(render) {
+                    block.draw(g2, (float)middle, (float)state.getCursor()+height/2,
+                        TextBlockAnchor.CENTER, (float)middle,
+                        (float)state.getCursor()+height/2, angle);
+                  }
+                  break;
+                }
             }
             state.cursorDown(maxHeight);
             state.cursorDown(config.getMarginBottom());

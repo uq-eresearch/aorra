@@ -144,7 +144,7 @@ public class PSIITrendsBuilder extends JFreeBuilder {
 
     @Override
     protected Drawable getDrawable(JFreeContext ctx) {
-      return PSIITrends.createChart((ADCDataset)ctx.dataset(), new Dimension(1000, 500));
+      return PSIITrends.createChart((ADCDataset)ctx.dataset(), new Dimension(1250, 500));
     }
 
     @Override

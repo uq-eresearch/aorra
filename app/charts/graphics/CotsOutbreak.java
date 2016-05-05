@@ -48,8 +48,9 @@ public class CotsOutbreak {
         XYItemRenderer r = plot.getRenderer();
         r.setSeriesPaint(0, dataset.get(Attribute.SERIES_COLOR));
         DateAxis axis = (DateAxis) plot.getDomainAxis();
-        axis.setDateFormatOverride(new SimpleDateFormat("yyyy"));
-        DateTickUnit unit = new DateTickUnit(DateTickUnitType.YEAR, 1, new SimpleDateFormat("yyyy"));
+        final SimpleDateFormat dateFormatter = new SimpleDateFormat("yy"); 
+        axis.setDateFormatOverride(dateFormatter);
+        DateTickUnit unit = new DateTickUnit(DateTickUnitType.YEAR, 1, dateFormatter);
         axis.setTickUnit(unit);
         return new JFreeChartDrawable(chart, dimension);
     }

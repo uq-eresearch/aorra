@@ -3,7 +3,6 @@ package charts.graphics;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.geom.Rectangle2D;
@@ -14,7 +13,6 @@ import org.jfree.chart.LegendItemCollection;
 import org.jfree.chart.LegendItemSource;
 import org.jfree.chart.StandardChartTheme;
 import org.jfree.chart.axis.CategoryAxis;
-import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
@@ -28,11 +26,8 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
 
 import charts.Drawable;
-import charts.graphics.AutoSubCategoryAxis.Border;
 import charts.jfree.ADCDataset;
 import charts.jfree.Attribute;
-
-import com.google.common.collect.ImmutableMap;
 
 public class PSIIMaxHeq {
     
@@ -145,34 +140,8 @@ public class PSIIMaxHeq {
             renderer.setBarPainter(new StandardBarPainter());
         }
         {
-            Font f = plot.getRangeAxis().getTickLabelFont();
-            AutoSubCategoryAxis cAxis = (AutoSubCategoryAxis)plot.getDomainAxis();
-            cAxis.setLowerMargin(0.01);
-            cAxis.setUpperMargin(0.01);
-            cAxis.setItemMargin(0, 1.0);
-            cAxis.setItemMargin(1, 1.0);
-            cAxis.setItemMargin(2, 0.10);
-            // TODO would be nice if the AutoSubCategoryAxis could do the wrapping automatically
-            ImmutableMap<String, String> labels = new ImmutableMap.Builder<String, String>()
-                .put("Low Isles", "Low\nIsles")
-                .put("Green Island", "Green\nIsland")
-                .put("Fitzroy Island", "Fitzroy\nIsland")
-                .put("Normanby Island", "Normanby\nIsland")
-                .put("Dunk Island", "Dunk\nIsland")
-                .put("Orpheus Island", "Orpheus\nIsland")
-                .put("Magnetic Island", "Magnetic\nIsland")
-                .put("Cape Cleveland", "Cape\nCleveland")
-                .put("Pioneer Bay", "Pioneer\nBay")
-                .put("Outer Whitsunday", "Outer\nWhitsunday")
-                .put("Sarina Inlet", "Sarina\nInlet")
-                .put("North Keppel Island", "North\nKeppel Is")
-                .build();
-            cAxis.setCategoryLabelConfig(0, new AutoSubCategoryAxis.CategoryLabelConfig(
-                    f,2,2, Border.ALL, Color.black));
-            cAxis.setCategoryLabelConfig(1, new AutoSubCategoryAxis.CategoryLabelConfig(
-                    f,2,2, Border.BETWEEN, Color.lightGray, labels));
-            cAxis.setCategoryLabelConfig(2, new AutoSubCategoryAxis.CategoryLabelConfig(
-                    CategoryLabelPositions.UP_90,f, Color.black,2.0,2.0));
+        	new PSIICommon().configureSubCategoryAxis((AutoSubCategoryAxis)plot.getDomainAxis(),
+        			plot.getRangeAxis().getTickLabelFont());
         }
         return new JFreeChartDrawable(chart, dimension);
     }
