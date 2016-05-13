@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Paint;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 
@@ -198,19 +197,36 @@ public class TrendsSeagrassAbundance {
         rangeAxis.setTickMarksVisible(false);
         chart.getTitle().setFont(rangeAxis.getLabelFont());
         CategoryAxis cAxis = new CategoryAxis() {
-            @SuppressWarnings("rawtypes")
-            @Override
-            protected TextBlock createLabel(Comparable category, float width,
-                    RectangleEdge edge, Graphics2D g2) {
-                int mod = dataset.getColumnCount() / 25 + 1;
-                int col = dataset.getColumnIndex(category);
-                String label = "";
-                if(col % mod == 0) {
-                    label = category.toString();
-                }
-                return TextUtilities.createTextBlock(label,
-                        getTickLabelFont(category), getTickLabelPaint(category));
+          
+          private boolean last(int col, int colCount) {
+            return col == (colCount - 1);
+          }
+
+          private boolean nextToLast(int col, int colCount) {
+            return col == (colCount - 2);
+          }
+
+          @SuppressWarnings("rawtypes")
+          private TextBlock label(Comparable category, String label) {
+            return TextUtilities.createTextBlock(label,
+                getTickLabelFont(category), getTickLabelPaint(category));
+          }
+
+          @SuppressWarnings("rawtypes")
+          @Override
+          protected TextBlock createLabel(Comparable category, float width,
+              RectangleEdge edge, Graphics2D g2) {
+            final int colCount = dataset.getColumnCount();
+            final int mod = colCount / 25 + 1;
+            final int col = dataset.getColumnIndex(category);
+            if(mod > 1 && nextToLast(col, colCount)) {
+              return label(category, "");
+            } else if((col % mod == 0) || last(col, colCount)) {
+              return label(category, category.toString());
+            } else {
+              return label(category, ""); 
             }
+          }
         };
         cAxis.setLabel(dataset.get(Attribute.X_AXIS_LABEL));
         cAxis.setLabelFont(rangeAxis.getLabelFont());
