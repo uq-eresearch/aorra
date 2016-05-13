@@ -667,6 +667,10 @@ public abstract class SpreadsheetDataSource implements DataSource {
     return workbook.getSheetAt(defaultSheet).getRow(row).getLastCellNum();
   }
 
+  public int getRows() {
+    return workbook.getSheetAt(defaultSheet).getLastRowNum();
+  }
+
   public Iterable<Value> rangeSelect(final int row1, final int column1,
       final int row2, final int column2) {
     if(row1 == row2) {

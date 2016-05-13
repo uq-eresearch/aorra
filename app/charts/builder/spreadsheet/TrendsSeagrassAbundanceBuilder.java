@@ -3,7 +3,7 @@ package charts.builder.spreadsheet;
 import static com.google.common.collect.Lists.newLinkedList;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.strip;
 
 import java.awt.Color;
@@ -15,10 +15,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.general.Dataset;
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 import org.supercsv.io.CsvListWriter;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import charts.ChartType;
 import charts.Drawable;
@@ -30,11 +38,6 @@ import charts.graphics.TrendsSeagrassAbundance;
 import charts.jfree.ADSCDataset;
 import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
 
@@ -122,6 +125,10 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
         ST(Region.CAPE_YORK, "Stanley Island", Habitat.COASTAL),
         LI(Region.WET_TROPICS, "Low Island", Habitat.REEF),
         JR(Region.BURDEKIN, "Jerona", Habitat.COASTAL),
+        YY(Region.CAPE_YORK, "Yum Yum Beach", Habitat.REEF),
+        MP(Region.MACKAY_WHITSUNDAY, "Midge Point", Habitat.COASTAL),
+        HB(Region.MACKAY_WHITSUNDAY, "Hydeaway Bay", Habitat.REEF),
+        BH(Region.BURNETT_MARY, "Burrum Heads", Habitat.COASTAL),
         ;
 
         private final Region region;
@@ -183,47 +190,22 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
     }
 
     private List<String> getSubregions(SpreadsheetDataSource ds) {
-        List<String> subregions = Lists.newArrayList();
-        for(int row = 1; true; row++) {
-            try {
-                String s = strip(ds.select(row, 0).asString());
-                if(isBlank(s)) {
-                    if(isBlank(strip(ds.select(row+1, 0).asString()))) {
-                        break;
-                    } else {
-                        continue;
-                    }
-                }
-                if(Subregion.fromName(s.toUpperCase()) != null && !subregions.contains(s)) {
-                    subregions.add(s);
-                }
-            } catch(MissingDataException e ) {}
-        }
-        return subregions;
+      return StreamSupport.stream(ds.rangeRowSelect(0, 1,
+          ds.getRows()).spliterator(), false).map(v -> v!=null?v.asString():null).filter(
+              StringUtils::isNotBlank).map(StringUtils::upperCase).distinct().collect(
+                  Collectors.toList());
     }
 
     private Subregion getSubregion(final SpreadsheetDataSource ds, Map<String, ?> parameters) {
-        String subregion = (String)parameters.get(SUBREGION);
-        if(isBlank(subregion)) {
-            return null;
-        }
-        if(!getSubregions(ds).contains(subregion)) {
-            return null;
-        }
-        return Subregion.valueOf(subregion.toUpperCase());
+      String subregion = (String)parameters.get(SUBREGION);
+      return (isNotBlank(subregion) && getSubregions(ds).contains(subregion.toUpperCase()))?
+          Subregion.fromName(subregion.toUpperCase()):null;
     }
 
   private int getSubregionRowStart(SpreadsheetDataSource ds, String name) {
-    for (int row = 1; true; row++) {
+    for (int row = 1; row <= ds.getRows(); row++) {
       try {
         String s = strip(ds.select(row, 0).asString());
-        if (isBlank(s)) {
-          if (isBlank(strip(ds.select(row + 1, 0).asString()))) {
-            break;
-          } else {
-            continue;
-          }
-        }
         if (equalsIgnoreCase(s, name)) {
           return row;
         }
@@ -283,23 +265,6 @@ public class TrendsSeagrassAbundanceBuilder extends JFreeBuilder {
       }
     }
     return entries;
-  }
-
-  private Set<String> names(List<Entry> l) {
-    Set<String> names = Sets.newHashSet();
-    for(Entry entry : l) {
-      names.add(entry.name);
-    }
-    return names;
-  }
-
-  private boolean contains(String name, List<Entry> l) {
-    for(Entry entry : l) {
-      if(entry.name.equals(name)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private ADSCDataset toDataset(List<DList> dates) {
