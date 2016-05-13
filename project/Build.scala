@@ -63,7 +63,6 @@ object ApplicationBuild extends Build {
     "net.sf.supercsv" % "super-csv" % "2.1.0",
     "org.apache.commons" % "commons-math3" % "3.2",
     "org.pegdown" % "pegdown" % "1.1.0",
-    "hanjava.net" % "svg2emf" % "0.0.2",
     "org.freehep" % "freehep-graphicsio-emf" % "2.2.1",
     ("org.docx4j" % "docx4j" % "2.8.1" % "compile").intransitive(),
     "org.docx4j" % "xhtmlrenderer" % "1.0.0",
@@ -140,8 +139,6 @@ object ApplicationBuild extends Build {
     resolvers ++= Seq(
       // Specify central explicitly, so we don't try joscha.github.io unnecessarily
       "Maven central" at "http://repo1.maven.org/maven2/",
-      // SVG2EMF
-      "SVG2EMF" at "http://svg2emf.googlecode.com/svn/m2/releases/",
       // Play Authenticate
       Resolver.url("play-easymail (release)", url("http://joscha.github.com/play-easymail/repo/releases/"))(Resolver.ivyStylePatterns),
       Resolver.url("play-easymail (snapshot)", url("http://joscha.github.com/play-easymail/repo/snapshots/"))(Resolver.ivyStylePatterns),
