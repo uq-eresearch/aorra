@@ -7,6 +7,7 @@ before_script:
   - sudo apt-get install python-virtualenv
   - virtualenv --system-site-packages ./venv
   - . ./venv/bin/activate
+  - pip install --upgrade pip
   - pip -q install WeasyPrint
 script:
   - yes "q" | play-${PLAY_VERSION}/play jacoco:cover coveralls
