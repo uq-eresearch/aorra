@@ -1,9 +1,11 @@
-language: scala
-sudo: false
+language: generic
+dist: trusty
 addons:
   apt:
     packages:
-      - python3
+      - openjdk-7-jdk
+      - python3.4-dev
+      - python3.4-venv
 env:
   - PLAY_VERSION=2.2.1
 before_script:
@@ -11,8 +13,8 @@ before_script:
   - unzip -q play-${PLAY_VERSION}.zip
   - python3 -m venv --system-site-packages ./venv
   - . ./venv/bin/activate
-  - python3 -m pip install --upgrade pip
-  - pip -q install WeasyPrint
+  - python3 -m pip install --upgrade pip setuptools
+  - pip install WeasyPrint
 script:
   - yes "q" | play-${PLAY_VERSION}/play jacoco:cover coveralls
   - curl -v --form json_file=@target/coveralls.json https://coveralls.io/api/v1/jobs || true
