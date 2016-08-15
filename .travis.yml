@@ -1,13 +1,17 @@
 language: scala
+sudo: false
+addons:
+  apt:
+    packages:
+      - python3
 env:
   - PLAY_VERSION=2.2.1
 before_script:
   - wget http://downloads.typesafe.com/play/${PLAY_VERSION}/play-${PLAY_VERSION}.zip
   - unzip -q play-${PLAY_VERSION}.zip
-  - sudo apt-get install python-virtualenv
-  - virtualenv --system-site-packages ./venv
+  - python3 -m venv --system-site-packages ./venv
   - . ./venv/bin/activate
-  - pip install --upgrade pip
+  - python3 -m pip install --upgrade pip
   - pip -q install WeasyPrint
 script:
   - yes "q" | play-${PLAY_VERSION}/play jacoco:cover coveralls
