@@ -34,7 +34,7 @@ object CoverallJson {
 
   def sourceFileJson: JArray = {
     val xmlReport = NoDtdXML.loadFile("target/jacoco/jacoco.xml")
-    val fileJsObjects: Seq[Option[JObject]] = 
+    val fileJsObjects: Seq[Option[JObject]] =
       for (
         packageNode <- (xmlReport \\ "package");
         fileNode <- (packageNode \ "sourcefile")
@@ -45,7 +45,7 @@ object CoverallJson {
           "app/")
         // Find file source (very naive)
         val source = try {
-          Some(io.Source.fromFile(filename))
+          Some(scala.io.Source.fromFile(filename))
         } catch {
           case _: java.io.FileNotFoundException => None
         }

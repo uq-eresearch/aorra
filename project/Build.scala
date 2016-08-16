@@ -4,11 +4,12 @@ import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys.releaseProcess
 import sbtrelease.ReleaseStateTransformations._
 import Keys._
-import play.Project._
 import de.johoop.jacoco4sbt._
 import JacocoPlugin._
 import com.typesafe.sbt.SbtNativePackager.Universal
 import com.typesafe.sbt.packager.universal.Keys.packageZipTarball
+import play.Play.autoImport._
+import PlayKeys._
 
 object ApplicationBuild extends Build {
 
@@ -19,8 +20,6 @@ object ApplicationBuild extends Build {
   val BatikVersion = "1.7"
 
   val appDependencies = Seq(
-    javaCore,
-    cache,
     "org.webjars" %% "webjars-play" % "2.2.1" exclude("org.scala-lang", "scala-library"),
     "org.webjars" % "requirejs" % "2.1.1",
     "org.webjars" % "underscorejs" % "1.5.2-2",
@@ -75,8 +74,8 @@ object ApplicationBuild extends Build {
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
 
   lazy val s = Defaults.defaultSettings ++ releaseSettings ++
-      Seq(jacoco.settings:_*) ++ play.Project.playJavaSettings
-      
+      Seq(jacoco.settings:_*)
+
   val buildTarball: ReleaseStep =
     ReleaseStep(
       action = { st: State =>
@@ -86,8 +85,9 @@ object ApplicationBuild extends Build {
       }
     )
 
-  val main = play.Project(appName,
-      dependencies = appDependencies, settings = s).settings(
+  val main = Project(appName, file("."), settings = s)
+      .enablePlugins(play.PlayJava).settings(
+    libraryDependencies ++= appDependencies,
     version <<= version in ThisBuild,
     unmanagedResourceDirectories in Compile += file("resources"),
     lessEntryPoints <<= (sourceDirectory in Compile)(base => (
@@ -97,7 +97,7 @@ object ApplicationBuild extends Build {
     sourceGenerators in Compile <+= (sourceManaged in Compile, version) map { (dir, v) =>
       val file = dir / "helpers" / "AppVersion.scala"
       IO.write(file, s"""package helpers
-          object AppVersion { 
+          object AppVersion {
             override def toString = "$v"
           }""")
       Seq(file)
@@ -130,8 +130,10 @@ object ApplicationBuild extends Build {
       "-Dxr.util-logging.java.util.logging.ConsoleHandler.level=OFF"
     ),
     // Allows mock Http.Contexts to be built for play-authenticate
-    libraryDependencies += 
-      "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current,
+    libraryDependencies ++= Seq(
+      cache,
+      "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current
+    ),
     // Debug tests
     //Keys.fork in (Test) := true,
     //javaOptions in (Test) += "-Xdebug",
@@ -158,6 +160,6 @@ object ApplicationBuild extends Build {
       commitNextVersion
     )
   ).dependsOn(RootProject(uri(
-      "git://github.com/sgougi/play21-jackrabbit-plugin.git#94d3d7f2bca50815b0c96d90a0f34d40440bda0f")))
+      "git://github.com/uq-eresearch/play21-jackrabbit-plugin.git#7bb1fd522033ad06f7ca81cb19c9f5c492a99d29")))
 
 }
