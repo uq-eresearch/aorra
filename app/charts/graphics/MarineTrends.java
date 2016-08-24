@@ -10,6 +10,7 @@ import java.awt.geom.Rectangle2D;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.CategoryPlot;
@@ -124,6 +125,8 @@ public class MarineTrends {
         }
         renderer.setUseOutlinePaint(false);
         renderer.setBaseShapesVisible(true);
+        final CategoryAxis domainAxis = plot.getDomainAxis();
+        domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
         return new JFreeChartDrawable(chart, dimension);
     }
 

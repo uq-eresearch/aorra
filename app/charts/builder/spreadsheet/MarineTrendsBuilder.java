@@ -11,6 +11,7 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.data.category.CategoryDataset;
 import org.supercsv.io.CsvListWriter;
 
@@ -53,7 +54,7 @@ public class MarineTrendsBuilder extends JFreeBuilder {
         COVER("Cover", "Cover", MARINE_CT),
         CHANGE("Change", "Change", MARINE_CT),
         MACROALGAE("Macroalgae", "Algal Cover", MARINE_CT),
-        JUVENILE("Juveniles", "Juvenile", MARINE_CT),
+        JUVENILE("Juveniles", new String[] {"Juvenile", "Juvenile density"}, MARINE_CT),
         ;
 
         private String label;
@@ -159,7 +160,7 @@ public class MarineTrendsBuilder extends JFreeBuilder {
         List<String> l = Lists.newArrayList();
         int row = getRow(ds, indicator.getChartType()) + 1;
         for(int col = getColumnStart(ds, indicator);col <= getColumnEnd(ds, indicator);col++) {
-            l.add(ds.select(row, col).asString());
+            l.add(StringUtils.substringBefore(ds.select(row, col).asString(), "."));
         }
         return l;
     }
