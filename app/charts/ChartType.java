@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public enum ChartType {
     MARINE ("Marine"),
+    MARINE_V2 ("Marine"),
     COTS_OUTBREAK ("Crown of Thorns Outbreak"),
     ANNUAL_RAINFALL ("Annual Rainfall"),
     PROGRESS_TABLE ("Progress Table"),

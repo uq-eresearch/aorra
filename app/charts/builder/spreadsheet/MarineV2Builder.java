@@ -6,6 +6,9 @@ import java.util.Map;
 
 import org.supercsv.io.CsvListWriter;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+
 import charts.AbstractChart;
 import charts.Chart;
 import charts.ChartDescription;
@@ -16,20 +19,17 @@ import charts.builder.DataSource;
 import charts.builder.DataSource.MissingDataException;
 import charts.builder.csv.Csv;
 import charts.builder.csv.CsvWriter;
-import charts.graphics.BeerCoaster;
-import charts.graphics.BeerCoaster.Category;
-import charts.graphics.BeerCoaster.Condition;
-import charts.graphics.BeerCoaster.Indicator;
+import charts.graphics.BeerCoasterV2;
 import charts.graphics.Colors;
+import charts.graphics.BeerCoasterV2.Category;
+import charts.graphics.BeerCoasterV2.Condition;
+import charts.graphics.BeerCoasterV2.Indicator;
 import charts.jfree.Attribute;
 import charts.jfree.AttributeMap;
 import charts.jfree.AttributedDataset;
 import charts.jfree.AttributedDatasetImpl;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-
-public class MarineBuilder extends AbstractBuilder {
+public class MarineV2Builder extends AbstractBuilder {
 
   private static final ImmutableMap<Region, Integer> OFFSETS =
       new ImmutableMap.Builder<Region, Integer>()
@@ -44,7 +44,7 @@ public class MarineBuilder extends AbstractBuilder {
 
   private static enum Field {
     WATER_QUALITY(Category.WATER_QUALITY, "E", 9),
-    CORAL(Category.CORAL, "P", 9),
+    CORAL(Category.CORAL, "Q", 9),
     SEAGRASS(Category.SEAGRASS, "J", 9),
     CHLOROPHYLL_A(Indicator.CHLOROPHYLL_A, "C", 9),
     TOTAL_SUSPENDED_SOLIDS(Indicator.TOTAL_SUSPENDED_SOLIDS, "D", 9),
@@ -55,6 +55,7 @@ public class MarineBuilder extends AbstractBuilder {
     ABUNDANCE(Indicator.ABUNDANCE, "G", 9),
     REPRODUCTION(Indicator.REPRODUCTION, "H", 9),
     NUTRIENT_STATUS(Indicator.NUTRIENT_STATUS, "I", 9),
+    COMPOSITION(Indicator.COMPOSITION, "P", 9),
     OVERALL("F", 20)
     ;
     private Category category;
@@ -77,7 +78,7 @@ public class MarineBuilder extends AbstractBuilder {
       this.indicator = indicator;
     }
 
-    public void setCondition(BeerCoaster bc, DataSource datasource, Region region) {
+    public void setCondition(BeerCoasterV2 bc, DataSource datasource, Region region) {
       Condition c = condition(datasource, region);
       if(category != null) {
         bc.setCondition(category, c);
@@ -119,8 +120,8 @@ public class MarineBuilder extends AbstractBuilder {
     }
   }
 
-  public MarineBuilder() {
-    super(ChartType.MARINE);
+  public MarineV2Builder() {
+    super(ChartType.MARINE_V2);
   }
 
   @Override
@@ -132,21 +133,21 @@ public class MarineBuilder extends AbstractBuilder {
     try {
       return "MARINE SUMMARY".equalsIgnoreCase(
           datasource.select("B18").getValue()) && "Coral Index".equalsIgnoreCase(
-              datasource.select("P8").getValue());
+              datasource.select("Q8").getValue());
     } catch (MissingDataException e) {
       return false;
     }
   }
 
   public abstract static class MarineChart extends AbstractChart {
-    public abstract BeerCoaster beercoaster();
+    public abstract BeerCoasterV2 beercoaster();
   }
 
   @Override
   public Chart build(final Context context) {
     AttributedDataset a = new AttributedDatasetImpl();
     configurator(context).configure(a, context.type());
-    final BeerCoaster beercoaster = getDrawable(context.datasource(), context.region(), a);
+    final BeerCoasterV2 beercoaster = getDrawable(context.datasource(), context.region(), a);
     if (beercoaster != null) {
 
       final ChartDescription description = new ChartDescription(context.type(), context.region());
@@ -162,7 +163,7 @@ public class MarineBuilder extends AbstractBuilder {
         }
 
         @Override
-        public BeerCoaster beercoaster() {
+        public BeerCoasterV2 beercoaster() {
           return beercoaster;
         }
 
@@ -189,8 +190,8 @@ public class MarineBuilder extends AbstractBuilder {
     }
   }
 
-  private BeerCoaster getDrawable(DataSource datasource, Region region, AttributedDataset a) {
-    BeerCoaster bc = new BeerCoaster(conditionColors(a));
+  private BeerCoasterV2 getDrawable(DataSource datasource, Region region, AttributedDataset a) {
+    BeerCoasterV2 bc = new BeerCoasterV2(conditionColors(a));
     for(Field f : Field.values()) {
       f.setCondition(bc, datasource, region);
     }
@@ -219,5 +220,6 @@ public class MarineBuilder extends AbstractBuilder {
         put(Attribute.CONDITION_VERY_POOR, Colors.VERY_POOR).
         build();
   }
+
 
 }

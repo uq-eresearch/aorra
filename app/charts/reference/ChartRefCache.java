@@ -69,6 +69,7 @@ public class ChartRefCache {
     "total_suspended_solids.xlsx",
     "wetlands.xlsx",
     "pesticides.xlsx",
+    "marine_v2.xls"
   };
 
   private final DefaultChartBuilder chartBuilder;
