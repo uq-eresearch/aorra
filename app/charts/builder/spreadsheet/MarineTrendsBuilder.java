@@ -55,6 +55,7 @@ public class MarineTrendsBuilder extends JFreeBuilder {
         CHANGE("Change", "Change", MARINE_CT),
         MACROALGAE("Macroalgae", "Algal Cover", MARINE_CT),
         JUVENILE("Juveniles", new String[] {"Juvenile", "Juvenile density"}, MARINE_CT),
+        COMPOSITION("Composition", "Community composition", MARINE_CT),
         ;
 
         private String label;
@@ -140,6 +141,15 @@ public class MarineTrendsBuilder extends JFreeBuilder {
                 "column start for indicator '%s' not found", indicator.getLabel()));
     }
 
+    private boolean hasIndicator(SpreadsheetDataSource ds, Indicator indicator) {
+      try {
+        getColumnStart(ds, indicator);
+        return true;
+      } catch(RuntimeException e) {
+        return false;
+      }
+    }
+
     private int getColumnEnd(SpreadsheetDataSource ds, Indicator indicator) {
         int row = getRow(ds, indicator.getChartType()) + 1;
         for(int col = getColumnStart(ds, indicator) + 1; true; col++) {
@@ -176,15 +186,17 @@ public class MarineTrendsBuilder extends JFreeBuilder {
         ADCDataset dataset = new ADCDataset();
         int row = getRow(ds, ctx.type(), ctx.region());
         for(Indicator i : Indicator.forType(ctx.type())) {
-          int col = getColumnStart(ds, i);
-          for(String s : getCategories(ds, i)) {
-            try {
-              double d = ds.select(row, col).asDouble();
-              dataset.addValue(d, i.getLabel(), s);
-            } catch(Exception e) {
-              dataset.addValue(null, i.getLabel(), s);
+          if(hasIndicator(ds, i)) {
+            int col = getColumnStart(ds, i);
+            for(String s : getCategories(ds, i)) {
+              try {
+                double d = ds.select(row, col).asDouble();
+                dataset.addValue(d, i.getLabel(), s);
+              } catch(Exception e) {
+                dataset.addValue(null, i.getLabel(), s);
+              }
+              col++;
             }
-            col++;
           }
         }
         return dataset;
