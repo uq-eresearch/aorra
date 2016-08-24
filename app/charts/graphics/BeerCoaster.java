@@ -159,7 +159,6 @@ public class BeerCoaster implements Drawable {
     private static final Font CATEGORY_FONT = new Font(Font.SANS_SERIF, Font.BOLD, 18);
     private static final Font INDICATOR_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
     private static final Font LEGEND_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 18);
-    private static final Font NOT_EVALUATED_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 17);
     // The legend will be placed at the LEGEND_ANGLE measured from the center of the beer coaster
     private static final int LEGEND_ANGLE = 79;
 
@@ -308,15 +307,6 @@ public class BeerCoaster implements Drawable {
       TextUtilities.drawAlignedString("condition", g.getGraphics(), bcx, bcy, TextAnchor.TOP_CENTER);
     }
 
-    private void drawCoralNotEvaluated(GraphUtils g) {
-      if (getCondition(Category.CORAL) == Condition.NOT_EVALUATED) {
-        g.setColor(Color.black);
-        g.getGraphics().setFont(NOT_EVALUATED_FONT);
-        TextUtilities.drawAlignedString("Not evaluated",
-                g.getGraphics(), bcx, bcy+(bcr*2/3), TextAnchor.BASELINE_CENTER);
-      }
-    }
-
     @Override
     public void draw(Graphics2D graphics) {
       Graphics2D g2d = (Graphics2D) graphics.create();
@@ -341,7 +331,6 @@ public class BeerCoaster implements Drawable {
       }
       drawCategoryBorder(g);
       drawMarineCondition(g);
-      drawCoralNotEvaluated(g);
       drawLegend(g);
       g2d.dispose();
     }
