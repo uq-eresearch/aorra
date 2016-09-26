@@ -106,12 +106,8 @@ public class MarineTrends {
         plot.setDrawingSupplier(drawingSupplier());
         plot.setBackgroundPaint(Color.white);
         plot.setDomainGridlinesVisible(false);
-        if(ChartType.MARINE_WQT.equals(ctx.type())) {
-          plot.setRangeGridlinesVisible(false);
-        } else {
-          plot.setRangeGridlinePaint(Color.gray);
-          plot.setRangeGridlineStroke(new BasicStroke(1));
-        }
+        plot.setRangeGridlinePaint(Color.gray);
+        plot.setRangeGridlineStroke(new BasicStroke(1));
         NumberAxis raxis = (NumberAxis)plot.getRangeAxis();
         raxis.setRange(0, 100.0);
         raxis.setTickUnit(new NumberTickUnit(20));
