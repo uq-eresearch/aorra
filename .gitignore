@@ -32,3 +32,6 @@ repository
 
 # Production-mode PID
 /RUNNING_PID
+/*.docker
+/*.pdf
+/*.aci
