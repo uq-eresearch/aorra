@@ -19,6 +19,6 @@ VOLUME /opt/aorra/logs
 VOLUME /opt/aorra/repository
 WORKDIR /opt/aorra
 USER aorra:aorra
-ENTRYPOINT /opt/aorra/bin/aorra
+ENTRYPOINT ["/opt/aorra/bin/aorra"]
 EXPOSE 5000
 EXPOSE 9000
