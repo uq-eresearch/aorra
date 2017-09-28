@@ -153,4 +153,6 @@
     <Cluster id="node1">
         <Journal class="org.apache.jackrabbit.core.journal.MemoryJournal"/>
     </Cluster>
+
+    <RepositoryLockMechanism class="org.apache.jackrabbit.core.util.CooperativeFileLock" />
 </Repository>
