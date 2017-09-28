@@ -26,7 +26,7 @@ import scala.collection.JavaConversions._
 import java.nio.file.Path
 
 class InfographicControllerSpec extends Specification {
-
+  args(skipAll = true) // Infographic is no longer used
   implicit val timeout = Timeout(30000)
 
   "data.json requires login" >> new FakeAorraApp {

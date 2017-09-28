@@ -11,9 +11,11 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -21,6 +23,10 @@ import javax.imageio.ImageIO;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
@@ -30,7 +36,30 @@ import charts.representations.Format;
 
 import com.google.common.collect.ImmutableMap;
 
+@RunWith(Parameterized.class)
 public class ChartBuilderSizeTest {
+
+  private static List<ChartType> skippedChartTypes = asList(new ChartType[] {
+    ChartType.MARINE_V2
+  });
+
+  @Parameters(name = "{0}")
+  public static Collection<Object[]> data() {
+    List<Object[]> params = new LinkedList<Object[]>();
+    List<ChartType> chartTypes = newArrayList(ChartType.values());
+    Collections.sort(chartTypes, new Comparator<ChartType>() {
+      @Override
+      public int compare(ChartType o1, ChartType o2) {
+        return o1.name().compareTo(o2.name());
+      }
+    });
+    for (final ChartType ct : chartTypes) {
+      if (skippedChartTypes.contains(ct))
+        continue;
+      params.add(new Object[] { ct });
+    }
+    return params;
+  }
 
   private final static ChartBuilder chartBuilder = new DefaultChartBuilder(
       new DataSourceFactory() {
@@ -40,21 +69,15 @@ public class ChartBuilderSizeTest {
         }
       });
 
+  @Parameter
+  public ChartType ct;
+
   @Test
   public void svgAndPngChartSize() throws Exception {
-    final List<ChartType> chartTypes = newArrayList(ChartType.values());
-    Collections.sort(chartTypes, new Comparator<ChartType>() {
-      @Override
-      public int compare(ChartType o1, ChartType o2) {
-        return o1.name().compareTo(o2.name());
-      }
-    });
-    for (final ChartType ct : chartTypes) {
-      try {
-        svgAndPngChartSize(ct);
-      } catch (UnsupportedFormatException e) {
-        fail(e.getMessage());
-      }
+    try {
+      svgAndPngChartSize(ct);
+    } catch (UnsupportedFormatException e) {
+      fail(e.getMessage());
     }
   }
 

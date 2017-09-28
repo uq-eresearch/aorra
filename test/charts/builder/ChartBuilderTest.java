@@ -6,10 +6,16 @@ import static org.junit.Assert.fail;
 
 import java.awt.Dimension;
 import java.io.FileInputStream;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedList;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import charts.Chart.UnsupportedFormatException;
 import charts.ChartType;
@@ -18,7 +24,12 @@ import charts.builder.spreadsheet.XlsDataSource;
 import charts.builder.spreadsheet.XlsxDataSource;
 import charts.representations.Format;
 
+@RunWith(Parameterized.class)
 public class ChartBuilderTest {
+
+  private static List<ChartType> skippedChartTypes = asList(new ChartType[] {
+    ChartType.MARINE_V2
+  });
 
   private final static ChartBuilder chartBuilder = new DefaultChartBuilder(
       new DataSourceFactory() {
@@ -28,13 +39,28 @@ public class ChartBuilderTest {
         }
       });
 
-  @Test
-  public void format() throws Exception {
+  @Parameters(name = "{0} {1}")
+  public static Collection<Object[]> data() {
+    List<Object[]> params = new LinkedList<Object[]>();
     for (final ChartType ct : ChartType.values()) {
+      if (skippedChartTypes.contains(ct))
+        continue;
       for (final Format f : new Format[]{Format.CSV, Format.SVG}) {
-        format(ct, f);
+        params.add(new Object[] { ct, f });
       }
     }
+    return params;
+  }
+
+  @Parameter
+  public ChartType ct;
+
+  @Parameter(1)
+  public Format f;
+
+  @Test
+  public void format() throws Exception {
+    format(ct, f);
   }
 
   public void format(ChartType chartType, Format format) throws Exception {
