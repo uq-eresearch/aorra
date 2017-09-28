@@ -30,6 +30,22 @@ AORRA runs on port 9000 by default, and exposes a local admin console over telne
 
 Ensure the `SESSION_SECRET` environment variable is set in order to properly protect cookie-based sessions.
 
+### SMTP
+
+SMTP needs to be configured in production so password reset & notification emails can be sent. This can be done from the command line.
+
+e.g.
+```
+<command to run AORRA> \
+-Dsmtp.mock=false \
+-Dsmtp.host=smtp.gmail.com \
+-Dsmtp.port=465 \
+-Dsmtp.ssl=yes \
+-Dsmtp.user=somebody@gmail.com \
+-Dsmtp.password=somepassword \
+-Dplay-authenticate.password.mail.from.email=somebody@gmail.com \
+-Dplay-easymail.from.email=somebody@gmail.com
+```
 
 [play]: https://playframework.com/
 [activator]: https://typesafe.com/activator
