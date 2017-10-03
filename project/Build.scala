@@ -5,8 +5,6 @@ import sbtrelease.ReleasePlugin.ReleaseKeys.releaseProcess
 import sbtrelease.ReleaseStateTransformations._
 import Keys._
 import play.Project._
-import de.johoop.jacoco4sbt._
-import JacocoPlugin._
 import com.typesafe.sbt.SbtNativePackager.Universal
 import com.typesafe.sbt.packager.universal.Keys.packageZipTarball
 
@@ -74,9 +72,10 @@ object ApplicationBuild extends Build {
 
   val coveralls = TaskKey[Unit]("coveralls", "Generate report file for Coveralls.io")
 
-  lazy val s = Defaults.defaultSettings ++ releaseSettings ++
-      Seq(jacoco.settings:_*) ++ play.Project.playJavaSettings
-      
+  lazy val s = Defaults.defaultSettings ++
+      releaseSettings ++
+      play.Project.playJavaSettings
+
   val buildTarball: ReleaseStep =
     ReleaseStep(
       action = { st: State =>
@@ -97,7 +96,7 @@ object ApplicationBuild extends Build {
     sourceGenerators in Compile <+= (sourceManaged in Compile, version) map { (dir, v) =>
       val file = dir / "helpers" / "AppVersion.scala"
       IO.write(file, s"""package helpers
-          object AppVersion { 
+          object AppVersion {
             override def toString = "$v"
           }""")
       Seq(file)
@@ -108,19 +107,6 @@ object ApplicationBuild extends Build {
     // Show deprecation & feature warnings
     javacOptions += "-Xlint:deprecation",
     scalacOptions += "-feature",
-    // Play Framework can't do parallel testing
-    parallelExecution in jacoco.Config := false,
-    // Jacoco report output
-    jacoco.reportFormats in jacoco.Config := Seq(XMLReport("utf-8"), HTMLReport("utf-8"), CSVReport("utf-8")),
-    jacoco.excludes in jacoco.Config := Seq("Route*", "Reverse*", "com*", "views*", "controllers.javascript.*"),
-    jacoco.outputDirectory in jacoco.Config := file("target/jacoco"),
-    // Coveralls
-    coveralls := {
-      println("Generating Coveralls.io JSON...")
-      val out = new java.io.FileWriter("target/coveralls.json")
-      out.write(CoverallJson.toString)
-      out.close
-    },
     javaOptions := Seq(
       // Get rid of jBoss logging warning
       "-Dorg.jboss.logging.provider=slf4j",
@@ -130,7 +116,7 @@ object ApplicationBuild extends Build {
       "-Dxr.util-logging.java.util.logging.ConsoleHandler.level=OFF"
     ),
     // Allows mock Http.Contexts to be built for play-authenticate
-    libraryDependencies += 
+    libraryDependencies +=
       "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current,
     // Debug tests
     //Keys.fork in (Test) := true,

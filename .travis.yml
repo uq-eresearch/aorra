@@ -16,12 +16,8 @@ before_script:
   - python3 -m pip install --upgrade pip setuptools
   - pip install WeasyPrint
 script:
-  - yes "q" | activator-${ACTIVATOR_VERSION}-minimal/bin/activator jacoco:cover coveralls
-  - curl -v --form json_file=@target/coveralls.json https://coveralls.io/api/v1/jobs || true
+  - yes "q" | activator-${ACTIVATOR_VERSION}-minimal/bin/activator test
 notifications:
   email:
-    recipients:
-      - t.dettrick@uq.edu.au
-      - a.gebers@uq.edu.au
     on_success: change
     on_failure: always
