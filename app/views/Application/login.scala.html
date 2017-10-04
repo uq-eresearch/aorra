@@ -2,7 +2,7 @@
 
 @import helper.twitterBootstrap._
 
-@inlineInput(field: play.data.Form.Field, inputType: String, icon: String, 
+@inlineInput(field: play.data.Form.Field, inputType: String, icon: String,
   placeholder: String = "") = {
 <div class="login-field @(if (field.errors.length > 0) {"has-error"})">
   <div class="input-group">
@@ -21,7 +21,7 @@
     $('html').addClass("hero-page");
   });
   </script>
-  
+
   <div class="col-lg-8 col-lg-offset-2">
   <div class="above-login">
     @if(flash.contains("error")) {
@@ -46,7 +46,7 @@
       <span class="word"><span class="first">A</span>pplication</span>
     </small>
   </h1>
-  
+
   <br />
   @helper.form(action = routes.Application.postLogin(), 'class -> "form-inline") {
     @inlineInput(form("email"), "email", "envelope", "your email address")
@@ -55,12 +55,12 @@
       <i class="fa fa-sign-in"></i> Login
     </button>
   }
-  
+
   <br />
   <ul class="list-inline">
     <li>
-      <a class="muted" href="mailto:support@@aorra.freshdesk.com"
-         title="The University of Queensland ITEE e-Research Group">
+      <a class="muted" href="mailto:aorra.system@@gmail.com"
+         title="AORRA administrator">
         Questions?
       </a>
     </li>
@@ -71,10 +71,10 @@
       </a>
     </li>
   </ul>
-  
+
   </div>
   </div>
-  
+
   <p class="attribution">
     <a href="#attribution-modal" data-toggle="modal" role="button">
       <i class="fa fa-info-circle"></i> Background
@@ -98,7 +98,7 @@
       by
       <a href="http://www.flickr.com/photos/sackerman519/">Sarah Ackerman</a>
       and is used under her
-      <a href="http://creativecommons.org/licenses/by/2.0/" 
+      <a href="http://creativecommons.org/licenses/by/2.0/"
          style="white-space: nowrap;">
         Some Rights Reserved
       </a>
