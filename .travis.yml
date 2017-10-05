@@ -24,9 +24,7 @@ script:
 after_success:
   - curl -sL https://github.com/appc/docker2aci/releases/download/v${DOCKER2ACI_VERSION}/docker2aci-v${DOCKER2ACI_VERSION}.tar.gz | tar xvz --strip-components=1
   - activator-${ACTIVATOR_VERSION}-minimal/bin/activator dist
-  - docker build -t aorra .
-  - docker save aorra > nghttpx.docker
-  - ./docker2aci aorra.docker && mv aorra-latest.aci aorra.linux.amd64.aci
+  - PATH=$PATH:./activator-${ACTIVATOR_VERSION}-minimal/bin:. ./build_aci.sh
   - xz aorra.docker
 notifications:
   email:
