@@ -30,3 +30,14 @@ notifications:
   email:
     on_success: change
     on_failure: always
+deploy:
+  provider: releases
+  api_key:
+    secure: "IaFNGkTBBEBOduhhO/Bsic5Y19Avf129b1T7TVGeDdsffno4R4+0yhoCQClfZQQN9mHWKexrRA3j6D//gDYn6D38uQ/myuS7PYhxs0DPSQ/fyILHprNkl9dpo2tJaQy2jzjYxBoNVLcK9rj2sVIXqqzCmxIGxnM9dr9RUd/rLR8="
+  file:
+    - aorra.aci
+    - aorra.docker.xz
+  skip_cleanup: true
+  on:
+    tags: true
+    repo: dit4c/dockerfile-nghttpx
